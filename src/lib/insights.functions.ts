@@ -330,8 +330,10 @@ export const updateMyInsightsSettings = createServerFn({ method: "POST" })
       push_feishu: z.boolean().optional(),
       scope: z.array(z.enum(["schedule", "notes", "habits", "insights"])).optional(),
       lookback_days: z.number().int().min(1).max(14).optional(),
+      timezone: z.string().min(1).max(64).optional(),
     }).parse(input),
   )
+
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context as any;
     const { error } = await supabase
