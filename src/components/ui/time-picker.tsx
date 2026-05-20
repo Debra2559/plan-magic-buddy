@@ -42,24 +42,34 @@ export function TimePicker({
     };
   }, [open]);
 
+  // 仅在「打开」那一刻做一次性定位，之后切换值不再滚动，避免列表跳动。
   useEffect(() => {
     if (!open) return;
-    // 滚动到当前选中
-    requestAnimationFrame(() => {
+    const raf = requestAnimationFrame(() => {
       const scroll = (el: HTMLDivElement | null, idx: number) => {
         if (!el) return;
         const item = el.children[idx] as HTMLElement | undefined;
-        if (item) el.scrollTop = item.offsetTop - el.clientHeight / 2 + item.clientHeight / 2;
+        if (!item) return;
+        const target = item.offsetTop - el.clientHeight / 2 + item.clientHeight / 2;
+        // 用 instant 行为，open 瞬间不要出现一段平滑滚动
+        el.scrollTo({ top: target, behavior: "auto" });
       };
       const hIdx = hh ? HOURS.indexOf(hh) : new Date().getHours();
-      const closestMin = mm
-        ? MINUTES.reduce((p, c) => (Math.abs(+c - +mm) < Math.abs(+p - +mm) ? c : p))
-        : "00";
-      const mIdx = MINUTES.indexOf(closestMin);
+      const mInit = mm ? closest(mm) : "00";
+      const mIdx = MINUTES.indexOf(mInit);
       scroll(hourColRef.current, hIdx >= 0 ? hIdx : 0);
       scroll(minColRef.current, mIdx >= 0 ? mIdx : 0);
     });
-  }, [open, hh, mm]);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  // 值变化时触发一次高亮闪烁（不动滚动位置）
+  const [flashKey, setFlashKey] = useState(0);
+  useEffect(() => {
+    if (!open) return;
+    setFlashKey((k) => k + 1);
+  }, [hh, mm, open]);
 
   const select = (newHh: string, newMm: string) => {
     onChange(`${newHh}:${newMm}`);
