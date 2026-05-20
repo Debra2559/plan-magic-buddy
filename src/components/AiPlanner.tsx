@@ -4,6 +4,7 @@ import { generatePlan, chatPlan, type Plan, type PlanItem, type ChatStep } from 
 import { useSylva } from "@/lib/sylva-store";
 import { HackathonInbox } from "./HackathonInbox";
 import { EnterHint } from "@/components/EnterHint";
+import { shouldSubmitOnKey } from "@/lib/keybinds";
 import { Sparkles, ArrowUp, Loader2, Calendar, CheckSquare, Bell, Plus, RefreshCw, Wand2, Check, X, Trash2, Target, Globe } from "lucide-react";
 
 type Mode = "create" | "adjust" | "add" | "goal";
@@ -33,7 +34,7 @@ const tagColors: Record<string, string> = {
 };
 
 export function AiPlanner() {
-  const { items: confirmedFull, addItems, replaceItems, removeItem, clearItems } = useSylva();
+  const { items: confirmedFull, addItems, replaceItems, removeItem, clearItems, enterToSubmit } = useSylva();
   const confirmed = confirmedFull;
   const [mode, setMode] = useState<Mode>("create");
   const [idea, setIdea] = useState("");
@@ -230,7 +231,7 @@ export function AiPlanner() {
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                if (shouldSubmitOnKey(e, enterToSubmit)) {
                   e.preventDefault();
                   handleSubmit();
                 }
@@ -245,7 +246,7 @@ export function AiPlanner() {
             value={idea}
             onChange={(e) => setIdea(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+              if (shouldSubmitOnKey(e, enterToSubmit)) {
                 e.preventDefault();
                 handleSubmit();
               }

@@ -3,6 +3,7 @@ import { useSylva, type Mood, type Note, habitStreak, habitDaysSinceLast, isHabi
 import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, ListChecks, NotebookPen, Sparkles, CheckCircle2, Circle, Flame, AlertTriangle, RotateCcw } from "lucide-react";
 import { markRecapDone, getDailyRecap } from "@/lib/feishu.functions";
 import { EnterHint } from "@/components/EnterHint";
+import { shouldSubmitOnKey } from "@/lib/keybinds";
 
 type Tab = "notes" | "diary" | "summary";
 
@@ -65,7 +66,7 @@ function TabBtn({ active, onClick, icon, children }: { active: boolean; onClick:
 
 /* ---------------- Notes ---------------- */
 function NotesTab() {
-  const { notes, addNote, removeNote, updateNote } = useSylva();
+  const { notes, addNote, removeNote, updateNote, enterToSubmit } = useSylva();
   const [text, setText] = useState("");
   const [mood, setMood] = useState<Mood | undefined>();
   const [tagsRaw, setTagsRaw] = useState("");
@@ -102,7 +103,7 @@ function NotesTab() {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+            if (shouldSubmitOnKey(e, enterToSubmit)) {
               e.preventDefault();
               submit();
             }
@@ -204,7 +205,7 @@ function NoteCard({ n, onRemove, onPin }: { n: Note; onRemove: () => void; onPin
 
 /* ---------------- Diary ---------------- */
 function DiaryTab({ initialDate }: { initialDate?: string | null }) {
-  const { diary, upsertDiary } = useSylva();
+  const { diary, upsertDiary, enterToSubmit } = useSylva();
   const today = todayStr();
   const [date, setDate] = useState(initialDate ?? today);
   const entry = diary.find((d) => d.date === date);
@@ -276,7 +277,7 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
           onChange={(e) => setContent(e.target.value)}
           onBlur={save}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+            if (shouldSubmitOnKey(e, enterToSubmit)) {
               e.preventDefault();
               save();
             }
