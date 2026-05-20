@@ -990,7 +990,43 @@ export function FeishuSyncPanel() {
               })}
             </div>
           )}
+
+          {state.calendarId && (
+            <div className="mt-3 flex items-center gap-2 flex-wrap">
+              <button
+                onClick={async () => {
+                  setSharing(true);
+                  setShareResult(null);
+                  try {
+                    const r: any = await runShare({ data: {} });
+                    if (r?.ok) {
+                      setShareResult({ ok: true, msg: `已添加到你的飞书日历（${r.role}）` });
+                    } else {
+                      setShareResult({ ok: false, msg: r?.error ?? "分享失败" });
+                    }
+                  } catch (e: any) {
+                    setShareResult({ ok: false, msg: e?.message ?? "请求失败" });
+                  } finally {
+                    setSharing(false);
+                  }
+                }}
+                disabled={sharing}
+                className="text-[11px] px-2.5 py-1 rounded-md border border-amber-glow/40 bg-amber-glow/10 text-amber-glow hover:bg-amber-glow/15 disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {sharing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Link2 className="w-3 h-3" />}
+                添加到我的飞书日历
+              </button>
+              {shareResult && (
+                <span className={`text-[11px] flex items-center gap-1 ${shareResult.ok ? "text-emerald-300" : "text-rose-300"}`}>
+                  {shareResult.ok ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                  {shareResult.msg}
+                </span>
+              )}
+              <span className="text-[10px] text-muted-foreground/70">把机器人日历分享给你，事件就会出现在飞书日历 App 中</span>
+            </div>
+          )}
         </div>
+
 
         <div className="px-4 py-3 border-b border-border/70 flex items-center gap-3">
           <div className="flex-1">
