@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import forestBg from "@/assets/forest-bg.jpg";
 import { CalendarWidget } from "@/components/widgets/CalendarWidget";
 import { TodayWidget } from "@/components/widgets/TodayWidget";
@@ -6,7 +6,7 @@ import { QuickNoteWidget } from "@/components/widgets/QuickNoteWidget";
 import { HabitsWidget } from "@/components/widgets/HabitsWidget";
 import { AiPlanner } from "@/components/AiPlanner";
 import { PhoneMockup } from "@/components/PhoneMockup";
-import { Sparkles, RefreshCw, Apple, Smartphone } from "lucide-react";
+import { Sparkles, RefreshCw, Apple, Smartphone, Monitor } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -59,10 +59,13 @@ function Index() {
           为 Mac 与 iPhone 设计的智能规划助手。<br className="hidden md:inline" />
           像森林一样安静地待在你身边，把零散的想法长成可执行的节奏。
         </p>
-        <div className="flex items-center justify-center gap-3 mt-10">
-          <button className="flex items-center gap-2 px-6 py-3 rounded-full bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition">
-            <Apple className="w-4 h-4" /> Mac 客户端
-          </button>
+        <div className="flex items-center justify-center gap-3 mt-10 flex-wrap">
+          <Link to="/desktop" className="flex items-center gap-2 px-6 py-3 rounded-full bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition shadow-lg shadow-amber-glow/30">
+            <Monitor className="w-4 h-4" /> 打开 Mac 桌面体验
+          </Link>
+          <a href="#download" className="flex items-center gap-2 px-6 py-3 rounded-full bg-foreground/10 border border-foreground/15 backdrop-blur text-sm hover:bg-foreground/15 transition">
+            <Apple className="w-4 h-4" /> 下载 .app
+          </a>
           <button className="flex items-center gap-2 px-6 py-3 rounded-full bg-foreground/10 border border-foreground/15 backdrop-blur text-sm hover:bg-foreground/15 transition">
             <Smartphone className="w-4 h-4" /> iPhone App
           </button>
