@@ -117,6 +117,10 @@ function LoginPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !pwd) return;
+    if (mode === "signup" && pwd !== pwd2) {
+      toast.error("两次输入的密码不一致");
+      return;
+    }
     setBusy(true);
     try {
       if (mode === "signup") {
