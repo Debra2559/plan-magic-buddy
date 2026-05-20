@@ -183,13 +183,26 @@ function ChartCard({ title, data, stroke, fill }: { title: string; data: { dim: 
   );
 }
 
+const ASSESSMENT_DRAFT_KEY = "sylva.abilityAssessmentDraft";
+
 function AssessmentPanel({ questions, onDone }: { questions: readonly any[]; onDone: () => void }) {
-  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [answers, setAnswers] = useState<Record<string, number>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const raw = localStorage.getItem(ASSESSMENT_DRAFT_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(ASSESSMENT_DRAFT_KEY, JSON.stringify(answers)); } catch {}
+  }, [answers]);
   const submit = useServerFn(submitAbilityAssessment);
   const mut = useMutation({
     mutationFn: (responses: Record<string, number>) => submit({ data: { responses, kind: "initial" } }),
     onSuccess: () => {
       toast.success("测评完成，已生成你的画像");
+      try { localStorage.removeItem(ASSESSMENT_DRAFT_KEY); } catch {}
+      setAnswers({});
       onDone();
     },
     onError: (e: any) => toast.error(e?.message ?? "提交失败"),
