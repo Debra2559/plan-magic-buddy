@@ -46,6 +46,8 @@ interface WinPos {
   y: number;
 }
 
+type SylvaView = "ai" | "schedule" | "todos" | "notes" | "habits" | "settings";
+
 function DesktopApp() {
   const [now, setNow] = useState(new Date());
   const [positions, setPositions] = useState<Record<WidgetId, WinPos>>({
@@ -56,8 +58,9 @@ function DesktopApp() {
   });
   const [appOpen, setAppOpen] = useState(true);
   const [appPos, setAppPos] = useState<WinPos>({ x: 240, y: 90 });
-  const [appMaximized, setAppMaximized] = useState(false);
+  const [appMaximized, setAppMaximized] = useState(true);
   const [activeDock, setActiveDock] = useState<string>("sylva");
+  const [view, setView] = useState<SylvaView>("ai");
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000 * 30);
