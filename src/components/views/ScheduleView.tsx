@@ -593,7 +593,7 @@ function ItemCard({
           {pending && (
             <select
               value={item.tag}
-              onChange={(e) => onChange({ tag: e.target.value })}
+              onChange={(e) => onChange({ tag: e.target.value as PlanItem["tag"] })}
               className="absolute inset-0 opacity-0 cursor-pointer"
               title="点击修改标签"
             >
