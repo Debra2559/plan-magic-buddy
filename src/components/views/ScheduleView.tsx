@@ -549,16 +549,21 @@ function ItemCard({
   onChange,
   onToggleDone,
   onDelete,
+  onConfirm,
+  onRevert,
 }: {
-  item: PlanItem & { id: string; done?: boolean };
+  item: PlanItem & { id: string; done?: boolean; pending?: boolean };
   onChange: (patch: Partial<PlanItem>) => void;
   onToggleDone: () => void;
   onDelete: () => void;
+  onConfirm?: () => void;
+  onRevert?: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(item.title);
   const Icon = typeIcon[item.type];
   const done = !!item.done;
+  const pending = !!item.pending;
 
   const commit = () => {
     const t = title.trim();
@@ -568,7 +573,18 @@ function ItemCard({
   };
 
   return (
-    <div className={`group relative p-3 rounded-xl border transition ${done ? "bg-moss/10 border-moss/30" : "bg-white/[0.04] border-white/10 hover:border-white/20"}`}>
+    <div className={`group relative p-3 rounded-xl border transition ${
+      pending
+        ? "bg-amber-glow/10 border-dashed border-amber-glow/60"
+        : done
+          ? "bg-moss/10 border-moss/30"
+          : "bg-white/[0.04] border-white/10 hover:border-white/20"
+    }`}>
+      {pending && (
+        <div className="absolute -top-2 left-3 px-1.5 py-0.5 rounded-full text-[9px] tracking-wider bg-amber-glow text-primary-foreground font-bold">
+          待确认
+        </div>
+      )}
       <div className="flex items-center gap-2 mb-1.5">
         <DoneCheckbox done={done} onToggle={onToggleDone} />
         <Icon className="w-3.5 h-3.5 text-amber-glow/80 shrink-0" />
@@ -581,13 +597,33 @@ function ItemCard({
             onChange={(v) => onChange({ time: v || undefined })}
             size="sm"
           />
-          <button
-            onClick={onDelete}
-            className="opacity-0 group-hover:opacity-100 transition p-1 rounded hover:bg-white/10 text-white/40 hover:text-destructive"
-            title="删除"
-          >
-            <Trash2 className="w-3 h-3" />
-          </button>
+          {pending && onConfirm && (
+            <button
+              onClick={onConfirm}
+              className="p-1 rounded hover:bg-amber-glow/20 text-amber-glow"
+              title="确认此项"
+            >
+              <Check className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {pending && onRevert && (
+            <button
+              onClick={onRevert}
+              className="p-1 rounded hover:bg-white/10 text-white/50 hover:text-destructive"
+              title="撤销此项"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {!pending && (
+            <button
+              onClick={onDelete}
+              className="opacity-0 group-hover:opacity-100 transition p-1 rounded hover:bg-white/10 text-white/40 hover:text-destructive"
+              title="删除"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          )}
         </div>
       </div>
       {editing ? (
