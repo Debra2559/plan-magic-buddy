@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as DesktopRouteImport } from './routes/desktop'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicHooksScanHackathonsRouteImport } from './routes/api/public/hooks/scan-hackathons'
 import { Route as ApiPublicFeishuWebhookRouteImport } from './routes/api/public/feishu/webhook'
 
 const DesktopRoute = DesktopRouteImport.update({
@@ -23,6 +24,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksScanHackathonsRoute =
+  ApiPublicHooksScanHackathonsRouteImport.update({
+    id: '/api/public/hooks/scan-hackathons',
+    path: '/api/public/hooks/scan-hackathons',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicFeishuWebhookRoute = ApiPublicFeishuWebhookRouteImport.update({
   id: '/api/public/feishu/webhook',
   path: '/api/public/feishu/webhook',
@@ -33,30 +40,47 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/desktop': typeof DesktopRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
+  '/api/public/hooks/scan-hackathons': typeof ApiPublicHooksScanHackathonsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/desktop': typeof DesktopRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
+  '/api/public/hooks/scan-hackathons': typeof ApiPublicHooksScanHackathonsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/desktop': typeof DesktopRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
+  '/api/public/hooks/scan-hackathons': typeof ApiPublicHooksScanHackathonsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/desktop' | '/api/public/feishu/webhook'
+  fullPaths:
+    | '/'
+    | '/desktop'
+    | '/api/public/feishu/webhook'
+    | '/api/public/hooks/scan-hackathons'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/desktop' | '/api/public/feishu/webhook'
-  id: '__root__' | '/' | '/desktop' | '/api/public/feishu/webhook'
+  to:
+    | '/'
+    | '/desktop'
+    | '/api/public/feishu/webhook'
+    | '/api/public/hooks/scan-hackathons'
+  id:
+    | '__root__'
+    | '/'
+    | '/desktop'
+    | '/api/public/feishu/webhook'
+    | '/api/public/hooks/scan-hackathons'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DesktopRoute: typeof DesktopRoute
   ApiPublicFeishuWebhookRoute: typeof ApiPublicFeishuWebhookRoute
+  ApiPublicHooksScanHackathonsRoute: typeof ApiPublicHooksScanHackathonsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -75,6 +99,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/scan-hackathons': {
+      id: '/api/public/hooks/scan-hackathons'
+      path: '/api/public/hooks/scan-hackathons'
+      fullPath: '/api/public/hooks/scan-hackathons'
+      preLoaderRoute: typeof ApiPublicHooksScanHackathonsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/feishu/webhook': {
       id: '/api/public/feishu/webhook'
       path: '/api/public/feishu/webhook'
@@ -89,6 +120,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DesktopRoute: DesktopRoute,
   ApiPublicFeishuWebhookRoute: ApiPublicFeishuWebhookRoute,
+  ApiPublicHooksScanHackathonsRoute: ApiPublicHooksScanHackathonsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
