@@ -24,6 +24,7 @@ import {
   getFeishuPermissionStatus,
   getFeishuCaptureDiagnostics,
   pingFeishuWebhook,
+  shareFeishuCalendarToUser,
 } from "@/lib/feishu.functions";
 import {
   getFeishuAuthUrl,
