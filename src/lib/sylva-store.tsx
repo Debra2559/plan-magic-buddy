@@ -165,9 +165,9 @@ interface SylvaContextValue {
   updateItem: (id: string, patch: Partial<PlanItem>) => void;
   toggleDone: (id: string) => void;
   clearItems: () => void;
-  addNote: (text: string, opts?: { mood?: Mood; tags?: string[]; images?: string[]; videos?: string[]; audios?: string[] }) => void;
+  addNote: (text: string, opts?: { mood?: Mood; tags?: string[]; images?: string[]; videos?: string[]; audios?: string[]; kind?: NoteKind }) => void;
   removeNote: (id: string) => void;
-  updateNote: (id: string, patch: Partial<Pick<Note, "text" | "mood" | "tags" | "pinned" | "videos" | "audios">>) => void;
+  updateNote: (id: string, patch: Partial<Pick<Note, "text" | "mood" | "tags" | "pinned" | "videos" | "audios" | "kind">>) => void;
   toggleHabit: (id: string) => void;
   toggleHabitOn: (id: string, date: string) => void;
   addHabit: (input: { name: string; emoji?: string }) => void;
