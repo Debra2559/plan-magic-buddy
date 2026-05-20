@@ -15,7 +15,7 @@ const PlanItemSchema = z.object({
 
 const PlanSchema = z.object({
   summary: z.string().describe("用一句中文概括这次规划的整体节奏, 不超过 40 字"),
-  items: z.array(PlanItemSchema).min(1).max(20),
+  items: z.array(PlanItemSchema).describe("3-12 条最自然, 不要超过 20 条"),
 });
 
 export type PlanItem = z.infer<typeof PlanItemSchema>;
