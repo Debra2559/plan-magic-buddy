@@ -168,10 +168,7 @@ export async function fetchAllRemote() {
     diary: ((diary.data ?? []) as any[]).map(diaryFromRow) as DiaryEntry[],
     comics: ((comics.data ?? []) as any[]).map(comicFromRow) as DailyComic[],
 
-    notes: (notes.data ?? []).map(noteFromRow as any),
-    habits: (habits.data ?? []).map(habitFromRow as any),
-    diary: (diary.data ?? []).map(diaryFromRow as any),
-    comics: (comics.data ?? []).map(comicFromRow as any),
+
     hasAny:
       !!(items.data?.length || notes.data?.length || habits.data?.length ||
          diary.data?.length || comics.data?.length),
