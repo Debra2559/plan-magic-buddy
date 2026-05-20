@@ -128,6 +128,7 @@ export function AiPersonaPanel() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [pickedFile, setPickedFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [templateCategory, setTemplateCategory] = useState<(typeof CATEGORIES)[number]>("全部");
 
   useEffect(() => setLocal(persona), [persona]);
 
