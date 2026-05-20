@@ -344,12 +344,7 @@ function EditableRow({
     <div className="group flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-white/5 border border-white/10 hover:border-white/20">
       {editing ? (
         <>
-          <input
-            type="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            className="bg-black/30 border border-white/15 rounded px-1 py-0.5 text-[10px] font-mono text-white/80 w-[68px] focus:outline-none"
-          />
+          <TimePicker value={time} onChange={setTime} size="sm" />
           <input
             autoFocus
             value={title}
