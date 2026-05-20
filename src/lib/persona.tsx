@@ -134,10 +134,16 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
     setPersona(next);
   }, []);
 
+  // 最后一次"非默认"的人设快照，用于回退后一键恢复
+  const lastNonDefaultRef = useRef<Partial<PersonaProfile> | null>(null);
+  // 同一次回退只提示一次
+  const revertNoticeKeyRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!user) {
       setPersona(null);
       versionRef.current = 0;
+      lastNonDefaultRef.current = null;
       setLoading(false);
       return;
     }
@@ -147,7 +153,9 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
       const { data } = await supabase.from("user_profiles").select("*").eq("user_id", user.id).maybeSingle();
       if (cancelled) return;
       if (data) {
-        applyPersona(data as PersonaProfile);
+        const p = data as PersonaProfile;
+        applyPersona(p);
+        if (!isDefaultPersona(p)) lastNonDefaultRef.current = snapshotPersona(p);
       } else {
         const seed = { user_id: user.id, ...DEFAULT_PERSONA };
         const { data: inserted } = await supabase
@@ -168,28 +176,63 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
         { event: "*", schema: "public", table: "user_profiles", filter: `user_id=eq.${user.id}` },
         (payload) => {
           if (cancelled) return;
+
+          // 计算"应用后的下一状态"，便于统一判断是否回退到默认
+          let nextPersona: PersonaProfile | null = null;
+
           if (payload.eventType === "DELETE") {
             versionRef.current = 0;
-            setPersona({ user_id: user.id, version: 0, ...DEFAULT_PERSONA });
-            return;
-          }
-          const next = payload.new as PersonaProfile | undefined;
-          if (!next) return;
-          const incoming = next.version ?? 0;
-          // 丢弃陈旧事件（含我们自己的回声）
-          if (incoming <= versionRef.current) return;
-
-          const isSelfEcho = inflightVersionsRef.current.delete(incoming);
-          // 别人在我们提交之间又改了（远端版本跳过了我们预期值）→ 提示冲突
-          if (!isSelfEcho && versionRef.current > 0 && incoming > versionRef.current + 1) {
-            toast.info("资料在其他设备被更新", { description: "已同步到最新版本" });
-          }
-
-          versionRef.current = incoming;
-          if (payload.eventType === "INSERT") {
-            setPersona(next);
+            nextPersona = { user_id: user.id, version: 0, ...DEFAULT_PERSONA };
+            setPersona(nextPersona);
           } else {
-            setPersona((prev) => ({ ...(prev as PersonaProfile), ...next }));
+            const incoming = payload.new as PersonaProfile | undefined;
+            if (!incoming) return;
+            const incomingVersion = incoming.version ?? 0;
+            if (incomingVersion <= versionRef.current) return;
+
+            const isSelfEcho = inflightVersionsRef.current.delete(incomingVersion);
+            if (!isSelfEcho && versionRef.current > 0 && incomingVersion > versionRef.current + 1) {
+              toast.info("资料在其他设备被更新", { description: "已同步到最新版本" });
+            }
+
+            versionRef.current = incomingVersion;
+            if (payload.eventType === "INSERT") {
+              nextPersona = incoming;
+              setPersona(incoming);
+            } else {
+              setPersona((prev) => {
+                const merged = { ...(prev as PersonaProfile), ...incoming };
+                nextPersona = merged;
+                return merged;
+              });
+            }
+          }
+
+          // 检测：是否被其他设备/操作回退到默认人设？
+          if (nextPersona && isDefaultPersona(nextPersona)) {
+            const snapshot = lastNonDefaultRef.current;
+            const key = `${payload.eventType}:${nextPersona.version}`;
+            if (snapshot && revertNoticeKeyRef.current !== key) {
+              revertNoticeKeyRef.current = key;
+              const eventLabel =
+                payload.eventType === "DELETE"
+                  ? "删除"
+                  : payload.eventType === "INSERT"
+                    ? "新建"
+                    : "更新";
+              toast("人设已回退为默认", {
+                description: `检测到 ${eventLabel} 操作把人设重置了，可一键恢复上次的设定。`,
+                action: {
+                  label: "重新生成",
+                  onClick: () => {
+                    void regenerateRef.current?.(snapshot);
+                  },
+                },
+              });
+            }
+          } else if (nextPersona) {
+            lastNonDefaultRef.current = snapshotPersona(nextPersona);
+            revertNoticeKeyRef.current = null;
           }
         },
       )
@@ -244,15 +287,46 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
 
       // 成功：登记本次自增后的版本号，realtime 回声到达时跳过冲突判断
       inflightVersionsRef.current.add((data as PersonaProfile).version);
-      applyPersona(data as PersonaProfile);
+      const saved = data as PersonaProfile;
+      applyPersona(saved);
+      if (!isDefaultPersona(saved)) {
+        lastNonDefaultRef.current = snapshotPersona(saved);
+        revertNoticeKeyRef.current = null;
+      }
     },
     [user, persona, applyPersona],
   );
 
+  /** 把快照（或当前 lastNonDefault）重新写回云端 */
+  const regenerate = useCallback<PersonaCtxValue["regenerate"]>(
+    async (snapshot) => {
+      const target = snapshot ?? lastNonDefaultRef.current;
+      if (!target) {
+        toast.error("没有可恢复的历史人设");
+        return;
+      }
+      if (!user) return;
+      const tid = toast.loading("正在重新生成人设…");
+      try {
+        await save(target);
+        toast.success("已恢复上次的人设", { id: tid });
+      } catch (e) {
+        toast.error("恢复失败", { id: tid, description: (e as Error)?.message });
+      }
+    },
+    [user, save],
+  );
+
+  // 让 realtime 回调拿到最新的 regenerate（避免闭包过期）
+  const regenerateRef = useRef<PersonaCtxValue["regenerate"] | null>(null);
+  useEffect(() => {
+    regenerateRef.current = regenerate;
+  }, [regenerate]);
+
   const systemPrefix = useCallback(() => buildPersonaSystemPrompt(persona), [persona]);
 
   return (
-    <Ctx.Provider value={{ persona, loading, save, systemPrefix }}>{children}</Ctx.Provider>
+    <Ctx.Provider value={{ persona, loading, save, regenerate, systemPrefix }}>{children}</Ctx.Provider>
   );
 }
 
