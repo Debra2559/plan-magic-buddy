@@ -64,50 +64,74 @@ const ExtractedSchema = z.object({
     .max(15),
 });
 
-async function extractWithAI(source: string, snippets: FirecrawlSearchItem[]): Promise<z.infer<typeof ExtractedSchema>> {
+async function extractWithAI(
+  source: string,
+  snippets: FirecrawlSearchItem[],
+): Promise<{ data: z.infer<typeof ExtractedSchema>; error?: string }> {
   const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey || snippets.length === 0) return { hackathons: [] };
+  if (!apiKey) return { data: { hackathons: [] }, error: "LOVABLE_API_KEY 未配置" };
+  if (snippets.length === 0) return { data: { hackathons: [] } };
 
   const corpus = snippets
     .map((s, i) => `[${i + 1}] ${s.title ?? ""}\nURL: ${s.url ?? ""}\n${(s.markdown ?? s.description ?? "").slice(0, 800)}`)
     .join("\n\n---\n\n");
 
+  const now = new Date();
+  const ym = `${now.getFullYear()} 年 ${now.getMonth() + 1} 月`;
+  const todayStr = now.toISOString().slice(0, 10);
+
   const gateway = createLovableAiGatewayProvider(apiKey);
-  try {
-    const { object } = await generateObject({
-      model: gateway("google/gemini-3-flash-preview"),
-      schema: ExtractedSchema,
-      system: `你是一个黑客松信息提取器。从搜索结果中提取「正在或即将进行报名」的黑客松/比赛。
-当前是 2026 年 5 月。只保留:
-- 真正的黑客松/编程比赛/创新比赛 (不要会议/课程/招聘)
-- url 必须是完整 https:// 链接 (不要相对路径)
-- 截止日期晚于 2026-05-01 (无法判断也保留)
+  const models = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash"] as const;
+  let lastErr = "";
+  for (const m of models) {
+    try {
+      const { object } = await generateObject({
+        model: gateway(m),
+        schema: ExtractedSchema,
+        system: `你是黑客松信息提取器。从搜索结果里挑出所有看起来像黑客松/编程比赛/创新比赛的条目。
+当前是 ${ym} (today=${todayStr})。要求:
+- 只要 url 是完整 https:// 链接, 都尽量保留, 不要因为信息不全而丢弃
+- 如果不确定截止日期, 字段填 null 就行, 不要因此丢掉条目
+- 不要只挑「中文」的, 英文比赛也保留
+- 跳过纯会议/课程/招聘/广告
+- 一次最多 12 条, 信息差不多的去重
 来源: ${source}`,
-      prompt: `从下面 ${snippets.length} 条搜索结果中提取黑客松, 去重并补全字段:\n\n${corpus}`,
-    });
-    return object;
-  } catch {
-    return { hackathons: [] };
+        prompt: `下面是 ${snippets.length} 条搜索结果, 把里面的黑客松全提出来:\n\n${corpus}`,
+      });
+      return { data: object };
+    } catch (err) {
+      lastErr = err instanceof Error ? err.message : String(err);
+    }
   }
+  return { data: { hackathons: [] }, error: lastErr };
 }
 
 // ------- Scan & store -------
 const SOURCES: Array<{ name: string; query: string }> = [
-  { name: "Devpost", query: "site:devpost.com hackathon 2026 register" },
-  { name: "MLH", query: "site:mlh.io 2026 hackathon season" },
-  { name: "DoraHacks", query: "site:dorahacks.io hackathon 2026 报名" },
-  { name: "小红书", query: "小红书 黑客松 2026 报名" },
-  { name: "稀土掘金", query: "site:juejin.cn 黑客松 2026" },
+  { name: "Devpost", query: "devpost hackathon register open" },
+  { name: "Devpost", query: "site:devpost.com hackathon" },
+  { name: "MLH", query: "mlh.io hackathon season" },
+  { name: "DoraHacks", query: "dorahacks hackathon 报名" },
+  { name: "DoraHacks", query: "site:dorahacks.io hackathon" },
+  { name: "ETHGlobal", query: "ethglobal hackathon upcoming" },
+  { name: "小红书", query: "小红书 黑客松 报名" },
+  { name: "稀土掘金", query: "掘金 黑客松 2025 OR 2026" },
+  { name: "微信公众号", query: "黑客松 报名 截止" },
 ];
 
 export const scanHackathonsNow = createServerFn({ method: "GET" }).handler(async () => {
   const allFound: Array<{ source: string; item: z.infer<typeof ExtractedSchema>["hackathons"][number] }> = [];
+  const debug: Array<{ source: string; query: string; snippets: number; extracted: number; error?: string }> = [];
 
   for (const src of SOURCES) {
-    const snippets = await firecrawlSearch(src.query, 6);
-    if (snippets.length === 0) continue;
-    const { hackathons } = await extractWithAI(src.name, snippets);
-    for (const h of hackathons) {
+    const snippets = await firecrawlSearch(src.query, 8);
+    if (snippets.length === 0) {
+      debug.push({ source: src.name, query: src.query, snippets: 0, extracted: 0, error: "firecrawl 0 结果" });
+      continue;
+    }
+    const { data: ex, error } = await extractWithAI(src.name, snippets);
+    debug.push({ source: src.name, query: src.query, snippets: snippets.length, extracted: ex.hackathons.length, error });
+    for (const h of ex.hackathons) {
       if (!h.url?.startsWith("http")) continue;
       allFound.push({ source: src.name, item: h });
     }
@@ -120,28 +144,34 @@ export const scanHackathonsNow = createServerFn({ method: "GET" }).handler(async
   }
 
   let inserted = 0;
+  const insertErrors: string[] = [];
   for (const { source, item } of byUrl.values()) {
     const { data: row, error } = await supabaseAdmin
       .from("hackathons")
-      .insert({
-        source,
-        url: item.url,
-        title: item.title,
-        deadline: item.deadline,
-        starts_at: item.starts_at,
-        location: item.location,
-        prize: item.prize,
-        summary: item.summary,
-        tags: item.tags ?? [],
-        status: "pending",
-        raw: item,
-      })
+      .upsert(
+        {
+          source,
+          url: item.url,
+          title: item.title,
+          deadline: item.deadline,
+          starts_at: item.starts_at,
+          location: item.location,
+          prize: item.prize,
+          summary: item.summary,
+          tags: item.tags ?? [],
+          status: "pending",
+          raw: item,
+        },
+        { onConflict: "url", ignoreDuplicates: true },
+      )
       .select("*")
       .maybeSingle();
-    // unique violation = already seen; ignore
-    if (!error && row) {
+    if (error) {
+      insertErrors.push(`${item.url}: ${error.message}`);
+      continue;
+    }
+    if (row) {
       inserted += 1;
-      // 发现新比赛 → 飞书推送（失败不影响主流程）
       void notifyHackathonDiscovered({
         id: (row as any).id,
         title: (row as any).title,
@@ -156,7 +186,14 @@ export const scanHackathonsNow = createServerFn({ method: "GET" }).handler(async
     }
   }
 
-  return { ok: true as const, scanned: allFound.length, deduped: byUrl.size, inserted };
+  return {
+    ok: true as const,
+    scanned: allFound.length,
+    deduped: byUrl.size,
+    inserted,
+    debug,
+    insertErrors,
+  };
 });
 
 // ------- List / decide -------
