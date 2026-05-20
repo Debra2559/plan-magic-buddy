@@ -154,19 +154,22 @@ export function AiPlanner() {
           <span className="text-xs tracking-wider text-amber-glow">Sylva AI · 实时规划</span>
         </div>
 
-        <h3 className="font-display text-2xl mb-4">说一个想法</h3>
+        <h3 className="font-display text-2xl mb-4">{mode === "goal" ? "告诉我一个目标" : "说一个想法"}</h3>
 
         {/* Mode tabs */}
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2 mb-4 flex-wrap">
           {(Object.keys(modeMeta) as Mode[]).map((m) => {
             const Icon = modeMeta[m].icon;
             const active = mode === m;
-            const disabled = m !== "create" && confirmed.length === 0;
+            const disabled = (m === "adjust" || m === "add") && confirmed.length === 0;
             return (
               <button
                 key={m}
                 disabled={disabled}
-                onClick={() => setMode(m)}
+                onClick={() => {
+                  setMode(m);
+                  if (m === "goal") resetChat();
+                }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition
                   ${active ? "bg-amber-glow/20 border-amber-glow/50 text-amber-glow" : "bg-foreground/5 border-foreground/10 text-foreground/70 hover:bg-foreground/10"}
                   ${disabled ? "opacity-30 cursor-not-allowed" : ""}`}
@@ -179,28 +182,90 @@ export function AiPlanner() {
           })}
         </div>
 
-        <textarea
-          value={idea}
-          onChange={(e) => setIdea(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit();
-          }}
-          placeholder={
-            mode === "create"
-              ? "例如：下周要准备毕业答辩，同时跑通飞书提效系统，每天还要泛听英语..."
-              : mode === "adjust"
-              ? "例如：周三下午突然有个会，把那天的安排往后推..."
-              : "例如：再加一个每天 30 分钟的力量训练..."
-          }
-          rows={5}
-          className="w-full bg-foreground/5 border border-foreground/10 rounded-2xl p-4 text-sm leading-relaxed resize-none outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
-        />
+        {mode === "goal" ? (
+          <div className="space-y-3">
+            {/* Chat history */}
+            {chatMessages.length > 0 && (
+              <div className="max-h-[280px] overflow-auto space-y-2 pr-1">
+                {chatMessages.map((m, i) => (
+                  <div
+                    key={i}
+                    className={`p-3 rounded-xl text-sm leading-relaxed whitespace-pre-wrap ${
+                      m.role === "user"
+                        ? "bg-amber-glow/15 border border-amber-glow/30 text-foreground/90 ml-6"
+                        : "bg-foreground/5 border border-foreground/10 text-foreground/85 mr-6"
+                    }`}
+                  >
+                    {m.content}
+                    {m.quickReplies && m.quickReplies.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {m.quickReplies.map((q) => (
+                          <button
+                            key={q}
+                            onClick={() => runChat(q)}
+                            disabled={loading}
+                            className="text-[11px] px-2.5 py-1 rounded-full bg-amber-glow/10 border border-amber-glow/30 text-amber-glow hover:bg-amber-glow/20 transition disabled:opacity-40"
+                          >
+                            {q}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {loading && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground p-2">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    {chatStep?.kind === "research" ? (
+                      <span className="flex items-center gap-1"><Globe className="w-3 h-3" /> 正在联网查方案…</span>
+                    ) : (
+                      "AI 思考中…"
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            <textarea
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit();
+              }}
+              placeholder={chatMessages.length === 0 ? "例如：我要考雅思 / 想 3 个月跑下半马 / 准备申请研究生…" : "继续回答…"}
+              rows={chatMessages.length === 0 ? 4 : 2}
+              className="w-full bg-foreground/5 border border-foreground/10 rounded-2xl p-4 text-sm leading-relaxed resize-none outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
+            />
+          </div>
+        ) : (
+          <textarea
+            value={idea}
+            onChange={(e) => setIdea(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit();
+            }}
+            placeholder={
+              mode === "create"
+                ? "例如：下周要准备毕业答辩，同时跑通飞书提效系统，每天还要泛听英语..."
+                : mode === "adjust"
+                ? "例如：周三下午突然有个会，把那天的安排往后推..."
+                : "例如：再加一个每天 30 分钟的力量训练..."
+            }
+            rows={5}
+            className="w-full bg-foreground/5 border border-foreground/10 rounded-2xl p-4 text-sm leading-relaxed resize-none outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
+          />
+        )}
 
         <div className="flex items-center justify-between mt-3">
-          <span className="text-[10px] text-muted-foreground tracking-wider">⌘ + Enter 发送</span>
+          <span className="text-[10px] text-muted-foreground tracking-wider">
+            {mode === "goal" && chatMessages.length > 0 ? (
+              <button onClick={resetChat} className="hover:text-foreground transition">重新开始</button>
+            ) : (
+              "⌘ + Enter 发送"
+            )}
+          </span>
           <button
             onClick={handleSubmit}
-            disabled={!idea.trim() || loading}
+            disabled={loading || (mode === "goal" ? !chatInput.trim() : !idea.trim())}
             className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition disabled:opacity-40 disabled:scale-100"
           >
             {loading ? (
@@ -210,7 +275,7 @@ export function AiPlanner() {
               </>
             ) : (
               <>
-                让 AI 拆解
+                {mode === "goal" ? (chatMessages.length === 0 ? "开始拆解" : "发送") : "让 AI 拆解"}
                 <ArrowUp className="w-4 h-4" strokeWidth={2.5} />
               </>
             )}
@@ -224,7 +289,7 @@ export function AiPlanner() {
         )}
 
         {/* Example prompts */}
-        {!draft && !loading && (
+        {!draft && !loading && mode !== "goal" && (
           <div className="mt-5 pt-5 border-t border-foreground/10">
             <p className="text-[10px] tracking-wider text-muted-foreground mb-2">试试看 →</p>
             <div className="flex flex-wrap gap-2">
@@ -236,6 +301,22 @@ export function AiPlanner() {
                 <button
                   key={s}
                   onClick={() => setIdea(s)}
+                  className="text-xs px-3 py-1.5 rounded-full bg-foreground/5 border border-foreground/10 text-foreground/70 hover:bg-foreground/10 transition"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {mode === "goal" && chatMessages.length === 0 && !loading && (
+          <div className="mt-5 pt-5 border-t border-foreground/10">
+            <p className="text-[10px] tracking-wider text-muted-foreground mb-2">试试看 →</p>
+            <div className="flex flex-wrap gap-2">
+              {["我想考雅思", "三个月跑下半马", "申请 26 fall 计算机硕士", "学钢琴入门"].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => runChat(s)}
                   className="text-xs px-3 py-1.5 rounded-full bg-foreground/5 border border-foreground/10 text-foreground/70 hover:bg-foreground/10 transition"
                 >
                   {s}
