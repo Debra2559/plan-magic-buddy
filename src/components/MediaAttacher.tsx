@@ -138,7 +138,7 @@ export function MediaAttacher({ videos, audios, images = [], onChange, maxVideos
         setUploading(true);
         try {
           const url = await uploadToBucket(blob, "webm");
-          onChange({ videos, audios: [...audios, url] });
+          onChange({ videos, audios: [...audios, url], images });
         } catch (e: any) {
           toast.error("上传失败", { description: e?.message });
         } finally {
