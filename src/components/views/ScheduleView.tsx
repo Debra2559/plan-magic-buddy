@@ -184,6 +184,7 @@ export function ScheduleView() {
           </div>
         )}
 
+        <QuickAdd date={selected} onAdd={(item) => addItems([item])} />
       </aside>
 
 
