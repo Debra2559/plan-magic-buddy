@@ -193,11 +193,18 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
     loadLS<any[]>("sylva.habits", initialHabits as any).map(migrateHabit)
   );
   const [diary, setDiary] = useState<DiaryEntry[]>(() => loadLS<DiaryEntry[]>("sylva.diary", []));
+  const [comics, setComics] = useState<DailyComic[]>(() => loadLS<DailyComic[]>("sylva.comics", []));
 
   useEffect(() => saveLS("sylva.items", items), [items]);
   useEffect(() => saveLS("sylva.notes", notes), [notes]);
   useEffect(() => saveLS("sylva.habits", habits), [habits]);
   useEffect(() => saveLS("sylva.diary", diary), [diary]);
+  useEffect(() => saveLS("sylva.comics", comics), [comics]);
+
+  const setComic = (c: DailyComic) =>
+    setComics((prev) => [c, ...prev.filter((p) => p.date !== c.date)]);
+  const removeComic = (date: string) =>
+    setComics((prev) => prev.filter((p) => p.date !== date));
 
   const addItems = (newOnes: PlanItem[]) =>
     setItems((prev) => [...prev, ...newOnes.map((i) => ({ ...i, id: (i as any).id ?? nextId() }))]);
