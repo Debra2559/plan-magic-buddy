@@ -106,6 +106,8 @@ async function shareComicImage(url: string, filename: string, title: string) {
 
 export function JournalView() {
   const { items, habits, notes, diary, comics, isRecapDone, toggleHabitOn, addNote, upsertDiary, setComic, removeComic, comicHistory, addComicHistory, removeComicHistory, dateFlashEnabled, dateFlashDurationMs } = useSylva();
+  const { persona } = usePersona();
+  const aiName = (persona?.ai_nickname || "").trim() || "Sylva";
   const [date, setDate] = useState<string>(() => {
     if (typeof window === "undefined") return todayLocal();
     try {
