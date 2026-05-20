@@ -216,46 +216,42 @@ export const submitAbilityAssessment = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { userId } = context as any;
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("AI 网关未配置");
 
-    const gateway = createLovableAiGatewayProvider(apiKey);
-
-    // 1) 本地确定性计分（避免模型把 schema 玩坏）
+    // 本地确定性计算 —— 不依赖 AI，避免任何 schema / 网络失败
     const { abilities, personalityScores } = computeScores(data.responses);
 
     const sortedAbilities = Object.entries(abilities).sort((a, b) => b[1] - a[1]);
-    const topDims = sortedAbilities.slice(0, 3).map(([k, v]) => `${DIM_LABELS[k]}(${v})`);
-    const bottomDims = sortedAbilities.slice(-3).reverse().map(([k, v]) => `${DIM_LABELS[k]}(${v})`);
-    const bigfiveStr = Object.entries(personalityScores)
-      .map(([k, v]) => `${DIM_LABELS[k]}:${v}`)
-      .join(", ");
+    const topDims = sortedAbilities.slice(0, 3).map(([k]) => DIM_LABELS[k]);
+    const bottomDims = sortedAbilities.slice(-3).reverse().map(([k]) => DIM_LABELS[k]);
 
-    // 2) 仅向 AI 索取定性描述（schema 极简，避免数值字段失败）
-    let qualitative: z.infer<typeof QualitativeSchema>;
-    try {
-      const { object } = await generateObject({
-        model: gateway("google/gemini-2.5-flash"),
-        schema: QualitativeSchema,
-        system: `你是亲切而专业的能力画像分析师。基于已经给出的分数，写出有温度、口语化的定性描述。\n- strengths：2-4 条，从最高维度自然导出，写成"擅长 XX / 在 XX 上有优势"，避免直接报分。\n- growth_areas：2-4 条，从最低维度导出，给出可改进方向，措辞鼓励而不是评判。\n- personality_summary：1-2 句，融合大五人格特征。\n- tagline：一句不超过 30 字、有画面感的画像。`,
-        prompt: `能力分（0-100）：\n${JSON.stringify(abilities)}\n大五人格分：\n${bigfiveStr}\n最高维度：${topDims.join("、")}\n最低维度：${bottomDims.join("、")}\n请输出上述四个字段。`,
-      });
-      qualitative = object;
-    } catch {
-      qualitative = {
-        personality_summary: `画像整体均衡（${bigfiveStr}）。`,
-        strengths: topDims.map((d) => `擅长${d.replace(/\(\d+\)/, "")}`),
-        growth_areas: bottomDims.map((d) => `可以继续培养${d.replace(/\(\d+\)/, "")}`),
-        tagline: `稳步前行的成长者 · ${topDims[0]?.replace(/\(\d+\)/, "") ?? "潜力派"}`,
-      };
-    }
+    const p = personalityScores;
+    const traits: string[] = [];
+    traits.push(p.openness >= 60 ? "对新事物保持开放" : p.openness <= 40 ? "更喜欢熟悉与稳定" : "对新旧事物较为均衡");
+    traits.push(p.conscientiousness >= 60 ? "做事有计划且自律" : p.conscientiousness <= 40 ? "偏随性、灵活" : "在自律与灵活间平衡");
+    traits.push(p.extraversion >= 60 ? "外向、乐于表达" : p.extraversion <= 40 ? "偏内向、享受独处" : "外向与内向都能切换");
+    if (p.neuroticism >= 60) traits.push("情绪较敏感，容易被外界影响");
+    else if (p.neuroticism <= 40) traits.push("情绪较稳定");
+    const personality_summary = traits.join("，") + "。";
+
+    const strengths = topDims.slice(0, 3).map((d) => `在${d}上表现突出`);
+    const growth_areas = bottomDims.slice(0, 3).map((d) => `可以继续培养${d}`);
+
+    const taglineMap: Record<string, string> = {
+      计划力: "井然有序的执行者",
+      专注力: "心无旁骛的深耕者",
+      健康力: "节奏稳健的生活家",
+      创造力: "跨界连接的点子家",
+      社交力: "温度十足的连接者",
+      反思力: "向内生长的思考者",
+    };
+    const tagline = taglineMap[topDims[0]] ?? "稳步前行的成长者";
 
     const result = {
       abilities,
-      personality: { ...personalityScores, summary: qualitative.personality_summary },
-      strengths: qualitative.strengths,
-      growth_areas: qualitative.growth_areas,
-      tagline: qualitative.tagline,
+      personality: { ...personalityScores, summary: personality_summary },
+      strengths,
+      growth_areas,
+      tagline,
     };
 
     const { error: upErr } = await supabaseAdmin.from("user_ability_profiles").upsert({
