@@ -454,6 +454,7 @@ export function AiPlanner() {
           )}
         </div>
       </div>
+      </div>
     </div>
   );
 }
