@@ -104,7 +104,7 @@ async function shareComicImage(url: string, filename: string, title: string) {
   await downloadComicImage(url, filename);
 }
 
-export function JournalView() {
+export function JournalView({ embedded = false }: { embedded?: boolean } = {}) {
   const { items, habits, notes, diary, comics, isRecapDone, toggleHabitOn, addNote, upsertDiary, setComic, removeComic, comicHistory, addComicHistory, removeComicHistory, dateFlashEnabled, dateFlashDurationMs } = useSylva();
   const { persona } = usePersona();
   const aiName = (persona?.ai_nickname || "").trim() || "Sylva";
@@ -217,9 +217,11 @@ export function JournalView() {
 
   return (
     <div className="flex h-full">
-      <div className="absolute top-4 right-6 z-20">
-        <JournalModeToggle mode={jMode} onChange={setJMode} />
-      </div>
+      {!embedded && (
+        <div className="absolute top-4 right-6 z-20">
+          <JournalModeToggle mode={jMode} onChange={setJMode} />
+        </div>
+      )}
       {/* 手帐主页 */}
       <div className="flex-1 overflow-auto">
         <div className="max-w-3xl mx-auto p-7">

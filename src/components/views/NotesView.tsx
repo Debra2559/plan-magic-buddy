@@ -87,7 +87,7 @@ export function NotesView() {
           {HeaderTabs}
         </div>
         <div className="flex-1 overflow-hidden">
-          <JournalView />
+          <JournalView embedded />
         </div>
       </div>
     );
