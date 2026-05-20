@@ -423,15 +423,18 @@ function DoneCheckbox({ done, onToggle, size = "md" }: { done: boolean; onToggle
 function ItemCard({
   item,
   onChange,
+  onToggleDone,
   onDelete,
 }: {
-  item: PlanItem & { id: string };
+  item: PlanItem & { id: string; done?: boolean };
   onChange: (patch: Partial<PlanItem>) => void;
+  onToggleDone: () => void;
   onDelete: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(item.title);
   const Icon = typeIcon[item.type];
+  const done = !!item.done;
 
   const commit = () => {
     const t = title.trim();
@@ -441,8 +444,9 @@ function ItemCard({
   };
 
   return (
-    <div className="group relative p-3 rounded-xl bg-white/[0.04] border border-white/10 hover:border-white/20 transition">
+    <div className={`group relative p-3 rounded-xl border transition ${done ? "bg-moss/10 border-moss/30" : "bg-white/[0.04] border-white/10 hover:border-white/20"}`}>
       <div className="flex items-center gap-2 mb-1.5">
+        <DoneCheckbox done={done} onToggle={onToggleDone} />
         <Icon className="w-3.5 h-3.5 text-amber-glow/80 shrink-0" />
         <span className={`text-[10px] px-1.5 py-0.5 rounded-md border ${tagColor[item.tag] ?? "bg-white/10 text-white/70 border-white/15"}`}>
           {item.tag}
@@ -478,7 +482,7 @@ function ItemCard({
         <div
           onClick={() => setEditing(true)}
           title="点击编辑"
-          className="text-sm text-white/90 leading-snug cursor-text"
+          className={`text-sm leading-snug cursor-text ${done ? "text-white/45 line-through" : "text-white/90"}`}
         >
           {item.title}
         </div>
