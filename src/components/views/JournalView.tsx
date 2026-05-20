@@ -763,7 +763,7 @@ function ComicPanel({
     try {
       const summary = buildSummary();
       const res = await generateDailyComic({
-        data: { date, summary, provider, panels },
+        data: { date, summary, provider },
       });
       onGenerated({
         date,
