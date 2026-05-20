@@ -108,9 +108,12 @@ function NotesTab() {
             }
           }}
           rows={3}
-          placeholder="此刻在想什么？Enter 保存 · Shift + Enter 换行"
+          placeholder="此刻在想什么？"
           className="w-full bg-transparent outline-none text-sm leading-relaxed text-white/90 placeholder:text-white/30 resize-none"
         />
+        <div className="flex justify-end -mt-1 mb-1">
+          <EnterHint example={"灵感：把答辩比喻成森林徒步 ↵（Shift+Enter）\n开场用 30 秒抛痛点"} />
+        </div>
         <div className="flex flex-wrap items-center gap-2 mt-3">
           <div className="flex items-center gap-1">
             {MOODS.map((m) => (
