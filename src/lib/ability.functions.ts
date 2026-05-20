@@ -173,8 +173,8 @@ export const submitAbilityAssessment = createServerFn({ method: "POST" })
     const { object } = await generateObject({
       model: gateway("google/gemini-2.5-flash"),
       schema: AnalysisSchema,
-      system: `你是专业的能力测评分析师。基于用户对 12 道李克特量表题（1=非常不符合, 5=非常符合）的作答，输出 6 维能力分（planning 计划力, focus 专注力, health 健康力, creativity 创造力, social 社交力, reflection 反思力）与大五人格分（0-100），并给出 1-3 个优势、1-3 个成长方向，以及一句温度感的画像 tagline。所有分数尽量分散，不要全部集中在 50-60。`,
-      prompt: `用户作答数据：\n${JSON.stringify(qaPairs, null, 0)}\n请基于每题的 dimension 与分数综合判断（如 neuroticism_inv 反向计分）。`,
+      system: `你是专业的能力测评分析师。基于用户对 30 道李克特量表题（1=非常不符合, 5=非常符合）的作答，输出 6 维能力分（planning 计划力, focus 专注力, health 健康力, creativity 创造力, social 社交力, reflection 反思力）与大五人格分（openness, conscientiousness, extraversion, agreeableness, neuroticism，均 0-100），并给出 1-4 个优势、1-4 个成长方向，以及一句有温度感的画像 tagline。\n\n关键计分规则：\n- 每个能力维度有 3 题（含 1 题反向题，dim 以 _inv 结尾），大五人格每个维度 2-3 题。\n- 反向题（dim 以 _inv 结尾）需要按 6-score 反转后再与同维度正向题合并平均，再线性映射到 0-100（1→0, 5→100）。\n- 同维度题之间如果差异很大，倾向于取均值并适度向中位回归，避免被单题极端值带偏。\n- 分数要分散、有差异，不要集中在 50-60；优势/成长方向要从最高/最低维度自然导出，并写成日常化短语（如"擅长规划"而不是"planning 高"）。`,
+      prompt: `用户作答数据（含 dim 与 1-5 分）：\n${JSON.stringify(qaPairs, null, 0)}\n请严格按反向计分规则汇总每个维度，再给出 6 维能力分与大五人格分。`,
     });
 
     // upsert profile
