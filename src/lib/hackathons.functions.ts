@@ -24,6 +24,41 @@ export interface HackathonRow {
 // ------- Firecrawl helpers -------
 type FirecrawlSearchItem = { url?: string; title?: string; description?: string; markdown?: string };
 
+function isHackathonSnippet(item: FirecrawlSearchItem): boolean {
+  const text = `${item.title ?? ""}\n${item.description ?? ""}\n${item.markdown ?? ""}`.toLowerCase();
+  return /hackathon|黑客松|编程比赛|创新大赛|报名|register|prize|devpost|dorahacks|mlh/.test(text);
+}
+
+function fallbackHackathons(source: string, snippets: FirecrawlSearchItem[]): z.infer<typeof ExtractedSchema>["hackathons"] {
+  return snippets
+    .filter((s) => s.url?.startsWith("http") && isHackathonSnippet(s))
+    .slice(0, 6)
+    .map((s) => ({
+      title: (s.title ?? source).trim().slice(0, 120),
+      url: s.url!,
+      deadline: null,
+      starts_at: null,
+      location: /online|线上/i.test(`${s.description ?? ""}${s.markdown ?? ""}`) ? "线上" : null,
+      prize: null,
+      summary: (s.description ?? s.markdown ?? "黑客松/创新比赛报名信息").replace(/\s+/g, " ").trim().slice(0, 60),
+      tags: ["黑客松", source].filter(Boolean).slice(0, 5),
+    }));
+}
+
+async function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise.catch(() => fallback),
+      new Promise<T>((resolve) => {
+        timer = setTimeout(() => resolve(fallback), ms);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function firecrawlSearch(query: string, limit = 8): Promise<FirecrawlSearchItem[]> {
   const apiKey = process.env.FIRECRAWL_API_KEY;
   if (!apiKey) return [];
@@ -200,17 +235,20 @@ export const updateHackathonSettings = createServerFn({ method: "POST" })
 
 export const scanHackathonsNow = createServerFn({ method: "GET" }).handler(async () => {
   const settings = await loadSettings();
-  const sources = settings.sources.filter((s) => s.enabled);
+  const sources = settings.sources.filter((s) => s.enabled).slice(0, 5);
   const allFound: Array<{ source: string; item: z.infer<typeof ExtractedSchema>["hackathons"][number] }> = [];
   const debug: Array<{ source: string; query: string; snippets: number; extracted: number; error?: string }> = [];
 
   for (const src of sources) {
-    const snippets = await firecrawlSearch(src.query, 8);
+    const snippets = await firecrawlSearch(src.query, 6);
     if (snippets.length === 0) {
       debug.push({ source: src.name, query: src.query, snippets: 0, extracted: 0, error: "firecrawl 0 结果" });
       continue;
     }
-    const { data: ex, error } = await extractWithAI(src.name, snippets);
+    const fallbackItems = fallbackHackathons(src.name, snippets);
+    const { data: ex, error } = fallbackItems.length > 0
+      ? { data: { hackathons: fallbackItems }, error: undefined }
+      : await withTimeout(extractWithAI(src.name, snippets), 3_000, { data: { hackathons: [] }, error: "AI 提取超时" });
     debug.push({ source: src.name, query: src.query, snippets: snippets.length, extracted: ex.hackathons.length, error });
     for (const h of ex.hackathons) {
       if (!h.url?.startsWith("http")) continue;
@@ -266,6 +304,10 @@ export const scanHackathonsNow = createServerFn({ method: "GET" }).handler(async
       }).catch(() => {});
     }
   }
+
+  await supabaseAdmin
+    .from("hackathon_settings" as never)
+    .upsert({ id: "singleton", last_scanned_at: new Date().toISOString(), last_scan_result: { scanned: allFound.length, deduped: byUrl.size, inserted, debug } } as never, { onConflict: "id" });
 
   return {
     ok: true as const,

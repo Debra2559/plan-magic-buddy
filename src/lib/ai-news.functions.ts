@@ -18,6 +18,38 @@ export interface AiNewsRow {
 
 type FirecrawlSearchItem = { url?: string; title?: string; description?: string; markdown?: string };
 
+function isAiNewsSnippet(item: FirecrawlSearchItem): boolean {
+  const text = `${item.title ?? ""}\n${item.description ?? ""}\n${item.markdown ?? ""}`.toLowerCase();
+  return /\bai\b|artificial intelligence|llm|agent|openai|anthropic|deepmind|gemini|大模型|人工智能|机器学习|模型|推理/.test(text);
+}
+
+function fallbackNews(source: string, snippets: FirecrawlSearchItem[]): z.infer<typeof ExtractedSchema>["news"] {
+  return snippets
+    .filter((s) => s.url?.startsWith("http") && isAiNewsSnippet(s))
+    .slice(0, 6)
+    .map((s) => ({
+      title: (s.title ?? source).trim().slice(0, 140),
+      url: s.url!,
+      published_at: null,
+      summary: (s.description ?? s.markdown ?? "AI 行业动态").replace(/\s+/g, " ").trim().slice(0, 60),
+      tags: ["AI", source].filter(Boolean).slice(0, 5),
+    }));
+}
+
+async function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise.catch(() => fallback),
+      new Promise<T>((resolve) => {
+        timer = setTimeout(() => resolve(fallback), ms);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function firecrawlSearch(query: string, limit = 8, tbs = "qdr:w"): Promise<FirecrawlSearchItem[]> {
   const apiKey = process.env.FIRECRAWL_API_KEY;
   if (!apiKey) return [];
@@ -255,17 +287,20 @@ export const scanAiNewsNow = createServerFn({ method: "POST" })
       }
     }
 
-    const activeSources = settings.sources.filter((s) => s.enabled);
+    const activeSources = settings.sources.filter((s) => s.enabled).slice(0, 5);
     const allFound: Array<{ source: string; item: z.infer<typeof ExtractedSchema>["news"][number] }> = [];
     const debug: Array<{ source: string; query: string; snippets: number; extracted: number; kept: number; error?: string }> = [];
 
     for (const src of activeSources) {
-      const snippets = await firecrawlSearch(src.query, settings.per_source_limit, settings.time_window);
+      const snippets = await firecrawlSearch(src.query, Math.min(settings.per_source_limit, 6), settings.time_window);
       if (snippets.length === 0) {
         debug.push({ source: src.name, query: src.query, snippets: 0, extracted: 0, kept: 0, error: "firecrawl 0 结果" });
         continue;
       }
-      const { data: ex, error } = await extractWithAI(src.name, snippets);
+      const fallbackItems = fallbackNews(src.name, snippets);
+      const { data: ex, error } = fallbackItems.length > 0
+        ? { data: { news: fallbackItems }, error: undefined }
+        : await withTimeout(extractWithAI(src.name, snippets), 3_000, { data: { news: [] }, error: "AI 提取超时" });
       let kept = 0;
       for (const n of ex.news) {
         if (!n.url?.startsWith("http")) continue;
