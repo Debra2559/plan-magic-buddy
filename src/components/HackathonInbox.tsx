@@ -5,10 +5,17 @@ import {
   acceptHackathon,
   dismissHackathon,
   scanHackathonsNow,
+  getHackathonSettings,
+  updateHackathonSettings,
   type HackathonRow,
+  type HackathonSettings,
 } from "@/lib/hackathons.functions";
 import { useSylva } from "@/lib/sylva-store";
-import { Trophy, X, Check, RefreshCw, Loader2, ExternalLink, MapPin, Calendar as CalIcon, Gift } from "lucide-react";
+import {
+  Trophy, X, Check, RefreshCw, Loader2, ExternalLink, MapPin, Calendar as CalIcon, Gift,
+  Settings as SettingsIcon, Save,
+} from "lucide-react";
+import { SourcesEditor } from "@/components/SourcesEditor";
 
 export function HackathonInbox() {
   const { addItems } = useSylva();
@@ -19,10 +26,16 @@ export function HackathonInbox() {
   const [error, setError] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
 
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settings, setSettings] = useState<HackathonSettings | null>(null);
+  const [saving, setSaving] = useState(false);
+
   const listFn = useServerFn(listPendingHackathons);
   const acceptFn = useServerFn(acceptHackathon);
   const dismissFn = useServerFn(dismissHackathon);
   const scanFn = useServerFn(scanHackathonsNow);
+  const getSettingsFn = useServerFn(getHackathonSettings);
+  const updateSettingsFn = useServerFn(updateHackathonSettings);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -38,9 +51,47 @@ export function HackathonInbox() {
     }
   }, [listFn]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useEffect(() => { void load(); }, [load]);
+
+  const openSettings = async () => {
+    setSettingsOpen(true);
+    if (settings) return;
+    try {
+      const r = await getSettingsFn();
+      if (r.ok && r.settings) setSettings(r.settings);
+      else if (!r.ok) setError(r.error);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const onSaveSettings = async () => {
+    if (!settings) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const cleaned = settings.sources
+        .map((s) => ({ ...s, name: s.name.trim(), query: s.query.trim() }))
+        .filter((s) => s.name && s.query);
+      const r = await updateSettingsFn({
+        data: {
+          enabled: settings.enabled,
+          sources: cleaned,
+          scan_interval_hours: settings.scan_interval_hours,
+        },
+      });
+      if (r.ok) {
+        setSettings(r.settings);
+        setSettingsOpen(false);
+      } else {
+        setError(r.error);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const onScan = async () => {
     setScanning(true);
@@ -84,10 +135,7 @@ export function HackathonInbox() {
   return (
     <div className="widget p-5">
       <div className="flex items-center justify-between mb-3">
-        <button
-          onClick={() => setCollapsed((c) => !c)}
-          className="flex items-center gap-2 text-left"
-        >
+        <button onClick={() => setCollapsed((c) => !c)} className="flex items-center gap-2 text-left">
           <Trophy className="w-4 h-4 text-amber-glow" />
           <span className="text-xs tracking-wider text-amber-glow">黑客松雷达</span>
           {items.length > 0 && (
@@ -96,16 +144,98 @@ export function HackathonInbox() {
             </span>
           )}
         </button>
-        <button
-          onClick={onScan}
-          disabled={scanning}
-          className="flex items-center gap-1 text-[11px] text-foreground/60 hover:text-foreground transition disabled:opacity-40"
-          title="立即扫描"
-        >
-          {scanning ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-          {scanning ? "扫描中" : "扫描"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={openSettings}
+            className="flex items-center gap-1 text-[11px] text-foreground/60 hover:text-amber-glow transition"
+            title="雷达设置"
+          >
+            <SettingsIcon className="w-3 h-3" /> 设置
+          </button>
+          <button
+            onClick={onScan}
+            disabled={scanning}
+            className="flex items-center gap-1 text-[11px] text-foreground/60 hover:text-foreground transition disabled:opacity-40"
+            title="立即扫描"
+          >
+            {scanning ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+            {scanning ? "扫描中" : "扫描"}
+          </button>
+        </div>
       </div>
+
+      {settingsOpen && (
+        <div className="mb-4 p-4 rounded-xl bg-foreground/5 border border-amber-glow/30 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs tracking-wider text-amber-glow flex items-center gap-1.5">
+              <SettingsIcon className="w-3.5 h-3.5" /> 黑客松雷达设置
+            </span>
+            <button onClick={() => setSettingsOpen(false)} className="text-foreground/50 hover:text-foreground transition">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {!settings ? (
+            <div className="text-xs text-muted-foreground py-3 text-center">
+              <Loader2 className="w-4 h-4 animate-spin inline-block mr-1" /> 加载中…
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-foreground/60">扫描状态</span>
+                <button
+                  onClick={() => setSettings({ ...settings, enabled: !settings.enabled })}
+                  className={`text-[10px] px-2 py-0.5 rounded-full border transition ${
+                    settings.enabled
+                      ? "bg-amber-glow/15 border-amber-glow/40 text-amber-glow"
+                      : "bg-foreground/5 border-foreground/15 text-foreground/40"
+                  }`}
+                >
+                  {settings.enabled ? "● 自动扫描中" : "○ 已暂停"}
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 text-[11px]">
+                <span className="text-foreground/60">扫描频率</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={168}
+                  value={settings.scan_interval_hours}
+                  onChange={(e) =>
+                    setSettings({ ...settings, scan_interval_hours: Math.max(1, Math.min(168, Number(e.target.value) || 24)) })
+                  }
+                  className="w-16 bg-background/40 border border-foreground/15 rounded px-2 py-0.5 text-[12px] text-foreground focus:border-amber-glow/50 focus:outline-none"
+                />
+                <span className="text-foreground/50">小时一次</span>
+              </div>
+
+              <SourcesEditor
+                sources={settings.sources}
+                onChange={(next) => setSettings({ ...settings, sources: next })}
+                queryPlaceholder="搜索关键词，例：site:devpost.com hackathon"
+              />
+
+              <div className="flex items-center justify-end gap-2 pt-1">
+                <button
+                  onClick={() => setSettingsOpen(false)}
+                  className="px-3 py-1.5 rounded-full text-xs bg-foreground/5 border border-foreground/10 text-foreground/60 hover:bg-foreground/10"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={onSaveSettings}
+                  disabled={saving}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs bg-amber-glow text-background hover:scale-[1.02] transition disabled:opacity-40"
+                >
+                  {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                  保存
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {!collapsed && (
         <>
