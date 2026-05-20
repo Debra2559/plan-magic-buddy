@@ -616,6 +616,7 @@ export type Database = {
           deadline: string | null
           decided_at: string | null
           discovered_at: string
+          ends_at: string | null
           id: string
           location: string | null
           prize: string | null
@@ -632,6 +633,7 @@ export type Database = {
           deadline?: string | null
           decided_at?: string | null
           discovered_at?: string
+          ends_at?: string | null
           id?: string
           location?: string | null
           prize?: string | null
@@ -648,6 +650,7 @@ export type Database = {
           deadline?: string | null
           decided_at?: string | null
           discovered_at?: string
+          ends_at?: string | null
           id?: string
           location?: string | null
           prize?: string | null
