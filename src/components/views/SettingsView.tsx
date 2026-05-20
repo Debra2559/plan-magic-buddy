@@ -174,6 +174,7 @@ const NAV: NavGroup[] = [
       { key: "general", title: "通用", icon: User },
       { key: "persona", title: "AI 人格", icon: Bot },
       { key: "insights", title: "AI 行为洞察", icon: Lightbulb },
+      { key: "comic", title: "漫画生成", icon: Wand2 },
     ],
   },
   {
