@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { supabaseAdmin } from '@/integrations/supabase/client.server'
 import { z } from 'zod'
 import { getUserAccessToken } from './feishu-user-auth.functions'
+import { randomUUID } from 'crypto'
 
 const FEISHU_BASE = 'https://open.feishu.cn/open-apis'
 
@@ -555,12 +556,13 @@ type NotifySettings = {
   receive_id_type: 'open_id' | 'chat_id' | 'user_id' | 'email'
   notify_on_discover: boolean
   notify_on_accept: boolean
+  user_open_id?: string | null
 }
 
 async function loadNotifySettings(): Promise<NotifySettings | null> {
   const { data } = await supabaseAdmin
     .from('feishu_settings')
-    .select('notify_receive_id, notify_receive_id_type, notify_on_discover, notify_on_accept')
+    .select('notify_receive_id, notify_receive_id_type, notify_on_discover, notify_on_accept, user_open_id')
     .limit(1)
     .maybeSingle()
   if (!data) return null
@@ -569,6 +571,7 @@ async function loadNotifySettings(): Promise<NotifySettings | null> {
     receive_id_type: ((data as any).notify_receive_id_type ?? 'open_id') as NotifySettings['receive_id_type'],
     notify_on_discover: (data as any).notify_on_discover ?? true,
     notify_on_accept: (data as any).notify_on_accept ?? true,
+    user_open_id: (data as any).user_open_id ?? null,
   }
 }
 
@@ -652,22 +655,53 @@ function hackathonCard(opts: {
 async function sendCardToFeishu(card: unknown): Promise<{ ok: boolean; error?: string }> {
   const s = await loadNotifySettings()
   if (!s || !s.receive_id) return { ok: false, error: '未配置飞书接收人' }
+  const requestId = randomUUID()
+  const startedAt = Date.now()
+  let receiveId = s.receive_id.trim()
+  let receiveIdType = s.receive_id_type
+  if (receiveId.startsWith('ou_')) receiveIdType = 'open_id'
+  if (receiveId.startsWith('oc_')) receiveIdType = 'chat_id'
+  if (receiveIdType === 'user_id' && /^\d{12,}$/.test(receiveId) && s.user_open_id) {
+    receiveId = s.user_open_id
+    receiveIdType = 'open_id'
+  }
   try {
     const r = await feishu<{ code: number; msg: string }>(
-      `/im/v1/messages?receive_id_type=${encodeURIComponent(s.receive_id_type)}`,
+      `/im/v1/messages?receive_id_type=${encodeURIComponent(receiveIdType)}`,
       {
         method: 'POST',
         body: JSON.stringify({
-          receive_id: s.receive_id,
+          receive_id: receiveId,
           msg_type: 'interactive',
           content: JSON.stringify(card),
         }),
       }
     )
+    await supabaseAdmin.from('feishu_webhook_logs').insert({
+      request_id: requestId,
+      step: 'send_message',
+      level: r.code === 0 ? 'info' : 'error',
+      status: r.code === 0 ? 200 : 400,
+      duration_ms: Date.now() - startedAt,
+      message: r.code === 0 ? `sent to ${receiveIdType}` : `code=${r.code} msg=${r.msg}`,
+      error: r.code === 0 ? null : `code=${r.code} msg=${r.msg}`,
+      payload: { receiveId, receiveIdType, originalReceiveId: s.receive_id, originalReceiveIdType: s.receive_id_type },
+    } as any)
     if (r.code !== 0) return { ok: false, error: `code=${r.code} msg=${r.msg}` }
     return { ok: true }
   } catch (e: any) {
-    return { ok: false, error: e?.message ?? '发送失败' }
+    const error = e?.message ?? '发送失败'
+    await supabaseAdmin.from('feishu_webhook_logs').insert({
+      request_id: requestId,
+      step: 'send_message',
+      level: 'error',
+      status: 500,
+      duration_ms: Date.now() - startedAt,
+      message: 'send request failed',
+      error,
+      payload: { receiveId, receiveIdType, originalReceiveId: s.receive_id, originalReceiveIdType: s.receive_id_type },
+    } as any)
+    return { ok: false, error }
   }
 }
 
