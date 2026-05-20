@@ -179,7 +179,7 @@ export function TimePicker({
                 );
                 onChange(`${String(now.getHours()).padStart(2, "0")}:${closestMin}`);
               }}
-              className="px-2 py-0.5 text-[10px] rounded text-white/60 hover:text-amber-glow hover:bg-white/5"
+              className="px-2 py-0.5 text-[11px] rounded text-white/80 hover:text-amber-glow hover:bg-white/10"
             >
               现在
             </button>
