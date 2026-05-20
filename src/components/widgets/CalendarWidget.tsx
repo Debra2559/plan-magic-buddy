@@ -48,7 +48,7 @@ export function CalendarWidget() {
               className={`bg-background/60 h-[52px] p-1 flex flex-col gap-0.5 overflow-hidden text-left
                 ${isToday ? "ring-1 ring-amber-glow/60 bg-amber-glow/5" : ""}`}
             >
-              <div className={`text-[10px] leading-none ${isToday ? "text-amber-glow font-bold" : "text-foreground/70"}`}>
+              <div className={`text-[11px] leading-none font-semibold ${isToday ? "text-amber-glow" : "text-foreground"}`}>
                 {day}
               </div>
               {dayItems.slice(0, 2).map((it) => (
