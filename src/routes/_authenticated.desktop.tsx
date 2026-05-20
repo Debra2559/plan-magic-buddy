@@ -233,6 +233,8 @@ function DesktopApp() {
       >
         <ChevronLeft className="w-3 h-3" /> 返回介绍页
       </Link>
+
+      {showOnboarding && <OnboardingHint onClose={() => setShowOnboarding(false)} />}
     </div>
   );
 }
