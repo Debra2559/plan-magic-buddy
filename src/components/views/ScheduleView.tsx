@@ -167,11 +167,21 @@ export function ScheduleView() {
           </div>
         )}
 
-        <DayTimeline
-          items={selectedItems}
-          onSetTime={(id, time) => updateItem(id, { time })}
-          onClearTime={(id) => updateItem(id, { time: undefined })}
-        />
+        {selectedItems.length === 0 ? (
+          <div className="text-center py-10 text-xs text-white/40">这一天还没有安排</div>
+        ) : (
+          <div className="space-y-2">
+            {selectedItems.map((it) => (
+              <ItemCard
+                key={it.id}
+                item={it}
+                onChange={(patch) => updateItem(it.id, patch)}
+                onDelete={() => removeItem(it.id)}
+              />
+            ))}
+          </div>
+        )}
+
       </aside>
 
 
@@ -390,6 +400,77 @@ function EditableRow({
     </div>
   );
 }
+
+/* ---------- Editable Card (aside) ---------- */
+function ItemCard({
+  item,
+  onChange,
+  onDelete,
+}: {
+  item: PlanItem & { id: string };
+  onChange: (patch: Partial<PlanItem>) => void;
+  onDelete: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState(item.title);
+  const Icon = typeIcon[item.type];
+
+  const commit = () => {
+    const t = title.trim();
+    if (t && t !== item.title) onChange({ title: t });
+    else setTitle(item.title);
+    setEditing(false);
+  };
+
+  return (
+    <div className="group relative p-3 rounded-xl bg-white/[0.04] border border-white/10 hover:border-white/20 transition">
+      <div className="flex items-center gap-2 mb-1.5">
+        <Icon className="w-3.5 h-3.5 text-amber-glow/80 shrink-0" />
+        <span className={`text-[10px] px-1.5 py-0.5 rounded-md border ${tagColor[item.tag] ?? "bg-white/10 text-white/70 border-white/15"}`}>
+          {item.tag}
+        </span>
+        <div className="ml-auto flex items-center gap-1">
+          <input
+            type="time"
+            value={item.time ?? ""}
+            onChange={(e) => onChange({ time: e.target.value || undefined })}
+            title="点击编辑时间"
+            className="bg-black/30 border border-white/10 hover:border-white/25 rounded px-1 py-0.5 text-[11px] font-mono text-white/85 w-[72px] focus:outline-none cursor-pointer"
+          />
+          <button
+            onClick={onDelete}
+            className="opacity-0 group-hover:opacity-100 transition p-1 rounded hover:bg-white/10 text-white/40 hover:text-destructive"
+            title="删除"
+          >
+            <Trash2 className="w-3 h-3" />
+          </button>
+        </div>
+      </div>
+      {editing ? (
+        <input
+          autoFocus
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); commit(); }
+            if (e.key === "Escape") { setTitle(item.title); setEditing(false); }
+          }}
+          className="w-full bg-black/30 border border-white/15 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-amber-glow/50"
+        />
+      ) : (
+        <div
+          onClick={() => setEditing(true)}
+          title="点击编辑"
+          className="text-sm text-white/90 leading-snug cursor-text"
+        >
+          {item.title}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 
 function formatLong(iso: string) {
