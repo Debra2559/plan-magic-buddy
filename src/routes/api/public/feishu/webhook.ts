@@ -232,6 +232,7 @@ export const Route = createFileRoute('/api/public/feishu/webhook')({
                 status: 200,
                 duration_ms: Date.now() - startedAt,
                 message: `saved sender open_id ${senderOpenId.slice(0, 8)}…`,
+                payload: { senderOpenId, receiveIdType: 'open_id' },
               })
             } catch (e: any) {
               log({ step: 'capture_open_id', level: 'error', event_type: eventType, error: e?.message, message: 'save open_id failed' })
