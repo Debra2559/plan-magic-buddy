@@ -5,6 +5,7 @@ import { InsightsSettingsPanel } from "@/components/InsightsSettingsPanel";
 import { FeishuSyncPanel } from "@/components/FeishuSyncPanel";
 import { FeishuWebhookLogsPanel } from "@/components/FeishuWebhookLogsPanel";
 import { AiPersonaPanel } from "@/components/AiPersonaPanel";
+import { RemindersPanel } from "@/components/RemindersPanel";
 import { useSylva } from "@/lib/sylva-store";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/lib/auth-context";
