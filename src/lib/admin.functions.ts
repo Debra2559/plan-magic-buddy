@@ -172,7 +172,7 @@ export const adminDeleteContent = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as any;
     await assertAdmin(supabase, userId);
-    let q = supabaseAdmin.from(data.table).delete();
+    let q: any = (supabaseAdmin as any).from(data.table).delete();
     if (data.compositeKey) {
       q = q.eq("date", data.compositeKey.date).eq("user_id", data.compositeKey.user_id);
     } else if (data.id) {
