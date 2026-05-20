@@ -253,10 +253,15 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
   useEffect(() => saveLS("sylva.comics", comics), [comics]);
   useEffect(() => saveLS("sylva.comicHistory", comicHistory), [comicHistory]);
 
-  const setComic = (c: DailyComic) =>
+  const setComic = (c: DailyComic) => {
     setComics((prev) => [c, ...prev.filter((p) => p.date !== c.date)]);
-  const removeComic = (date: string) =>
+    void remote.upsertComic(c);
+  };
+  const removeComic = (date: string) => {
     setComics((prev) => prev.filter((p) => p.date !== date));
+    void remote.removeComic(date);
+  };
+
 
   const addComicHistory: SylvaContextValue["addComicHistory"] = (item) =>
     setComicHistory((prev) =>
