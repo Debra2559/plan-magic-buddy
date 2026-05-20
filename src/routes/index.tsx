@@ -4,9 +4,9 @@ import { CalendarWidget } from "@/components/widgets/CalendarWidget";
 import { TodayWidget } from "@/components/widgets/TodayWidget";
 import { QuickNoteWidget } from "@/components/widgets/QuickNoteWidget";
 import { HabitsWidget } from "@/components/widgets/HabitsWidget";
-import { AiInputWidget } from "@/components/widgets/AiInputWidget";
+import { AiPlanner } from "@/components/AiPlanner";
 import { PhoneMockup } from "@/components/PhoneMockup";
-import { Sparkles, Calendar, CheckSquare, PenLine, Bell, RefreshCw, Apple, Smartphone } from "lucide-react";
+import { Sparkles, RefreshCw, Apple, Smartphone } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: Index,
