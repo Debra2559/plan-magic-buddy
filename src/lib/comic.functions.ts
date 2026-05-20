@@ -82,7 +82,7 @@ export const generateDailyComic = createServerFn({ method: "POST" })
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "doubao-seedream-4-0-250828",
+          model: "doubao-seedream-5-0-lite",
           prompt,
           size: "2K",
           response_format: "url",
