@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSylva, type Mood, type Note, habitStreak, habitDaysSinceLast, isHabitDoneOn } from "@/lib/sylva-store";
 import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, ListChecks, NotebookPen, Sparkles, CheckCircle2, Circle, Flame, AlertTriangle } from "lucide-react";
+import { markRecapDone } from "@/lib/feishu.functions";
 
 type Tab = "notes" | "diary" | "summary";
 
@@ -198,7 +199,12 @@ function DiaryTab() {
     setMood(e?.mood);
   });
 
-  const save = () => upsertDiary(date, { content, mood });
+  const save = () => {
+    upsertDiary(date, { content, mood });
+    if (content.trim().length > 0) {
+      markRecapDone({ data: { date } }).catch(() => {});
+    }
+  };
   const sorted = [...diary].sort((a, b) => b.date.localeCompare(a.date));
 
   return (
@@ -323,6 +329,7 @@ function SummaryTab() {
     const existing = diary.find((d) => d.date === date)?.content ?? "";
     const merged = existing ? existing + "\n\n" + lines.join("\n") : lines.join("\n");
     upsertDiary(date, { content: merged });
+    markRecapDone({ data: { date } }).catch(() => {});
   };
 
   return (

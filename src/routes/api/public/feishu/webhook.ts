@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { handleHackathonCardAction } from '@/lib/feishu.functions'
+import { handleHackathonCardAction, handleRecapCardAction } from '@/lib/feishu.functions'
 
 /**
  * 飞书事件回调入口
@@ -52,7 +52,10 @@ export const Route = createFileRoute('/api/public/feishu/webhook')({
           try {
             if (value?.kind === 'hackathon' && value?.id && (value?.action === 'accept' || value?.action === 'dismiss')) {
               const result = await handleHackathonCardAction({ id: String(value.id), action: value.action })
-              // 飞书 v2 卡片回调要求返回 { toast } 来轻提示
+              return json({ toast: result.toast })
+            }
+            if (value?.kind === 'recap' && value?.action === 'done' && value?.date) {
+              const result = await handleRecapCardAction({ action: 'done', date: String(value.date) })
               return json({ toast: result.toast })
             }
           } catch (e: any) {

@@ -711,20 +711,27 @@ export const testHackathonNotify = createServerFn({ method: 'POST' }).handler(as
 
 // ============= 每日小结提醒 =============
 
-function dailyRecapCard(dateLabel: string) {
+function dailyRecapCard(dateLabel: string, opts?: { missed?: boolean }) {
+  const missed = !!opts?.missed
   return {
     config: { wide_screen_mode: true },
     header: {
-      template: 'indigo',
-      title: { tag: 'plain_text', content: `📝 今日小结提醒 · ${dateLabel}` },
+      template: missed ? 'orange' : 'indigo',
+      title: {
+        tag: 'plain_text',
+        content: missed
+          ? `⏰ 昨日小结还没填 · ${dateLabel}`
+          : `📝 今日小结提醒 · ${dateLabel}`,
+      },
     },
     elements: [
       {
         tag: 'div',
         text: {
           tag: 'lark_md',
-          content:
-            '今天过得怎么样？花 1 分钟回顾一下吧：\n- ✅ 今天完成了哪些任务\n- 💭 写两句话日记 / 心情\n- 🌱 明天想优先做什么',
+          content: missed
+            ? `**${dateLabel}** 的小结和日记还是空的，要不要现在补一下？\n- ✅ 昨天完成了哪些任务\n- 💭 写两句话日记 / 心情\n- 🌱 今天想优先做什么`
+            : '今天过得怎么样？花 1 分钟回顾一下吧：\n- ✅ 今天完成了哪些任务\n- 💭 写两句话日记 / 心情\n- 🌱 明天想优先做什么',
         },
       },
       { tag: 'hr' },
@@ -736,6 +743,12 @@ function dailyRecapCard(dateLabel: string) {
             text: { tag: 'plain_text', content: '去 Sylva 填写 ✍️' },
             type: 'primary',
             url: 'https://id-preview--01545937-4efd-4487-a500-8dd999f2e87d.lovable.app/?view=notes',
+          },
+          {
+            tag: 'button',
+            text: { tag: 'plain_text', content: '✅ 已完成' },
+            type: 'default',
+            value: { kind: 'recap', action: 'done', date: dateLabel },
           },
         ],
       },
@@ -757,44 +770,117 @@ export async function runDailyRecapTick(): Promise<{
 
   const { data: rows } = await supabaseAdmin
     .from('feishu_settings')
-    .select('id, notify_receive_id, notify_receive_id_type, daily_recap_enabled, daily_recap_hour, daily_recap_last_sent_date')
+    .select('id, notify_receive_id, notify_receive_id_type, daily_recap_enabled, daily_recap_hour, daily_recap_last_sent_date, daily_recap_done_dates, daily_recap_last_followup_date')
 
   const results: Array<{ ok: boolean; error?: string }> = []
   let sent = 0
+  const yesterday = new Date(cn.getTime() - 24 * 3600 * 1000).toISOString().slice(0, 10)
+
   for (const r of (rows ?? []) as any[]) {
     if (!r.daily_recap_enabled) continue
     if (!r.notify_receive_id) continue
     if (Number(r.daily_recap_hour) !== hour) continue
-    if (r.daily_recap_last_sent_date === today) continue
 
-    try {
-      const res = await feishu<{ code: number; msg: string }>(
-        `/im/v1/messages?receive_id_type=${encodeURIComponent(r.notify_receive_id_type ?? 'open_id')}`,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            receive_id: r.notify_receive_id,
-            msg_type: 'interactive',
-            content: JSON.stringify(dailyRecapCard(today)),
-          }),
-        },
-      )
-      if (res.code !== 0) {
-        results.push({ ok: false, error: `code=${res.code} msg=${res.msg}` })
-        continue
+    const doneDates: string[] = Array.isArray(r.daily_recap_done_dates) ? r.daily_recap_done_dates : []
+
+    // (A) 今日提醒：到点 + 今天还没发过
+    if (r.daily_recap_last_sent_date !== today) {
+      try {
+        const res = await feishu<{ code: number; msg: string }>(
+          `/im/v1/messages?receive_id_type=${encodeURIComponent(r.notify_receive_id_type ?? 'open_id')}`,
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              receive_id: r.notify_receive_id,
+              msg_type: 'interactive',
+              content: JSON.stringify(dailyRecapCard(today)),
+            }),
+          },
+        )
+        if (res.code !== 0) {
+          results.push({ ok: false, error: `today: code=${res.code} msg=${res.msg}` })
+        } else {
+          await supabaseAdmin
+            .from('feishu_settings')
+            .update({ daily_recap_last_sent_date: today } as any)
+            .eq('id', r.id)
+          sent++
+          results.push({ ok: true })
+        }
+      } catch (e: any) {
+        results.push({ ok: false, error: e?.message ?? '发送失败' })
       }
-      await supabaseAdmin
-        .from('feishu_settings')
-        .update({ daily_recap_last_sent_date: today } as any)
-        .eq('id', r.id)
-      sent++
-      results.push({ ok: true })
-    } catch (e: any) {
-      results.push({ ok: false, error: e?.message ?? '发送失败' })
+    }
+
+    // (B) 昨日补打：昨天没在 done_dates 里 + 今天还没发过补打提醒
+    if (!doneDates.includes(yesterday) && r.daily_recap_last_followup_date !== today) {
+      try {
+        const res = await feishu<{ code: number; msg: string }>(
+          `/im/v1/messages?receive_id_type=${encodeURIComponent(r.notify_receive_id_type ?? 'open_id')}`,
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              receive_id: r.notify_receive_id,
+              msg_type: 'interactive',
+              content: JSON.stringify(dailyRecapCard(yesterday, { missed: true })),
+            }),
+          },
+        )
+        if (res.code !== 0) {
+          results.push({ ok: false, error: `followup: code=${res.code} msg=${res.msg}` })
+        } else {
+          await supabaseAdmin
+            .from('feishu_settings')
+            .update({ daily_recap_last_followup_date: today } as any)
+            .eq('id', r.id)
+          sent++
+          results.push({ ok: true })
+        }
+      } catch (e: any) {
+        results.push({ ok: false, error: e?.message ?? '补打发送失败' })
+      }
     }
   }
   return { checked: (rows ?? []).length, sent, results }
 }
+
+/** 标记某天的小结已完成（在 done_dates 数组里追加去重）。 */
+async function markRecapDoneInternal(date: string) {
+  const { data: rows } = await supabaseAdmin
+    .from('feishu_settings')
+    .select('id, daily_recap_done_dates')
+  for (const r of (rows ?? []) as any[]) {
+    const cur: string[] = Array.isArray(r.daily_recap_done_dates) ? r.daily_recap_done_dates : []
+    if (cur.includes(date)) continue
+    const next = [...cur, date].slice(-60) // 只保留最近 60 天
+    await supabaseAdmin
+      .from('feishu_settings')
+      .update({ daily_recap_done_dates: next } as any)
+      .eq('id', r.id)
+  }
+}
+
+export async function handleRecapCardAction(payload: {
+  action: 'done'
+  date: string
+}): Promise<{ toast: { type: 'success' | 'info' | 'error'; content: string } }> {
+  if (payload.action !== 'done' || !payload.date) {
+    return { toast: { type: 'error', content: '参数错误' } }
+  }
+  try {
+    await markRecapDoneInternal(payload.date)
+    return { toast: { type: 'success', content: `已标记 ${payload.date} 完成` } }
+  } catch (e: any) {
+    return { toast: { type: 'error', content: e?.message ?? '标记失败' } }
+  }
+}
+
+export const markRecapDone = createServerFn({ method: 'POST' })
+  .inputValidator((d: { date: string }) => z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(d))
+  .handler(async ({ data }) => {
+    await markRecapDoneInternal(data.date)
+    return { ok: true as const }
+  })
 
 export const getDailyRecapConfig = createServerFn({ method: 'GET' }).handler(async () => {
   const { data } = await supabaseAdmin
