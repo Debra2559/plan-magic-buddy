@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { PlanItem } from "./plan.functions";
-import { getRecapDoneDates, getDailyRecap, unmarkRecapDone as unmarkRecapDoneFn } from "./feishu.functions";
+import { getRecapDoneDates, getDailyRecap, unmarkRecapDone as unmarkRecapDoneFn, syncToFeishu } from "./feishu.functions";
 import { supabase } from "@/integrations/supabase/client";
 import {
   remote, fetchAllRemote,
@@ -259,6 +259,36 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
   useEffect(() => saveLS("sylva.diary", diary), [diary]);
   useEffect(() => saveLS("sylva.comics", comics), [comics]);
   useEffect(() => saveLS("sylva.comicHistory", comicHistory), [comicHistory]);
+
+  // 自动同步：任何带时间的、非待确认事项变动，5 秒后静默推送到飞书日历
+  const autoSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoSyncSigRef = useRef<string>("");
+  useEffect(() => {
+    const timed = items
+      .filter((i) => !!i.time && !i.pending)
+      .map((i) => ({
+        id: i.id,
+        type: i.type,
+        title: i.title,
+        date: i.date,
+        time: i.time,
+        tag: i.tag,
+        done: i.done,
+      }));
+    const sig = JSON.stringify(timed);
+    if (sig === autoSyncSigRef.current) return;
+    autoSyncSigRef.current = sig;
+    if (autoSyncTimerRef.current) clearTimeout(autoSyncTimerRef.current);
+    autoSyncTimerRef.current = setTimeout(() => {
+      if (timed.length === 0) return;
+      void syncToFeishu({ data: { items: timed as any } }).catch(() => {
+        /* 静默：未配置飞书或网络错误时不打扰用户 */
+      });
+    }, 5000);
+    return () => {
+      if (autoSyncTimerRef.current) clearTimeout(autoSyncTimerRef.current);
+    };
+  }, [items]);
 
   const setComic = (c: DailyComic) => {
     setComics((prev) => [c, ...prev.filter((p) => p.date !== c.date)]);

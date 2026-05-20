@@ -5,7 +5,7 @@ import type { PlanItem } from "@/lib/plan.functions";
 import { TimePicker } from "@/components/ui/time-picker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AiPlanner } from "@/components/AiPlanner";
-import { FeishuQuickSyncBar } from "@/components/FeishuQuickSyncBar";
+
 import { HackathonInbox } from "@/components/HackathonInbox";
 import { AiNewsRadar } from "@/components/AiNewsRadar";
 
@@ -281,13 +281,10 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
           })}
         </div>
 
-        {/* 飞书同步 + 雷达模块 */}
-        <div className="mt-6 space-y-6">
-          <FeishuQuickSyncBar onGoSettings={onGoSettings} />
-          <div className="grid lg:grid-cols-2 gap-6 items-start">
-            <HackathonInbox />
-            <AiNewsRadar />
-          </div>
+        {/* 雷达模块（飞书已自动同步带时间的事项） */}
+        <div className="mt-6 grid lg:grid-cols-2 gap-6 items-start">
+          <HackathonInbox />
+          <AiNewsRadar />
         </div>
       </div>
 
