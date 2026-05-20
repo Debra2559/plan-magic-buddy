@@ -993,12 +993,14 @@ export async function handleRecapSubmit(payload: {
       const calendarId = (settings as any)?.selected_calendar_id
       if (calendarId) {
         const start = toUnixSeconds(date, '20:30')
+        const moodLabel = moodToLabel(mood)
         const desc = [
           summary ? `【今日小结】\n${summary}` : '',
           diary ? `\n\n【日记】\n${diary}` : '',
+          moodLabel ? `\n\n【心情】${moodLabel}` : '',
         ].join('').trim()
         const eventBody = {
-          summary: `✅ 今日小结 · ${date}`,
+          summary: `✅ 今日小结 · ${date}${moodLabel ? ` · ${moodLabel}` : ''}`,
           description: desc,
           start_time: { timestamp: String(start), timezone: TZ },
           end_time: { timestamp: String(start + 15 * 60), timezone: TZ },
