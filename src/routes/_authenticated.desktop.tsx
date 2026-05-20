@@ -184,7 +184,7 @@ function DesktopApp() {
             <div className="flex h-full">
               {/* Sidebar */}
               <aside className="w-52 shrink-0 bg-black/30 backdrop-blur-xl border-r border-white/8 p-4 flex flex-col gap-1 text-[13px]">
-                <AssistantHeader onClick={openSettings} />
+                <AssistantHeader onClick={() => openSettings("persona")} />
                 <SidebarItem icon={CalIcon} label="日程" active={view === "schedule"} onClick={() => setView("schedule")} />
                 <SidebarItem icon={Sparkles} label="规划" active={view === "ai"} onClick={() => setView("ai")} />
                 <SidebarItem icon={CheckSquare} label="待办" active={view === "todos"} onClick={() => setView("todos")} />
