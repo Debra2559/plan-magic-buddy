@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bell, Cloud, Palette, Keyboard, User, Info, Sparkles, Bot, Webhook, ChevronRight, ChevronDown } from "lucide-react";
+import { Bell, Cloud, Palette, Keyboard, User, Info, Sparkles, Bot, Webhook, ChevronRight, ChevronDown, LogOut } from "lucide-react";
 import { FeishuSyncPanel } from "@/components/FeishuSyncPanel";
 import { FeishuWebhookLogsPanel } from "@/components/FeishuWebhookLogsPanel";
 import { AiPersonaPanel } from "@/components/AiPersonaPanel";
 import { useSylva } from "@/lib/sylva-store";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useAuth } from "@/lib/auth-context";
+import { useNavigate } from "@tanstack/react-router";
+
 
 type SimpleRow = { label: string; value: string; action: string };
 
