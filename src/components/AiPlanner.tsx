@@ -262,13 +262,12 @@ export function AiPlanner() {
           />
         )}
 
-        <div className="flex items-center justify-between mt-3">
-          <span className="text-[10px] text-muted-foreground tracking-wider">
+        <div className="flex items-center justify-between mt-3 gap-2">
+          <span className="text-[10px] text-muted-foreground tracking-wider flex items-center gap-3">
             {mode === "goal" && chatMessages.length > 0 ? (
               <button onClick={resetChat} className="hover:text-foreground transition">重新开始</button>
-            ) : (
-              "⌘ + Enter 发送"
-            )}
+            ) : null}
+            <EnterHint example={"我要在 3 个月内跑下半马 ↵（Shift+Enter）\n每周至少 4 次跑步训练"} />
           </span>
           <button
             onClick={handleSubmit}
