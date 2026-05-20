@@ -10,10 +10,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { AvatarCropDialog } from "@/components/AvatarCropDialog";
 import { ProfileHistoryPanel } from "@/components/ProfileHistoryPanel";
 
+// 精选两组风格：极简线条肖像（notionists-neutral）+ 抽象几何渐变（shapes）
+// 整体走 Linear / Notion / Apple 设计审美，避免花哨的卡通 emoji
 const PRESET_AVATARS: string[] = [
-  "fox", "panda", "cat", "dog", "koala", "tiger", "bear", "rabbit",
-  "owl", "penguin", "monkey", "lion", "wolf", "frog", "duck", "pig",
-].map((seed) => `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${seed}&backgroundType=gradientLinear`);
+  ...["aurora", "atlas", "luna", "nova", "iris", "river", "sage", "wren"].map(
+    (seed) =>
+      `https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${seed}&backgroundColor=f5f0e8,e8dccb,d4c4a8,c9b99a,b8a382,a89172`,
+  ),
+  ...["ink", "mist", "ember", "tide", "dusk", "stone", "moss", "clay"].map(
+    (seed) =>
+      `https://api.dicebear.com/9.x/shapes/svg?seed=${seed}&backgroundType=gradientLinear&backgroundRotation=15,30,45,210,225,240`,
+  ),
+];
+
 
 type PersonaTemplate = {
   name: string;
