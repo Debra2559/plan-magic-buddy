@@ -77,7 +77,7 @@ const PersonalitySchema = z.object({
   extraversion: z.number().min(0).max(100),
   agreeableness: z.number().min(0).max(100),
   neuroticism: z.number().min(0).max(100),
-  summary: z.string().max(280),
+  summary: z.string(),
 });
 const AnalysisSchema = z.object({
   abilities: AbilitiesSchema,
