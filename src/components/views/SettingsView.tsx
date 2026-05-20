@@ -295,6 +295,13 @@ export function SettingsView() {
       case "reminders": return <RowList rows={simpleSections.reminders.rows} />;
       case "appearance": return (
         <div className="space-y-4">
+          <div className="widget p-4 flex items-center justify-between">
+            <div>
+              <div className="text-sm text-white/90">主题模式</div>
+              <div className="text-xs text-white/50 mt-0.5">切换亮色 / 暗色外观</div>
+            </div>
+            <ThemeToggle />
+          </div>
           <RowList rows={simpleSections.appearance.rows} />
           <div>
             <div className="text-[10px] uppercase tracking-widest text-white/35 mb-2 px-1 flex items-center gap-1.5">
@@ -325,7 +332,6 @@ export function SettingsView() {
           <div>
             <p className="text-[10px] tracking-widest text-amber-glow mb-1">偏好设置</p>
             <h2 className="font-display text-2xl text-white leading-tight">让 Sylva<br/>长成你的样子。</h2>
-            <div className="mt-3"><ThemeToggle /></div>
           </div>
           <nav className="flex flex-col gap-3">
             {NAV.map((group) => {
