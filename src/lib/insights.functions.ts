@@ -346,31 +346,34 @@ export const updateMyInsightsSettings = createServerFn({ method: "POST" })
 // ---------- Cron (called from public hook) ----------
 
 export async function runScheduledInsights(): Promise<{ processed: number; generated: number; errors: number }> {
-  const nowSlot = currentSlot();
-  const today = todayStr();
-  // Find all users with enabled settings, whose slots include current, and who haven't generated this slot today
+  // Find all users with enabled settings, then compute slot/today in each user's own timezone
   const { data: users, error } = await supabaseAdmin
     .from("ai_insights_settings")
-    .select("user_id, slots, enabled, last_generated_at, last_slot");
+    .select("user_id, slots, enabled, last_generated_at, last_slot, timezone");
   if (error) return { processed: 0, generated: 0, errors: 1 };
 
+  const now = new Date();
   let processed = 0;
   let generated = 0;
   let errors = 0;
   for (const u of users ?? []) {
     if (!u.enabled) continue;
+    const tz = (u as any).timezone || DEFAULT_TZ;
+    const userSlot = currentSlot(now, tz);
+    const userToday = todayStr(now, tz);
     const slots: string[] = u.slots ?? [];
-    if (!slots.includes(nowSlot)) continue;
-    // Skip if already generated this slot today
-    if (u.last_slot === nowSlot && u.last_generated_at && (u.last_generated_at as string).slice(0, 10) === today) continue;
+    if (!slots.includes(userSlot)) continue;
+    // Skip if already generated this slot today (in user's tz)
+    if (u.last_slot === userSlot && u.last_generated_at && (u.last_generated_at as string).slice(0, 10) === userToday) continue;
     processed++;
     try {
-      const r = await generateForUser(u.user_id, nowSlot);
+      const r = await generateForUser(u.user_id, userSlot);
       if (r.ok && (r as any).count > 0) generated++;
       else if (!r.ok) errors++;
     } catch {
       errors++;
     }
+
   }
   return { processed, generated, errors };
 }
