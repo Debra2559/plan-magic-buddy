@@ -103,7 +103,18 @@ async function shareComicImage(url: string, filename: string, title: string) {
 
 export function JournalView() {
   const { items, habits, notes, diary, comics, isRecapDone, toggleHabitOn, addNote, upsertDiary, setComic, removeComic, comicHistory, addComicHistory, removeComicHistory } = useSylva();
-  const [date, setDate] = useState<string>(todayLocal());
+  const [date, setDate] = useState<string>(() => {
+    if (typeof window === "undefined") return todayLocal();
+    try {
+      const saved = window.localStorage.getItem("journal:lastDate");
+      return saved && /^\d{4}-\d{2}-\d{2}$/.test(saved) ? saved : todayLocal();
+    } catch {
+      return todayLocal();
+    }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem("journal:lastDate", date); } catch {}
+  }, [date]);
   const dateBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [flashTick, setFlashTick] = useState(0);
 
