@@ -230,9 +230,19 @@ export function SettingsView() {
       case "persona": return <AiPersonaPanel />;
       case "feishu": return <FeishuSyncPanel />;
       case "webhook": return <FeishuWebhookLogsPanel />;
-      case "dateflash": return <DateFlashPanel />;
       case "reminders": return <RowList rows={simpleSections.reminders.rows} />;
-      case "appearance": return <RowList rows={simpleSections.appearance.rows} />;
+      case "appearance": return (
+        <div className="space-y-4">
+          <RowList rows={simpleSections.appearance.rows} />
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-white/35 mb-2 px-1 flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3 text-amber-glow" />
+              手帐 · 日期高亮
+            </div>
+            <DateFlashPanel />
+          </div>
+        </div>
+      );
       case "shortcuts": return <RowList rows={simpleSections.shortcuts.rows} />;
       case "about":
         return (
