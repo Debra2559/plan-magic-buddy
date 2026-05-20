@@ -355,8 +355,8 @@ function StyleGallery({
                   自由发挥
                 </div>
               )}
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-2 py-1.5">
-                <div className="text-[11px] text-foreground font-medium truncate">{p.label}</div>
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent px-2 pt-4 pb-1.5">
+                <div className="text-[12px] text-white font-semibold truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">{p.label}</div>
               </div>
               {isActive && (
                 <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-amber-glow flex items-center justify-center">
