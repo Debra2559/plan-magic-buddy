@@ -359,8 +359,8 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
                   ? "例如：再加一个每天 30 分钟的力量训练..."
                   : "一句话描述你想做的事，例如：这周冲毕业答辩 + 每天 30 分钟英语"
               }
-              rows={2}
-              className="flex-1 bg-foreground/5 border border-foreground/10 rounded-xl px-4 py-3 text-sm leading-relaxed resize-none outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
+              rows={4}
+              className="flex-1 min-h-[110px] bg-foreground/5 border border-foreground/10 rounded-xl px-4 py-3 text-sm leading-relaxed resize-none outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
             />
             <button
               onClick={handleSubmit}
