@@ -22,6 +22,11 @@ import {
   batchLookupFeishuOpenId,
 } from "@/lib/feishu.functions";
 import {
+  getFeishuAuthUrl,
+  getFeishuUserAuthStatus,
+  clearFeishuUserAuth,
+} from "@/lib/feishu-user-auth.functions";
+import {
   Check,
   RefreshCw,
   Link2,
