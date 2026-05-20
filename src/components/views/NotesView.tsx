@@ -282,12 +282,15 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
             }
           }}
           rows={10}
-          placeholder="今天发生了什么？Enter 保存 · Shift + Enter 换行"
+          placeholder="今天发生了什么？"
           className="w-full bg-transparent outline-none text-sm leading-7 text-white/90 placeholder:text-white/30 resize-none"
         />
-        <div className="flex items-center justify-between mt-2">
+        <div className="flex items-center justify-between mt-2 gap-2">
           <span className="text-[10px] text-white/40">失焦自动保存 · {content.length} 字</span>
-          <button onClick={save} className="px-4 py-1.5 rounded-full bg-amber-glow text-primary-foreground text-xs font-medium">保存</button>
+          <div className="flex items-center gap-3">
+            <EnterHint example={"今天搞定了答辩 PPT ↵（Shift+Enter）\n明天要去和导师对齐节奏"} />
+            <button onClick={save} className="px-4 py-1.5 rounded-full bg-amber-glow text-primary-foreground text-xs font-medium">保存</button>
+          </div>
         </div>
       </div>
 
