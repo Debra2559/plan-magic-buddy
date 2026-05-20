@@ -97,24 +97,21 @@ export function HabitsView() {
                     ? "bg-white/[0.03] border-rose-400/30"
                     : "bg-white/[0.04] border-white/8 hover:border-white/20"}`}
             >
-              {/* edit/delete actions */}
-              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition z-10">
+              {/* edit/delete actions — bottom right, away from done badge */}
+              <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition z-10">
                 <button
                   onClick={(e) => { e.stopPropagation(); setEditing(h); }}
-                  className="w-7 h-7 rounded-full bg-black/40 hover:bg-black/60 text-white/70 hover:text-amber-glow flex items-center justify-center"
+                  className="w-6 h-6 rounded-md bg-black/50 backdrop-blur hover:bg-amber-glow/25 text-white/60 hover:text-amber-glow flex items-center justify-center"
                   title="编辑"
                 >
-                  <Pencil className="w-3.5 h-3.5" />
+                  <Pencil className="w-3 h-3" />
                 </button>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (confirm(`删除习惯「${h.name}」？该习惯的打卡历史也会一并清除。`)) removeHabit(h.id);
-                  }}
-                  className="w-7 h-7 rounded-full bg-black/40 hover:bg-black/60 text-white/70 hover:text-rose-300 flex items-center justify-center"
+                  onClick={(e) => { e.stopPropagation(); setDeleting(h); }}
+                  className="w-6 h-6 rounded-md bg-black/50 backdrop-blur hover:bg-rose-500/25 text-white/60 hover:text-rose-300 flex items-center justify-center"
                   title="删除"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-3 h-3" />
                 </button>
               </div>
 
