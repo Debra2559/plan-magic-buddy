@@ -961,8 +961,33 @@ export function FeishuSyncPanel() {
               </button>
             </div>
             {lookup.result && (
-              <div className={`text-[11px] ${lookup.result.ok ? "text-emerald-300" : "text-rose-300"}`}>
-                {lookup.result.ok ? "✓ " : "✗ "}{lookup.result.msg}
+              <div className="space-y-1.5">
+                <div className={`text-[11px] ${lookup.result.ok ? "text-emerald-300" : "text-rose-300"}`}>
+                  {lookup.result.ok ? "✓ " : "✗ "}{lookup.result.msg}
+                </div>
+                {lookup.result.ok && lookup.result.openId && (
+                  <>
+                    <div className="text-[11px] font-mono break-all px-2 py-1 rounded bg-black/30 border border-white/10 text-white/80">
+                      {lookup.result.openId}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={copyOpenId}
+                        className="text-[11px] px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-white/80 hover:bg-white/10"
+                      >
+                        {lookup.copied ? "✓ 已复制" : "复制 open_id"}
+                      </button>
+                      <button
+                        onClick={fillAndSaveOpenId}
+                        disabled={lookup.saving}
+                        className="text-[11px] px-2.5 py-1 rounded-md bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-50 flex items-center gap-1"
+                      >
+                        {lookup.saving ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                        {notifySaved ? "✓ 已填入并保存" : "填入并保存"}
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
