@@ -34,6 +34,16 @@ export function FreeformCanvas({ kind, title }: Props) {
   const [penColor, setPenColor] = useState("#1f2937");
   const [penWidth, setPenWidth] = useState(2);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const editingRef = useRef<HTMLTextAreaElement | null>(null);
+  useEffect(() => {
+    if (editingId && editingRef.current) {
+      const ta = editingRef.current;
+      ta.focus();
+      const len = ta.value.length;
+      ta.setSelectionRange(len, len);
+    }
+  }, [editingId]);
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
