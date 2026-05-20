@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth-context";
 import {
   MousePointer2, StickyNote, Pen, ArrowRight, Image as ImageIcon,
   Trash2, ZoomIn, ZoomOut, Maximize2, Loader2, Hand,
+  FileText, FileArchive, FileAudio, FileVideo, File as FileIcon, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -14,7 +15,8 @@ interface NoteItem extends BaseItem { type: "note"; x: number; y: number; w: num
 interface StrokeItem extends BaseItem { type: "stroke"; points: number[]; color: string; width: number; }
 interface ImageItem extends BaseItem { type: "image"; x: number; y: number; w: number; h: number; url: string; }
 interface EdgeItem extends BaseItem { type: "edge"; x1: number; y1: number; x2: number; y2: number; color: string; }
-type Item = NoteItem | StrokeItem | ImageItem | EdgeItem;
+interface FileItem extends BaseItem { type: "file"; x: number; y: number; w: number; h: number; url: string; name: string; mime: string; size: number; }
+type Item = NoteItem | StrokeItem | ImageItem | EdgeItem | FileItem;
 
 interface Viewport { x: number; y: number; scale: number; }
 interface CanvasData { items: Item[]; viewport: Viewport; }
@@ -198,29 +200,103 @@ export function FreeformCanvas({ kind, title }: Props) {
     }
   };
 
-  // ---- Image upload ----
+  // ---- Upload (images + generic files) ----
   const fileRef = useRef<HTMLInputElement>(null);
-  const handleImage = async (file: File) => {
+  const MAX_BYTES = 20 * 1024 * 1024;
+
+  const centerCanvasPoint = (clientX?: number, clientY?: number): [number, number] => {
+    const rect = wrapRef.current!.getBoundingClientRect();
+    const px = clientX ?? rect.left + rect.width / 2;
+    const py = clientY ?? rect.top + rect.height / 2;
+    return toCanvas(px, py);
+  };
+
+  const uploadToStorage = async (file: File): Promise<string> => {
+    const safeName = file.name.replace(/[^\w.\-]+/g, "_") || "file";
+    const ext = safeName.includes(".") ? safeName.split(".").pop()!.toLowerCase() : "bin";
+    const path = `${user!.id}/canvas-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await supabase.storage.from("avatars").upload(path, file, {
+      upsert: true, contentType: file.type || "application/octet-stream", cacheControl: "31536000",
+    });
+    if (error) throw error;
+    const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+    return pub.publicUrl;
+  };
+
+  const addImageItem = (url: string, atClient?: { x: number; y: number }) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxW = 320; const ratio = img.width > maxW ? maxW / img.width : 1;
+      const w = img.width * ratio, h = img.height * ratio;
+      const [cx, cy] = centerCanvasPoint(atClient?.x, atClient?.y);
+      const item: ImageItem = { id: crypto.randomUUID(), type: "image", x: cx - w / 2, y: cy - h / 2, w, h, url };
+      persist({ ...dataRef.current, items: [...dataRef.current.items, item] });
+    };
+    img.onerror = () => toast.error("图片加载失败");
+    img.src = url;
+  };
+
+  const addFileItem = (file: File, url: string, atClient?: { x: number; y: number }) => {
+    const w = 220, h = 84;
+    const [cx, cy] = centerCanvasPoint(atClient?.x, atClient?.y);
+    const item: FileItem = {
+      id: crypto.randomUUID(), type: "file",
+      x: cx - w / 2, y: cy - h / 2, w, h, url,
+      name: file.name || "未命名文件", mime: file.type || "application/octet-stream", size: file.size,
+    };
+    persist({ ...dataRef.current, items: [...dataRef.current.items, item] });
+  };
+
+  const handleAnyFile = async (file: File, atClient?: { x: number; y: number }) => {
     if (!user) return;
-    if (!file.type.startsWith("image/")) { toast.error("请选择图片"); return; }
-    if (file.size > 8 * 1024 * 1024) { toast.error("图片需小于 8MB"); return; }
+    if (file.size > MAX_BYTES) { toast.error(`文件需小于 ${Math.round(MAX_BYTES / 1024 / 1024)}MB`); return; }
+    const toastId = toast.loading(`上传 ${file.name || "文件"}…`);
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-      const path = `${user.id}/canvas-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type, cacheControl: "31536000" });
-      if (error) throw error;
-      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-      const img = new Image();
-      img.onload = () => {
-        const maxW = 320; const ratio = img.width > maxW ? maxW / img.width : 1;
-        const w = img.width * ratio, h = img.height * ratio;
-        const rect = wrapRef.current!.getBoundingClientRect();
-        const [cx, cy] = toCanvas(rect.left + rect.width / 2, rect.top + rect.height / 2);
-        const item: ImageItem = { id: crypto.randomUUID(), type: "image", x: cx - w / 2, y: cy - h / 2, w, h, url: pub.publicUrl };
-        persist({ ...dataRef.current, items: [...dataRef.current.items, item] });
-      };
-      img.src = pub.publicUrl;
-    } catch (e: any) { toast.error(e?.message ?? "上传失败"); }
+      const url = await uploadToStorage(file);
+      if (file.type.startsWith("image/")) addImageItem(url, atClient);
+      else addFileItem(file, url, atClient);
+      toast.success("已添加到画布", { id: toastId });
+    } catch (e: any) { toast.error(e?.message ?? "上传失败", { id: toastId }); }
+  };
+
+  // Back-compat: image-only entry point used by the file picker
+  const handleImage = (file: File) => {
+    if (!file.type.startsWith("image/")) { toast.error("请选择图片"); return; }
+    void handleAnyFile(file);
+  };
+
+  // ---- Paste & drag-drop ----
+  useEffect(() => {
+    if (!user) return;
+    const onPaste = async (e: ClipboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && target.closest("textarea,input,[contenteditable='true']")) return;
+      const cd = e.clipboardData; if (!cd) return;
+      const files: File[] = [];
+      for (const it of Array.from(cd.items)) {
+        if (it.kind === "file") { const f = it.getAsFile(); if (f) files.push(f); }
+      }
+      if (files.length === 0) return;
+      e.preventDefault();
+      for (const f of files) await handleAnyFile(f);
+    };
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  const [dragOver, setDragOver] = useState(false);
+  const onDragOver = (e: React.DragEvent) => {
+    if (Array.from(e.dataTransfer.types).includes("Files")) {
+      e.preventDefault(); setDragOver(true);
+    }
+  };
+  const onDragLeave = () => setDragOver(false);
+  const onDrop = async (e: React.DragEvent) => {
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0) return;
+    e.preventDefault(); setDragOver(false);
+    for (const f of files) await handleAnyFile(f, { x: e.clientX, y: e.clientY });
   };
 
   // ---- Item helpers ----
