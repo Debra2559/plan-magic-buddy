@@ -82,9 +82,9 @@ const PersonalitySchema = z.object({
 const AnalysisSchema = z.object({
   abilities: AbilitiesSchema,
   personality: PersonalitySchema,
-  strengths: z.array(z.string().max(20)).min(1).max(4),
-  growth_areas: z.array(z.string().max(20)).min(1).max(4),
-  tagline: z.string().max(40).describe("一句话画像描述"),
+  strengths: z.array(z.string()).min(1).max(6),
+  growth_areas: z.array(z.string()).min(1).max(6),
+  tagline: z.string().describe("一句话画像描述"),
 });
 
 const PlanItemSchema = z.object({
