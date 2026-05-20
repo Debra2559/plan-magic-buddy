@@ -23,6 +23,7 @@ import {
   getLastCapturedOpenId,
   getFeishuPermissionStatus,
   getFeishuCaptureDiagnostics,
+  pingFeishuWebhook,
 } from "@/lib/feishu.functions";
 import {
   getFeishuAuthUrl,
