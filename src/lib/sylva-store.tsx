@@ -284,7 +284,7 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
 
   const addNote: SylvaContextValue["addNote"] = (text, opts) =>
     setNotes((prev) => [
-      { id: nextId(), text, createdAt: new Date().toISOString(), mood: opts?.mood, tags: opts?.tags },
+      { id: nextId(), text, createdAt: new Date().toISOString(), mood: opts?.mood, tags: opts?.tags, images: opts?.images },
       ...prev,
     ]);
 
