@@ -37,8 +37,8 @@ const tagColors: Record<string, string> = {
   习惯: "bg-moss/15 text-moss border-moss/30",
 };
 
-export function AiPlanner({ onGoSettings }: { onGoSettings?: () => void } = {}) {
-  const { items: confirmedFull, addItems, replaceItems, removeItem, clearItems, enterToSubmit } = useSylva();
+export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => void; onConfirmed?: () => void } = {}) {
+  const { items: confirmedFull, addItems, replaceItems, removeItem, clearItems, enterToSubmit, markRecentlySynced, setSyncSummary } = useSylva();
   const confirmed = confirmedFull;
   const [mode, setMode] = useState<Mode>("auto");
   const [idea, setIdea] = useState("");
