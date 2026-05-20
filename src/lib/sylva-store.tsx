@@ -119,6 +119,8 @@ interface SylvaContextValue {
   unmarkRecapDone: (date: string) => Promise<void>;
   recapBackfillStrategy: RecapBackfillStrategy;
   setRecapBackfillStrategy: (s: RecapBackfillStrategy) => void;
+  enterToSubmit: boolean;
+  setEnterToSubmit: (v: boolean) => void;
 }
 
 const SylvaContext = createContext<SylvaContextValue | null>(null);
