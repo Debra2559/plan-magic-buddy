@@ -411,6 +411,14 @@ export function AiPersonaPanel() {
           )}
         </div>
 
+        <div className="pt-3 border-t border-border">
+          <PersonaPreviewPanel
+            personaPrompt={buildLocalPrefix(local)}
+            displayName={local.display_name || "你"}
+            aiNickname={local.ai_nickname || "Sylva"}
+          />
+        </div>
+
         <ProfileHistoryPanel />
       </div>
 
