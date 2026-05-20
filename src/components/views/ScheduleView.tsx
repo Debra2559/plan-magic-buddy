@@ -324,15 +324,18 @@ function DayEditor({
 function EditableRow({
   item,
   onChange,
+  onToggleDone,
   onDelete,
 }: {
-  item: PlanItem & { id: string };
+  item: PlanItem & { id: string; done?: boolean };
   onChange: (patch: Partial<PlanItem>) => void;
+  onToggleDone: () => void;
   onDelete: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(item.title);
   const [time, setTime] = useState(item.time ?? "");
+  const done = !!item.done;
 
   const commit = () => {
     const t = title.trim();
@@ -346,7 +349,8 @@ function EditableRow({
   };
 
   return (
-    <div className="group flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-white/5 border border-white/10 hover:border-white/20">
+    <div className={`group flex items-center gap-1.5 px-2 py-1.5 rounded-md border transition ${done ? "bg-moss/10 border-moss/25" : "bg-white/5 border-white/10 hover:border-white/20"}`}>
+      <DoneCheckbox done={done} onToggle={onToggleDone} size="sm" />
       {editing ? (
         <>
           <TimePicker value={time} onChange={setTime} size="sm" />
@@ -378,7 +382,7 @@ function EditableRow({
             className="flex-1 flex items-center gap-1.5 text-left"
             title="点击编辑标题"
           >
-            <span className="text-xs text-white/90 truncate">{item.title}</span>
+            <span className={`text-xs truncate ${done ? "text-white/40 line-through" : "text-white/90"}`}>{item.title}</span>
           </button>
         </>
 
@@ -391,6 +395,27 @@ function EditableRow({
         <Trash2 className="w-3 h-3" />
       </button>
     </div>
+  );
+}
+
+function DoneCheckbox({ done, onToggle, size = "md" }: { done: boolean; onToggle: () => void; size?: "sm" | "md" }) {
+  const dim = size === "sm" ? "w-4 h-4" : "w-5 h-5";
+  const iconDim = size === "sm" ? "w-2.5 h-2.5" : "w-3 h-3";
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={done}
+      onClick={(e) => { e.stopPropagation(); onToggle(); }}
+      title={done ? "标记为未完成" : "标记为已完成"}
+      className={`shrink-0 ${dim} rounded-md flex items-center justify-center border transition ${
+        done
+          ? "bg-moss border-moss text-primary-foreground"
+          : "bg-white/5 border-white/25 hover:border-white/60 text-transparent"
+      }`}
+    >
+      <Check className={`${iconDim}`} strokeWidth={3} />
+    </button>
   );
 }
 
