@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, ChevronDown, ChevronRight } from "lucide-react";
+import { RefreshCw, ChevronDown, ChevronRight, Zap } from "lucide-react";
+import { toast } from "sonner";
 
 type LogRow = {
   id: string;
@@ -35,6 +36,31 @@ export function FeishuWebhookLogsPanel() {
   const [requestId, setRequestId] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [err, setErr] = useState<string | null>(null);
+  const [testing, setTesting] = useState(false);
+
+  const sendTest = async () => {
+    setTesting(true);
+    const challenge = `test-${Date.now().toString(36)}`;
+    try {
+      const res = await fetch("/api/public/feishu/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "url_verification", challenge, token: "test", uuid: `test-${challenge}` }),
+      });
+      const text = await res.text();
+      if (res.ok && text.includes(challenge)) {
+        toast.success("测试回调已发送 ✓", { description: "刷新查看日志" });
+      } else {
+        toast.error("测试失败", { description: `HTTP ${res.status} · ${text.slice(0, 120)}` });
+      }
+      // 等数据库写入，再刷新
+      setTimeout(() => refresh(), 600);
+    } catch (e: any) {
+      toast.error("测试失败", { description: e?.message ?? "网络错误" });
+    } finally {
+      setTesting(false);
+    }
+  };
 
   const refresh = async () => {
     setLoading(true);
@@ -96,10 +122,18 @@ export function FeishuWebhookLogsPanel() {
           placeholder="按 request_id 过滤"
           className="h-8 text-xs flex-1 min-w-[180px]"
         />
+        <Button size="sm" variant="outline" onClick={sendTest} disabled={testing}>
+          <Zap className={`h-3.5 w-3.5 mr-1 ${testing ? "animate-pulse" : ""}`} />
+          测试一次
+        </Button>
         <Button size="sm" variant="outline" onClick={refresh} disabled={loading}>
-          查询
+          <RefreshCw className={`h-3.5 w-3.5 mr-1 ${loading ? "animate-spin" : ""}`} />
+          刷新
         </Button>
       </div>
+
+
+
 
       {err && (
         <div className="text-xs text-destructive bg-destructive/10 rounded p-2">{err}</div>
