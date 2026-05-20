@@ -217,10 +217,10 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                   setEditorAnchor({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
                 }}
                 title="双击编辑这一天"
-                className={`min-h-[110px] p-2 text-left transition relative overflow-hidden
+                className={`block min-h-[110px] p-2 text-left align-top transition relative overflow-hidden
                   ${isSelected ? "bg-amber-glow/15 ring-2 ring-amber-glow/60 z-10" : "bg-black/30 hover:bg-black/40"}`}
               >
-                <div className="flex items-center justify-between mb-1 h-5">
+                <div className="absolute top-2 left-2 right-2 flex items-center justify-between h-5">
                   <span className={`text-sm leading-5 ${isToday ? "text-amber-glow font-bold" : "text-white/85"}`}>
                     {cell.day}
                   </span>
@@ -231,7 +231,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                     {isToday && <span className="text-[9px] text-amber-glow">今</span>}
                   </div>
                 </div>
-                <div className="space-y-0.5">
+                <div className="space-y-0.5 pt-7">
                   {dayItems.slice(0, 3).map((it) => (
                     <div
                       key={it.id}
