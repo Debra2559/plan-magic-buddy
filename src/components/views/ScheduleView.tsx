@@ -26,6 +26,7 @@ export function ScheduleView({ onGoPlan }: { onGoPlan?: () => void } = {}) {
   const [selected, setSelected] = useState("2026-05-19");
   const [editorDate, setEditorDate] = useState<string | null>(null);
   const [editorAnchor, setEditorAnchor] = useState<{ x: number; y: number } | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
 
 
   const year = cursor.getFullYear();
