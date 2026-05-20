@@ -245,8 +245,10 @@ export const scanHackathonsNow = createServerFn({ method: "GET" }).handler(async
       debug.push({ source: src.name, query: src.query, snippets: 0, extracted: 0, error: "firecrawl 0 结果" });
       continue;
     }
-    const fallback = { data: { hackathons: fallbackHackathons(src.name, snippets) }, error: "AI 提取超时，已用搜索结果兜底" };
-    const { data: ex, error } = await withTimeout(extractWithAI(src.name, snippets), 6_000, fallback);
+    const fallbackItems = fallbackHackathons(src.name, snippets);
+    const { data: ex, error } = fallbackItems.length > 0
+      ? { data: { hackathons: fallbackItems }, error: undefined }
+      : await withTimeout(extractWithAI(src.name, snippets), 3_000, { data: { hackathons: [] }, error: "AI 提取超时" });
     debug.push({ source: src.name, query: src.query, snippets: snippets.length, extracted: ex.hackathons.length, error });
     for (const h of ex.hackathons) {
       if (!h.url?.startsWith("http")) continue;
