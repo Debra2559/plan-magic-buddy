@@ -36,7 +36,56 @@ const tagColors: Record<string, string> = {
   习惯: "bg-moss/15 text-moss border-moss/30",
 };
 
-export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => void; onConfirmed?: () => void } = {}) {
+function ThinkingTrace({ active, variant }: { active: boolean; variant: "plan" | "goal-clarify" | "goal-research" | "goal-plan" }) {
+  const stagesMap: Record<typeof variant, string[]> = {
+    "plan": ["理解你的想法", "拆解关键节点", "安排时间与节奏", "检查冲突与负载", "整理最终规划"],
+    "goal-clarify": ["读取你说的内容", "判断关键参数是否齐全", "想 1-2 个最关键的追问"],
+    "goal-research": ["读取你说的内容", "判断需要哪些外部信息", "联网搜索最新资料", "整理可用片段"],
+    "goal-plan": ["回顾完整对话", "拆解为日程 / 待办 / 提醒", "排布每日节奏", "校验冲突与负载", "整理最终规划"],
+  };
+  const stages = stagesMap[variant];
+  const [idx, setIdx] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+  const startRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!active) { setIdx(0); setElapsed(0); return; }
+    startRef.current = Date.now();
+    setIdx(0);
+    setElapsed(0);
+    const tick = setInterval(() => {
+      setElapsed(Math.round((Date.now() - startRef.current) / 1000));
+      setIdx((p) => Math.min(p + 1, stages.length - 1));
+    }, 1600);
+    return () => clearInterval(tick);
+  }, [active, stages.length]);
+
+  if (!active) return null;
+  return (
+    <div className="mt-3 rounded-xl border border-amber-glow/20 bg-amber-glow/[0.04] p-3 animate-in fade-in duration-300">
+      <div className="flex items-center gap-2 mb-2 text-[11px] text-amber-glow/90 tracking-wider">
+        <Sparkles className="w-3 h-3 animate-pulse" />
+        <span>AI 思考过程</span>
+        <span className="ml-auto font-mono text-amber-glow/60">{elapsed}s</span>
+      </div>
+      <ol className="space-y-1.5">
+        {stages.map((s, i) => {
+          const done = i < idx;
+          const current = i === idx;
+          return (
+            <li key={s} className={`flex items-center gap-2 text-xs transition ${done ? "text-foreground/55" : current ? "text-foreground/95" : "text-foreground/30"}`}>
+              <span className="w-3.5 h-3.5 flex items-center justify-center shrink-0">
+                {done ? <Check className="w-3 h-3 text-moss" /> : current ? <Loader2 className="w-3 h-3 animate-spin text-amber-glow" /> : <span className="w-1.5 h-1.5 rounded-full bg-foreground/25" />}
+              </span>
+              <span className={current ? "font-medium" : ""}>{s}</span>
+              {current && <span className="ml-1 text-amber-glow/60 animate-pulse">…</span>}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
   const { items: confirmedFull, addItems, addItemsPending, replaceItems, removeItem, clearItems, enterToSubmit, markRecentlySynced, setSyncSummary } = useSylva();
   const confirmed = confirmedFull;
   const [mode, setMode] = useState<Mode>("auto");
