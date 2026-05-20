@@ -33,6 +33,7 @@ import {
   Download,
   Share2,
   X as XIcon,
+  ListChecks,
 } from "lucide-react";
 
 const MOODS: Record<Mood, { emoji: string; label: string }> = {
