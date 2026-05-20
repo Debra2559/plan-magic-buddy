@@ -131,6 +131,57 @@ export function FeishuSyncPanel() {
     [items, runSync, state.calendarId]
   );
 
+  const doPull = useCallback(async () => {
+    if (!state.calendarId) return;
+    setPulling(true);
+    try {
+      const r = await runPull();
+      if (!r.ok) {
+        setLogs((prev) => [mkLog("pull", "feishu", `拉取失败: ${r.error}`, "conflict"), ...prev].slice(0, 12));
+        return;
+      }
+      if (r.newItems.length === 0) {
+        setLogs((prev) => [mkLog("pull", "feishu", `无新事件 (共 ${r.total} 条)`, "ok"), ...prev].slice(0, 12));
+        return;
+      }
+      // 用 feishu_event_id 当本地 id，方便和映射表对齐
+      const itemsToAdd = r.newItems.map((it) => ({
+        id: `fs-${it._feishuEventId}`,
+        type: it.type,
+        title: it.title,
+        date: it.date,
+        time: it.time,
+        durationMin: it.durationMin,
+        tag: it.tag,
+        note: it.note,
+      }));
+      addItems(itemsToAdd as any);
+      // 写映射表，防止下次推送时重复
+      await runRecord({
+        data: {
+          calendarId: r.calendarId,
+          records: r.newItems.map((it) => ({
+            localId: `fs-${it._feishuEventId}`,
+            feishuEventId: it._feishuEventId,
+          })),
+        },
+      });
+      // 更新签名，避免触发自动推送
+      lastItemSignature.current = "";
+      const newLogs = itemsToAdd.slice(0, 6).map((it) =>
+        mkLog("create", "feishu", it.title, "ok")
+      );
+      if (r.newItems.length > 6) {
+        newLogs.push(mkLog("pull", "feishu", `… 还有 ${r.newItems.length - 6} 条`, "ok"));
+      }
+      setLogs((prev) => [...newLogs, ...prev].slice(0, 12));
+    } catch (e: any) {
+      setLogs((prev) => [mkLog("pull", "feishu", `拉取异常: ${e?.message ?? e}`, "conflict"), ...prev].slice(0, 12));
+    } finally {
+      setPulling(false);
+    }
+  }, [state.calendarId, runPull, runRecord, addItems]);
+
   const loadCalendars = useCallback(async () => {
     setLoadingCalendars(true);
     setCalendarsError(null);
