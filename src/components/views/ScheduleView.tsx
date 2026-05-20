@@ -167,11 +167,21 @@ export function ScheduleView() {
           </div>
         )}
 
-        <DayTimeline
-          items={selectedItems}
-          onSetTime={(id, time) => updateItem(id, { time })}
-          onClearTime={(id) => updateItem(id, { time: undefined })}
-        />
+        {selectedItems.length === 0 ? (
+          <div className="text-center py-10 text-xs text-white/40">这一天还没有安排</div>
+        ) : (
+          <div className="space-y-2">
+            {selectedItems.map((it) => (
+              <ItemCard
+                key={it.id}
+                item={it}
+                onChange={(patch) => updateItem(it.id, patch)}
+                onDelete={() => removeItem(it.id)}
+              />
+            ))}
+          </div>
+        )}
+
       </aside>
 
 
