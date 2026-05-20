@@ -65,6 +65,23 @@ export function FeishuSyncPanel() {
   const [state, setState] = useState<Persisted>(loadPersisted);
   const [logs, setLogs] = useState<SyncLog[]>([]);
   const lastItemSignature = useRef<string>("");
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const runTest = useServerFn(testFeishuConnection);
+
+  const onTest = async () => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const r = await runTest();
+      if (r.ok) setTestResult({ ok: true, msg: `凭证有效 · token 有效期 ${r.expire}s` });
+      else setTestResult({ ok: false, msg: r.error });
+    } catch (e: any) {
+      setTestResult({ ok: false, msg: e?.message ?? "请求失败" });
+    } finally {
+      setTesting(false);
+    }
+  };
 
   useEffect(() => {
     try {
