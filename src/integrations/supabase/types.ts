@@ -14,7 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      feishu_event_map: {
+        Row: {
+          calendar_id: string
+          feishu_event_id: string
+          id: string
+          last_pushed_at: string
+          local_id: string
+        }
+        Insert: {
+          calendar_id: string
+          feishu_event_id: string
+          id?: string
+          last_pushed_at?: string
+          local_id: string
+        }
+        Update: {
+          calendar_id?: string
+          feishu_event_id?: string
+          id?: string
+          last_pushed_at?: string
+          local_id?: string
+        }
+        Relationships: []
+      }
+      feishu_settings: {
+        Row: {
+          created_at: string
+          direction: string
+          id: string
+          last_sync_at: string | null
+          page_token: string | null
+          selected_calendar_id: string | null
+          selected_calendar_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          direction?: string
+          id?: string
+          last_sync_at?: string | null
+          page_token?: string | null
+          selected_calendar_id?: string | null
+          selected_calendar_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          direction?: string
+          id?: string
+          last_sync_at?: string | null
+          page_token?: string | null
+          selected_calendar_id?: string | null
+          selected_calendar_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      feishu_webhook_dedup: {
+        Row: {
+          received_at: string
+          uuid: string
+        }
+        Insert: {
+          received_at?: string
+          uuid: string
+        }
+        Update: {
+          received_at?: string
+          uuid?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

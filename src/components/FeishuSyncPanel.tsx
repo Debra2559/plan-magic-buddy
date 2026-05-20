@@ -1,7 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useSylva } from "@/lib/sylva-store";
 import { useServerFn } from "@tanstack/react-start";
-import { testFeishuConnection } from "@/lib/feishu.functions";
+import {
+  testFeishuConnection,
+  listFeishuCalendars,
+  getFeishuSettings,
+  selectFeishuCalendar,
+  setFeishuDirection,
+} from "@/lib/feishu.functions";
 import {
   Check,
   RefreshCw,
@@ -18,20 +24,15 @@ import {
 type Status = "disconnected" | "connecting" | "connected";
 type Direction = "two-way" | "push-only";
 
-interface MockCalendar {
+interface RealCalendar {
   id: string;
   name: string;
-  color: string;
   role: string;
-  count: number;
+  type: string;
 }
 
-const MOCK_CALENDARS: MockCalendar[] = [
-  { id: "cal_primary", name: "我的日历", color: "#f5b942", role: "所有者", count: 142 },
-  { id: "cal_work", name: "Sylva · 产品研发", color: "#7dd3fc", role: "所有者", count: 87 },
-  { id: "cal_team", name: "团队周会", color: "#a78bfa", role: "可编辑", count: 24 },
-  { id: "cal_personal", name: "个人 · 健康", color: "#86efac", role: "所有者", count: 56 },
-];
+// 飞书日历没颜色，给一组固定色循环用
+const CAL_COLORS = ["#f5b942", "#7dd3fc", "#a78bfa", "#86efac", "#fb7185", "#fbbf24", "#60a5fa"];
 
 interface SyncLog {
   id: string;
@@ -67,19 +68,78 @@ export function FeishuSyncPanel() {
   const lastItemSignature = useRef<string>("");
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [calendars, setCalendars] = useState<RealCalendar[]>([]);
+  const [loadingCalendars, setLoadingCalendars] = useState(false);
+  const [calendarsError, setCalendarsError] = useState<string | null>(null);
+
   const runTest = useServerFn(testFeishuConnection);
+  const runList = useServerFn(listFeishuCalendars);
+  const runGetSettings = useServerFn(getFeishuSettings);
+  const runSelect = useServerFn(selectFeishuCalendar);
+  const runSetDir = useServerFn(setFeishuDirection);
+
+  const loadCalendars = useCallback(async () => {
+    setLoadingCalendars(true);
+    setCalendarsError(null);
+    try {
+      const r = await runList();
+      if (r.ok) setCalendars(r.calendars);
+      else setCalendarsError(r.error);
+    } catch (e: any) {
+      setCalendarsError(e?.message ?? "请求失败");
+    } finally {
+      setLoadingCalendars(false);
+    }
+  }, [runList]);
+
+  // 首次加载：从数据库读设置 + 拉日历列表
+  useEffect(() => {
+    (async () => {
+      try {
+        const s = await runGetSettings();
+        setState((prev) => ({
+          ...prev,
+          calendarId: s.selectedCalendarId ?? prev.calendarId,
+          direction: s.direction,
+          lastSyncAt: s.lastSyncAt ?? prev.lastSyncAt,
+        }));
+      } catch {}
+      loadCalendars();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onTest = async () => {
     setTesting(true);
     setTestResult(null);
     try {
       const r = await runTest();
-      if (r.ok) setTestResult({ ok: true, msg: `凭证有效 · token 有效期 ${r.expire}s` });
-      else setTestResult({ ok: false, msg: r.error });
+      if (r.ok) {
+        setTestResult({ ok: true, msg: `凭证有效 · token 有效期 ${r.expire}s` });
+        loadCalendars();
+      } else setTestResult({ ok: false, msg: r.error });
     } catch (e: any) {
       setTestResult({ ok: false, msg: e?.message ?? "请求失败" });
     } finally {
       setTesting(false);
+    }
+  };
+
+  const onSelectCalendar = async (c: RealCalendar) => {
+    setState((s) => ({ ...s, calendarId: c.id }));
+    try {
+      await runSelect({ data: { calendarId: c.id, calendarName: c.name } });
+    } catch (e) {
+      console.error("select calendar failed", e);
+    }
+  };
+
+  const onSetDirection = async (direction: Direction) => {
+    setState((s) => ({ ...s, direction }));
+    try {
+      await runSetDir({ data: { direction } });
+    } catch (e) {
+      console.error("set direction failed", e);
     }
   };
 
@@ -123,8 +183,8 @@ export function FeishuSyncPanel() {
   }, [items, state.status, state.calendarId]);
 
   const selected = useMemo(
-    () => MOCK_CALENDARS.find((c) => c.id === state.calendarId) ?? null,
-    [state.calendarId]
+    () => calendars.find((c) => c.id === state.calendarId) ?? null,
+    [calendars, state.calendarId]
   );
 
   const connect = async () => {
@@ -251,34 +311,58 @@ export function FeishuSyncPanel() {
         </div>
 
         <div className="px-4 py-3 border-b border-white/8">
-          <div className="text-[11px] text-white/50 mb-2 flex items-center gap-1.5">
-            <Calendar className="w-3 h-3" /> 选择要同步的日历
+          <div className="text-[11px] text-white/50 mb-2 flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <Calendar className="w-3 h-3" /> 选择要同步的日历
+            </span>
+            <button
+              onClick={loadCalendars}
+              disabled={loadingCalendars}
+              className="text-white/40 hover:text-white/70 flex items-center gap-1 disabled:opacity-50"
+            >
+              {loadingCalendars ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+              刷新
+            </button>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            {MOCK_CALENDARS.map((c) => {
-              const active = state.calendarId === c.id;
-              const disabled = state.status === "disconnected";
-              return (
-                <button
-                  key={c.id}
-                  disabled={disabled}
-                  onClick={() => setState((s) => ({ ...s, calendarId: c.id }))}
-                  className={`text-left px-3 py-2 rounded-lg border transition flex items-center gap-2.5 ${
-                    active
-                      ? "bg-amber-glow/15 border-amber-glow/40"
-                      : "bg-white/[0.03] border-white/8 hover:bg-white/[0.06]"
-                  } ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
-                >
-                  <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: c.color }} />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm text-white/90 truncate">{c.name}</div>
-                    <div className="text-[10px] text-white/40">{c.role} · {c.count} 个事件</div>
-                  </div>
-                  {active && <Check className="w-3.5 h-3.5 text-amber-glow shrink-0" />}
-                </button>
-              );
-            })}
-          </div>
+
+          {calendarsError ? (
+            <div className="text-[11px] text-rose-300 py-2">读取失败：{calendarsError}</div>
+          ) : loadingCalendars && calendars.length === 0 ? (
+            <div className="text-[11px] text-white/40 py-4 text-center flex items-center justify-center gap-1.5">
+              <Loader2 className="w-3 h-3 animate-spin" /> 正在拉取飞书日历…
+            </div>
+          ) : calendars.length === 0 ? (
+            <div className="text-[11px] text-white/40 py-4 text-center">
+              没有可见日历。请到飞书后台「权限管理」给应用开通 calendar:calendar 权限并把日历分享给应用。
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              {calendars.map((c, i) => {
+                const active = state.calendarId === c.id;
+                const color = CAL_COLORS[i % CAL_COLORS.length];
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => onSelectCalendar(c)}
+                    className={`text-left px-3 py-2 rounded-lg border transition flex items-center gap-2.5 ${
+                      active
+                        ? "bg-amber-glow/15 border-amber-glow/40"
+                        : "bg-white/[0.03] border-white/8 hover:bg-white/[0.06]"
+                    }`}
+                  >
+                    <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: color }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-white/90 truncate">{c.name}</div>
+                      <div className="text-[10px] text-white/40 truncate">
+                        {c.role || c.type || "日历"}
+                      </div>
+                    </div>
+                    {active && <Check className="w-3.5 h-3.5 text-amber-glow shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="px-4 py-3 border-b border-white/8 flex items-center gap-3">
@@ -292,7 +376,7 @@ export function FeishuSyncPanel() {
           </div>
           <div className="flex bg-white/5 border border-white/10 rounded-full p-0.5 text-[11px]">
             <button
-              onClick={() => setState((s) => ({ ...s, direction: "two-way" }))}
+              onClick={() => onSetDirection("two-way")}
               className={`px-3 py-1 rounded-full flex items-center gap-1 transition ${
                 state.direction === "two-way" ? "bg-white/10 text-white" : "text-white/50"
               }`}
@@ -300,7 +384,7 @@ export function FeishuSyncPanel() {
               <ArrowUpDown className="w-3 h-3" /> 双向
             </button>
             <button
-              onClick={() => setState((s) => ({ ...s, direction: "push-only" }))}
+              onClick={() => onSetDirection("push-only")}
               className={`px-3 py-1 rounded-full flex items-center gap-1 transition ${
                 state.direction === "push-only" ? "bg-white/10 text-white" : "text-white/50"
               }`}
