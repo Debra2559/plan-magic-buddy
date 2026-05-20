@@ -201,6 +201,10 @@ function DesktopApp() {
         )}
       </div>
 
+      <InsightsBell />
+
+
+
       {/* Dock */}
       <div className="absolute bottom-3 inset-x-0 z-50 flex justify-center pointer-events-none">
         <div className="pointer-events-auto flex items-end gap-2 px-3 py-2 rounded-2xl bg-white/10 backdrop-blur-2xl border border-white/15 shadow-2xl">
