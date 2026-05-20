@@ -1635,6 +1635,62 @@ export function FeishuSyncPanel() {
         </p>
       </div>
 
+      {/* 同步事件时间线 */}
+      <div className="widget mt-3 px-4 py-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Bell className="w-3.5 h-3.5 text-sky-300" />
+          <h4 className="text-sm text-white/90">同步事件时间线</h4>
+          {nextAutoSyncAt && (
+            <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-glow/15 text-amber-glow tabular-nums">
+              下次自动同步 · {new Date(nextAutoSyncAt).toLocaleTimeString()}
+            </span>
+          )}
+          {timeline.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setTimeline([])}
+              className="ml-auto text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/60 hover:bg-white/10"
+            >
+              清空
+            </button>
+          )}
+        </div>
+        {timeline.length === 0 ? (
+          <p className="text-[11px] text-white/40">还没有事件 · 覆盖保存接收人、刷新配置或触发同步后会显示在这里。</p>
+        ) : (
+          <ul className="space-y-1 max-h-56 overflow-y-auto pr-1">
+            {timeline.map((e) => {
+              const dotColor =
+                e.status === "ok" ? "bg-emerald-400"
+                : e.status === "fail" ? "bg-rose-400"
+                : e.status === "warn" ? "bg-amber-400"
+                : e.status === "pending" ? "bg-sky-400 animate-pulse"
+                : "bg-white/40";
+              const kindLabel = ({
+                overwrite: "覆盖保存",
+                verify: "验证",
+                config: "配置刷新",
+                sync: "推送同步",
+                pull: "拉取同步",
+                schedule: "计划",
+                perm: "权限自检",
+                capture: "捕获",
+              } as const)[e.kind];
+              return (
+                <li key={e.id} className="flex items-start gap-2 text-[11px]">
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 mt-1.5 ${dotColor}`} />
+                  <span className="text-white/40 tabular-nums shrink-0 mt-px">{new Date(e.at).toLocaleTimeString()}</span>
+                  <span className="text-white/50 shrink-0 mt-px">{kindLabel}</span>
+                  <span className="text-white/85 break-words">{e.msg}</span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+
+
       {/* 每日小结提醒 */}
       <div className="widget mt-3 px-4 py-3">
         <div className="flex items-center gap-2 mb-2">
