@@ -72,12 +72,58 @@ export function FeishuSyncPanel() {
   const [calendars, setCalendars] = useState<RealCalendar[]>([]);
   const [loadingCalendars, setLoadingCalendars] = useState(false);
   const [calendarsError, setCalendarsError] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   const runTest = useServerFn(testFeishuConnection);
   const runList = useServerFn(listFeishuCalendars);
   const runGetSettings = useServerFn(getFeishuSettings);
   const runSelect = useServerFn(selectFeishuCalendar);
   const runSetDir = useServerFn(setFeishuDirection);
+  const runSync = useServerFn(syncToFeishu);
+
+  const doSync = useCallback(
+    async (reason: string) => {
+      if (!state.calendarId) return;
+      setSyncing(true);
+      try {
+        const r = await runSync({
+          data: {
+            items: items.map((i) => ({
+              id: i.id,
+              type: i.type,
+              title: i.title,
+              date: i.date,
+              time: i.time,
+              durationMin: i.durationMin,
+              tag: i.tag,
+              note: i.note,
+              done: i.done,
+            })),
+          },
+        });
+        if (!r.ok) {
+          setLogs((prev) => [mkLog("update", "sylva", `同步失败: ${r.error}`, "conflict"), ...prev].slice(0, 12));
+          return;
+        }
+        const newLogs: SyncLog[] = r.entries.slice(0, 8).map((e) =>
+          mkLog(
+            e.op === "delete" ? "delete" : e.op === "update" ? "update" : "create",
+            "sylva",
+            e.status === "ok" ? e.title : `${e.title} · ${e.error ?? "失败"}`,
+            e.status === "ok" ? "ok" : "conflict"
+          )
+        );
+        if (r.entries.length === 0) {
+          newLogs.push(mkLog("pull", "feishu", `${reason} · 无需同步`, "ok"));
+        }
+        setLogs((prev) => [...newLogs, ...prev].slice(0, 12));
+        setState((s) => ({ ...s, lastSyncAt: new Date().toISOString() }));
+      } finally {
+        setSyncing(false);
+      }
+    },
+    [items, runSync, state.calendarId]
+  );
 
   const loadCalendars = useCallback(async () => {
     setLoadingCalendars(true);
