@@ -26,6 +26,10 @@ export interface Note {
   pinned?: boolean;
   /** 内嵌的图片附件（data URL，已在客户端压缩） */
   images?: string[];
+  /** 视频附件 URL（存放在 note-media 存储桶） */
+  videos?: string[];
+  /** 语音附件 URL（存放在 note-media 存储桶） */
+  audios?: string[];
 }
 
 export interface DailyComic {
@@ -157,9 +161,9 @@ interface SylvaContextValue {
   updateItem: (id: string, patch: Partial<PlanItem>) => void;
   toggleDone: (id: string) => void;
   clearItems: () => void;
-  addNote: (text: string, opts?: { mood?: Mood; tags?: string[]; images?: string[] }) => void;
+  addNote: (text: string, opts?: { mood?: Mood; tags?: string[]; images?: string[]; videos?: string[]; audios?: string[] }) => void;
   removeNote: (id: string) => void;
-  updateNote: (id: string, patch: Partial<Pick<Note, "text" | "mood" | "tags" | "pinned">>) => void;
+  updateNote: (id: string, patch: Partial<Pick<Note, "text" | "mood" | "tags" | "pinned" | "videos" | "audios">>) => void;
   toggleHabit: (id: string) => void;
   toggleHabitOn: (id: string, date: string) => void;
   addHabit: (input: { name: string; emoji?: string }) => void;
@@ -375,7 +379,11 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
   };
 
   const addNote: SylvaContextValue["addNote"] = (text, opts) => {
-    const n: Note = { id: nextId(), text, createdAt: new Date().toISOString(), mood: opts?.mood, tags: opts?.tags, images: opts?.images };
+    const n: Note = {
+      id: nextId(), text, createdAt: new Date().toISOString(),
+      mood: opts?.mood, tags: opts?.tags, images: opts?.images,
+      videos: opts?.videos, audios: opts?.audios,
+    };
     setNotes((prev) => [n, ...prev]);
     void remote.upsertNote(n);
   };
