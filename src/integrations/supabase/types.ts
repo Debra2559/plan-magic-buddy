@@ -86,6 +86,57 @@ export type Database = {
         }
         Relationships: []
       }
+      hackathons: {
+        Row: {
+          deadline: string | null
+          decided_at: string | null
+          discovered_at: string
+          id: string
+          location: string | null
+          prize: string | null
+          raw: Json | null
+          source: string
+          starts_at: string | null
+          status: string
+          summary: string | null
+          tags: string[] | null
+          title: string
+          url: string
+        }
+        Insert: {
+          deadline?: string | null
+          decided_at?: string | null
+          discovered_at?: string
+          id?: string
+          location?: string | null
+          prize?: string | null
+          raw?: Json | null
+          source: string
+          starts_at?: string | null
+          status?: string
+          summary?: string | null
+          tags?: string[] | null
+          title: string
+          url: string
+        }
+        Update: {
+          deadline?: string | null
+          decided_at?: string | null
+          discovered_at?: string
+          id?: string
+          location?: string | null
+          prize?: string | null
+          raw?: Json | null
+          source?: string
+          starts_at?: string | null
+          status?: string
+          summary?: string | null
+          tags?: string[] | null
+          title?: string
+          url?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
