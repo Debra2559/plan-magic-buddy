@@ -434,7 +434,7 @@ export function FeishuSyncPanel() {
 
   // 本地有变化时，debounce 1.5s 后自动推到飞书
   useEffect(() => {
-    const sig = items.map((i) => `${i.id}:${i.title}:${i.date}:${i.time ?? ""}:${i.done ? 1 : 0}`).join("|");
+    const sig = items.filter((i) => !i.pending).map((i) => `${i.id}:${i.title}:${i.date}:${i.time ?? ""}:${i.done ? 1 : 0}`).join("|");
     if (lastItemSignature.current === "") {
       lastItemSignature.current = sig;
       return;
