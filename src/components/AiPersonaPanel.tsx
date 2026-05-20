@@ -3,7 +3,7 @@ import { Sparkles, Wand2, LogOut, Loader2, Camera, Trash2, Upload } from "lucide
 import { usePersona } from "@/lib/persona";
 import { CachedAvatar } from "@/components/CachedAvatar";
 import { useAuth } from "@/lib/auth-context";
-import { generatePlan } from "@/lib/plan.functions";
+import { tryPersonaLine } from "@/lib/persona-demo.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
