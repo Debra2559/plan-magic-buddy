@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSylva, type Mood, type Note, habitStreak, habitDaysSinceLast, isHabitDoneOn } from "@/lib/sylva-store";
-import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, ListChecks, NotebookPen, Sparkles, CheckCircle2, Circle, Flame, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, ListChecks, NotebookPen, Sparkles, CheckCircle2, Circle, Flame, AlertTriangle, RotateCcw } from "lucide-react";
 import { markRecapDone, getDailyRecap } from "@/lib/feishu.functions";
 
 type Tab = "notes" | "diary" | "summary";
