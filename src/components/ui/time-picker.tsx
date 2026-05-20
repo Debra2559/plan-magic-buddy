@@ -138,7 +138,6 @@ export function TimePicker({
         )}
       </button>
 
-      {open && (
       {open && pos && typeof document !== "undefined" && createPortal(
         <div
           ref={popRef}
