@@ -34,6 +34,7 @@ export const itemToRow = (i: DoneItem) => ({
 type NoteRow = {
   id: string; text: string; mood: string | null;
   tags: string[]; pinned: boolean; images: string[];
+  videos?: string[] | null; audios?: string[] | null;
   created_at: string; updated_at: string; deleted_at: string | null;
 };
 export const noteFromRow = (r: NoteRow): Note => ({
@@ -42,10 +43,13 @@ export const noteFromRow = (r: NoteRow): Note => ({
   tags: r.tags?.length ? r.tags : undefined,
   pinned: r.pinned || undefined,
   images: r.images?.length ? r.images : undefined,
+  videos: r.videos?.length ? r.videos : undefined,
+  audios: r.audios?.length ? r.audios : undefined,
 });
 export const noteToRow = (n: Note) => ({
   id: n.id, text: n.text, mood: n.mood ?? null,
   tags: n.tags ?? [], pinned: !!n.pinned, images: n.images ?? [],
+  videos: n.videos ?? [], audios: n.audios ?? [],
   created_at: n.createdAt, deleted_at: null,
 });
 

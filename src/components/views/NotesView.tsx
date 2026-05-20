@@ -7,6 +7,7 @@ import { markRecapDone, getDailyRecap } from "@/lib/feishu.functions";
 import { EnterHint } from "@/components/EnterHint";
 import { shouldSubmitOnKey } from "@/lib/keybinds";
 import { ImageAttacher, extractImagesFromEvent, fileToCompressedDataURL } from "@/components/ImageAttacher";
+import { MediaAttacher } from "@/components/MediaAttacher";
 import { JournalView } from "@/components/views/JournalView";
 
 type Tab = "notes" | "diary" | "handbook";
@@ -129,6 +130,8 @@ function NotesTab() {
   const [mood, setMood] = useState<Mood | undefined>();
   const [tagsRaw, setTagsRaw] = useState("");
   const [images, setImages] = useState<string[]>([]);
+  const [videos, setVideos] = useState<string[]>([]);
+  const [audios, setAudios] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [diaryOpen, setDiaryOpen] = useState(false);
 
@@ -141,7 +144,7 @@ function NotesTab() {
   const [showFilters, setShowFilters] = useState(false);
 
   const submit = () => {
-    if (!text.trim() && images.length === 0) return;
+    if (!text.trim() && images.length === 0 && videos.length === 0 && audios.length === 0) return;
     const tags = tagsRaw
       .split(/[,，#\s]+/)
       .map((t) => t.replace(/^#/, "").trim())
@@ -150,11 +153,15 @@ function NotesTab() {
       mood,
       tags: tags.length ? tags : undefined,
       images: images.length ? images : undefined,
+      videos: videos.length ? videos : undefined,
+      audios: audios.length ? audios : undefined,
     });
     setText("");
     setMood(undefined);
     setTagsRaw("");
     setImages([]);
+    setVideos([]);
+    setAudios([]);
   };
 
   const onPasteOrDrop = async (e: React.ClipboardEvent | React.DragEvent) => {
@@ -233,6 +240,13 @@ function NotesTab() {
         <div className="mt-2">
           <ImageAttacher images={images} onChange={setImages} max={6} />
         </div>
+        <div className="mt-2">
+          <MediaAttacher
+            videos={videos}
+            audios={audios}
+            onChange={(next) => { setVideos(next.videos); setAudios(next.audios); }}
+          />
+        </div>
         <div className="flex flex-wrap items-center gap-2 mt-3">
           <div className="flex items-center gap-1">
             {MOODS.map((m) => (
@@ -256,10 +270,15 @@ function NotesTab() {
           />
         </div>
         <div className="flex items-center justify-between mt-3">
-          <span className="text-[10px] text-white/40 tracking-wider">{text.length} 字{images.length > 0 ? ` · ${images.length} 张图片` : ""}</span>
+          <span className="text-[10px] text-white/40 tracking-wider">
+            {text.length} 字
+            {images.length > 0 ? ` · ${images.length} 图` : ""}
+            {videos.length > 0 ? ` · ${videos.length} 视频` : ""}
+            {audios.length > 0 ? ` · ${audios.length} 语音` : ""}
+          </span>
           <button
             onClick={submit}
-            disabled={!text.trim() && images.length === 0}
+            disabled={!text.trim() && images.length === 0 && videos.length === 0 && audios.length === 0}
             className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-glow text-primary-foreground text-xs font-medium disabled:opacity-30"
           >
             <Plus className="w-3 h-3" /> 保存
@@ -433,6 +452,26 @@ function NoteCard({ n, onRemove, onPin }: { n: Note; onRemove: () => void; onPin
                 <a key={i} href={src} target="_blank" rel="noreferrer" className="block">
                   <img src={src} alt="" className="max-h-40 rounded-lg border border-white/10 hover:border-amber-glow/40 transition" />
                 </a>
+              ))}
+            </div>
+          )}
+          {n.videos && n.videos.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {n.videos.map((src, i) => (
+                <video
+                  key={i}
+                  src={src}
+                  controls
+                  preload="metadata"
+                  className="max-h-48 rounded-lg border border-white/10 bg-black"
+                />
+              ))}
+            </div>
+          )}
+          {n.audios && n.audios.length > 0 && (
+            <div className="flex flex-col gap-1.5 mt-2">
+              {n.audios.map((src, i) => (
+                <audio key={i} src={src} controls className="h-8 max-w-full" />
               ))}
             </div>
           )}
