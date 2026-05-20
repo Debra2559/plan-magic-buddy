@@ -24,6 +24,7 @@ export function AiPersonaPanel() {
   const planFn = useServerFn(generatePlan);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [pickedFile, setPickedFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
 
