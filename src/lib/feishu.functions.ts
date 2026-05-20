@@ -754,6 +754,18 @@ function dailyRecapCard(dateLabel: string, opts?: { missed?: boolean }) {
             max_length: 2000,
           },
           {
+            tag: 'select_static',
+            name: 'mood',
+            placeholder: { tag: 'plain_text', content: '今天的心情…（可选）' },
+            options: [
+              { text: { tag: 'plain_text', content: '😄 很棒' }, value: 'great' },
+              { text: { tag: 'plain_text', content: '🙂 不错' }, value: 'good' },
+              { text: { tag: 'plain_text', content: '😐 一般' }, value: 'ok' },
+              { text: { tag: 'plain_text', content: '🙁 低落' }, value: 'down' },
+              { text: { tag: 'plain_text', content: '😴 疲惫' }, value: 'tired' },
+            ],
+          },
+          {
             tag: 'action',
             actions: [
               {
@@ -933,15 +945,19 @@ export async function handleRecapSubmit(payload: {
   date: string
   summary?: string
   diary?: string
+  mood?: string
 }): Promise<{ toast: { type: 'success' | 'info' | 'error'; content: string }; card?: any }> {
   const date = payload.date
   const summary = (payload.summary ?? '').trim()
   const diary = (payload.diary ?? '').trim()
+  const moodRaw = (payload.mood ?? '').trim()
+  const ALLOWED_MOODS = ['great', 'good', 'ok', 'down', 'tired'] as const
+  const mood = (ALLOWED_MOODS as readonly string[]).includes(moodRaw) ? moodRaw : ''
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return { toast: { type: 'error', content: '日期参数错误' } }
   }
-  if (!summary && !diary) {
-    return { toast: { type: 'info', content: '小结和日记都是空的哦~' } }
+  if (!summary && !diary && !mood) {
+    return { toast: { type: 'info', content: '小结、日记和心情都是空的哦~' } }
   }
 
   try {
@@ -958,7 +974,7 @@ export async function handleRecapSubmit(payload: {
     const { error: upErr } = await supabaseAdmin
       .from('daily_recaps')
       .upsert(
-        { date, summary, diary, source: 'feishu_card', updated_at: nowIso } as any,
+        { date, summary, diary, mood: mood || null, source: 'feishu_card', updated_at: nowIso } as any,
         { onConflict: 'date' },
       )
     if (upErr) throw new Error(upErr.message)
@@ -977,12 +993,14 @@ export async function handleRecapSubmit(payload: {
       const calendarId = (settings as any)?.selected_calendar_id
       if (calendarId) {
         const start = toUnixSeconds(date, '20:30')
+        const moodLabel = moodToLabel(mood)
         const desc = [
           summary ? `【今日小结】\n${summary}` : '',
           diary ? `\n\n【日记】\n${diary}` : '',
+          moodLabel ? `\n\n【心情】${moodLabel}` : '',
         ].join('').trim()
         const eventBody = {
-          summary: `✅ 今日小结 · ${date}`,
+          summary: `✅ 今日小结 · ${date}${moodLabel ? ` · ${moodLabel}` : ''}`,
           description: desc,
           start_time: { timestamp: String(start), timezone: TZ },
           end_time: { timestamp: String(start + 15 * 60), timezone: TZ },
@@ -1050,20 +1068,33 @@ export async function handleRecapSubmit(payload: {
           : (calendarPushed ? `已记录并在日历上打勾 ✅` : `已记录 ${date} 的小结 ✅`),
       },
       // 返回一张「已完成」的回执卡片替换原卡，展示最新内容
-      card: recapDoneCard(date, { summary, diary, calendarPushed, isUpdate, updatedAt: nowIso }),
+      card: recapDoneCard(date, { summary, diary, mood, calendarPushed, isUpdate, updatedAt: nowIso }),
     }
   } catch (e: any) {
     return { toast: { type: 'error', content: e?.message ?? '保存失败' } }
   }
 }
 
+function moodToLabel(m: string): string {
+  switch (m) {
+    case 'great': return '😄 很棒'
+    case 'good': return '🙂 不错'
+    case 'ok': return '😐 一般'
+    case 'down': return '🙁 低落'
+    case 'tired': return '😴 疲惫'
+    default: return ''
+  }
+}
+
 function recapDoneCard(
   date: string,
-  opts: { summary: string; diary: string; calendarPushed: boolean; isUpdate?: boolean; updatedAt?: string },
+  opts: { summary: string; diary: string; mood?: string; calendarPushed: boolean; isUpdate?: boolean; updatedAt?: string },
 ) {
   const parts: string[] = []
   if (opts.summary) parts.push(`**今日小结**\n${opts.summary}`)
   if (opts.diary) parts.push(`**日记 / 心情**\n${opts.diary}`)
+  const moodLabel = moodToLabel(opts.mood ?? '')
+  if (moodLabel) parts.push(`**心情** ${moodLabel}`)
   const tsLabel = opts.updatedAt ? formatTsInTz(opts.updatedAt, TZ) : ''
   const noteParts: string[] = []
   noteParts.push(opts.isUpdate ? '内容已更新' : '内容已记录')

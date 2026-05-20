@@ -215,10 +215,18 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
         if (!row) return;
         const remote = [row.summary, row.diary].filter(Boolean).join("\n\n");
         const local = (diary.find((d) => d.date === date)?.content ?? "").trim();
+        const localMood = diary.find((d) => d.date === date)?.mood;
+        const remoteMood = (row.mood as Mood | undefined) || undefined;
+        const patch: { content?: string; mood?: Mood } = {};
         if (remote && !local) {
           setContent(remote);
-          upsertDiary(date, { content: remote });
+          patch.content = remote;
         }
+        if (remoteMood && !localMood) {
+          setMood(remoteMood);
+          patch.mood = remoteMood;
+        }
+        if (Object.keys(patch).length > 0) upsertDiary(date, patch);
       })
       .catch(() => {});
   });
@@ -390,6 +398,9 @@ function SummaryTab({ initialDate }: { initialDate?: string | null }) {
         </div>
       </div>
 
+      {/* 心情趋势 · 近 7 天 */}
+      <MoodTrend date={date} diary={diary} />
+
       <Section title="已完成" icon={<CheckCircle2 className="w-3.5 h-3.5 text-amber-glow" />} list={done} empty="今天还没有完成的任务" />
       <Section title="未完成" icon={<Circle className="w-3.5 h-3.5 text-white/40" />} list={pending} empty="全部完成，太棒了 🎉" />
 
@@ -472,6 +483,84 @@ function Section({ title, icon, list, empty }: { title: string; icon: React.Reac
     </div>
   );
 }
+
+/* ---------------- Mood Trend ---------------- */
+const MOOD_SCORE: Record<Mood, number> = { great: 5, good: 4, ok: 3, down: 2, tired: 1 };
+
+function MoodTrend({ date, diary }: { date: string; diary: { date: string; mood?: Mood; content: string }[] }) {
+  // 最近 7 天（以 date 为终点，按本地日期倒推）
+  const days: string[] = [];
+  const [y, m, d] = date.split("-").map(Number);
+  const end = new Date(y, m - 1, d);
+  for (let i = 6; i >= 0; i--) {
+    const dt = new Date(end);
+    dt.setDate(end.getDate() - i);
+    days.push(`${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`);
+  }
+  const series = days.map((iso) => {
+    const e = diary.find((x) => x.date === iso);
+    return { iso, mood: e?.mood as Mood | undefined };
+  });
+  const filled = series.filter((s) => s.mood);
+  const avg = filled.length
+    ? filled.reduce((a, s) => a + MOOD_SCORE[s.mood!], 0) / filled.length
+    : 0;
+  const counts: Record<Mood, number> = { great: 0, good: 0, ok: 0, down: 0, tired: 0 };
+  for (const s of filled) counts[s.mood!] += 1;
+
+  return (
+    <div className="widget p-5 mb-4">
+      <div className="flex items-baseline justify-between mb-3">
+        <p className="text-[10px] tracking-widest text-white/40">心情 · 近 7 天</p>
+        <p className="text-[11px] text-white/60">
+          {filled.length > 0 ? `${filled.length}/7 天有记录 · 平均 ${avg.toFixed(1)}` : "暂无心情记录"}
+        </p>
+      </div>
+
+      {/* 7 天迷你条 */}
+      <div className="flex items-end gap-1.5 h-16">
+        {series.map((s) => {
+          const score = s.mood ? MOOD_SCORE[s.mood] : 0;
+          const h = score ? `${(score / 5) * 100}%` : "6%";
+          const opacity = s.mood ? 1 : 0.25;
+          const m = moodOf(s.mood);
+          const dd = Number(s.iso.slice(-2));
+          return (
+            <div key={s.iso} className="flex-1 flex flex-col items-center gap-1" title={`${s.iso} ${m?.label ?? "无记录"}`}>
+              <div className="w-full flex-1 flex items-end">
+                <div
+                  className="w-full rounded-t bg-gradient-to-t from-amber-glow/80 to-amber-glow/40"
+                  style={{ height: h, opacity }}
+                />
+              </div>
+              <span className="text-[9px] text-white/50">{m?.emoji ?? "·"}</span>
+              <span className="text-[9px] text-white/30 font-mono">{dd}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 分布 chips */}
+      {filled.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {MOODS.map((m) => {
+            const c = counts[m.value];
+            if (!c) return null;
+            return (
+              <span
+                key={m.value}
+                className="text-[11px] px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10 text-white/75"
+              >
+                {m.emoji} {m.label} × {c}
+              </span>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 /* ---------------- utils ---------------- */
 function todayStr() {

@@ -61,6 +61,7 @@ export const Route = createFileRoute('/api/public/feishu/webhook')({
                 date: String(value.date),
                 summary: String(formValue?.summary ?? ''),
                 diary: String(formValue?.diary ?? ''),
+                mood: String(formValue?.mood ?? ''),
               })
               return json({
                 toast: result.toast,
