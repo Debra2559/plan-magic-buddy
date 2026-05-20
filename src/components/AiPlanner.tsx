@@ -148,8 +148,60 @@ export function AiPlanner() {
   const grouped = groupByDate(confirmed.map((c) => ({ ...c, _key: c.id })));
   const draftGrouped = draft ? groupByDate(draft.items.map((it, i) => ({ ...it, _key: `d-${i}` }))) : null;
 
+  const [quickIdea, setQuickIdea] = useState("");
+  const runQuick = async () => {
+    const text = quickIdea.trim();
+    if (!text || loading) return;
+    setMode("create");
+    setIdea(text);
+    setLoading(true);
+    setError(null);
+    setDraft(null);
+    try {
+      const result = await planFn({ data: { idea: text, mode: "create" } });
+      if (!result.ok) setError(result.error);
+      else { setDraft(result.plan); setQuickIdea(""); }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "未知错误");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="grid lg:grid-cols-[1fr_1.2fr] gap-8 items-start">
+    <div className="space-y-6">
+      {/* Quick generate bar */}
+      <div className="widget widget-glow p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <Wand2 className="w-4 h-4 text-amber-glow" />
+          <span className="text-xs tracking-wider text-amber-glow">一键生成 · 直接把想法变成完整规划</span>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            value={quickIdea}
+            onChange={(e) => setQuickIdea(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                runQuick();
+              }
+            }}
+            placeholder="一句话描述你想做的事，例如：这周冲毕业答辩 + 每天 30 分钟英语"
+            className="flex-1 bg-foreground/5 border border-foreground/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
+          />
+          <button
+            onClick={runQuick}
+            disabled={loading || !quickIdea.trim()}
+            className="shrink-0 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition disabled:opacity-40 disabled:scale-100"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {loading ? "生成中" : "生成规划"}
+          </button>
+        </div>
+        <p className="mt-2 text-[10px] text-muted-foreground">Enter 直接生成 · 生成后在下方草稿确认即可写入日历</p>
+      </div>
+
+      <div className="grid lg:grid-cols-[1fr_1.2fr] gap-8 items-start">
       {/* LEFT: Input */}
       <div className="widget widget-glow p-7 lg:sticky lg:top-8">
         <div className="flex items-center gap-2 mb-4">
