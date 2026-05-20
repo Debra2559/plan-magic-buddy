@@ -268,43 +268,70 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
   const addItems = (newOnes: PlanItem[]): string[] => {
     const withIds = newOnes.map((i) => ({ ...i, id: (i as any).id ?? nextId() }));
     setItems((prev) => [...prev, ...withIds]);
+    void remote.upsertItems(withIds as DoneItem[]);
     return withIds.map((i) => i.id);
   };
 
   const replaceItems = (newOnes: PlanItem[]): string[] => {
     const withIds = newOnes.map((i) => ({ ...i, id: nextId() }));
     setItems(withIds);
+    void remote.clearItems().then(() => remote.upsertItems(withIds as DoneItem[]));
     return withIds.map((i) => i.id);
   };
 
-  const removeItem = (id: string) =>
+  const removeItem = (id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
+    void remote.softDeleteItem(id);
+  };
 
-  const updateItem: SylvaContextValue["updateItem"] = (id, patch) =>
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
+  const updateItem: SylvaContextValue["updateItem"] = (id, patch) => {
+    setItems((prev) => {
+      const next = prev.map((i) => (i.id === id ? { ...i, ...patch } : i));
+      const updated = next.find((i) => i.id === id);
+      if (updated) void remote.upsertItem(updated);
+      return next;
+    });
+  };
 
-  const toggleDone = (id: string) =>
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, done: !i.done } : i)));
+  const toggleDone = (id: string) => {
+    setItems((prev) => {
+      const next = prev.map((i) => (i.id === id ? { ...i, done: !i.done } : i));
+      const updated = next.find((i) => i.id === id);
+      if (updated) void remote.upsertItem(updated);
+      return next;
+    });
+  };
 
-  const clearItems = () => setItems([]);
+  const clearItems = () => {
+    setItems([]);
+    void remote.clearItems();
+  };
 
-  const addNote: SylvaContextValue["addNote"] = (text, opts) =>
-    setNotes((prev) => [
-      { id: nextId(), text, createdAt: new Date().toISOString(), mood: opts?.mood, tags: opts?.tags, images: opts?.images },
-      ...prev,
-    ]);
+  const addNote: SylvaContextValue["addNote"] = (text, opts) => {
+    const n: Note = { id: nextId(), text, createdAt: new Date().toISOString(), mood: opts?.mood, tags: opts?.tags, images: opts?.images };
+    setNotes((prev) => [n, ...prev]);
+    void remote.upsertNote(n);
+  };
 
-  const removeNote = (id: string) =>
+  const removeNote = (id: string) => {
     setNotes((prev) => prev.filter((n) => n.id !== id));
+    void remote.softDeleteNote(id);
+  };
 
-  const updateNote: SylvaContextValue["updateNote"] = (id, patch) =>
-    setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, ...patch } : n)));
+  const updateNote: SylvaContextValue["updateNote"] = (id, patch) => {
+    setNotes((prev) => {
+      const next = prev.map((n) => (n.id === id ? { ...n, ...patch } : n));
+      const updated = next.find((n) => n.id === id);
+      if (updated) void remote.upsertNote(updated);
+      return next;
+    });
+  };
 
   const toggleHabit = (id: string) => toggleHabitOn(id, todayLocal());
 
   const toggleHabitOn = (id: string, date: string) =>
-    setHabits((prev) =>
-      prev.map((h) => {
+    setHabits((prev) => {
+      const next = prev.map((h) => {
         if (h.id !== id) return h;
         const hist = h.history ?? [];
         const has = hist.includes(date);
@@ -312,34 +339,49 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
           ? hist.filter((d) => d !== date)
           : [date, ...hist].sort((a, b) => b.localeCompare(a));
         return { ...h, history: nextHist };
-      })
-    );
+      });
+      const updated = next.find((h) => h.id === id);
+      if (updated) void remote.upsertHabit(updated);
+      return next;
+    });
 
-  const addHabit: SylvaContextValue["addHabit"] = ({ name, emoji }) =>
-    setHabits((prev) => [
-      ...prev,
-      { id: `h-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, name: name.trim() || "新习惯", emoji: emoji?.trim() || "✨", history: [] },
-    ]);
+  const addHabit: SylvaContextValue["addHabit"] = ({ name, emoji }) => {
+    const h: Habit = { id: `h-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, name: name.trim() || "新习惯", emoji: emoji?.trim() || "✨", history: [] };
+    setHabits((prev) => [...prev, h]);
+    void remote.upsertHabit(h);
+  };
 
   const updateHabit: SylvaContextValue["updateHabit"] = (id, patch) =>
-    setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, ...patch } : h)));
+    setHabits((prev) => {
+      const next = prev.map((h) => (h.id === id ? { ...h, ...patch } : h));
+      const updated = next.find((h) => h.id === id);
+      if (updated) void remote.upsertHabit(updated);
+      return next;
+    });
 
-  const removeHabit: SylvaContextValue["removeHabit"] = (id) =>
+  const removeHabit: SylvaContextValue["removeHabit"] = (id) => {
     setHabits((prev) => prev.filter((h) => h.id !== id));
+    void remote.softDeleteHabit(id);
+  };
 
 
   const upsertDiary: SylvaContextValue["upsertDiary"] = (date, patch) =>
     setDiary((prev) => {
       const existing = prev.find((d) => d.date === date);
       const updatedAt = new Date().toISOString();
+      let next: DiaryEntry[];
+      let updatedRow: DiaryEntry;
       if (existing) {
-        return prev.map((d) => (d.date === date ? { ...d, ...patch, updatedAt } : d));
+        updatedRow = { ...existing, ...patch, updatedAt };
+        next = prev.map((d) => (d.date === date ? updatedRow : d));
+      } else {
+        updatedRow = { date, content: patch.content ?? "", mood: patch.mood, updatedAt };
+        next = [updatedRow, ...prev];
       }
-      return [
-        { date, content: patch.content ?? "", mood: patch.mood, updatedAt },
-        ...prev,
-      ];
+      void remote.upsertDiary(updatedRow);
+      return next;
     });
+
 
   // 远端：飞书卡片已提交完成的日期集合（轮询同步）
   const [recapDoneDates, setRecapDoneDates] = useState<Set<string>>(() => new Set());
