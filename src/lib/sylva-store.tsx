@@ -329,6 +329,23 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
     saveLS("sylva.enterToSubmit", v);
   }, []);
 
+  // 日期卡片高亮闪烁开关 & 持续时间（ms）
+  const [dateFlashEnabled, setDateFlashEnabledState] = useState<boolean>(
+    () => loadLS<boolean>("sylva.dateFlashEnabled", true)
+  );
+  const setDateFlashEnabled = useCallback((v: boolean) => {
+    setDateFlashEnabledState(v);
+    saveLS("sylva.dateFlashEnabled", v);
+  }, []);
+  const [dateFlashDurationMs, setDateFlashDurationMsState] = useState<number>(
+    () => loadLS<number>("sylva.dateFlashDurationMs", 1200)
+  );
+  const setDateFlashDurationMs = useCallback((v: number) => {
+    const clamped = Math.max(200, Math.min(5000, Math.round(v)));
+    setDateFlashDurationMsState(clamped);
+    saveLS("sylva.dateFlashDurationMs", clamped);
+  }, []);
+
   const refreshRecapDoneDates = useCallback(async () => {
     try {
       const res = await getRecapDoneDates();
