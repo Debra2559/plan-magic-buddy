@@ -8,6 +8,8 @@ import {
   selectFeishuCalendar,
   setFeishuDirection,
   syncToFeishu,
+  pullFromFeishu,
+  recordPulledMappings,
 } from "@/lib/feishu.functions";
 import {
   Check,
@@ -20,6 +22,7 @@ import {
   AlertTriangle,
   Loader2,
   Zap,
+  Download,
 } from "lucide-react";
 
 type Status = "disconnected" | "connecting" | "connected";
