@@ -325,13 +325,28 @@ export function JournalView() {
                 buildSummary={() =>
                   buildComicSummary({ date, fmt, dayItems, habitsDone: habits.filter((h) => isHabitDoneOn(h, date)), habitsMissed: habits.filter((h) => !isHabitDoneOn(h, date)), dayNotes, dayDiary })
                 }
-                onGenerated={(c) => setComic(c)}
+                onGenerated={(c) => {
+                  setComic(c);
+                  addComicHistory({ date: c.date, imageUrl: c.imageUrl, provider: c.provider, caption: c.caption, createdAt: c.createdAt });
+                }}
                 onRemove={() => removeComic(date)}
                 onCopyToDiary={(line) => {
                   const prev = diary.find((d) => d.date === date)?.content ?? "";
                   upsertDiary(date, { content: prev ? `${prev}\n\n${line}` : line });
                 }}
                 onCopyToNote={(line) => addNote(line, { tags: ["每日漫画"] })}
+              />
+
+              <ComicHistoryPanel
+                history={comicHistory}
+                currentDate={date}
+                onRecall={(item) => setComic({ date, imageUrl: item.imageUrl, provider: item.provider, caption: item.caption, createdAt: new Date().toISOString() })}
+                onDelete={(id) => removeComicHistory(id)}
+                onInsertDiary={(item) => {
+                  const prev = diary.find((d) => d.date === date)?.content ?? "";
+                  const line = `🖼️ 旧作回看（${item.provider} · ${item.date}）：${item.imageUrl}`;
+                  upsertDiary(date, { content: prev ? `${prev}\n\n${line}` : line });
+                }}
               />
 
               {/* —— 给未来的建议 —— */}
