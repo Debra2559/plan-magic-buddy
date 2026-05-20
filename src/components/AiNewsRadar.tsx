@@ -191,16 +191,45 @@ export function AiNewsRadar() {
             </span>
           )}
         </button>
-        <button
-          onClick={onScan}
-          disabled={scanning}
-          className="flex items-center gap-1 text-[11px] text-foreground/60 hover:text-foreground transition disabled:opacity-40"
-          title="立即扫描"
-        >
-          {scanning ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-          {scanning ? "扫描中" : "扫描"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={openSettings}
+            className="flex items-center gap-1 text-[11px] text-foreground/60 hover:text-amber-glow transition"
+            title="雷达设置"
+          >
+            <SettingsIcon className="w-3 h-3" /> 设置
+          </button>
+          <button
+            onClick={onScan}
+            disabled={scanning}
+            className="flex items-center gap-1 text-[11px] text-foreground/60 hover:text-foreground transition disabled:opacity-40"
+            title="立即扫描"
+          >
+            {scanning ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+            {scanning ? "扫描中" : "扫描"}
+          </button>
+        </div>
       </div>
+
+      {settingsOpen && (
+        <SettingsPanel
+          settings={settings}
+          includeText={includeText}
+          excludeText={excludeText}
+          tagsText={tagsText}
+          saving={savingSettings}
+          onClose={() => setSettingsOpen(false)}
+          onSave={onSaveSettings}
+          onChange={setSettings}
+          onIncludeChange={setIncludeText}
+          onExcludeChange={setExcludeText}
+          onTagsChange={setTagsText}
+          onAddSource={addSource}
+          onUpdateSource={updateSource}
+          onRemoveSource={removeSource}
+        />
+      )}
+
 
       {!collapsed && (
         <>
