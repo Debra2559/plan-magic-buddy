@@ -53,11 +53,11 @@ export function NotesView() {
         <div className="flex items-center justify-between px-7 pt-5 pb-3">
           <div>
             <p className="text-[10px] tracking-widest text-amber-glow mb-1">每日笔记</p>
-            <h2 className="font-display text-2xl text-white">画布视图 · 拖动卡片</h2>
+            <h2 className="font-display text-2xl text-foreground">画布视图 · 拖动卡片</h2>
           </div>
           <ModeToggle mode={mode} onChange={setMode} />
         </div>
-        <div className="flex-1 mx-7 mb-5 rounded-2xl overflow-hidden border border-white/10">
+        <div className="flex-1 mx-7 mb-5 rounded-2xl overflow-hidden border border-border">
           <NotesCanvas />
         </div>
       </div>
@@ -65,7 +65,7 @@ export function NotesView() {
   }
 
   const HeaderTabs = (
-    <div className="flex items-center gap-1 p-1 rounded-full bg-white/[0.04] border border-white/8 w-fit">
+    <div className="flex items-center gap-1 p-1 rounded-full bg-foreground/[0.05] border border-border/70 w-fit">
       <TabBtn active={tab === "log"} onClick={() => setTab("log")} icon={<ListChecks className="w-3.5 h-3.5" />}>事件</TabBtn>
       <TabBtn active={tab === "reflection"} onClick={() => setTab("reflection")} icon={<Sparkles className="w-3.5 h-3.5" />}>感受 &amp; 思考</TabBtn>
       <TabBtn active={tab === "handbook"} onClick={() => setTab("handbook")} icon={<BookHeart className="w-3.5 h-3.5" />}>手帐</TabBtn>
@@ -80,7 +80,7 @@ export function NotesView() {
           <div className="flex items-start justify-between gap-3 mb-5">
             <div>
               <p className="text-[10px] tracking-widest text-amber-glow mb-1">每日记录</p>
-              <h2 className="font-display text-3xl text-white">手帐 · 按天回顾</h2>
+              <h2 className="font-display text-3xl text-foreground">手帐 · 按天回顾</h2>
             </div>
             <ModeToggle mode={mode} onChange={setMode} />
           </div>
@@ -98,7 +98,7 @@ export function NotesView() {
       <div className="flex items-start justify-between mb-5 gap-3">
         <div>
           <p className="text-[10px] tracking-widest text-amber-glow mb-1">每日记录</p>
-          <h2 className="font-display text-3xl text-white">
+          <h2 className="font-display text-3xl text-foreground">
             {tab === "log" ? "把发生的事，先存下来。" : "把感受和想法，写出来。"}
           </h2>
         </div>
@@ -118,7 +118,7 @@ function TabBtn({ active, onClick, icon, children }: { active: boolean; onClick:
     <button
       onClick={onClick}
       className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs transition ${
-        active ? "bg-amber-glow text-primary-foreground font-medium" : "text-white/60 hover:text-white"
+        active ? "bg-amber-glow text-primary-foreground font-medium" : "text-muted-foreground hover:text-foreground"
       }`}
     >
       {icon}
@@ -241,7 +241,7 @@ function NotesTab({ kind }: { kind: NoteKind }) {
           placeholder={kind === "reflection"
             ? "此刻在想什么？写下感受、复盘、灵感…"
             : "刚发生了什么？开会 / 健身 / 见了谁…粘贴或拖入图片即可附加"}
-          className="w-full bg-transparent outline-none text-sm leading-relaxed text-white/90 placeholder:text-white/30 resize-none"
+          className="w-full bg-transparent outline-none text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/60 resize-none"
         />
         <div className="flex justify-end -mt-1 mb-1">
           <EnterHint example={kind === "reflection"
@@ -268,7 +268,7 @@ function NotesTab({ kind }: { kind: NoteKind }) {
                 onClick={() => setMood(mood === m.value ? undefined : m.value)}
                 title={m.label}
                 className={`w-7 h-7 rounded-full text-base transition ${
-                  mood === m.value ? "bg-amber-glow/30 ring-1 ring-amber-glow" : "hover:bg-white/10"
+                  mood === m.value ? "bg-amber-glow/30 ring-1 ring-amber-glow" : "hover:bg-foreground/10"
                 }`}
               >
                 {m.emoji}
@@ -279,11 +279,11 @@ function NotesTab({ kind }: { kind: NoteKind }) {
             value={tagsRaw}
             onChange={(e) => setTagsRaw(e.target.value)}
             placeholder="#标签 用逗号或空格"
-            className="flex-1 min-w-[140px] bg-transparent text-xs text-white/80 placeholder:text-white/30 outline-none border-b border-white/10 focus:border-white/30 py-1"
+            className="flex-1 min-w-[140px] bg-transparent text-xs text-foreground/85 placeholder:text-muted-foreground/60 outline-none border-b border-border focus:border-white/30 py-1"
           />
         </div>
         <div className="flex items-center justify-between mt-3">
-          <span className="text-[10px] text-white/40 tracking-wider">
+          <span className="text-[10px] text-muted-foreground/70 tracking-wider">
             {text.length} 字
             {images.length > 0 ? ` · ${images.length} 图` : ""}
             {videos.length > 0 ? ` · ${videos.length} 视频` : ""}
@@ -302,51 +302,51 @@ function NotesTab({ kind }: { kind: NoteKind }) {
       <QuickDiaryEditor open={diaryOpen} onToggle={() => setDiaryOpen((v) => !v)} />
 
       {/* 搜索框 */}
-      <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-full bg-white/[0.04] border border-white/8">
-        <Search className="w-3.5 h-3.5 text-white/40" />
+      <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-full bg-foreground/[0.05] border border-border/70">
+        <Search className="w-3.5 h-3.5 text-muted-foreground/70" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="搜索内容或标签"
-          className="flex-1 bg-transparent text-xs text-white/80 placeholder:text-white/30 outline-none"
+          className="flex-1 bg-transparent text-xs text-foreground/85 placeholder:text-muted-foreground/60 outline-none"
         />
         <button
           onClick={() => setShowFilters((v) => !v)}
           className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] border transition ${
             activeFilterCount > 0 || showFilters
               ? "bg-amber-glow/15 border-amber-glow/40 text-amber-glow"
-              : "border-white/10 text-white/50 hover:text-white"
+              : "border-border text-muted-foreground hover:text-foreground"
           }`}
           title="筛选"
         >
           <Filter className="w-3 h-3" />
           筛选{activeFilterCount > 0 ? ` · ${activeFilterCount}` : ""}
         </button>
-        <span className="text-[10px] text-white/40">{filtered.length} 条</span>
+        <span className="text-[10px] text-muted-foreground/70">{filtered.length} 条</span>
       </div>
 
       {/* 筛选面板 */}
       {showFilters && (
-        <div className="mb-4 p-3 rounded-xl bg-white/[0.03] border border-white/8 space-y-2.5">
+        <div className="mb-4 p-3 rounded-xl bg-foreground/[0.04] border border-border/70 space-y-2.5">
           {/* 日期 */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] tracking-widest text-white/40 w-10">日期</span>
+            <span className="text-[10px] tracking-widest text-muted-foreground/70 w-10">日期</span>
             <input
               type="date"
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
-              className="bg-black/30 border border-white/10 rounded-md px-2 py-1 text-[11px] text-white/85 outline-none focus:border-amber-glow/50"
+              className="bg-background/50 border border-border rounded-md px-2 py-1 text-[11px] text-white/85 outline-none focus:border-amber-glow/50"
             />
             <button
               onClick={() => setDateFilter(todayStr())}
-              className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 hover:bg-white/10 text-white/70"
+              className="text-[10px] px-2 py-0.5 rounded-full bg-foreground/5 hover:bg-foreground/10 text-foreground/75"
             >
               今天
             </button>
             {dateFilter && (
               <button
                 onClick={() => setDateFilter("")}
-                className="text-[10px] px-1.5 py-0.5 rounded-full text-white/40 hover:text-white"
+                className="text-[10px] px-1.5 py-0.5 rounded-full text-muted-foreground/70 hover:text-foreground"
                 title="清除日期"
               >
                 <XIcon className="w-3 h-3" />
@@ -356,7 +356,7 @@ function NotesTab({ kind }: { kind: NoteKind }) {
 
           {/* 心情 */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] tracking-widest text-white/40 w-10">心情</span>
+            <span className="text-[10px] tracking-widest text-muted-foreground/70 w-10">心情</span>
             <FilterChip active={moodFilter === "all"} onClick={() => setMoodFilter("all")}>全部</FilterChip>
             {MOODS.map((m) => (
               <FilterChip
@@ -373,7 +373,7 @@ function NotesTab({ kind }: { kind: NoteKind }) {
           {/* 习惯（按标签匹配） */}
           {habits.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10px] tracking-widest text-white/40 w-10">习惯</span>
+              <span className="text-[10px] tracking-widest text-muted-foreground/70 w-10">习惯</span>
               <FilterChip active={habitFilter === "all"} onClick={() => setHabitFilter("all")}>全部</FilterChip>
               {habits.map((h) => (
                 <FilterChip
@@ -390,7 +390,7 @@ function NotesTab({ kind }: { kind: NoteKind }) {
 
           {/* 类型 */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] tracking-widest text-white/40 w-10">类型</span>
+            <span className="text-[10px] tracking-widest text-muted-foreground/70 w-10">类型</span>
             {([
               ["all", "全部"],
               ["pinned", "置顶"],
@@ -408,7 +408,7 @@ function NotesTab({ kind }: { kind: NoteKind }) {
             <div className="flex justify-end pt-1">
               <button
                 onClick={clearFilters}
-                className="text-[10px] text-white/50 hover:text-amber-glow flex items-center gap-1"
+                className="text-[10px] text-muted-foreground hover:text-amber-glow flex items-center gap-1"
               >
                 <XIcon className="w-3 h-3" /> 清除全部筛选
               </button>
@@ -419,7 +419,7 @@ function NotesTab({ kind }: { kind: NoteKind }) {
 
       <div className="space-y-3">
         {filtered.length === 0 ? (
-          <div className="text-center py-16 text-white/40 text-sm">
+          <div className="text-center py-16 text-muted-foreground/70 text-sm">
             {query || activeFilterCount > 0 ? "没有匹配的记录" : "还没有任何记录"}
           </div>
         ) : (
@@ -440,7 +440,7 @@ function FilterChip({ active, onClick, title, children }: { active: boolean; onC
       className={`text-[11px] px-2 py-0.5 rounded-full border transition ${
         active
           ? "bg-amber-glow/20 border-amber-glow/50 text-amber-glow"
-          : "bg-white/[0.03] border-white/10 text-white/65 hover:text-white hover:border-white/25"
+          : "bg-foreground/[0.04] border-border text-muted-foreground hover:text-foreground hover:border-border"
       }`}
     >
       {children}
@@ -452,18 +452,18 @@ function FilterChip({ active, onClick, title, children }: { active: boolean; onC
 function NoteCard({ n, onRemove, onPin }: { n: Note; onRemove: () => void; onPin: () => void }) {
   const m = moodOf(n.mood);
   return (
-    <div className="group p-4 rounded-2xl bg-white/[0.04] border border-white/8 hover:border-white/15 transition">
+    <div className="group p-4 rounded-2xl bg-foreground/[0.05] border border-border/70 hover:border-border transition">
       <div className="flex items-start gap-3">
         <StickyNote className="w-4 h-4 text-amber-glow mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
           {n.text && (
-            <p className="text-sm text-white/90 leading-relaxed whitespace-pre-wrap break-words">{n.text}</p>
+            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">{n.text}</p>
           )}
           {n.images && n.images.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2">
               {n.images.map((src, i) => (
                 <a key={i} href={src} target="_blank" rel="noreferrer" className="block">
-                  <img src={src} alt="" className="max-h-40 rounded-lg border border-white/10 hover:border-amber-glow/40 transition" />
+                  <img src={src} alt="" className="max-h-40 rounded-lg border border-border hover:border-amber-glow/40 transition" />
                 </a>
               ))}
             </div>
@@ -476,7 +476,7 @@ function NoteCard({ n, onRemove, onPin }: { n: Note; onRemove: () => void; onPin
                   src={src}
                   controls
                   preload="metadata"
-                  className="max-h-48 rounded-lg border border-white/10 bg-black"
+                  className="max-h-48 rounded-lg border border-border bg-black"
                 />
               ))}
             </div>
@@ -489,19 +489,19 @@ function NoteCard({ n, onRemove, onPin }: { n: Note; onRemove: () => void; onPin
             </div>
           )}
           <div className="flex flex-wrap items-center gap-2 mt-2">
-            <span className="text-[10px] text-white/40 tracking-wider">{fmt(n.createdAt)}</span>
+            <span className="text-[10px] text-muted-foreground/70 tracking-wider">{fmt(n.createdAt)}</span>
             {m && <span className="text-[10px]" title={m.label}>{m.emoji}</span>}
             {(n.tags ?? []).map((t) => (
-              <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 text-white/60">#{t}</span>
+              <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-foreground/5 text-muted-foreground">#{t}</span>
             ))}
             {n.pinned && <span className="text-[10px] text-amber-glow">已置顶</span>}
           </div>
         </div>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
-          <button onClick={onPin} className="text-white/40 hover:text-amber-glow p-1" title={n.pinned ? "取消置顶" : "置顶"}>
+          <button onClick={onPin} className="text-muted-foreground/70 hover:text-amber-glow p-1" title={n.pinned ? "取消置顶" : "置顶"}>
             {n.pinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
           </button>
-          <button onClick={onRemove} className="text-white/30 hover:text-destructive p-1">
+          <button onClick={onRemove} className="text-muted-foreground/60 hover:text-destructive p-1">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -534,20 +534,20 @@ function QuickDiaryEditor({ open, onToggle }: { open: boolean; onToggle: () => v
     <div className="mb-4">
       <button
         onClick={onToggle}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/8 text-xs text-white/70 hover:text-white hover:border-white/15 transition"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-foreground/[0.05] border border-border/70 text-xs text-foreground/75 hover:text-foreground hover:border-border transition"
         title="编辑今日手帐"
       >
         <BookHeart className="w-3.5 h-3.5 text-amber-glow" />
         {open ? "收起今日手帐" : "编辑今日手帐"}
         {entry?.content?.trim() && !open && (
-          <span className="text-[10px] text-white/40">· 已有 {entry.content.length} 字</span>
+          <span className="text-[10px] text-muted-foreground/70">· 已有 {entry.content.length} 字</span>
         )}
       </button>
       {open && (
         <div className="widget p-4 mt-2">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] tracking-widest text-amber-glow">{today} · 今日手帐</span>
-            <span className="text-[10px] text-white/40">{content.length} 字</span>
+            <span className="text-[10px] text-muted-foreground/70">{content.length} 字</span>
           </div>
           <textarea
             value={content}
@@ -560,7 +560,7 @@ function QuickDiaryEditor({ open, onToggle }: { open: boolean; onToggle: () => v
             }}
             rows={6}
             placeholder="今天发生了什么？"
-            className="w-full bg-transparent outline-none text-sm leading-7 text-white/90 placeholder:text-white/30 resize-none"
+            className="w-full bg-transparent outline-none text-sm leading-7 text-foreground placeholder:text-muted-foreground/60 resize-none"
           />
           <div className="flex items-center justify-end gap-3 mt-2">
             <EnterHint example={"今天搞定了答辩 PPT ↵（Shift+Enter）\n明天和导师对齐"} />
@@ -676,7 +676,7 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="bg-transparent text-sm text-white/90 outline-none border border-white/10 rounded-md px-2 py-1"
+            className="bg-transparent text-sm text-foreground outline-none border border-border rounded-md px-2 py-1"
           />
           <div className="flex items-center gap-1">
             {MOODS.map((m) => (
@@ -685,7 +685,7 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
                 onClick={() => setMood(mood === m.value ? undefined : m.value)}
                 title={m.label}
                 className={`w-7 h-7 rounded-full text-base transition ${
-                  mood === m.value ? "bg-amber-glow/30 ring-1 ring-amber-glow" : "hover:bg-white/10"
+                  mood === m.value ? "bg-amber-glow/30 ring-1 ring-amber-glow" : "hover:bg-foreground/10"
                 }`}
               >
                 {m.emoji}
@@ -708,10 +708,10 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
           }}
 
           data-placeholder="今天发生了什么？粘贴图片即可插入"
-          className="diary-editor min-h-[240px] w-full bg-transparent outline-none text-sm leading-7 text-white/90 whitespace-pre-wrap break-words"
+          className="diary-editor min-h-[240px] w-full bg-transparent outline-none text-sm leading-7 text-foreground whitespace-pre-wrap break-words"
         />
         <div className="flex items-center justify-between mt-2 gap-2">
-          <span className="text-[10px] text-white/40">失焦自动保存 · 支持粘贴图片 · {textLength} 字</span>
+          <span className="text-[10px] text-muted-foreground/70">失焦自动保存 · 支持粘贴图片 · {textLength} 字</span>
           <div className="flex items-center gap-3">
             <EnterHint example={"今天搞定了答辩 PPT ↵（Shift+Enter）\n明天要去和导师对齐节奏"} />
             <button onClick={save} className="px-4 py-1.5 rounded-full bg-amber-glow text-primary-foreground text-xs font-medium">保存</button>
@@ -720,10 +720,10 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
 
       </div>
 
-      <p className="text-[10px] tracking-widest text-white/40 mb-2">过往</p>
+      <p className="text-[10px] tracking-widest text-muted-foreground/70 mb-2">过往</p>
       <div className="space-y-2">
         {sorted.length === 0 ? (
-          <div className="text-center py-12 text-white/40 text-sm">还没有记录，从今天开始 ✨</div>
+          <div className="text-center py-12 text-muted-foreground/70 text-sm">还没有记录，从今天开始 ✨</div>
         ) : (
           sorted.map((d) => {
             const m = moodOf(d.mood);
@@ -731,15 +731,15 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
               <button
                 key={d.date}
                 onClick={() => setDate(d.date)}
-                className={`w-full text-left p-3 rounded-xl bg-white/[0.03] border transition ${
-                  d.date === date ? "border-amber-glow/40" : "border-white/8 hover:border-white/15"
+                className={`w-full text-left p-3 rounded-xl bg-foreground/[0.04] border transition ${
+                  d.date === date ? "border-amber-glow/40" : "border-border/70 hover:border-border"
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs text-white/70 tracking-wider">{d.date}</span>
+                  <span className="text-xs text-foreground/75 tracking-wider">{d.date}</span>
                   {m && <span className="text-xs">{m.emoji}</span>}
                 </div>
-                <div className="text-xs text-white/60 line-clamp-2 whitespace-pre-wrap [&_img]:hidden" dangerouslySetInnerHTML={{ __html: d.content || "（空白）" }} />
+                <div className="text-xs text-muted-foreground line-clamp-2 whitespace-pre-wrap [&_img]:hidden" dangerouslySetInnerHTML={{ __html: d.content || "（空白）" }} />
               </button>
             );
           })
@@ -769,16 +769,16 @@ function fmt(iso: string) {
 
 function ModeToggle({ mode, onChange }: { mode: "list" | "canvas"; onChange: (m: "list" | "canvas") => void }) {
   return (
-    <div className="flex items-center gap-1 p-1 rounded-full bg-white/[0.04] border border-white/10 shrink-0">
+    <div className="flex items-center gap-1 p-1 rounded-full bg-foreground/[0.05] border border-border shrink-0">
       <button
         onClick={() => onChange("list")}
-        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${mode === "list" ? "bg-white/15 text-white" : "text-white/60 hover:text-white"}`}
+        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${mode === "list" ? "bg-foreground/15 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
       >
         <LayoutGrid className="w-3 h-3" /> 列表
       </button>
       <button
         onClick={() => onChange("canvas")}
-        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${mode === "canvas" ? "bg-amber-glow/20 text-amber-glow" : "text-white/60 hover:text-white"}`}
+        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${mode === "canvas" ? "bg-amber-glow/20 text-amber-glow" : "text-muted-foreground hover:text-foreground"}`}
       >
         <Brush className="w-3 h-3" /> 画布
       </button>

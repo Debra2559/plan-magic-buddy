@@ -828,15 +828,15 @@ export function FeishuSyncPanel() {
   return (
     <div>
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-4 h-4 rounded bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-[9px] font-bold text-white">飞</div>
-        <h3 className="font-display text-lg text-white">飞书日程同步</h3>
+        <div className="w-4 h-4 rounded bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-[9px] font-bold text-foreground">飞</div>
+        <h3 className="font-display text-lg text-foreground">飞书日程同步</h3>
         <span
           className={`ml-2 text-[10px] px-2 py-0.5 rounded-full border ${
             state.status === "connected"
               ? "bg-emerald-500/15 text-emerald-300 border-emerald-400/30"
               : state.status === "connecting"
               ? "bg-amber-400/15 text-amber-300 border-amber-400/30"
-              : "bg-white/5 text-white/50 border-white/10"
+              : "bg-foreground/5 text-muted-foreground border-border"
           }`}
         >
           {state.status === "connected" ? "已连接" : state.status === "connecting" ? "连接中…" : "未连接"}
@@ -844,7 +844,7 @@ export function FeishuSyncPanel() {
         <button
           onClick={onTest}
           disabled={testing}
-          className="ml-auto text-[11px] px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-50 flex items-center gap-1.5"
+          className="ml-auto text-[11px] px-2.5 py-1 rounded-full bg-foreground/5 border border-border text-foreground/75 hover:bg-foreground/10 disabled:opacity-50 flex items-center gap-1.5"
           title="用 App ID/Secret 换 tenant_access_token，验证凭证"
         >
           {testing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
@@ -866,17 +866,17 @@ export function FeishuSyncPanel() {
       )}
 
       <div className="widget overflow-hidden">
-        <div className="px-4 py-3 flex items-center gap-3 border-b border-white/8">
+        <div className="px-4 py-3 flex items-center gap-3 border-b border-border/70">
           {state.status === "connected" ? (
             <>
               <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
                 <Check className="w-4 h-4 text-emerald-300" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm text-white/90 truncate">
+                <div className="text-sm text-foreground truncate">
                   {selected ? selected.name : "已选日历"}
                 </div>
-                <div className="text-[11px] text-white/50">
+                <div className="text-[11px] text-muted-foreground">
                   {state.lastSyncAt ? `上次同步 ${fmtTime(state.lastSyncAt)}` : "尚未同步"}
                   {syncing && <span className="ml-2 text-amber-glow/80">同步中…</span>}
                 </div>
@@ -884,7 +884,7 @@ export function FeishuSyncPanel() {
               <button
                 onClick={doPull}
                 disabled={pulling}
-                className="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 disabled:opacity-50 flex items-center gap-1.5"
+                className="text-xs px-3 py-1.5 rounded-full bg-foreground/5 border border-border text-foreground/85 hover:bg-foreground/10 disabled:opacity-50 flex items-center gap-1.5"
                 title="从飞书拉取选中日历的事件到本地"
               >
                 {pulling ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
@@ -893,26 +893,26 @@ export function FeishuSyncPanel() {
               <button
                 onClick={syncNow}
                 disabled={syncing}
-                className="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 disabled:opacity-50 flex items-center gap-1.5"
+                className="text-xs px-3 py-1.5 rounded-full bg-foreground/5 border border-border text-foreground/85 hover:bg-foreground/10 disabled:opacity-50 flex items-center gap-1.5"
               >
                 {syncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
                 立即同步
               </button>
               <button
                 onClick={disconnect}
-                className="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-rose-300 flex items-center gap-1.5"
+                className="text-xs px-3 py-1.5 rounded-full bg-foreground/5 border border-border text-muted-foreground hover:text-rose-300 flex items-center gap-1.5"
               >
                 <Unlink className="w-3 h-3" /> 断开
               </button>
             </>
           ) : (
             <>
-              <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-                <Link2 className="w-4 h-4 text-white/50" />
+              <div className="w-8 h-8 rounded-full bg-foreground/5 border border-border flex items-center justify-center">
+                <Link2 className="w-4 h-4 text-muted-foreground" />
               </div>
               <div className="flex-1">
-                <div className="text-sm text-white/90">从下方挑一个飞书日历开始同步</div>
-                <div className="text-[11px] text-white/50">选中后会自动把本地日程推到该日历</div>
+                <div className="text-sm text-foreground">从下方挑一个飞书日历开始同步</div>
+                <div className="text-[11px] text-muted-foreground">选中后会自动把本地日程推到该日历</div>
               </div>
               <button
                 onClick={connect}
@@ -933,15 +933,15 @@ export function FeishuSyncPanel() {
           )}
         </div>
 
-        <div className="px-4 py-3 border-b border-white/8">
-          <div className="text-[11px] text-white/50 mb-2 flex items-center justify-between">
+        <div className="px-4 py-3 border-b border-border/70">
+          <div className="text-[11px] text-muted-foreground mb-2 flex items-center justify-between">
             <span className="flex items-center gap-1.5">
               <Calendar className="w-3 h-3" /> 选择要同步的日历
             </span>
             <button
               onClick={loadCalendars}
               disabled={loadingCalendars}
-              className="text-white/40 hover:text-white/70 flex items-center gap-1 disabled:opacity-50"
+              className="text-muted-foreground/70 hover:text-foreground/75 flex items-center gap-1 disabled:opacity-50"
             >
               {loadingCalendars ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
               刷新
@@ -951,11 +951,11 @@ export function FeishuSyncPanel() {
           {calendarsError ? (
             <div className="text-[11px] text-rose-300 py-2">读取失败：{calendarsError}</div>
           ) : loadingCalendars && calendars.length === 0 ? (
-            <div className="text-[11px] text-white/40 py-4 text-center flex items-center justify-center gap-1.5">
+            <div className="text-[11px] text-muted-foreground/70 py-4 text-center flex items-center justify-center gap-1.5">
               <Loader2 className="w-3 h-3 animate-spin" /> 正在拉取飞书日历…
             </div>
           ) : calendars.length === 0 ? (
-            <div className="text-[11px] text-white/40 py-4 text-center">
+            <div className="text-[11px] text-muted-foreground/70 py-4 text-center">
               没有可见日历。请到飞书后台「权限管理」给应用开通 calendar:calendar 权限并把日历分享给应用。
             </div>
           ) : (
@@ -970,13 +970,13 @@ export function FeishuSyncPanel() {
                     className={`text-left px-3 py-2 rounded-lg border transition flex items-center gap-2.5 ${
                       active
                         ? "bg-amber-glow/15 border-amber-glow/40"
-                        : "bg-white/[0.03] border-white/8 hover:bg-white/[0.06]"
+                        : "bg-foreground/[0.04] border-border/70 hover:bg-foreground/[0.08]"
                     }`}
                   >
                     <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: color }} />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-white/90 truncate">{c.name}</div>
-                      <div className="text-[10px] text-white/40 truncate">
+                      <div className="text-sm text-foreground truncate">{c.name}</div>
+                      <div className="text-[10px] text-muted-foreground/70 truncate">
                         {c.role || c.type || "日历"}
                       </div>
                     </div>
@@ -988,20 +988,20 @@ export function FeishuSyncPanel() {
           )}
         </div>
 
-        <div className="px-4 py-3 border-b border-white/8 flex items-center gap-3">
+        <div className="px-4 py-3 border-b border-border/70 flex items-center gap-3">
           <div className="flex-1">
-            <div className="text-sm text-white/90">同步方向</div>
-            <div className="text-[11px] text-white/50">
+            <div className="text-sm text-foreground">同步方向</div>
+            <div className="text-[11px] text-muted-foreground">
               {state.direction === "two-way"
                 ? "两端任意修改互相覆盖（最后修改者胜）"
                 : "Sylva 的变更推送到飞书，远端改动不回流"}
             </div>
           </div>
-          <div className="flex bg-white/5 border border-white/10 rounded-full p-0.5 text-[11px]">
+          <div className="flex bg-foreground/5 border border-border rounded-full p-0.5 text-[11px]">
             <button
               onClick={() => onSetDirection("two-way")}
               className={`px-3 py-1 rounded-full flex items-center gap-1 transition ${
-                state.direction === "two-way" ? "bg-white/10 text-white" : "text-white/50"
+                state.direction === "two-way" ? "bg-foreground/10 text-foreground" : "text-muted-foreground"
               }`}
             >
               <ArrowUpDown className="w-3 h-3" /> 双向
@@ -1009,7 +1009,7 @@ export function FeishuSyncPanel() {
             <button
               onClick={() => onSetDirection("push-only")}
               className={`px-3 py-1 rounded-full flex items-center gap-1 transition ${
-                state.direction === "push-only" ? "bg-white/10 text-white" : "text-white/50"
+                state.direction === "push-only" ? "bg-foreground/10 text-foreground" : "text-muted-foreground"
               }`}
             >
               <ArrowUp className="w-3 h-3" /> 仅推送
@@ -1017,10 +1017,10 @@ export function FeishuSyncPanel() {
           </div>
         </div>
 
-        <div className="px-4 py-3 border-b border-white/8 space-y-3">
+        <div className="px-4 py-3 border-b border-border/70 space-y-3">
           <div className="flex items-center gap-2">
-            <div className="text-sm text-white/90">推送规则</div>
-            <div className="text-[11px] text-white/40">控制哪些日程项会被同步到飞书</div>
+            <div className="text-sm text-foreground">推送规则</div>
+            <div className="text-[11px] text-muted-foreground/70">控制哪些日程项会被同步到飞书</div>
             {pushRulesSaved && (
               <span className="ml-auto text-[10px] text-emerald-300 flex items-center gap-1">
                 <Check className="w-3 h-3" /> 已保存
@@ -1030,7 +1030,7 @@ export function FeishuSyncPanel() {
 
           {/* 类型 */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[11px] text-white/50 w-16 shrink-0">同步类型</span>
+            <span className="text-[11px] text-muted-foreground w-16 shrink-0">同步类型</span>
             {(["event", "reminder", "todo"] as const).map((t) => {
               const on = pushRules.allowedTypes.includes(t);
               const label = t === "event" ? "事件" : t === "reminder" ? "提醒" : "待办";
@@ -1049,7 +1049,7 @@ export function FeishuSyncPanel() {
                   className={`text-[11px] px-2.5 py-1 rounded-full border transition ${
                     on
                       ? "bg-amber-glow/20 border-amber-glow/40 text-amber-100"
-                      : "bg-white/5 border-white/10 text-white/50 hover:text-white/80"
+                      : "bg-foreground/5 border-border text-muted-foreground hover:text-foreground/85"
                   }`}
                 >
                   {label}
@@ -1060,7 +1060,7 @@ export function FeishuSyncPanel() {
 
           {/* 必须有时间 + 默认时间 */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[11px] text-white/50 w-16 shrink-0">时间要求</span>
+            <span className="text-[11px] text-muted-foreground w-16 shrink-0">时间要求</span>
             <button
               onClick={async () => {
                 const nr = { ...pushRules, requireTime: !pushRules.requireTime };
@@ -1070,13 +1070,13 @@ export function FeishuSyncPanel() {
               className={`text-[11px] px-2.5 py-1 rounded-full border transition ${
                 pushRules.requireTime
                   ? "bg-amber-glow/20 border-amber-glow/40 text-amber-100"
-                  : "bg-white/5 border-white/10 text-white/50 hover:text-white/80"
+                  : "bg-foreground/5 border-border text-muted-foreground hover:text-foreground/85"
               }`}
             >
               {pushRules.requireTime ? "仅推送有时间的" : "无时间也推送"}
             </button>
             {!pushRules.requireTime && (
-              <label className="flex items-center gap-1.5 text-[11px] text-white/60">
+              <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 默认时间
                 <input
                   type="time"
@@ -1085,7 +1085,7 @@ export function FeishuSyncPanel() {
                   onBlur={async () => {
                     try { await runSetPushRules({ data: pushRules }); setPushRulesSaved(true); setTimeout(() => setPushRulesSaved(false), 1200); } catch {}
                   }}
-                  className="bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-white/90 text-[11px] outline-none focus:border-amber-glow/40"
+                  className="bg-foreground/5 border border-border rounded px-1.5 py-0.5 text-foreground text-[11px] outline-none focus:border-amber-glow/40"
                 />
               </label>
             )}
@@ -1093,7 +1093,7 @@ export function FeishuSyncPanel() {
 
           {/* 已完成 */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-white/50 w-16 shrink-0">已完成项</span>
+            <span className="text-[11px] text-muted-foreground w-16 shrink-0">已完成项</span>
             <button
               onClick={async () => {
                 const nr = { ...pushRules, includeDone: !pushRules.includeDone };
@@ -1103,7 +1103,7 @@ export function FeishuSyncPanel() {
               className={`text-[11px] px-2.5 py-1 rounded-full border transition ${
                 pushRules.includeDone
                   ? "bg-amber-glow/20 border-amber-glow/40 text-amber-100"
-                  : "bg-white/5 border-white/10 text-white/50 hover:text-white/80"
+                  : "bg-foreground/5 border-border text-muted-foreground hover:text-foreground/85"
               }`}
             >
               {pushRules.includeDone ? "保留已完成" : "完成后从飞书移除"}
@@ -1150,14 +1150,14 @@ export function FeishuSyncPanel() {
               )}
             </div>
           )}
-          <div className="text-[11px] text-white/50 mb-2 flex items-center justify-between">
+          <div className="text-[11px] text-muted-foreground mb-2 flex items-center justify-between">
             <span>同步记录</span>
             {selected && (
-              <span className="text-white/40">→ {selected.name}</span>
+              <span className="text-muted-foreground/70">→ {selected.name}</span>
             )}
           </div>
           {logs.length === 0 ? (
-            <div className="text-xs text-white/40 py-4 text-center">
+            <div className="text-xs text-muted-foreground/70 py-4 text-center">
               {state.status === "connected"
                 ? "在 AI 规划里新增或调整日程后会出现在这里"
                 : "连接飞书后将记录每一次同步动作"}
@@ -1169,14 +1169,14 @@ export function FeishuSyncPanel() {
                   <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                     l.status === "ok" ? "bg-emerald-400" : l.status === "pending" ? "bg-amber-400" : "bg-rose-400"
                   }`} />
-                  <span className="text-white/40 tabular-nums shrink-0">{fmtClock(l.at)}</span>
-                  <span className="text-white/50 shrink-0">{opLabel(l.op)}</span>
+                  <span className="text-muted-foreground/70 tabular-nums shrink-0">{fmtClock(l.at)}</span>
+                  <span className="text-muted-foreground shrink-0">{opLabel(l.op)}</span>
                   <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${
                     l.source === "sylva" ? "bg-amber-glow/15 text-amber-glow" : "bg-sky-400/15 text-sky-300"
                   }`}>
                     {l.source === "sylva" ? "Sylva→飞书" : "飞书→Sylva"}
                   </span>
-                  <span className="text-white/80 truncate">{l.title}</span>
+                  <span className="text-foreground/85 truncate">{l.title}</span>
                 </li>
               ))}
             </ul>
@@ -1188,7 +1188,7 @@ export function FeishuSyncPanel() {
       <div className="widget mt-3 px-4 py-3">
         <div className="flex items-center gap-2 mb-2">
           <Bell className="w-3.5 h-3.5 text-amber-glow" />
-          <h4 className="text-sm text-white/90">黑客松雷达 · 飞书推送</h4>
+          <h4 className="text-sm text-foreground">黑客松雷达 · 飞书推送</h4>
         </div>
         {perm && (() => {
           const ok = perm.imMessageSubscribed && !perm.sendScopeIssue;
@@ -1197,7 +1197,7 @@ export function FeishuSyncPanel() {
             <div className={`mb-2 rounded-md border px-2.5 py-2 text-[11px] ${
               ok ? "border-emerald-400/30 bg-emerald-400/5 text-emerald-200"
                  : warn ? "border-amber-400/30 bg-amber-400/5 text-amber-100"
-                 : "border-white/10 bg-white/[0.03] text-white/70"
+                 : "border-border bg-foreground/[0.04] text-foreground/75"
             }`}>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-medium">权限与订阅自检</span>
@@ -1207,20 +1207,20 @@ export function FeishuSyncPanel() {
                 <span className={`text-[10px] px-1.5 py-0.5 rounded ${perm.imMessageSubscribed ? "bg-emerald-400/15 text-emerald-300" : "bg-rose-400/15 text-rose-300"}`}>
                   im.message.receive_v1 {perm.imMessageSubscribed ? "✓ 已订阅" : "✗ 未订阅"}
                 </span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded ${perm.sendScopeIssue ? "bg-rose-400/15 text-rose-300" : "bg-white/5 text-white/60"}`}>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded ${perm.sendScopeIssue ? "bg-rose-400/15 text-rose-300" : "bg-foreground/5 text-muted-foreground"}`}>
                   im:message 发送权限 {perm.sendScopeIssue ? "✗ 可能缺失" : "未发现错误"}
                 </span>
                 <button
                   type="button"
                   onClick={() => refreshPerm()}
                   disabled={permRefreshing}
-                  className="ml-auto text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-50"
+                  className="ml-auto text-[10px] px-2 py-0.5 rounded bg-foreground/5 border border-border text-foreground/75 hover:bg-foreground/10 disabled:opacity-50"
                 >
                   {permRefreshing ? "检测中…" : "重新检测"}
                 </button>
               </div>
               {!ok && (
-                <ul className="mt-1.5 space-y-0.5 text-[11px] text-white/80 list-disc pl-4">
+                <ul className="mt-1.5 space-y-0.5 text-[11px] text-foreground/85 list-disc pl-4">
                   {!perm.webhookReceived && (
                     <li>
                       未收到任何 webhook：去飞书开放平台「事件订阅」配置回调 URL 为
@@ -1237,7 +1237,7 @@ export function FeishuSyncPanel() {
                   {perm.sendScopeIssue && (
                     <li>
                       发送消息时报权限错误：开通 <code className="font-mono text-amber-glow/90">im:message:send_as_bot</code> 权限并重新发布版本。
-                      {perm.lastSendError && <span className="text-white/50"> · 最近错误：{perm.lastSendError}</span>}
+                      {perm.lastSendError && <span className="text-muted-foreground"> · 最近错误：{perm.lastSendError}</span>}
                     </li>
                   )}
                 </ul>
@@ -1245,15 +1245,15 @@ export function FeishuSyncPanel() {
             </div>
           );
         })()}
-        <div className="mb-2 rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[11px] text-white/70 flex items-center gap-2 flex-wrap">
-          <span className="text-white/50 shrink-0">最近捕获：</span>
+        <div className="mb-2 rounded-md border border-border bg-foreground/[0.04] px-2.5 py-1.5 text-[11px] text-foreground/75 flex items-center gap-2 flex-wrap">
+          <span className="text-muted-foreground shrink-0">最近捕获：</span>
           {capture?.openId ? (
             <>
               <code className="font-mono text-amber-glow/90 truncate max-w-[260px]" title={capture.openId}>{capture.openId}</code>
-              <span className="text-white/40">({capture.receiveIdType ?? "open_id"})</span>
+              <span className="text-muted-foreground/70">({capture.receiveIdType ?? "open_id"})</span>
               {capture.eventType && <span className="px-1.5 py-0.5 rounded bg-sky-400/15 text-sky-300 text-[10px]">{capture.eventType}</span>}
               {capture.capturedAt && (
-                <span className="text-white/40 tabular-nums" title={capture.capturedAt}>
+                <span className="text-muted-foreground/70 tabular-nums" title={capture.capturedAt}>
                   {new Date(capture.capturedAt).toLocaleString()}
                 </span>
               )}
@@ -1262,7 +1262,7 @@ export function FeishuSyncPanel() {
               )}
             </>
           ) : (
-            <span className="text-white/40">还没有捕获到 sender.open_id（向机器人发一条私信即可）</span>
+            <span className="text-muted-foreground/70">还没有捕获到 sender.open_id（向机器人发一条私信即可）</span>
           )}
           {capture?.openId && capture.openId !== notify.receiveId && (
             <button
@@ -1339,17 +1339,17 @@ export function FeishuSyncPanel() {
             type="button"
             onClick={() => refreshCapture()}
             disabled={captureRefreshing}
-            className={`${capture?.openId && capture.openId !== notify.receiveId ? "" : "ml-auto"} text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-50`}
+            className={`${capture?.openId && capture.openId !== notify.receiveId ? "" : "ml-auto"} text-[10px] px-2 py-0.5 rounded bg-foreground/5 border border-border text-foreground/75 hover:bg-foreground/10 disabled:opacity-50`}
           >
             {captureRefreshing ? "刷新中…" : "刷新"}
           </button>
         </div>
         {/* 捕获/错误明细诊断 */}
-        <div className="mb-2 rounded-md border border-white/10 bg-white/[0.02]">
+        <div className="mb-2 rounded-md border border-border bg-foreground/[0.03]">
           <button
             type="button"
             onClick={() => { setDiagOpen((v) => !v); if (!diag) refreshDiag(); }}
-            className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] text-white/70 hover:bg-white/[0.04]"
+            className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] text-foreground/75 hover:bg-foreground/[0.05]"
           >
             <AlertTriangle className="w-3 h-3 text-amber-300" />
             <span className="font-medium">捕获 / 错误明细</span>
@@ -1359,7 +1359,7 @@ export function FeishuSyncPanel() {
             {diag && diag.reasons.length === 0 && (
               <span className="px-1.5 py-0.5 rounded bg-emerald-400/15 text-emerald-300 text-[10px]">未发现明显问题</span>
             )}
-            <span className="ml-auto text-white/40">{diagOpen ? "收起" : "展开"}</span>
+            <span className="ml-auto text-muted-foreground/70">{diagOpen ? "收起" : "展开"}</span>
           </button>
           {diagOpen && (
             <div className="px-2.5 pb-2 space-y-2 text-[11px]">
@@ -1377,7 +1377,7 @@ export function FeishuSyncPanel() {
                   type="button"
                   onClick={refreshDiag}
                   disabled={diagLoading}
-                  className="text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-50"
+                  className="text-[10px] px-2 py-0.5 rounded bg-foreground/5 border border-border text-foreground/75 hover:bg-foreground/10 disabled:opacity-50"
                 >
                   {diagLoading ? "刷新中…" : "刷新明细"}
                 </button>
@@ -1386,7 +1386,7 @@ export function FeishuSyncPanel() {
                     {pingResult.ok ? `✓ ${pingResult.status} · ${pingResult.durationMs}ms` : `✗ ${pingResult.error ?? "失败"}`}
                   </span>
                 )}
-                <span className="text-white/40 ml-auto">向自身 webhook 发送 url_verification 并重新判断状态</span>
+                <span className="text-muted-foreground/70 ml-auto">向自身 webhook 发送 url_verification 并重新判断状态</span>
               </div>
 
               {diag && diag.reasons.length > 0 && (
@@ -1397,7 +1397,7 @@ export function FeishuSyncPanel() {
                       <li key={i} className="text-rose-100/90">
                         <span className="font-mono text-[10px] px-1 py-0.5 mr-1 rounded bg-rose-400/15 text-rose-200">{r.code}</span>
                         {r.text}
-                        {r.hint && <div className="text-white/50 mt-0.5">→ {r.hint}</div>}
+                        {r.hint && <div className="text-muted-foreground mt-0.5">→ {r.hint}</div>}
                       </li>
                     ))}
                   </ul>
@@ -1407,18 +1407,18 @@ export function FeishuSyncPanel() {
               {diag && (
                 <div className="space-y-2">
                   <div>
-                    <div className="text-white/60 mb-1">最近捕获日志（{diag.captureLogs.length}）</div>
+                    <div className="text-muted-foreground mb-1">最近捕获日志（{diag.captureLogs.length}）</div>
                     {diag.captureLogs.length === 0 ? (
-                      <div className="text-white/40">尚无 capture_open_id 日志</div>
+                      <div className="text-muted-foreground/70">尚无 capture_open_id 日志</div>
                     ) : (
                       <ul className="space-y-1">
                         {diag.captureLogs.map((l) => (
                           <li key={l.id} className="flex items-start gap-2 border-l-2 pl-2" style={{ borderColor: l.level === "error" ? "rgba(244,63,94,0.5)" : l.level === "warn" ? "rgba(251,191,36,0.5)" : "rgba(255,255,255,0.15)" }}>
-                            <span className="text-white/40 tabular-nums shrink-0">{new Date(l.at).toLocaleTimeString()}</span>
-                            <span className={`text-[10px] px-1 py-0.5 rounded shrink-0 ${l.level === "error" ? "bg-rose-400/15 text-rose-300" : l.level === "warn" ? "bg-amber-400/15 text-amber-300" : "bg-white/5 text-white/60"}`}>{l.level}</span>
+                            <span className="text-muted-foreground/70 tabular-nums shrink-0">{new Date(l.at).toLocaleTimeString()}</span>
+                            <span className={`text-[10px] px-1 py-0.5 rounded shrink-0 ${l.level === "error" ? "bg-rose-400/15 text-rose-300" : l.level === "warn" ? "bg-amber-400/15 text-amber-300" : "bg-foreground/5 text-muted-foreground"}`}>{l.level}</span>
                             <div className="min-w-0 flex-1">
-                              <div className="text-white/80 break-words">{l.message || l.error || "（无消息）"}</div>
-                              <div className="text-white/40 text-[10px] flex flex-wrap gap-x-2">
+                              <div className="text-foreground/85 break-words">{l.message || l.error || "（无消息）"}</div>
+                              <div className="text-muted-foreground/70 text-[10px] flex flex-wrap gap-x-2">
                                 {l.eventType && <span>event: <code className="font-mono">{l.eventType}</code></span>}
                                 {l.senderOpenId && <span>open_id: <code className="font-mono">{l.senderOpenId.slice(0, 14)}…</code></span>}
                                 {l.requestId && <span title={l.requestId}>req: <code className="font-mono">{l.requestId.slice(0, 8)}</code></span>}
@@ -1434,17 +1434,17 @@ export function FeishuSyncPanel() {
                   </div>
 
                   <div>
-                    <div className="text-white/60 mb-1">最近发送日志（{diag.sendLogs.length}）</div>
+                    <div className="text-muted-foreground mb-1">最近发送日志（{diag.sendLogs.length}）</div>
                     {diag.sendLogs.length === 0 ? (
-                      <div className="text-white/40">尚无 send 相关日志</div>
+                      <div className="text-muted-foreground/70">尚无 send 相关日志</div>
                     ) : (
                       <ul className="space-y-1">
                         {diag.sendLogs.map((l) => (
                           <li key={l.id} className="flex items-start gap-2 border-l-2 pl-2" style={{ borderColor: l.level === "error" ? "rgba(244,63,94,0.5)" : "rgba(255,255,255,0.15)" }}>
-                            <span className="text-white/40 tabular-nums shrink-0">{new Date(l.at).toLocaleTimeString()}</span>
-                            <span className={`text-[10px] px-1 py-0.5 rounded shrink-0 ${l.level === "error" ? "bg-rose-400/15 text-rose-300" : "bg-white/5 text-white/60"}`}>{l.step}</span>
+                            <span className="text-muted-foreground/70 tabular-nums shrink-0">{new Date(l.at).toLocaleTimeString()}</span>
+                            <span className={`text-[10px] px-1 py-0.5 rounded shrink-0 ${l.level === "error" ? "bg-rose-400/15 text-rose-300" : "bg-foreground/5 text-muted-foreground"}`}>{l.step}</span>
                             <div className="min-w-0 flex-1">
-                              <div className="text-white/80 break-words">{l.message || l.error || "（无消息）"}</div>
+                              <div className="text-foreground/85 break-words">{l.message || l.error || "（无消息）"}</div>
                               {l.error && l.message !== l.error && <div className="text-rose-200/80 text-[10px] break-words">err: {l.error}</div>}
                             </div>
                           </li>
@@ -1454,18 +1454,18 @@ export function FeishuSyncPanel() {
                   </div>
 
                   <div>
-                    <div className="text-white/60 mb-1">其它告警/错误（{diag.errorLogs.length}）</div>
+                    <div className="text-muted-foreground mb-1">其它告警/错误（{diag.errorLogs.length}）</div>
                     {diag.errorLogs.length === 0 ? (
-                      <div className="text-white/40">最近无告警或错误</div>
+                      <div className="text-muted-foreground/70">最近无告警或错误</div>
                     ) : (
                       <ul className="space-y-1 max-h-48 overflow-auto pr-1">
                         {diag.errorLogs.map((l) => (
                           <li key={l.id} className="flex items-start gap-2 border-l-2 pl-2" style={{ borderColor: l.level === "error" ? "rgba(244,63,94,0.5)" : "rgba(251,191,36,0.5)" }}>
-                            <span className="text-white/40 tabular-nums shrink-0">{new Date(l.at).toLocaleTimeString()}</span>
+                            <span className="text-muted-foreground/70 tabular-nums shrink-0">{new Date(l.at).toLocaleTimeString()}</span>
                             <span className={`text-[10px] px-1 py-0.5 rounded shrink-0 ${l.level === "error" ? "bg-rose-400/15 text-rose-300" : "bg-amber-400/15 text-amber-300"}`}>{l.step}</span>
                             <div className="min-w-0 flex-1">
-                              <div className="text-white/80 break-words">{l.message || l.error || "（无消息）"}</div>
-                              <div className="text-white/40 text-[10px] flex flex-wrap gap-x-2">
+                              <div className="text-foreground/85 break-words">{l.message || l.error || "（无消息）"}</div>
+                              <div className="text-muted-foreground/70 text-[10px] flex flex-wrap gap-x-2">
                                 {l.eventType && <span>event: <code className="font-mono">{l.eventType}</code></span>}
                                 {typeof l.status === "number" && <span>status: {l.status}</span>}
                                 {l.requestId && <span>req: <code className="font-mono">{l.requestId.slice(0, 8)}</code></span>}
@@ -1486,14 +1486,14 @@ export function FeishuSyncPanel() {
           <div className={`mb-2 rounded-md border px-2.5 py-1.5 text-[11px] flex items-center gap-2 flex-wrap ${
             verify.status === "ok" ? "border-emerald-400/30 bg-emerald-400/5 text-emerald-200"
               : verify.status === "fail" ? "border-rose-400/30 bg-rose-400/10 text-rose-200"
-              : "border-white/10 bg-white/[0.03] text-white/70"
+              : "border-border bg-foreground/[0.04] text-foreground/75"
           }`}>
             <span className="font-medium">同步验证</span>
             {verify.status === "verifying" && <><Loader2 className="w-3 h-3 animate-spin" /><span>正在用新接收人发送测试卡片…</span></>}
             {verify.status === "ok" && <span>✓ {verify.msg}</span>}
             {verify.status === "fail" && <span>✗ {verify.msg}</span>}
             {verify.at && verify.status !== "verifying" && (
-              <span className="text-white/40 tabular-nums ml-auto">{new Date(verify.at).toLocaleTimeString()}</span>
+              <span className="text-muted-foreground/70 tabular-nums ml-auto">{new Date(verify.at).toLocaleTimeString()}</span>
             )}
             {verify.status === "fail" && (
               <button
@@ -1509,7 +1509,7 @@ export function FeishuSyncPanel() {
                     setVerify({ status: "fail", msg: e?.message ?? "请求失败", at: new Date().toISOString() });
                   }
                 }}
-                className="text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/80 hover:bg-white/10"
+                className="text-[10px] px-2 py-0.5 rounded bg-foreground/5 border border-border text-foreground/85 hover:bg-foreground/10"
               >
                 重试验证
               </button>
@@ -1520,7 +1520,7 @@ export function FeishuSyncPanel() {
           <select
             value={notify.receiveIdType}
             onChange={(e) => setNotify({ ...notify, receiveIdType: e.target.value as any })}
-            className="bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white/80 outline-none"
+            className="bg-foreground/5 border border-border rounded-md px-2 py-1 text-xs text-foreground/85 outline-none"
           >
             <option value="open_id">open_id</option>
             <option value="user_id">user_id</option>
@@ -1539,12 +1539,12 @@ export function FeishuSyncPanel() {
               setNotify({ ...notify, receiveId: e.target.value, receiveIdType: t });
             }}
             placeholder="接收人 ID（推荐 open_id 或群 chat_id）"
-            className="flex-1 bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white/90 placeholder:text-white/30 outline-none"
+            className="flex-1 bg-foreground/5 border border-border rounded-md px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground/60 outline-none"
           />
           <button
             type="button"
             onClick={() => setLookup((s) => ({ ...s, open: !s.open, result: null }))}
-            className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 whitespace-nowrap"
+            className="text-[11px] px-2 py-1 rounded-md bg-foreground/5 border border-border text-foreground/75 hover:bg-foreground/10 whitespace-nowrap"
           >
             查我的 open_id
           </button>
@@ -1554,21 +1554,21 @@ export function FeishuSyncPanel() {
               if (!chats.open && chats.items.length === 0) doListChats();
               else setChats((s) => ({ ...s, open: !s.open }));
             }}
-            className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 whitespace-nowrap"
+            className="text-[11px] px-2 py-1 rounded-md bg-foreground/5 border border-border text-foreground/75 hover:bg-foreground/10 whitespace-nowrap"
           >
             列出群聊
           </button>
           <button
             type="button"
             onClick={() => setBatch((s) => ({ ...s, open: !s.open, error: null }))}
-            className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 whitespace-nowrap"
+            className="text-[11px] px-2 py-1 rounded-md bg-foreground/5 border border-border text-foreground/75 hover:bg-foreground/10 whitespace-nowrap"
           >
             批量查询
           </button>
         </div>
         {batch.open && (
-          <div className="mb-2 px-3 py-2 rounded-md border border-white/10 bg-white/[0.03] space-y-2">
-            <div className="text-[11px] text-white/60">
+          <div className="mb-2 px-3 py-2 rounded-md border border-border bg-foreground/[0.04] space-y-2">
+            <div className="text-[11px] text-muted-foreground">
               一行一个邮箱或手机号（也支持逗号/空格分隔），自动识别后批量返回 <code>open_id</code>。最多 50 条。
             </div>
             <textarea
@@ -1576,7 +1576,7 @@ export function FeishuSyncPanel() {
               onChange={(e) => setBatch((s) => ({ ...s, input: e.target.value, error: null }))}
               rows={4}
               placeholder={"name@company.com\n13800000000\n+8613900000000"}
-              className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-xs text-white/90 placeholder:text-white/30 outline-none font-mono"
+              className="w-full bg-foreground/5 border border-border rounded-md px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/60 outline-none font-mono"
             />
             <div className="flex items-center gap-2">
               <button
@@ -1589,13 +1589,13 @@ export function FeishuSyncPanel() {
               {batch.results.length > 0 && (
                 <button
                   onClick={copyAllOpenIds}
-                  className="text-[11px] px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-white/80 hover:bg-white/10"
+                  className="text-[11px] px-2.5 py-1 rounded-md bg-foreground/5 border border-border text-foreground/85 hover:bg-foreground/10"
                 >
                   {batch.copied ? "✓ 已复制" : "复制全部（TSV）"}
                 </button>
               )}
               {batch.results.length > 0 && (
-                <span className="text-[10px] text-white/50">
+                <span className="text-[10px] text-muted-foreground">
                   成功 {batch.results.filter((r) => r.openId).length} / {batch.results.length}
                 </span>
               )}
@@ -1606,12 +1606,12 @@ export function FeishuSyncPanel() {
               </div>
             )}
             {batch.results.length > 0 && (
-              <div className="max-h-56 overflow-auto rounded-md border border-white/10 divide-y divide-white/5">
+              <div className="max-h-56 overflow-auto rounded-md border border-border divide-y divide-border/50">
                 {batch.results.map((r, i) => (
                   <div key={i} className="px-2 py-1.5 flex items-center justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="text-[11px] text-white/80 truncate">
-                        <span className="text-white/40 mr-1">[{r.kind === "email" ? "邮" : "手"}]</span>
+                      <div className="text-[11px] text-foreground/85 truncate">
+                        <span className="text-muted-foreground/70 mr-1">[{r.kind === "email" ? "邮" : "手"}]</span>
                         {r.input}
                       </div>
                       <div className={`text-[10px] font-mono truncate ${r.openId ? "text-emerald-300/90" : "text-rose-300/80"}`}>
@@ -1623,7 +1623,7 @@ export function FeishuSyncPanel() {
                         onClick={() => {
                           setNotify((n) => ({ ...n, receiveId: r.openId!, receiveIdType: "open_id" }));
                         }}
-                        className="text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-amber-glow hover:bg-white/10 shrink-0"
+                        className="text-[10px] px-2 py-0.5 rounded bg-foreground/5 border border-border text-amber-glow hover:bg-foreground/10 shrink-0"
                       >
                         填入
                       </button>
@@ -1635,15 +1635,15 @@ export function FeishuSyncPanel() {
           </div>
         )}
         {chats.open && (
-          <div className="mb-2 px-3 py-2 rounded-md border border-white/10 bg-white/[0.03] space-y-2">
+          <div className="mb-2 px-3 py-2 rounded-md border border-border bg-foreground/[0.04] space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <div className="text-[11px] text-white/60">
+              <div className="text-[11px] text-muted-foreground">
                 机器人所在的群（需 <code>im:chat:readonly</code>）。点击即可填入 <code>chat_id</code>。
               </div>
               <button
                 onClick={doListChats}
                 disabled={chats.loading}
-                className="text-[11px] px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 flex items-center gap-1"
+                className="text-[11px] px-2 py-0.5 rounded-md bg-foreground/5 border border-border text-foreground/75 hover:bg-foreground/10 flex items-center gap-1"
               >
                 {chats.loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
                 刷新
@@ -1655,7 +1655,7 @@ export function FeishuSyncPanel() {
               </div>
             )}
             {!chats.error && !chats.loading && chats.items.length === 0 && (
-              <div className="text-[11px] text-white/50">
+              <div className="text-[11px] text-muted-foreground">
                 没有发现群聊。请先把机器人拉进群，再点刷新。
               </div>
             )}
@@ -1665,20 +1665,20 @@ export function FeishuSyncPanel() {
                   value={chats.filter}
                   onChange={(e) => setChats((s) => ({ ...s, filter: e.target.value }))}
                   placeholder="搜索群名…"
-                  className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white/90 placeholder:text-white/30 outline-none"
+                  className="w-full bg-foreground/5 border border-border rounded-md px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground/60 outline-none"
                 />
-                <div className="max-h-48 overflow-auto divide-y divide-white/5 rounded-md border border-white/10">
+                <div className="max-h-48 overflow-auto divide-y divide-border/50 rounded-md border border-border">
                   {chats.items
                     .filter((c) => !chats.filter.trim() || c.name.toLowerCase().includes(chats.filter.trim().toLowerCase()))
                     .map((c) => (
                       <button
                         key={c.chat_id}
                         onClick={() => pickChat(c.chat_id)}
-                        className="w-full text-left px-2 py-1.5 hover:bg-white/[0.04] flex items-center justify-between gap-2"
+                        className="w-full text-left px-2 py-1.5 hover:bg-foreground/[0.05] flex items-center justify-between gap-2"
                       >
                         <div className="min-w-0">
-                          <div className="text-xs text-white/90 truncate">{c.name}</div>
-                          <div className="text-[10px] text-white/40 font-mono truncate">{c.chat_id}</div>
+                          <div className="text-xs text-foreground truncate">{c.name}</div>
+                          <div className="text-[10px] text-muted-foreground/70 font-mono truncate">{c.chat_id}</div>
                         </div>
                         <span className="text-[10px] text-amber-glow shrink-0">填入</span>
                       </button>
@@ -1689,8 +1689,8 @@ export function FeishuSyncPanel() {
           </div>
         )}
         {lookup.open && (
-          <div className="mb-2 px-3 py-2 rounded-md border border-white/10 bg-white/[0.03] space-y-2">
-            <div className="flex items-center justify-between gap-2 text-[11px] text-white/60">
+          <div className="mb-2 px-3 py-2 rounded-md border border-border bg-foreground/[0.04] space-y-2">
+            <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
               <div>
                 输入企业内 <b>邮箱 / 手机号 / 姓名 / 工号</b>，反查你的 <code>open_id</code>。
               </div>
@@ -1703,7 +1703,7 @@ export function FeishuSyncPanel() {
                     </span>
                     <button
                       onClick={revokeFeishuAuth}
-                      className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/70 hover:bg-white/10"
+                      className="px-2 py-0.5 rounded bg-foreground/5 border border-border text-foreground/75 hover:bg-foreground/10"
                     >
                       解除
                     </button>
@@ -1719,14 +1719,14 @@ export function FeishuSyncPanel() {
                 )}
               </div>
             </div>
-            <div className="text-[10px] text-white/40">
+            <div className="text-[10px] text-muted-foreground/70">
               按姓名搜索需先点「授权飞书」完成 OAuth（获取 <code>user_access_token</code>）；邮箱 / 手机号 / 工号可直接用机器人 token 查询。
             </div>
             <div className="flex items-center gap-2">
               <select
                 value={lookup.type}
                 onChange={(e) => setLookup({ ...lookup, type: e.target.value as any, result: null })}
-                className="bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white/80 outline-none"
+                className="bg-foreground/5 border border-border rounded-md px-2 py-1 text-xs text-foreground/85 outline-none"
               >
                 <option value="email">邮箱</option>
                 <option value="mobile">手机号</option>
@@ -1754,7 +1754,7 @@ export function FeishuSyncPanel() {
                 }}
                 onKeyDown={(e) => e.key === "Enter" && doLookupOpenId()}
                 placeholder="输入邮箱 / 手机号 / 姓名 / 工号，自动识别"
-                className="flex-1 bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white/90 placeholder:text-white/30 outline-none"
+                className="flex-1 bg-foreground/5 border border-border rounded-md px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground/60 outline-none"
               />
               <button
                 onClick={doLookupOpenId}
@@ -1771,13 +1771,13 @@ export function FeishuSyncPanel() {
                 </div>
                 {lookup.result.ok && lookup.result.openId && (
                   <>
-                    <div className="text-[11px] font-mono break-all px-2 py-1 rounded bg-black/30 border border-white/10 text-white/80">
+                    <div className="text-[11px] font-mono break-all px-2 py-1 rounded bg-background/50 border border-border text-foreground/85">
                       {lookup.result.openId}
                     </div>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={copyOpenId}
-                        className="text-[11px] px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-white/80 hover:bg-white/10"
+                        className="text-[11px] px-2.5 py-1 rounded-md bg-foreground/5 border border-border text-foreground/85 hover:bg-foreground/10"
                       >
                         {lookup.copied ? "✓ 已复制" : "复制 open_id"}
                       </button>
@@ -1796,7 +1796,7 @@ export function FeishuSyncPanel() {
             )}
           </div>
         )}
-        <div className="flex flex-wrap items-center gap-3 mb-2 text-[11px] text-white/70">
+        <div className="flex flex-wrap items-center gap-3 mb-2 text-[11px] text-foreground/75">
           <label className="flex items-center gap-1.5">
             <input type="checkbox" checked={notify.notifyOnDiscover} onChange={(e) => setNotify({ ...notify, notifyOnDiscover: e.target.checked })} /> 发现新比赛时推送
           </label>
@@ -1805,7 +1805,7 @@ export function FeishuSyncPanel() {
           </label>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={saveNotify} className="text-[11px] px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10">
+          <button onClick={saveNotify} className="text-[11px] px-3 py-1 rounded-full bg-foreground/5 border border-border text-foreground/85 hover:bg-foreground/10">
             {notifySaved ? "已保存 ✓" : "保存"}
           </button>
           <button
@@ -1821,7 +1821,7 @@ export function FeishuSyncPanel() {
             </span>
           )}
         </div>
-        <p className="text-[10px] text-white/40 mt-2 leading-relaxed">
+        <p className="text-[10px] text-muted-foreground/70 mt-2 leading-relaxed">
           飞书后台需为应用开启 <code>im:message</code> 权限，并把「事件订阅 · 卡片回调」指向 <code>/api/public/feishu/webhook</code>。点击卡片「参加」会自动加入选中日历的日程。
         </p>
       </div>
@@ -1830,7 +1830,7 @@ export function FeishuSyncPanel() {
       <div className="widget mt-3 px-4 py-3">
         <div className="flex items-center gap-2 mb-2">
           <Bell className="w-3.5 h-3.5 text-sky-300" />
-          <h4 className="text-sm text-white/90">同步事件时间线</h4>
+          <h4 className="text-sm text-foreground">同步事件时间线</h4>
           {nextAutoSyncAt && (
             <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-glow/15 text-amber-glow tabular-nums">
               下次自动同步 · {new Date(nextAutoSyncAt).toLocaleTimeString()}
@@ -1840,14 +1840,14 @@ export function FeishuSyncPanel() {
             <button
               type="button"
               onClick={() => setTimeline([])}
-              className="ml-auto text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/60 hover:bg-white/10"
+              className="ml-auto text-[10px] px-2 py-0.5 rounded bg-foreground/5 border border-border text-muted-foreground hover:bg-foreground/10"
             >
               清空
             </button>
           )}
         </div>
         {timeline.length === 0 ? (
-          <p className="text-[11px] text-white/40">还没有事件 · 覆盖保存接收人、刷新配置或触发同步后会显示在这里。</p>
+          <p className="text-[11px] text-muted-foreground/70">还没有事件 · 覆盖保存接收人、刷新配置或触发同步后会显示在这里。</p>
         ) : (
           <ul className="space-y-1 max-h-56 overflow-y-auto pr-1">
             {timeline.map((e) => {
@@ -1870,8 +1870,8 @@ export function FeishuSyncPanel() {
               return (
                 <li key={e.id} className="flex items-start gap-2 text-[11px]">
                   <span className={`w-1.5 h-1.5 rounded-full shrink-0 mt-1.5 ${dotColor}`} />
-                  <span className="text-white/40 tabular-nums shrink-0 mt-px">{new Date(e.at).toLocaleTimeString()}</span>
-                  <span className="text-white/50 shrink-0 mt-px">{kindLabel}</span>
+                  <span className="text-muted-foreground/70 tabular-nums shrink-0 mt-px">{new Date(e.at).toLocaleTimeString()}</span>
+                  <span className="text-muted-foreground shrink-0 mt-px">{kindLabel}</span>
                   <span className="text-white/85 break-words">{e.msg}</span>
                 </li>
               );
@@ -1886,9 +1886,9 @@ export function FeishuSyncPanel() {
       <div className="widget mt-3 px-4 py-3">
         <div className="flex items-center gap-2 mb-2">
           <Bell className="w-3.5 h-3.5 text-indigo-300" />
-          <h4 className="text-sm text-white/90">每日小结提醒</h4>
+          <h4 className="text-sm text-foreground">每日小结提醒</h4>
         </div>
-        <div className="flex flex-wrap items-center gap-3 mb-2 text-[11px] text-white/70">
+        <div className="flex flex-wrap items-center gap-3 mb-2 text-[11px] text-foreground/75">
           <label className="flex items-center gap-1.5">
             <input
               type="checkbox"
@@ -1909,7 +1909,7 @@ export function FeishuSyncPanel() {
                 setRecap(next);
                 saveRecap(next);
               }}
-              className="bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white/80 outline-none"
+              className="bg-foreground/5 border border-border rounded-md px-2 py-1 text-xs text-foreground/85 outline-none"
             >
               {Array.from({ length: 24 }, (_, h) => (
                 <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>
@@ -1925,7 +1925,7 @@ export function FeishuSyncPanel() {
                 setRecap(next);
                 saveRecap(next);
               }}
-              className="bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white/80 outline-none max-w-[200px]"
+              className="bg-foreground/5 border border-border rounded-md px-2 py-1 text-xs text-foreground/85 outline-none max-w-[200px]"
             >
               {TIMEZONE_OPTIONS.map((tz) => (
                 <option key={tz.value} value={tz.value}>{tz.label}</option>
@@ -1939,7 +1939,7 @@ export function FeishuSyncPanel() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => saveRecap()}
-            className="text-[11px] px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10"
+            className="text-[11px] px-3 py-1 rounded-full bg-foreground/5 border border-border text-foreground/85 hover:bg-foreground/10"
           >
             {recapSaved ? "已保存 ✓" : "保存"}
           </button>
@@ -1953,7 +1953,7 @@ export function FeishuSyncPanel() {
           <button
             onClick={refreshTodayRecap}
             disabled={recapRefreshing}
-            className="text-[11px] px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 disabled:opacity-50 flex items-center gap-1"
+            className="text-[11px] px-3 py-1 rounded-full bg-foreground/5 border border-border text-foreground/85 hover:bg-foreground/10 disabled:opacity-50 flex items-center gap-1"
             title="重新从飞书拉取今日已提交的小结/手帐/心情，并刷新日历与待办的完成标记"
           >
             {recapRefreshing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} 刷新今日小结
@@ -1970,23 +1970,23 @@ export function FeishuSyncPanel() {
           )}
         </div>
         <div className="mt-3 flex items-center gap-2 flex-wrap">
-          <span className="text-[11px] text-white/60">本地手帐已编辑时的回填策略：</span>
+          <span className="text-[11px] text-muted-foreground">本地手帐已编辑时的回填策略：</span>
           <select
             value={recapBackfillStrategy}
             onChange={(e) => setRecapBackfillStrategy(e.target.value as any)}
-            className="bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white/80 outline-none"
+            className="bg-foreground/5 border border-border rounded-md px-2 py-1 text-xs text-foreground/85 outline-none"
           >
             <option value="fill-empty">仅在为空时填充（默认 · 安全）</option>
             <option value="merge">合并追加到本地末尾</option>
             <option value="overwrite">用飞书内容覆盖本地</option>
           </select>
-          <span className="text-[10px] text-white/40">
+          <span className="text-[10px] text-muted-foreground/70">
             {recapBackfillStrategy === "overwrite" && "⚠️ 提交后会用飞书的小结/手帐/心情覆盖当天本地内容"}
             {recapBackfillStrategy === "merge" && "提交后会把飞书内容追加到本地手帐末尾（去重）"}
             {recapBackfillStrategy === "fill-empty" && "只在本地手帐为空时回填，保护已写内容"}
           </span>
         </div>
-        <p className="text-[10px] text-white/40 mt-2 leading-relaxed">
+        <p className="text-[10px] text-muted-foreground/70 mt-2 leading-relaxed">
           每天到点会通过飞书发一张卡片，点「去 Sylva 填写」直接跳到「记录 · 今日小结/手帐」。复用上方的接收人配置。
         </p>
       </div>
@@ -1994,7 +1994,7 @@ export function FeishuSyncPanel() {
 
 
 
-      <div className="mt-2 flex items-start gap-1.5 text-[11px] text-white/40">
+      <div className="mt-2 flex items-start gap-1.5 text-[11px] text-muted-foreground/70">
         <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
         <span>
           已接入真接口：本地新增/修改/删除 1.5 秒后自动推到飞书；点「拉取」把飞书最近 60 天事件抓回本地（实时回流需另配 Encrypt Key + 订阅事件）。

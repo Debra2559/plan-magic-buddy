@@ -29,12 +29,12 @@ export function SyncSummaryModal() {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && close()}>
-      <DialogContent className="max-w-2xl w-[95vw] bg-zinc-950/95 backdrop-blur-xl border-white/10 text-white">
+      <DialogContent className="max-w-2xl w-[95vw] bg-zinc-950/95 backdrop-blur-xl border-border text-foreground">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-amber-glow">
             <Sparkles className="w-4 h-4" /> {modeLabel} {total} 项 · 汇总入口
           </DialogTitle>
-          <DialogDescription className="text-white/55 text-xs">
+          <DialogDescription className="text-muted-foreground text-xs">
             已写入对应列表，点击下方分组可直接跳转，新条目会高亮提示。
           </DialogDescription>
         </DialogHeader>
@@ -66,11 +66,11 @@ export function SyncSummaryModal() {
           />
         </div>
 
-        <div className="flex items-center justify-between mt-2 pt-3 border-t border-white/10">
-          <p className="text-[10px] text-white/40">高亮提示将在 12 秒后自动消失</p>
+        <div className="flex items-center justify-between mt-2 pt-3 border-t border-border">
+          <p className="text-[10px] text-muted-foreground/70">高亮提示将在 12 秒后自动消失</p>
           <button
             onClick={close}
-            className="text-xs text-white/60 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/5 flex items-center gap-1"
+            className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg hover:bg-foreground/5 flex items-center gap-1"
           >
             <X className="w-3 h-3" /> 留在当前页
           </button>
@@ -97,9 +97,9 @@ function SummaryBlock({
 }) {
   if (count === 0) {
     return (
-      <div className="p-3 rounded-xl border border-white/8 bg-white/[0.02] flex items-center gap-2 opacity-50">
-        <Icon className="w-3.5 h-3.5 text-white/40" />
-        <span className="text-xs text-white/40">{label} · 本次无新增</span>
+      <div className="p-3 rounded-xl border border-border/70 bg-foreground/[0.03] flex items-center gap-2 opacity-50">
+        <Icon className="w-3.5 h-3.5 text-muted-foreground/70" />
+        <span className="text-xs text-muted-foreground/70">{label} · 本次无新增</span>
       </div>
     );
   }
@@ -121,16 +121,16 @@ function SummaryBlock({
       </div>
       <div className="space-y-1 max-h-32 overflow-auto pr-1">
         {items.slice(0, 6).map((it) => (
-          <div key={it.id} className="flex items-center gap-2 text-[11px] text-white/80">
-            {it.time && <span className="font-mono text-white/50 shrink-0 w-10">{it.time}</span>}
+          <div key={it.id} className="flex items-center gap-2 text-[11px] text-foreground/85">
+            {it.time && <span className="font-mono text-muted-foreground shrink-0 w-10">{it.time}</span>}
             <span className="flex-1 truncate">{it.title}</span>
-            <span className={`shrink-0 px-1.5 py-0.5 rounded border text-[9px] ${tagColor[it.tag] ?? "bg-white/10 text-white/70 border-white/15"}`}>
+            <span className={`shrink-0 px-1.5 py-0.5 rounded border text-[9px] ${tagColor[it.tag] ?? "bg-foreground/10 text-foreground/75 border-border"}`}>
               {it.tag}
             </span>
           </div>
         ))}
         {items.length > 6 && (
-          <div className="text-[10px] text-white/40 pt-1">还有 {items.length - 6} 项…</div>
+          <div className="text-[10px] text-muted-foreground/70 pt-1">还有 {items.length - 6} 项…</div>
         )}
       </div>
     </div>

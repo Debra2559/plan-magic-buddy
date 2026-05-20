@@ -46,34 +46,34 @@ export function AvatarCropDialog({ open, file, onClose, onConfirm }: Props) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="w-full max-w-md widget p-5 space-y-4 bg-background">
         <div className="flex items-center justify-between">
-          <h3 className="font-display text-base text-white">裁剪头像</h3>
-          <button onClick={handleClose} className="text-white/60 hover:text-white" disabled={busy}>
+          <h3 className="font-display text-base text-foreground">裁剪头像</h3>
+          <button onClick={handleClose} className="text-muted-foreground hover:text-foreground" disabled={busy}>
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="flex items-center gap-2 text-xs">
-          <span className="text-white/60">形状</span>
+          <span className="text-muted-foreground">形状</span>
           <button
             type="button"
             onClick={() => setShape("round")}
-            className={`px-2 py-1 rounded flex items-center gap-1 border ${shape === "round" ? "bg-amber-glow/20 border-amber-glow/40 text-amber-glow" : "bg-white/5 border-white/10 text-white/70"}`}
+            className={`px-2 py-1 rounded flex items-center gap-1 border ${shape === "round" ? "bg-amber-glow/20 border-amber-glow/40 text-amber-glow" : "bg-foreground/5 border-border text-foreground/75"}`}
           >
             <CircleIcon className="w-3 h-3" /> 圆形
           </button>
           <button
             type="button"
             onClick={() => setShape("square")}
-            className={`px-2 py-1 rounded flex items-center gap-1 border ${shape === "square" ? "bg-amber-glow/20 border-amber-glow/40 text-amber-glow" : "bg-white/5 border-white/10 text-white/70"}`}
+            className={`px-2 py-1 rounded flex items-center gap-1 border ${shape === "square" ? "bg-amber-glow/20 border-amber-glow/40 text-amber-glow" : "bg-foreground/5 border-border text-foreground/75"}`}
           >
             <Square className="w-3 h-3" /> 方形
           </button>
         </div>
 
-        <div className="relative w-full h-64 rounded-lg overflow-hidden bg-black/40 border border-white/10">
+        <div className="relative w-full h-64 rounded-lg overflow-hidden bg-background/60 border border-border">
           {imageUrl ? (
             <Cropper
               image={imageUrl}
@@ -87,14 +87,14 @@ export function AvatarCropDialog({ open, file, onClose, onConfirm }: Props) {
               onCropComplete={onCropComplete}
             />
           ) : (
-            <div className="flex items-center justify-center h-full text-white/40 text-xs">
+            <div className="flex items-center justify-center h-full text-muted-foreground/70 text-xs">
               <Loader2 className="w-4 h-4 animate-spin mr-2" /> 加载图片中
             </div>
           )}
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="text-[11px] text-white/60 w-10">缩放</span>
+          <span className="text-[11px] text-muted-foreground w-10">缩放</span>
           <input
             type="range" min={1} max={4} step={0.01}
             value={zoom}
@@ -103,15 +103,15 @@ export function AvatarCropDialog({ open, file, onClose, onConfirm }: Props) {
           />
         </div>
 
-        <div className="flex items-center gap-4 pt-1 border-t border-white/10">
-          <div className="text-xs text-white/60">最终效果</div>
+        <div className="flex items-center gap-4 pt-1 border-t border-border">
+          <div className="text-xs text-muted-foreground">最终效果</div>
           <PreviewBox imageUrl={imageUrl} area={areaPixels} shape={shape} size={64} />
           <PreviewBox imageUrl={imageUrl} area={areaPixels} shape={shape} size={32} />
         </div>
 
         <div className="flex justify-end gap-2 pt-2">
           <button onClick={handleClose} disabled={busy}
-            className="px-3 py-1.5 rounded bg-white/5 border border-white/10 text-white/70 text-xs hover:bg-white/10">
+            className="px-3 py-1.5 rounded bg-foreground/5 border border-border text-foreground/75 text-xs hover:bg-foreground/10">
             取消
           </button>
           <button onClick={handleConfirm} disabled={busy || !areaPixels}
@@ -132,7 +132,7 @@ function PreviewBox({
   if (!imageUrl || !area || area.width === 0) {
     return (
       <div style={{ width: size, height: size, borderRadius: radius }}
-        className="bg-white/5 border border-white/10" />
+        className="bg-foreground/5 border border-border" />
     );
   }
   const scale = size / area.width;
@@ -145,7 +145,7 @@ function PreviewBox({
         backgroundPosition: `${-area.x * scale}px ${-area.y * scale}px`,
         backgroundSize: "auto",
       }}
-      className="border border-white/10 overflow-hidden"
+      className="border border-border overflow-hidden"
       ref={(el) => {
         if (!el) return;
         // 让 backgroundSize 反映 scale：先拿到原图宽高

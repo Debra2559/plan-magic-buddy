@@ -87,18 +87,18 @@ export function ImageAttacher({ images, onChange, max = 6, maxSize, quality, cla
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-amber-glow hover:border-amber-glow/40 transition"
+        className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-foreground/5 border border-border text-muted-foreground hover:text-amber-glow hover:border-amber-glow/40 transition"
         title="添加图片（也可直接粘贴或拖入）"
       >
         <ImagePlus className="w-3 h-3" /> 加图片
       </button>
       {images.map((src, i) => (
         <div key={i} className="relative group">
-          <img src={src} alt="" className="w-12 h-12 object-cover rounded-md border border-white/10" />
+          <img src={src} alt="" className="w-12 h-12 object-cover rounded-md border border-border" />
           <button
             type="button"
             onClick={() => removeAt(i)}
-            className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-background/90 border border-white/20 text-white/70 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
+            className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-background/90 border border-border text-foreground/75 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
             title="移除"
           >
             <X className="w-2.5 h-2.5" />
@@ -106,7 +106,7 @@ export function ImageAttacher({ images, onChange, max = 6, maxSize, quality, cla
         </div>
       ))}
       {images.length > 0 && (
-        <span className="text-[10px] text-white/40">{images.length}/{max}</span>
+        <span className="text-[10px] text-muted-foreground/70">{images.length}/{max}</span>
       )}
     </div>
   );

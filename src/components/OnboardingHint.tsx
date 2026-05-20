@@ -15,7 +15,7 @@ export function OnboardingHint({ onClose }: { onClose: () => void }) {
   const isLast = i === steps.length - 1;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-black/40 backdrop-blur-sm animate-in fade-in">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-background/60 backdrop-blur-sm animate-in fade-in">
       <div className="w-full max-w-md widget p-6 space-y-5 relative">
         <button
           onClick={onClose}

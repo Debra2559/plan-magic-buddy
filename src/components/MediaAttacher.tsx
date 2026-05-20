@@ -49,7 +49,7 @@ function AudioPill({ src }: { src: string }) {
   const pct = dur > 0 ? (cur / dur) * 100 : 0;
 
   return (
-    <div className="flex items-center gap-2 pl-1.5 pr-2 py-1 rounded-full bg-white/[0.04] border border-white/10">
+    <div className="flex items-center gap-2 pl-1.5 pr-2 py-1 rounded-full bg-foreground/[0.05] border border-border">
       <audio ref={ref} src={src} preload="metadata" className="hidden" />
       <button
         type="button"
@@ -58,10 +58,10 @@ function AudioPill({ src }: { src: string }) {
       >
         {playing ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 translate-x-[1px]" />}
       </button>
-      <div className="w-20 h-1 rounded-full bg-white/10 overflow-hidden">
+      <div className="w-20 h-1 rounded-full bg-foreground/10 overflow-hidden">
         <div className="h-full bg-amber-glow/70 transition-[width]" style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-[10px] tabular-nums text-white/60">
+      <span className="text-[10px] tabular-nums text-muted-foreground">
         {mmssShort(playing || cur > 0 ? cur : dur)}
       </span>
     </div>
@@ -223,7 +223,7 @@ export function MediaAttacher({ videos, audios, images = [], onChange, maxVideos
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] border transition ${
             recording
               ? "bg-destructive/20 border-destructive/50 text-destructive animate-pulse"
-              : "bg-white/[0.04] border-white/10 text-white/60 hover:text-amber-glow hover:border-amber-glow/40"
+              : "bg-foreground/[0.05] border-border text-muted-foreground hover:text-amber-glow hover:border-amber-glow/40"
           } disabled:opacity-40`}
           title={recording ? "结束录音" : "录一段语音"}
         >
@@ -235,7 +235,7 @@ export function MediaAttacher({ videos, audios, images = [], onChange, maxVideos
           type="button"
           onClick={pickFile}
           disabled={uploading || recording}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] border bg-white/[0.04] border-white/10 text-white/60 hover:text-amber-glow hover:border-amber-glow/40 transition disabled:opacity-40"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] border bg-foreground/[0.05] border-border text-muted-foreground hover:text-amber-glow hover:border-amber-glow/40 transition disabled:opacity-40"
           title={`图片或视频（视频 ≤${VIDEO_LIMIT_MB}MB）`}
         >
           <ImagePlus className="w-3 h-3" /> 图片 / 视频
@@ -251,7 +251,7 @@ export function MediaAttacher({ videos, audios, images = [], onChange, maxVideos
 
 
         {uploading && (
-          <span className="flex items-center gap-1 text-[10px] text-white/50">
+          <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
             <Loader2 className="w-3 h-3 animate-spin" /> 上传中…
           </span>
         )}
@@ -261,11 +261,11 @@ export function MediaAttacher({ videos, audios, images = [], onChange, maxVideos
         <div className="flex flex-wrap gap-2 items-center">
           {images.map((src, i) => (
             <div key={`i-${i}`} className="relative group">
-              <img src={src} alt="" className="w-12 h-12 object-cover rounded-md border border-white/10" />
+              <img src={src} alt="" className="w-12 h-12 object-cover rounded-md border border-border" />
               <button
                 type="button"
                 onClick={() => removeImage(i)}
-                className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-background/90 border border-white/20 text-white/70 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
+                className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-background/90 border border-border text-foreground/75 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
                 title="移除"
               >
                 <X className="w-2.5 h-2.5" />
@@ -278,12 +278,12 @@ export function MediaAttacher({ videos, audios, images = [], onChange, maxVideos
                 src={src}
                 controls
                 preload="metadata"
-                className="max-h-40 rounded-lg border border-white/10 bg-black"
+                className="max-h-40 rounded-lg border border-border bg-black"
               />
               <button
                 type="button"
                 onClick={() => removeVideo(i)}
-                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black/80 border border-white/20 text-white/70 hover:text-destructive opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-background/85 border border-border text-foreground/75 hover:text-destructive opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
                 title="删除"
               >
                 <Trash2 className="w-3 h-3" />
@@ -296,7 +296,7 @@ export function MediaAttacher({ videos, audios, images = [], onChange, maxVideos
               <button
                 type="button"
                 onClick={() => removeAudio(i)}
-                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black/80 border border-white/20 text-white/70 hover:text-destructive opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-background/85 border border-border text-foreground/75 hover:text-destructive opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
                 title="删除"
               >
                 <Trash2 className="w-3 h-3" />

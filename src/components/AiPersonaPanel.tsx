@@ -85,7 +85,7 @@ export function AiPersonaPanel() {
 
   if (loading || !local) {
     return (
-      <div className="widget p-5 text-sm text-white/60 flex items-center gap-2">
+      <div className="widget p-5 text-sm text-muted-foreground flex items-center gap-2">
         <Loader2 className="w-4 h-4 animate-spin" /> 正在加载人设...
       </div>
     );
@@ -201,18 +201,18 @@ export function AiPersonaPanel() {
     <div>
       <div className="flex items-center gap-2 mb-3">
         <Sparkles className="w-4 h-4 text-amber-glow" />
-        <h3 className="font-display text-lg text-white">AI 人设 · 让助理懂你说话方式</h3>
+        <h3 className="font-display text-lg text-foreground">AI 人设 · 让助理懂你说话方式</h3>
         {savingTip && <span className="text-[10px] text-amber-glow ml-2">已自动保存</span>}
       </div>
 
       <div className="widget p-5 space-y-5">
         <div className="flex items-center justify-between text-xs">
-          <div className="text-white/60">
+          <div className="text-muted-foreground">
             登录账号：<span className="text-white/85">{user?.email}</span>
           </div>
           <button
             onClick={() => signOut()}
-            className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-white/70"
+            className="flex items-center gap-1 px-2 py-1 rounded-full bg-foreground/5 border border-border hover:bg-foreground/10 text-foreground/75"
           >
             <LogOut className="w-3 h-3" /> 退出
           </button>
@@ -223,10 +223,10 @@ export function AiPersonaPanel() {
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
           onDrop={onDrop}
-          className={`flex items-center gap-4 p-3 rounded-xl border border-dashed transition ${dragOver ? "border-amber-glow/60 bg-amber-glow/5" : "border-white/10 bg-white/[0.02]"}`}
+          className={`flex items-center gap-4 p-3 rounded-xl border border-dashed transition ${dragOver ? "border-amber-glow/60 bg-amber-glow/5" : "border-border bg-foreground/[0.03]"}`}
         >
           <div className="relative">
-            <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/15 bg-white/5 flex items-center justify-center text-2xl text-white/60 relative">
+            <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-border bg-foreground/5 flex items-center justify-center text-2xl text-muted-foreground relative">
               <CachedAvatar
                 src={local.avatar_url}
                 alt="头像"
@@ -234,9 +234,9 @@ export function AiPersonaPanel() {
                 className={`w-full h-full object-cover transition ${uploadingAvatar ? "opacity-60 blur-[1px]" : ""}`}
               />
               {uploadingAvatar && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
-                  <Loader2 className="w-4 h-4 animate-spin text-white mb-0.5" />
-                  <span className="text-[10px] text-white font-medium tabular-nums">{uploadProgress}%</span>
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/60">
+                  <Loader2 className="w-4 h-4 animate-spin text-foreground mb-0.5" />
+                  <span className="text-[10px] text-foreground font-medium tabular-nums">{uploadProgress}%</span>
                 </div>
               )}
             </div>
@@ -258,7 +258,7 @@ export function AiPersonaPanel() {
             />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-xs text-white/70 mb-1 flex items-center gap-1.5">
+            <div className="text-xs text-foreground/75 mb-1 flex items-center gap-1.5">
               <Upload className="w-3 h-3" />
               {dragOver ? "松开以选择该图片" : "拖拽图片到这里，或"}
               {!dragOver && (
@@ -271,13 +271,13 @@ export function AiPersonaPanel() {
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-2 text-[11px] text-white/50 flex-wrap">
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground flex-wrap">
               <span>上传后可圆形/方形裁剪 · JPG/PNG · 5MB 内</span>
               {local.avatar_url && (
                 <button
                   type="button"
                   onClick={handleAvatarRemove}
-                  className="px-2 py-0.5 rounded bg-white/5 border border-white/10 hover:bg-rose-400/10 hover:text-rose-300 flex items-center gap-1"
+                  className="px-2 py-0.5 rounded bg-foreground/5 border border-border hover:bg-rose-400/10 hover:text-rose-300 flex items-center gap-1"
                 >
                   <Trash2 className="w-3 h-3" /> 移除
                 </button>
@@ -288,7 +288,7 @@ export function AiPersonaPanel() {
 
         {/* 默认头像库 */}
         <div className="space-y-2">
-          <div className="text-xs text-white/60">或从默认头像库挑一个</div>
+          <div className="text-xs text-muted-foreground">或从默认头像库挑一个</div>
           <div className="flex flex-wrap gap-2">
             {PRESET_AVATARS.map((url) => {
               const active = local.avatar_url === url;
@@ -297,10 +297,10 @@ export function AiPersonaPanel() {
                   key={url}
                   type="button"
                   onClick={() => commit({ avatar_url: url })}
-                  className={`w-12 h-12 rounded-full overflow-hidden border-2 transition ${active ? "border-amber-glow ring-2 ring-amber-glow/40" : "border-white/10 hover:border-white/30"}`}
+                  className={`w-12 h-12 rounded-full overflow-hidden border-2 transition ${active ? "border-amber-glow ring-2 ring-amber-glow/40" : "border-border hover:border-white/30"}`}
                   title="使用这个头像"
                 >
-                  <CachedAvatar src={url} alt="预设头像" className="w-full h-full object-cover bg-white/5" />
+                  <CachedAvatar src={url} alt="预设头像" className="w-full h-full object-cover bg-foreground/5" />
                 </button>
               );
             })}
@@ -309,22 +309,22 @@ export function AiPersonaPanel() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="text-xs text-white/60">你怎么称呼 AI（显示在左上角）</label>
+            <label className="text-xs text-muted-foreground">你怎么称呼 AI（显示在左上角）</label>
             <input
               value={local.ai_nickname ?? ""}
               onChange={(e) => patch({ ai_nickname: e.target.value })}
               onBlur={() => commit({ ai_nickname: (local.ai_nickname ?? "").trim() || "Sylva" })}
-              className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white outline-none focus:border-amber-glow/50"
+              className="w-full px-3 py-2 rounded-lg bg-foreground/5 border border-border text-sm text-foreground outline-none focus:border-amber-glow/50"
               placeholder="例：Sylva / 小西 / 助理"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-white/60">AI 怎么称呼你</label>
+            <label className="text-xs text-muted-foreground">AI 怎么称呼你</label>
             <input
               value={local.display_name}
               onChange={(e) => patch({ display_name: e.target.value })}
               onBlur={() => commit({ display_name: local.display_name })}
-              className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white outline-none focus:border-amber-glow/50"
+              className="w-full px-3 py-2 rounded-lg bg-foreground/5 border border-border text-sm text-foreground outline-none focus:border-amber-glow/50"
               placeholder="例：主人 / 老板 / Tobi"
             />
           </div>
@@ -333,8 +333,8 @@ export function AiPersonaPanel() {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs text-white/60">人设描述（所有 AI 输出都会按这个口吻）</label>
-            <span className="text-[10px] text-white/40">点击模版一键套用</span>
+            <label className="text-xs text-muted-foreground">人设描述（所有 AI 输出都会按这个口吻）</label>
+            <span className="text-[10px] text-muted-foreground/70">点击模版一键套用</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {PERSONA_TEMPLATES.map((t) => (
@@ -354,7 +354,7 @@ export function AiPersonaPanel() {
                   toast.success(`已套用「${t.name}」`);
                 }}
                 title={t.desc}
-                className="px-2.5 py-1 rounded-full text-xs bg-white/5 border border-white/10 text-white/80 hover:border-amber-glow/50 hover:text-amber-glow transition-colors"
+                className="px-2.5 py-1 rounded-full text-xs bg-foreground/5 border border-border text-foreground/85 hover:border-amber-glow/50 hover:text-amber-glow transition-colors"
               >
                 {t.emoji} {t.name}
               </button>
@@ -365,7 +365,7 @@ export function AiPersonaPanel() {
             onChange={(e) => patch({ persona_prompt: e.target.value })}
             onBlur={() => commit({ persona_prompt: local.persona_prompt })}
             rows={5}
-            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white outline-none focus:border-amber-glow/50 resize-none leading-relaxed"
+            className="w-full px-3 py-2 rounded-lg bg-foreground/5 border border-border text-sm text-foreground outline-none focus:border-amber-glow/50 resize-none leading-relaxed"
           />
         </div>
 
@@ -378,7 +378,7 @@ export function AiPersonaPanel() {
             ["verbosity_level", "啰嗦度", "简洁", "话痨"],
           ] as const).map(([k, label, lo, hi]) => (
             <div key={k}>
-              <div className="flex justify-between text-xs text-white/70 mb-1">
+              <div className="flex justify-between text-xs text-foreground/75 mb-1">
                 <span>{label}</span>
                 <span className="text-amber-glow tabular-nums">{local[k]}/5</span>
               </div>
@@ -390,7 +390,7 @@ export function AiPersonaPanel() {
                 onTouchEnd={() => commit({ [k]: local[k] } as any)}
                 className="w-full accent-amber-glow"
               />
-              <div className="flex justify-between text-[10px] text-white/40">
+              <div className="flex justify-between text-[10px] text-muted-foreground/70">
                 <span>{lo}</span><span>{hi}</span>
               </div>
             </div>
@@ -398,19 +398,19 @@ export function AiPersonaPanel() {
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs text-white/60">禁忌话题（逗号分隔，AI 永远不会碰）</label>
+          <label className="text-xs text-muted-foreground">禁忌话题（逗号分隔，AI 永远不会碰）</label>
           <input
             value={local.taboos?.join("，") ?? ""}
             onChange={(e) =>
               patch({ taboos: e.target.value.split(/[,，]/).map((s) => s.trim()).filter(Boolean) })
             }
             onBlur={() => commit({ taboos: local.taboos })}
-            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white outline-none focus:border-amber-glow/50"
+            className="w-full px-3 py-2 rounded-lg bg-foreground/5 border border-border text-sm text-foreground outline-none focus:border-amber-glow/50"
             placeholder="例：政治, 容貌焦虑"
           />
         </div>
 
-        <div className="pt-2 border-t border-white/10 space-y-2">
+        <div className="pt-2 border-t border-border space-y-2">
           <button
             onClick={tryIt}
             disabled={tryingTip}
@@ -420,7 +420,7 @@ export function AiPersonaPanel() {
             让 AI 用这个人设说一句话试试
           </button>
           {demoLine && (
-            <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/85 italic">
+            <div className="px-3 py-2 rounded-lg bg-foreground/5 border border-border text-sm text-white/85 italic">
               "{demoLine}"
             </div>
           )}
