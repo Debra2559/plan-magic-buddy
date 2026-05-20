@@ -101,6 +101,14 @@ function SettingsPanel({
         )}
       </div>
 
+      <SourcesEditor
+        sources={settings.sources.map((s) => ({ name: s.name, query: s.query, enabled: s.enabled }))}
+        onChange={(next) => onSourcesChange(next as AiNewsSettings["sources"])}
+        queryPlaceholder="搜索关键词，例：hacker news AI agent"
+      />
+
+
+
       <div>
         <label className="block text-[11px] text-foreground/60 mb-1.5">
           用一段话告诉雷达你想关注什么
