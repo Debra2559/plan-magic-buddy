@@ -29,7 +29,7 @@ const simpleSections: Record<string, { rows: SimpleRow[] }> = {
   shortcuts: {
     rows: [
       { label: "唤起 AI 输入", value: "⌘ + ⇧ + Space", action: "改键" },
-      { label: "添加随手记", value: "⌘ + N", action: "改键" },
+      { label: "添加记录", value: "⌘ + N", action: "改键" },
     ],
   },
 };
