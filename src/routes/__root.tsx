@@ -152,6 +152,7 @@ function RootComponent() {
               <ThemedToaster />
               <AvatarStatsOverlay />
               <QuickCaptureHotkey />
+              <FloatingBall />
             </SylvaProvider>
           </PersonaProvider>
         </AuthProvider>
