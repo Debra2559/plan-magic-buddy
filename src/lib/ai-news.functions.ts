@@ -257,39 +257,54 @@ export const scanAiNewsNow = createServerFn({ method: "POST" })
 
     const activeSources = settings.sources.filter((s) => s.enabled);
     const allFound: Array<{ source: string; item: z.infer<typeof ExtractedSchema>["news"][number] }> = [];
+    const debug: Array<{ source: string; query: string; snippets: number; extracted: number; kept: number; error?: string }> = [];
 
     for (const src of activeSources) {
       const snippets = await firecrawlSearch(src.query, settings.per_source_limit, settings.time_window);
-      if (snippets.length === 0) continue;
-      const { news } = await extractWithAI(src.name, snippets);
-      for (const n of news) {
+      if (snippets.length === 0) {
+        debug.push({ source: src.name, query: src.query, snippets: 0, extracted: 0, kept: 0, error: "firecrawl 0 结果" });
+        continue;
+      }
+      const { data: ex, error } = await extractWithAI(src.name, snippets);
+      let kept = 0;
+      for (const n of ex.news) {
         if (!n.url?.startsWith("http")) continue;
         const blob = `${n.title}\n${n.summary}\n${(n.tags ?? []).join(" ")}`;
         if (!matchesFilters(blob, n.tags ?? [], settings)) continue;
         allFound.push({ source: src.name, item: n });
+        kept += 1;
       }
+      debug.push({ source: src.name, query: src.query, snippets: snippets.length, extracted: ex.news.length, kept, error });
     }
 
     const byUrl = new Map<string, (typeof allFound)[number]>();
     for (const f of allFound) if (!byUrl.has(f.item.url)) byUrl.set(f.item.url, f);
 
     let inserted = 0;
+    const insertErrors: string[] = [];
     for (const { source, item } of byUrl.values()) {
       const { data: row, error } = await supabaseAdmin
         .from("ai_news")
-        .insert({
-          source,
-          url: item.url,
-          title: item.title,
-          published_at: item.published_at,
-          summary: item.summary,
-          tags: item.tags ?? [],
-          status: "pending",
-          raw: item,
-        })
+        .upsert(
+          {
+            source,
+            url: item.url,
+            title: item.title,
+            published_at: item.published_at,
+            summary: item.summary,
+            tags: item.tags ?? [],
+            status: "pending",
+            raw: item,
+          },
+          { onConflict: "url", ignoreDuplicates: true },
+        )
         .select("*")
         .maybeSingle();
-      if (!error && row) inserted += 1;
+      if (error) {
+        insertErrors.push(`${item.url}: ${error.message}`);
+        continue;
+      }
+      if (row) inserted += 1;
     }
 
     const result = { scanned: allFound.length, deduped: byUrl.size, inserted };
@@ -297,7 +312,7 @@ export const scanAiNewsNow = createServerFn({ method: "POST" })
       .from("ai_news_settings")
       .upsert({ id: "singleton", last_scanned_at: new Date().toISOString(), last_scan_result: result });
 
-    return { ok: true as const, ...result };
+    return { ok: true as const, ...result, debug, insertErrors };
   });
 
 export const listPendingAiNews = createServerFn({ method: "GET" }).handler(async () => {
