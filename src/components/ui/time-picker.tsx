@@ -120,6 +120,7 @@ export function TimePicker({
               innerRef={hourColRef}
               items={HOURS}
               selected={hh}
+              flashKey={flashKey}
               onPick={(v) => select(v, mm || "00")}
             />
             <div className="w-px bg-white/8" />
@@ -127,8 +128,10 @@ export function TimePicker({
               innerRef={minColRef}
               items={MINUTES}
               selected={mm && MINUTES.includes(mm) ? mm : mm ? closest(mm) : ""}
+              flashKey={flashKey}
               onPick={(v) => select(hh || String(new Date().getHours()).padStart(2, "0"), v)}
             />
+
           </div>
           <div className="flex items-center justify-between px-2 py-1.5 border-t border-white/8 bg-black/30">
             <button
