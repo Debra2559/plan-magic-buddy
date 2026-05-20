@@ -398,6 +398,9 @@ function SummaryTab({ initialDate }: { initialDate?: string | null }) {
         </div>
       </div>
 
+      {/* 心情趋势 · 近 7 天 */}
+      <MoodTrend date={date} diary={diary} />
+
       <Section title="已完成" icon={<CheckCircle2 className="w-3.5 h-3.5 text-amber-glow" />} list={done} empty="今天还没有完成的任务" />
       <Section title="未完成" icon={<Circle className="w-3.5 h-3.5 text-white/40" />} list={pending} empty="全部完成，太棒了 🎉" />
 
