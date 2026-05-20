@@ -66,7 +66,7 @@ const loadPersisted = (): Persisted => {
 };
 
 export function FeishuSyncPanel() {
-  const { items } = useSylva();
+  const { items, addItems } = useSylva();
   const [state, setState] = useState<Persisted>(loadPersisted);
   const [logs, setLogs] = useState<SyncLog[]>([]);
   const lastItemSignature = useRef<string>("");
@@ -76,6 +76,7 @@ export function FeishuSyncPanel() {
   const [loadingCalendars, setLoadingCalendars] = useState(false);
   const [calendarsError, setCalendarsError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [pulling, setPulling] = useState(false);
 
   const runTest = useServerFn(testFeishuConnection);
   const runList = useServerFn(listFeishuCalendars);
@@ -83,6 +84,8 @@ export function FeishuSyncPanel() {
   const runSelect = useServerFn(selectFeishuCalendar);
   const runSetDir = useServerFn(setFeishuDirection);
   const runSync = useServerFn(syncToFeishu);
+  const runPull = useServerFn(pullFromFeishu);
+  const runRecord = useServerFn(recordPulledMappings);
 
   const doSync = useCallback(
     async (reason: string) => {
