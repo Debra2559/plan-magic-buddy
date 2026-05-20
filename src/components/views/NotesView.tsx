@@ -507,7 +507,7 @@ function NoteCard({ n, onRemove, onPin }: { n: Note; onRemove: () => void; onPin
   );
 }
 
-/* ---------------- Quick Diary Editor (in 随手记) ---------------- */
+/* ---------------- Quick Diary Editor (in 记录) ---------------- */
 function QuickDiaryEditor({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   const { diary, upsertDiary, enterToSubmit } = useSylva();
   const today = todayStr();
