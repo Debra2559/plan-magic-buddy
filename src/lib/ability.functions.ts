@@ -6,19 +6,60 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createLovableAiGatewayProvider } from "./ai-gateway";
 
 // ---------- Static questionnaire ----------
+// 30 题李克特量表（1=非常不符合, 5=非常符合）。每个能力维度 3 题（含 1 题反向计分 _inv）；
+// 大五人格 2-3 题（含反向题）。反向题在分析时由模型按 dim 名自动反转。
 export const ABILITY_QUESTIONS = [
-  { id: "q1", text: "面对一周的工作，我会主动规划好每天的重点。", dim: "planning" },
-  { id: "q2", text: "我能长时间专注于一件事而不被打断。", dim: "focus" },
-  { id: "q3", text: "我会规律作息，关注饮食与运动。", dim: "health" },
-  { id: "q4", text: "我喜欢尝试新点子、新工具、新方法。", dim: "creativity" },
-  { id: "q5", text: "我享受与他人交流，并能主动维护关系。", dim: "social" },
-  { id: "q6", text: "我经常会回顾、反思自己的状态与决策。", dim: "reflection" },
-  { id: "q7", text: "未完成的任务会让我感到焦虑。", dim: "neuroticism" },
-  { id: "q8", text: "我乐于接受新的观点和不同意见。", dim: "openness" },
-  { id: "q9", text: "我做事有计划、守承诺，不轻易拖延。", dim: "conscientiousness" },
-  { id: "q10", text: "在团队中我倾向于主动表达想法。", dim: "extraversion" },
-  { id: "q11", text: "我会优先考虑别人的感受。", dim: "agreeableness" },
-  { id: "q12", text: "面对压力，我能很快调整情绪。", dim: "neuroticism_inv" },
+  // —— planning 计划力 ——
+  { id: "q1",  text: "面对一周的工作，我会主动规划好每天的重点。", dim: "planning" },
+  { id: "q2",  text: "开始一个项目前，我会先拆解步骤、估算时间。", dim: "planning" },
+  { id: "q3",  text: "我经常临时起意，很少为接下来的事做安排。", dim: "planning_inv" },
+
+  // —— focus 专注力 ——
+  { id: "q4",  text: "我能长时间专注于一件事而不被打断。", dim: "focus" },
+  { id: "q5",  text: "工作时我会主动关闭无关的通知和页面。", dim: "focus" },
+  { id: "q6",  text: "我经常一边做事一边刷手机或切换任务。", dim: "focus_inv" },
+
+  // —— health 健康力 ——
+  { id: "q7",  text: "我会规律作息，关注饮食与运动。", dim: "health" },
+  { id: "q8",  text: "即使忙碌，我也会保证每天的睡眠和活动量。", dim: "health" },
+  { id: "q9",  text: "我经常熬夜或久坐，很少主动运动。", dim: "health_inv" },
+
+  // —— creativity 创造力 ——
+  { id: "q10", text: "我喜欢尝试新点子、新工具、新方法。", dim: "creativity" },
+  { id: "q11", text: "我常常会把不同领域的想法联系起来。", dim: "creativity" },
+  { id: "q12", text: "比起新方法，我更愿意沿用已有的做法。", dim: "creativity_inv" },
+
+  // —— social 社交力 ——
+  { id: "q13", text: "我享受与他人交流，并能主动维护关系。", dim: "social" },
+  { id: "q14", text: "我能比较自如地结识新朋友。", dim: "social" },
+  { id: "q15", text: "需要和陌生人打交道时，我会感到明显不安。", dim: "social_inv" },
+
+  // —— reflection 反思力 ——
+  { id: "q16", text: "我经常会回顾、反思自己的状态与决策。", dim: "reflection" },
+  { id: "q17", text: "遇到挫折后，我会主动复盘原因和下次改进点。", dim: "reflection" },
+  { id: "q18", text: "事情过去就过去，我很少回头去想。", dim: "reflection_inv" },
+
+  // —— Big Five · openness ——
+  { id: "q19", text: "我乐于接受新的观点和不同意见。", dim: "openness" },
+  { id: "q20", text: "比起新奇的体验，我更喜欢熟悉和稳定。", dim: "openness_inv" },
+
+  // —— Big Five · conscientiousness ——
+  { id: "q21", text: "我做事有计划、守承诺，不轻易拖延。", dim: "conscientiousness" },
+  { id: "q22", text: "我的物品和文件经常处于杂乱状态。", dim: "conscientiousness_inv" },
+
+  // —— Big Five · extraversion ——
+  { id: "q23", text: "在团队中我倾向于主动表达想法。", dim: "extraversion" },
+  { id: "q24", text: "在热闹的场合我会感到精力充沛。", dim: "extraversion" },
+  { id: "q25", text: "比起聚会，我更喜欢独处或小范围相处。", dim: "extraversion_inv" },
+
+  // —— Big Five · agreeableness ——
+  { id: "q26", text: "我会优先考虑别人的感受。", dim: "agreeableness" },
+  { id: "q27", text: "为了达成目标，我可以比较直接甚至强硬。", dim: "agreeableness_inv" },
+
+  // —— Big Five · neuroticism ——
+  { id: "q28", text: "未完成的任务会让我感到焦虑。", dim: "neuroticism" },
+  { id: "q29", text: "我的情绪起伏比较大，容易被小事影响。", dim: "neuroticism" },
+  { id: "q30", text: "面对压力，我能很快调整情绪。", dim: "neuroticism_inv" },
 ] as const;
 
 // ---------- Schemas ----------
