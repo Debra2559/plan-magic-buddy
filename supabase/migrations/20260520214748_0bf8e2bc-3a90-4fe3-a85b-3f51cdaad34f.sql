@@ -1,0 +1,1 @@
+ALTER TABLE public.ai_insights_settings ADD COLUMN IF NOT EXISTS timezone TEXT NOT NULL DEFAULT 'Asia/Shanghai';
