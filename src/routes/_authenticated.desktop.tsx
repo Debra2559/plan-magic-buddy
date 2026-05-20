@@ -410,6 +410,61 @@ function SidebarItem({
   );
 }
 
+function AssistantHeader() {
+  const [name, setName] = useState<string>("Sylva");
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("Sylva");
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("sylva:assistantName");
+      if (saved) { setName(saved); setDraft(saved); }
+    } catch {}
+  }, []);
+
+  const save = () => {
+    const v = draft.trim().slice(0, 16) || "Sylva";
+    setName(v);
+    try { localStorage.setItem("sylva:assistantName", v); } catch {}
+    setEditing(false);
+  };
+
+  const initial = name.charAt(0).toUpperCase();
+
+  return (
+    <div className="mb-5 px-2 group">
+      <div className="flex items-center gap-2">
+        <div className="relative w-8 h-8 rounded-full bg-gradient-to-br from-amber-glow to-moss flex items-center justify-center shadow-lg ring-1 ring-white/10">
+          <span className="font-display text-primary-foreground text-sm">{initial}</span>
+          <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-black/60" />
+        </div>
+        {editing ? (
+          <input
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={save}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") save();
+              if (e.key === "Escape") { setDraft(name); setEditing(false); }
+            }}
+            maxLength={16}
+            className="flex-1 min-w-0 bg-white/10 border border-white/20 rounded px-1.5 py-0.5 text-sm text-white outline-none focus:border-amber-glow"
+          />
+        ) : (
+          <button
+            onClick={() => { setDraft(name); setEditing(true); }}
+            className="flex-1 min-w-0 text-left truncate font-display text-base text-white hover:text-amber-glow transition"
+            title="点击重命名 AI 助手"
+          >
+            {name}
+          </button>
+        )}
+      </div>
+      <div className="mt-1 ml-10 text-[10px] text-white/40">你的 AI 助手</div>
+    </div>
+  );
+
 function DockIcon({
   label,
   active,
