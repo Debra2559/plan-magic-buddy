@@ -15,6 +15,7 @@ import {
   Sparkles, X, Bookmark, RefreshCw, Loader2, ExternalLink, Calendar as CalIcon,
   ListPlus, Check, Settings as SettingsIcon, Wand2, Save,
 } from "lucide-react";
+import { SourcesEditor } from "@/components/SourcesEditor";
 import { useSylva, todayLocal } from "@/lib/sylva-store";
 
 const TIME_WINDOW_LABEL: Record<AiNewsSettings["time_window"], string> = {
