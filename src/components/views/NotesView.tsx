@@ -277,7 +277,7 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
           onChange={(e) => setContent(e.target.value)}
           onBlur={save}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+            if (shouldSubmitOnKey(e, enterToSubmit)) {
               e.preventDefault();
               save();
             }
