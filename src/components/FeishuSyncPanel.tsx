@@ -10,6 +10,9 @@ import {
   syncToFeishu,
   pullFromFeishu,
   recordPulledMappings,
+  getFeishuNotifyConfig,
+  setFeishuNotifyConfig,
+  testHackathonNotify,
 } from "@/lib/feishu.functions";
 import {
   Check,
@@ -23,6 +26,8 @@ import {
   Loader2,
   Zap,
   Download,
+  Bell,
+  Send,
 } from "lucide-react";
 
 type Status = "disconnected" | "connecting" | "connected";
