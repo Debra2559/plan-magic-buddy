@@ -24,6 +24,41 @@ export interface HackathonRow {
 // ------- Firecrawl helpers -------
 type FirecrawlSearchItem = { url?: string; title?: string; description?: string; markdown?: string };
 
+function isHackathonSnippet(item: FirecrawlSearchItem): boolean {
+  const text = `${item.title ?? ""}\n${item.description ?? ""}\n${item.markdown ?? ""}`.toLowerCase();
+  return /hackathon|黑客松|编程比赛|创新大赛|报名|register|prize|devpost|dorahacks|mlh/.test(text);
+}
+
+function fallbackHackathons(source: string, snippets: FirecrawlSearchItem[]): z.infer<typeof ExtractedSchema>["hackathons"] {
+  return snippets
+    .filter((s) => s.url?.startsWith("http") && isHackathonSnippet(s))
+    .slice(0, 6)
+    .map((s) => ({
+      title: (s.title ?? source).trim().slice(0, 120),
+      url: s.url!,
+      deadline: null,
+      starts_at: null,
+      location: /online|线上/i.test(`${s.description ?? ""}${s.markdown ?? ""}`) ? "线上" : null,
+      prize: null,
+      summary: (s.description ?? s.markdown ?? "黑客松/创新比赛报名信息").replace(/\s+/g, " ").trim().slice(0, 60),
+      tags: ["黑客松", source].filter(Boolean).slice(0, 5),
+    }));
+}
+
+async function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise.catch(() => fallback),
+      new Promise<T>((resolve) => {
+        timer = setTimeout(() => resolve(fallback), ms);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function firecrawlSearch(query: string, limit = 8): Promise<FirecrawlSearchItem[]> {
   const apiKey = process.env.FIRECRAWL_API_KEY;
   if (!apiKey) return [];
