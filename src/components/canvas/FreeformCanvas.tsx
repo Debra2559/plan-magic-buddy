@@ -554,7 +554,7 @@ export function FreeformCanvas({ kind, title }: Props) {
 
         {data.items.length === 0 && !loading && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="text-zinc-400 text-xs">选个工具开始 · 滚轮平移 · ⌘/Ctrl + 滚轮缩放</div>
+            <div className="text-zinc-400 text-xs">选个工具开始 · 粘贴 / 拖入图片或文件 · ⌘/Ctrl + 滚轮缩放</div>
           </div>
         )}
       </div>
