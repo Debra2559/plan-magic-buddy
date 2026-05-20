@@ -953,7 +953,71 @@ export function FeishuSyncPanel() {
           >
             查我的 open_id
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!chats.open && chats.items.length === 0) doListChats();
+              else setChats((s) => ({ ...s, open: !s.open }));
+            }}
+            className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 whitespace-nowrap"
+          >
+            列出群聊
+          </button>
         </div>
+        {chats.open && (
+          <div className="mb-2 px-3 py-2 rounded-md border border-white/10 bg-white/[0.03] space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-[11px] text-white/60">
+                机器人所在的群（需 <code>im:chat:readonly</code>）。点击即可填入 <code>chat_id</code>。
+              </div>
+              <button
+                onClick={doListChats}
+                disabled={chats.loading}
+                className="text-[11px] px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 flex items-center gap-1"
+              >
+                {chats.loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                刷新
+              </button>
+            </div>
+            {chats.error && (
+              <div className="text-[11px] text-rose-300">
+                ✗ {chats.error}{chats.hint ? ` · ${chats.hint}` : ""}
+              </div>
+            )}
+            {!chats.error && !chats.loading && chats.items.length === 0 && (
+              <div className="text-[11px] text-white/50">
+                没有发现群聊。请先把机器人拉进群，再点刷新。
+              </div>
+            )}
+            {chats.items.length > 0 && (
+              <>
+                <input
+                  value={chats.filter}
+                  onChange={(e) => setChats((s) => ({ ...s, filter: e.target.value }))}
+                  placeholder="搜索群名…"
+                  className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white/90 placeholder:text-white/30 outline-none"
+                />
+                <div className="max-h-48 overflow-auto divide-y divide-white/5 rounded-md border border-white/10">
+                  {chats.items
+                    .filter((c) => !chats.filter.trim() || c.name.toLowerCase().includes(chats.filter.trim().toLowerCase()))
+                    .map((c) => (
+                      <button
+                        key={c.chat_id}
+                        onClick={() => pickChat(c.chat_id)}
+                        className="w-full text-left px-2 py-1.5 hover:bg-white/[0.04] flex items-center justify-between gap-2"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-xs text-white/90 truncate">{c.name}</div>
+                          <div className="text-[10px] text-white/40 font-mono truncate">{c.chat_id}</div>
+                        </div>
+                        <span className="text-[10px] text-amber-glow shrink-0">填入</span>
+                      </button>
+                    ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
         {lookup.open && (
           <div className="mb-2 px-3 py-2 rounded-md border border-white/10 bg-white/[0.03] space-y-2">
             <div className="text-[11px] text-white/60">
