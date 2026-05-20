@@ -5,9 +5,15 @@ import {
   saveAiNews,
   dismissAiNews,
   scanAiNewsNow,
+  getAiNewsSettings,
+  updateAiNewsSettings,
   type AiNewsRow,
+  type AiNewsSettings,
 } from "@/lib/ai-news.functions";
-import { Sparkles, X, Bookmark, RefreshCw, Loader2, ExternalLink, Calendar as CalIcon, ListPlus, Check } from "lucide-react";
+import {
+  Sparkles, X, Bookmark, RefreshCw, Loader2, ExternalLink, Calendar as CalIcon,
+  ListPlus, Check, Settings as SettingsIcon, Plus, Trash2, Save,
+} from "lucide-react";
 import { useSylva, todayLocal } from "@/lib/sylva-store";
 
 export function AiNewsRadar() {
