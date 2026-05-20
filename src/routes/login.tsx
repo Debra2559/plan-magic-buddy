@@ -174,6 +174,7 @@ function LoginPage() {
                 {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+            {mode === "signup" && pwdCheck.status !== "idle" && (
               <p
                 className={`mt-1 text-[11px] ${
                   pwdCheck.status === "ok"
