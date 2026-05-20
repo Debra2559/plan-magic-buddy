@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import type { PlanItem } from "./plan.functions";
-import { getRecapDoneDates, getDailyRecap } from "./feishu.functions";
+import { getRecapDoneDates, getDailyRecap, unmarkRecapDone as unmarkRecapDoneFn } from "./feishu.functions";
 
 export interface DoneItem extends PlanItem {
   id: string;
