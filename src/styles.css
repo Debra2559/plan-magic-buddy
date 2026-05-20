@@ -140,6 +140,103 @@ html.light .widget {
   border-color: oklch(0.26 0.018 55 / 0.08);
 }
 
+/* ============================================================
+   亮色模式全局重映射
+   把组件里硬编码的 dark 风格 utility（bg-black/X, text-white/X,
+   bg-white/X, border-white/X, bg-zinc-9xx）在亮色下整体替换为
+   暖米调，避免每个组件单独改色。
+   ============================================================ */
+html.light .text-white          { color: oklch(0.26 0.018 55) !important; }
+html.light .text-white\/90      { color: oklch(0.26 0.018 55 / 0.92) !important; }
+html.light .text-white\/80      { color: oklch(0.28 0.018 55 / 0.88) !important; }
+html.light .text-white\/75      { color: oklch(0.3 0.018 55 / 0.84) !important; }
+html.light .text-white\/70      { color: oklch(0.32 0.018 55 / 0.8) !important; }
+html.light .text-white\/60      { color: oklch(0.38 0.018 55 / 0.78) !important; }
+html.light .text-white\/50      { color: oklch(0.45 0.015 60 / 0.75) !important; }
+html.light .text-white\/40      { color: oklch(0.5 0.015 60 / 0.7) !important; }
+html.light .text-white\/35      { color: oklch(0.55 0.015 60 / 0.7) !important; }
+html.light .text-white\/30      { color: oklch(0.58 0.012 60 / 0.65) !important; }
+html.light .text-white\/25      { color: oklch(0.62 0.012 60 / 0.6) !important; }
+html.light .text-white\/20      { color: oklch(0.65 0.01 60 / 0.55) !important; }
+html.light .hover\:text-white:hover { color: oklch(0.2 0.02 55) !important; }
+html.light .group:hover .group-hover\:text-white { color: oklch(0.2 0.02 55) !important; }
+
+/* bg-black/X 在原设计里表示深色面板 — 亮色下换成卡片/暖灰叠层 */
+html.light .bg-black\/85,
+html.light .bg-black\/80,
+html.light .bg-black\/75,
+html.light .bg-black\/70,
+html.light .bg-black\/65,
+html.light .bg-black\/60,
+html.light .bg-black\/55,
+html.light .bg-black\/50 { background-color: oklch(1 0.003 85 / 0.96) !important; }
+
+html.light .bg-black\/40,
+html.light .bg-black\/35,
+html.light .bg-black\/30 { background-color: oklch(0.97 0.005 85 / 0.85) !important; }
+
+html.light .bg-black\/25,
+html.light .bg-black\/20,
+html.light .bg-black\/15,
+html.light .bg-black\/10 { background-color: oklch(0.26 0.018 55 / 0.06) !important; }
+
+html.light .hover\:bg-black\/60:hover,
+html.light .hover\:bg-black\/70:hover,
+html.light .hover\:bg-black\/80:hover { background-color: oklch(0.96 0.006 85 / 0.95) !important; }
+
+/* zinc/neutral/slate 深色弹层 → 卡片 */
+html.light .bg-zinc-950,
+html.light .bg-zinc-900,
+html.light .bg-neutral-950,
+html.light .bg-neutral-900,
+html.light .bg-slate-950,
+html.light .bg-slate-900 {
+  background-color: oklch(1 0.003 85) !important;
+  color: oklch(0.26 0.018 55) !important;
+}
+
+/* 白色叠层（深色卡上的高光）→ 暖灰叠层 */
+html.light .bg-white\/\[0\.03\],
+html.light .bg-white\/\[0\.04\],
+html.light .bg-white\/5 { background-color: oklch(0.26 0.018 55 / 0.035) !important; }
+
+html.light .bg-white\/\[0\.06\],
+html.light .bg-white\/\[0\.08\],
+html.light .bg-white\/10 { background-color: oklch(0.26 0.018 55 / 0.06) !important; }
+
+html.light .bg-white\/15,
+html.light .bg-white\/20 { background-color: oklch(0.26 0.018 55 / 0.09) !important; }
+
+html.light .bg-white\/25,
+html.light .bg-white\/30 { background-color: oklch(0.26 0.018 55 / 0.14) !important; }
+
+html.light .hover\:bg-white\/5:hover,
+html.light .hover\:bg-white\/10:hover { background-color: oklch(0.26 0.018 55 / 0.08) !important; }
+
+html.light .hover\:bg-white\/15:hover,
+html.light .hover\:bg-white\/20:hover { background-color: oklch(0.26 0.018 55 / 0.12) !important; }
+
+/* 描边 */
+html.light .border-white\/5,
+html.light .border-white\/8,
+html.light .border-white\/10 { border-color: oklch(0.26 0.018 55 / 0.1) !important; }
+
+html.light .border-white\/15,
+html.light .border-white\/20 { border-color: oklch(0.26 0.018 55 / 0.16) !important; }
+
+html.light .border-white\/25,
+html.light .border-white\/30 { border-color: oklch(0.26 0.018 55 / 0.22) !important; }
+
+html.light .ring-white\/10,
+html.light .ring-white\/15,
+html.light .ring-white\/20 { --tw-ring-color: oklch(0.26 0.018 55 / 0.14) !important; }
+
+/* placeholder */
+html.light .placeholder\:text-white\/30::placeholder,
+html.light .placeholder\:text-white\/40::placeholder,
+html.light .placeholder\:text-white\/50::placeholder { color: oklch(0.5 0.015 60 / 0.55) !important; }
+
+
 @layer base {
   * { border-color: var(--color-border); }
   html, body { background-color: var(--color-background); color: var(--color-foreground); }
