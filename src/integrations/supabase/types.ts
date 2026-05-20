@@ -595,6 +595,7 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string
           display_name: string
           humor_level: number
@@ -608,6 +609,7 @@ export type Database = {
           verbosity_level: number
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
           display_name?: string
           humor_level?: number
@@ -621,6 +623,7 @@ export type Database = {
           verbosity_level?: number
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
           display_name?: string
           humor_level?: number

@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
-import { Sparkles, Wand2, LogOut, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Sparkles, Wand2, LogOut, Loader2, Camera, Trash2 } from "lucide-react";
 import { usePersona } from "@/lib/persona";
 import { useAuth } from "@/lib/auth-context";
 import { generatePlan } from "@/lib/plan.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export function AiPersonaPanel() {
   const { persona, loading, save } = usePersona();
@@ -14,6 +15,8 @@ export function AiPersonaPanel() {
   const [tryingTip, setTryingTip] = useState(false);
   const [demoLine, setDemoLine] = useState<string>("");
   const planFn = useServerFn(generatePlan);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => setLocal(persona), [persona]);
 
@@ -34,6 +37,31 @@ export function AiPersonaPanel() {
     setSavingTip(true);
     await save(p);
     setTimeout(() => setSavingTip(false), 900);
+  };
+
+  const handleAvatarPick = async (file: File) => {
+    if (!user) return;
+    if (!file.type.startsWith("image/")) { toast.error("请选择图片文件"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("图片需小于 5MB"); return; }
+    setUploadingAvatar(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+      const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      await commit({ avatar_url: pub.publicUrl });
+      toast.success("头像已更新");
+    } catch (e: any) {
+      toast.error(e?.message ?? "上传失败");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    await commit({ avatar_url: null });
+    toast.success("已移除头像");
   };
 
   const tryIt = async () => {
@@ -79,6 +107,58 @@ export function AiPersonaPanel() {
           >
             <LogOut className="w-3 h-3" /> 退出
           </button>
+        </div>
+
+        {/* 头像 + 称呼 */}
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/15 bg-white/5 flex items-center justify-center text-2xl text-white/60">
+              {local.avatar_url ? (
+                <img src={local.avatar_url} alt="头像" className="w-full h-full object-cover" />
+              ) : (
+                <span>{(local.display_name || "主").slice(0, 1)}</span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploadingAvatar}
+              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-amber-glow text-primary-foreground flex items-center justify-center shadow hover:brightness-110 disabled:opacity-60"
+              title="更换头像"
+            >
+              {uploadingAvatar ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarPick(f); e.target.value = ""; }}
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs text-white/50 mb-1">头像</div>
+            <div className="flex items-center gap-2 text-[11px] text-white/60">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="px-2 py-1 rounded bg-white/5 border border-white/10 hover:bg-white/10"
+              >
+                {local.avatar_url ? "更换" : "上传"}
+              </button>
+              {local.avatar_url && (
+                <button
+                  type="button"
+                  onClick={handleAvatarRemove}
+                  className="px-2 py-1 rounded bg-white/5 border border-white/10 hover:bg-rose-400/10 hover:text-rose-300 flex items-center gap-1"
+                >
+                  <Trash2 className="w-3 h-3" /> 移除
+                </button>
+              )}
+              <span className="text-white/35">支持 JPG / PNG，5MB 以内</span>
+            </div>
+          </div>
         </div>
 
         <div className="space-y-1">
