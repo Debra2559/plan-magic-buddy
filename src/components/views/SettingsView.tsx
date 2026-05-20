@@ -338,7 +338,7 @@ export function SettingsView() {
         <aside className="w-56 shrink-0 hidden md:flex flex-col gap-5 overflow-y-auto pr-1">
           <div>
             <p className="text-[10px] tracking-widest text-amber-glow mb-1">偏好设置</p>
-            <h2 className="font-display text-2xl text-white leading-tight">让 Sylva<br/>长成你的样子。</h2>
+            <h2 className="font-display text-2xl text-white leading-tight">让 {aiName}<br/>长成你的样子。</h2>
           </div>
           <nav className="flex flex-col gap-3">
             {NAV.map((group) => {
