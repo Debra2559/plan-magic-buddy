@@ -120,18 +120,19 @@ async function gatherUserContext(userId: string, lookbackDays: number, tz: strin
 
   const habitSummary = (habits.data ?? []).map((h: any) => {
     const hist: string[] = h.history ?? [];
-    const last7 = hist.filter((d) => d >= daysAgo(7)).length;
+    const last7 = hist.filter((d) => d >= daysAgo(7, tz)).length;
     const lastDate = hist[hist.length - 1] ?? null;
     const streak = (() => {
       let s = 0;
       for (let i = 0; ; i++) {
-        if (hist.includes(daysAgo(i))) s++;
+        if (hist.includes(daysAgo(i, tz))) s++;
         else break;
       }
       return s;
     })();
     return { name: h.name, emoji: h.emoji, last7days: last7, streak, lastDate };
   });
+
 
   return { today, since, schedule: schedule.data ?? [], notes: notes.data ?? [], diaries: diaries.data ?? [], habits: habitSummary, profile: profile.data ?? null };
 }
