@@ -28,6 +28,29 @@ const DEFAULT_PERSONA: Omit<PersonaProfile, "user_id"> = {
   taboos: [],
 };
 
+/** 默认头像（内嵌 SVG，无需外网） */
+export const DEFAULT_AVATAR_URL =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>
+      <defs><linearGradient id='g' x1='0' x2='1' y1='0' y2='1'>
+        <stop offset='0' stop-color='#f5c976'/><stop offset='1' stop-color='#7ea88a'/>
+      </linearGradient></defs>
+      <rect width='64' height='64' fill='url(#g)'/>
+      <circle cx='32' cy='26' r='11' fill='rgba(255,255,255,0.92)'/>
+      <path d='M10 60c4-12 14-18 22-18s18 6 22 18z' fill='rgba(255,255,255,0.92)'/>
+    </svg>`,
+  );
+
+/** 头像兜底：空 / 异常字符串 → 默认头像 */
+export function resolveAvatarUrl(url: string | null | undefined): string {
+  if (!url) return DEFAULT_AVATAR_URL;
+  const trimmed = url.trim();
+  if (!trimmed) return DEFAULT_AVATAR_URL;
+  if (!/^(https?:|data:|blob:|\/)/i.test(trimmed)) return DEFAULT_AVATAR_URL;
+  return trimmed;
+}
+
 interface PersonaCtxValue {
   persona: PersonaProfile | null;
   loading: boolean;
@@ -89,15 +112,25 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     })();
 
-    // 跨设备实时同步：监听本用户 profile 行变更
+    // 跨设备实时同步：监听本用户 profile 行的所有变更
     const channel = supabase
       .channel(`user_profiles:${user.id}`)
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "user_profiles", filter: `user_id=eq.${user.id}` },
+        { event: "*", schema: "public", table: "user_profiles", filter: `user_id=eq.${user.id}` },
         (payload) => {
           if (cancelled) return;
-          setPersona((prev) => ({ ...(prev as PersonaProfile), ...(payload.new as PersonaProfile) }));
+          if (payload.eventType === "DELETE") {
+            setPersona({ user_id: user.id, ...DEFAULT_PERSONA });
+            return;
+          }
+          const next = payload.new as PersonaProfile | undefined;
+          if (!next) return;
+          if (payload.eventType === "INSERT") {
+            setPersona(next);
+          } else {
+            setPersona((prev) => ({ ...(prev as PersonaProfile), ...next }));
+          }
         },
       )
       .subscribe();
