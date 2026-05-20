@@ -88,7 +88,7 @@ function ThinkingTrace({ active, variant }: { active: boolean; variant: "plan" |
 }
 
 export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => void; onConfirmed?: () => void } = {}) {
-  const { items: confirmedFull, addItems, addItemsPending, replaceItems, removeItem, clearItems, enterToSubmit, markRecentlySynced, setSyncSummary } = useSylva();
+  const { items: confirmedFull, addItems, addItemsPending, replaceItems, enterToSubmit, markRecentlySynced, setSyncSummary } = useSylva();
   const confirmed = confirmedFull;
   const [mode, setMode] = useState<Mode>("auto");
   const [idea, setIdea] = useState("");
@@ -235,12 +235,8 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
 
   const discardDraft = () => setDraft(null);
 
-  const removeConfirmed = (id: string) => {
-    removeItem(id);
-  };
-
-  const grouped = groupByDate(confirmed.map((c) => ({ ...c, _key: c.id })));
   const draftGrouped = draft ? groupByDate(draft.items.map((it, i) => ({ ...it, _key: `d-${i}` }))) : null;
+
 
 
 
@@ -443,39 +439,8 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
           </div>
         )}
 
-        {/* Confirmed schedule */}
-        <div className="widget p-7">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <p className="text-xs tracking-widest text-muted-foreground mb-1">我的规划</p>
-              <h3 className="font-display text-2xl">
-                {confirmed.length === 0 ? "还没有任何安排" : `${confirmed.length} 项 · 按日期`}
-              </h3>
-            </div>
-            {confirmed.length > 0 && (
-              <button
-                onClick={() => clearItems()}
-                className="text-xs text-foreground/40 hover:text-destructive transition"
-              >
-                全部清空
-              </button>
-            )}
-          </div>
-
-          {confirmed.length === 0 ? (
-            <div className="py-12 text-center">
-              <div className="inline-flex w-14 h-14 rounded-2xl bg-foreground/5 items-center justify-center mb-3">
-                <Sparkles className="w-6 h-6 text-foreground/30" />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                在左边输入一个想法 — Sylva 会自动帮你拆成日程、待办和提醒
-              </p>
-            </div>
-          ) : (
-            <ItemGroups grouped={grouped} variant="confirmed" onRemove={removeConfirmed} />
-          )}
-        </div>
       </div>
+
 
 
       {/* 预览确认弹窗 */}
