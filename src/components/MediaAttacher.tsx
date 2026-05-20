@@ -72,9 +72,11 @@ import { toast } from "sonner";
 type Props = {
   videos: string[];
   audios: string[];
-  onChange: (next: { videos: string[]; audios: string[] }) => void;
+  images?: string[];
+  onChange: (next: { videos: string[]; audios: string[]; images?: string[] }) => void;
   maxVideos?: number;
   maxAudios?: number;
+  maxImages?: number;
 };
 
 const VIDEO_LIMIT_MB = 30;
