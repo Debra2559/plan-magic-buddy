@@ -288,6 +288,23 @@ export function JournalView() {
                 <EmptyLine text="还没有写下今天 —— 去『随手记 · 日记』补一笔吧" />
               )}
 
+              {/* —— 每日漫画 —— */}
+              <SectionHeader icon={<Wand2 className="w-3.5 h-3.5" />} title="每日漫画" />
+              <ComicPanel
+                date={date}
+                comic={comics.find((c) => c.date === date)}
+                buildSummary={() =>
+                  buildComicSummary({ date, fmt, dayItems, habitsDone: habits.filter((h) => isHabitDoneOn(h, date)), habitsMissed: habits.filter((h) => !isHabitDoneOn(h, date)), dayNotes, dayDiary })
+                }
+                onGenerated={(c) => setComic(c)}
+                onRemove={() => removeComic(date)}
+                onCopyToDiary={(line) => {
+                  const prev = diary.find((d) => d.date === date)?.content ?? "";
+                  upsertDiary(date, { content: prev ? `${prev}\n\n${line}` : line });
+                }}
+                onCopyToNote={(line) => addNote(line, { tags: ["每日漫画"] })}
+              />
+
               {/* —— 给未来的建议 —— */}
               <SectionHeader icon={<Sparkles className="w-3.5 h-3.5" />} title="给未来的自己" />
               <div className="space-y-2">
