@@ -22,6 +22,7 @@ import {
   batchLookupFeishuOpenId,
   getLastCapturedOpenId,
   getFeishuPermissionStatus,
+  getFeishuCaptureDiagnostics,
 } from "@/lib/feishu.functions";
 import {
   getFeishuAuthUrl,
