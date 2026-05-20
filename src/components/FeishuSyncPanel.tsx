@@ -1311,6 +1311,130 @@ export function FeishuSyncPanel() {
             {captureRefreshing ? "刷新中…" : "刷新"}
           </button>
         </div>
+        {/* 捕获/错误明细诊断 */}
+        <div className="mb-2 rounded-md border border-white/10 bg-white/[0.02]">
+          <button
+            type="button"
+            onClick={() => { setDiagOpen((v) => !v); if (!diag) refreshDiag(); }}
+            className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] text-white/70 hover:bg-white/[0.04]"
+          >
+            <AlertTriangle className="w-3 h-3 text-amber-300" />
+            <span className="font-medium">捕获 / 错误明细</span>
+            {diag && diag.reasons.length > 0 && (
+              <span className="px-1.5 py-0.5 rounded bg-rose-400/15 text-rose-300 text-[10px]">{diag.reasons.length} 项问题</span>
+            )}
+            {diag && diag.reasons.length === 0 && (
+              <span className="px-1.5 py-0.5 rounded bg-emerald-400/15 text-emerald-300 text-[10px]">未发现明显问题</span>
+            )}
+            <span className="ml-auto text-white/40">{diagOpen ? "收起" : "展开"}</span>
+          </button>
+          {diagOpen && (
+            <div className="px-2.5 pb-2 space-y-2 text-[11px]">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={refreshDiag}
+                  disabled={diagLoading}
+                  className="text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-50"
+                >
+                  {diagLoading ? "刷新中…" : "刷新明细"}
+                </button>
+                <span className="text-white/40">仅显示最近 webhook 日志</span>
+              </div>
+
+              {diag && diag.reasons.length > 0 && (
+                <div className="rounded border border-rose-400/20 bg-rose-400/[0.04] p-2 space-y-1.5">
+                  <div className="text-rose-200 font-medium">推断原因</div>
+                  <ul className="space-y-1">
+                    {diag.reasons.map((r, i) => (
+                      <li key={i} className="text-rose-100/90">
+                        <span className="font-mono text-[10px] px-1 py-0.5 mr-1 rounded bg-rose-400/15 text-rose-200">{r.code}</span>
+                        {r.text}
+                        {r.hint && <div className="text-white/50 mt-0.5">→ {r.hint}</div>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {diag && (
+                <div className="space-y-2">
+                  <div>
+                    <div className="text-white/60 mb-1">最近捕获日志（{diag.captureLogs.length}）</div>
+                    {diag.captureLogs.length === 0 ? (
+                      <div className="text-white/40">尚无 capture_open_id 日志</div>
+                    ) : (
+                      <ul className="space-y-1">
+                        {diag.captureLogs.map((l) => (
+                          <li key={l.id} className="flex items-start gap-2 border-l-2 pl-2" style={{ borderColor: l.level === "error" ? "rgba(244,63,94,0.5)" : l.level === "warn" ? "rgba(251,191,36,0.5)" : "rgba(255,255,255,0.15)" }}>
+                            <span className="text-white/40 tabular-nums shrink-0">{new Date(l.at).toLocaleTimeString()}</span>
+                            <span className={`text-[10px] px-1 py-0.5 rounded shrink-0 ${l.level === "error" ? "bg-rose-400/15 text-rose-300" : l.level === "warn" ? "bg-amber-400/15 text-amber-300" : "bg-white/5 text-white/60"}`}>{l.level}</span>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-white/80 break-words">{l.message || l.error || "（无消息）"}</div>
+                              <div className="text-white/40 text-[10px] flex flex-wrap gap-x-2">
+                                {l.eventType && <span>event: <code className="font-mono">{l.eventType}</code></span>}
+                                {l.senderOpenId && <span>open_id: <code className="font-mono">{l.senderOpenId.slice(0, 14)}…</code></span>}
+                                {l.requestId && <span title={l.requestId}>req: <code className="font-mono">{l.requestId.slice(0, 8)}</code></span>}
+                              </div>
+                              {l.error && l.message !== l.error && (
+                                <div className="text-rose-200/80 text-[10px] break-words">err: {l.error}</div>
+                              )}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-white/60 mb-1">最近发送日志（{diag.sendLogs.length}）</div>
+                    {diag.sendLogs.length === 0 ? (
+                      <div className="text-white/40">尚无 send 相关日志</div>
+                    ) : (
+                      <ul className="space-y-1">
+                        {diag.sendLogs.map((l) => (
+                          <li key={l.id} className="flex items-start gap-2 border-l-2 pl-2" style={{ borderColor: l.level === "error" ? "rgba(244,63,94,0.5)" : "rgba(255,255,255,0.15)" }}>
+                            <span className="text-white/40 tabular-nums shrink-0">{new Date(l.at).toLocaleTimeString()}</span>
+                            <span className={`text-[10px] px-1 py-0.5 rounded shrink-0 ${l.level === "error" ? "bg-rose-400/15 text-rose-300" : "bg-white/5 text-white/60"}`}>{l.step}</span>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-white/80 break-words">{l.message || l.error || "（无消息）"}</div>
+                              {l.error && l.message !== l.error && <div className="text-rose-200/80 text-[10px] break-words">err: {l.error}</div>}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-white/60 mb-1">其它告警/错误（{diag.errorLogs.length}）</div>
+                    {diag.errorLogs.length === 0 ? (
+                      <div className="text-white/40">最近无告警或错误</div>
+                    ) : (
+                      <ul className="space-y-1 max-h-48 overflow-auto pr-1">
+                        {diag.errorLogs.map((l) => (
+                          <li key={l.id} className="flex items-start gap-2 border-l-2 pl-2" style={{ borderColor: l.level === "error" ? "rgba(244,63,94,0.5)" : "rgba(251,191,36,0.5)" }}>
+                            <span className="text-white/40 tabular-nums shrink-0">{new Date(l.at).toLocaleTimeString()}</span>
+                            <span className={`text-[10px] px-1 py-0.5 rounded shrink-0 ${l.level === "error" ? "bg-rose-400/15 text-rose-300" : "bg-amber-400/15 text-amber-300"}`}>{l.step}</span>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-white/80 break-words">{l.message || l.error || "（无消息）"}</div>
+                              <div className="text-white/40 text-[10px] flex flex-wrap gap-x-2">
+                                {l.eventType && <span>event: <code className="font-mono">{l.eventType}</code></span>}
+                                {typeof l.status === "number" && <span>status: {l.status}</span>}
+                                {l.requestId && <span>req: <code className="font-mono">{l.requestId.slice(0, 8)}</code></span>}
+                              </div>
+                              {l.error && l.message !== l.error && <div className="text-rose-200/80 text-[10px] break-words">err: {l.error}</div>}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
         {verify.status !== "idle" && (
           <div className={`mb-2 rounded-md border px-2.5 py-1.5 text-[11px] flex items-center gap-2 flex-wrap ${
             verify.status === "ok" ? "border-emerald-400/30 bg-emerald-400/5 text-emerald-200"
