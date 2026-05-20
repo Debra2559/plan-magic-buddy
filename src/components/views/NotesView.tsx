@@ -532,10 +532,10 @@ function QuickDiaryEditor({ open, onToggle }: { open: boolean; onToggle: () => v
       <button
         onClick={onToggle}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/8 text-xs text-white/70 hover:text-white hover:border-white/15 transition"
-        title="编辑今日日记"
+        title="编辑今日手帐"
       >
         <BookHeart className="w-3.5 h-3.5 text-amber-glow" />
-        {open ? "收起今日日记" : "编辑今日日记"}
+        {open ? "收起今日手帐" : "编辑今日手帐"}
         {entry?.content?.trim() && !open && (
           <span className="text-[10px] text-white/40">· 已有 {entry.content.length} 字</span>
         )}
@@ -543,7 +543,7 @@ function QuickDiaryEditor({ open, onToggle }: { open: boolean; onToggle: () => v
       {open && (
         <div className="widget p-4 mt-2">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] tracking-widest text-amber-glow">{today} · 今日日记</span>
+            <span className="text-[10px] tracking-widest text-amber-glow">{today} · 今日手帐</span>
             <span className="text-[10px] text-white/40">{content.length} 字</span>
           </div>
           <textarea
