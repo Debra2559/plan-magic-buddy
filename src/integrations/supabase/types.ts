@@ -682,6 +682,7 @@ export type Database = {
       }
       notes: {
         Row: {
+          audios: string[]
           created_at: string
           deleted_at: string | null
           id: string
@@ -692,8 +693,10 @@ export type Database = {
           text: string
           updated_at: string
           user_id: string | null
+          videos: string[]
         }
         Insert: {
+          audios?: string[]
           created_at?: string
           deleted_at?: string | null
           id: string
@@ -704,8 +707,10 @@ export type Database = {
           text?: string
           updated_at?: string
           user_id?: string | null
+          videos?: string[]
         }
         Update: {
+          audios?: string[]
           created_at?: string
           deleted_at?: string | null
           id?: string
@@ -716,6 +721,7 @@ export type Database = {
           text?: string
           updated_at?: string
           user_id?: string | null
+          videos?: string[]
         }
         Relationships: []
       }
