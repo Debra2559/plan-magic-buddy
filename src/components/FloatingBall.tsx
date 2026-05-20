@@ -150,7 +150,7 @@ export function FloatingBall() {
       />
       <div
         role="button"
-        aria-label="悬浮球"
+        aria-label={`${aiName} 悬浮球`}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -163,21 +163,30 @@ export function FloatingBall() {
           ring-1 ring-white/20
           hover:scale-110 active:scale-95 transition-transform duration-200 ease-out
           ${dragging ? "scale-95" : ""}`}
+        title={aiName}
       >
+        {/* AI 头像 */}
+        <img
+          src={avatarSrc}
+          alt={aiName}
+          draggable={false}
+          className="relative w-full h-full object-cover rounded-full pointer-events-none"
+        />
         {/* 顶部高光 */}
-        <span aria-hidden className="absolute inset-x-2 top-1 h-3 rounded-full bg-white/35 blur-[3px]" />
+        <span aria-hidden className="absolute inset-x-2 top-1 h-3 rounded-full bg-white/35 blur-[3px] pointer-events-none" />
         {/* 旋转光环 */}
         <span
           aria-hidden
-          className="absolute inset-0 rounded-full opacity-60 group-hover:opacity-100 transition-opacity"
+          className="absolute inset-0 rounded-full opacity-50 group-hover:opacity-90 transition-opacity pointer-events-none"
           style={{
             background: "conic-gradient(from 0deg, transparent 0%, rgba(255,255,255,0.45) 25%, transparent 50%, rgba(255,200,120,0.4) 75%, transparent 100%)",
-            maskImage: "radial-gradient(circle, transparent 55%, black 58%, black 100%)",
-            WebkitMaskImage: "radial-gradient(circle, transparent 55%, black 58%, black 100%)",
+            maskImage: "radial-gradient(circle, transparent 60%, black 63%, black 100%)",
+            WebkitMaskImage: "radial-gradient(circle, transparent 60%, black 63%, black 100%)",
             animation: "spin 6s linear infinite",
           }}
         />
-        <Sparkles className="relative w-5 h-5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" />
+        {/* 右下角微光火花标记，提示这是 AI 入口 */}
+        <Sparkles aria-hidden className="absolute bottom-0.5 right-0.5 w-3 h-3 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
       </div>
 
       {open && (
