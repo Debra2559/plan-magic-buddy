@@ -588,8 +588,20 @@ function ItemCard({
       <div className="flex items-center gap-2 mb-1.5">
         <DoneCheckbox done={done} onToggle={onToggleDone} />
         <Icon className="w-3.5 h-3.5 text-amber-glow/80 shrink-0" />
-        <span className={`text-[10px] px-1.5 py-0.5 rounded-md border ${tagColor[item.tag] ?? "bg-white/10 text-white/70 border-white/15"}`}>
+        <span className={`relative text-[10px] px-1.5 py-0.5 rounded-md border ${tagColor[item.tag] ?? "bg-white/10 text-white/70 border-white/15"} ${pending ? "cursor-pointer" : ""}`}>
           {item.tag}
+          {pending && (
+            <select
+              value={item.tag}
+              onChange={(e) => onChange({ tag: e.target.value })}
+              className="absolute inset-0 opacity-0 cursor-pointer"
+              title="点击修改标签"
+            >
+              {["工作", "学习", "健康", "生活", "英语", "习惯"].map((t) => (
+                <option key={t} value={t} className="bg-background text-foreground">{t}</option>
+              ))}
+            </select>
+          )}
         </span>
         <div className="ml-auto flex items-center gap-1">
           <TimePicker
