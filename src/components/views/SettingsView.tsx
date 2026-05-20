@@ -4,6 +4,7 @@ import { FeishuSyncPanel } from "@/components/FeishuSyncPanel";
 import { FeishuWebhookLogsPanel } from "@/components/FeishuWebhookLogsPanel";
 import { AiPersonaPanel } from "@/components/AiPersonaPanel";
 import { useSylva } from "@/lib/sylva-store";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type SimpleRow = { label: string; value: string; action: string };
 
@@ -254,6 +255,7 @@ export function SettingsView() {
           <div>
             <p className="text-[10px] tracking-widest text-amber-glow mb-1">偏好设置</p>
             <h2 className="font-display text-2xl text-white leading-tight">让 Sylva<br/>长成你的样子。</h2>
+            <div className="mt-3"><ThemeToggle /></div>
           </div>
           <nav className="flex flex-col gap-3">
             {NAV.map((group) => {
