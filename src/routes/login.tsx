@@ -138,6 +138,7 @@ function LoginPage() {
             return;
           }
         }
+        try { localStorage.setItem("sylva:onboarding", "1"); } catch {}
         toast.success("已注册并登录，正在进入...");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password: pwd });

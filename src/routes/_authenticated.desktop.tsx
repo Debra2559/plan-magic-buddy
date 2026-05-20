@@ -13,6 +13,7 @@ import { HabitsView } from "@/components/views/HabitsView";
 import { JournalView } from "@/components/views/JournalView";
 import { SettingsView } from "@/components/views/SettingsView";
 import { SyncSummaryModal } from "@/components/SyncSummaryModal";
+import { OnboardingHint } from "@/components/OnboardingHint";
 import { useSylva } from "@/lib/sylva-store";
 import {
   Apple,
@@ -72,6 +73,16 @@ function DesktopApp() {
   });
   const [todosFilter, setTodosFilter] = useState<"todo" | "reminder" | "event" | "all">("all");
   const { registerNavigate } = useSylva();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("sylva:onboarding") === "1") {
+        setShowOnboarding(true);
+        localStorage.removeItem("sylva:onboarding");
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     registerNavigate((nextView, opts) => {
@@ -222,6 +233,8 @@ function DesktopApp() {
       >
         <ChevronLeft className="w-3 h-3" /> 返回介绍页
       </Link>
+
+      {showOnboarding && <OnboardingHint onClose={() => setShowOnboarding(false)} />}
     </div>
   );
 }
