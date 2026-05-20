@@ -1183,10 +1183,27 @@ export function FeishuSyncPanel() {
                 setNotify(next);
                 try {
                   await runSetNotify({ data: next });
+                  // 重新从后端拉取最新通知配置，确保后续同步/推送都使用最新接收人
+                  try {
+                    const fresh = await runGetNotify();
+                    setNotify(fresh);
+                  } catch {}
+                  // 同步刷新飞书设置与捕获状态
+                  try {
+                    const s = await runGetSettings();
+                    setState((prev) => ({
+                      ...prev,
+                      calendarId: s.selectedCalendarId ?? prev.calendarId,
+                      direction: s.direction,
+                      lastSyncAt: s.lastSyncAt ?? prev.lastSyncAt,
+                      status: s.selectedCalendarId ? "connected" : prev.status,
+                    }));
+                  } catch {}
                   setNotifySaved(true);
-                  setNotifyResult({ ok: true, msg: "已覆盖保存为最新捕获的 open_id" });
+                  setNotifyResult({ ok: true, msg: "已覆盖并应用到飞书同步设置，后续同步将使用新接收人" });
                   setTimeout(() => setNotifySaved(false), 1500);
                   refreshCapture();
+                  refreshPerm();
                 } catch (e: any) {
                   setNotifyResult({ ok: false, msg: e?.message ?? "保存失败" });
                 }
