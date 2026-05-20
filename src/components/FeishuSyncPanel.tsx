@@ -72,6 +72,29 @@ const loadPersisted = (): Persisted => {
   } catch {}
   return { status: "disconnected", calendarId: null, direction: "two-way", lastSyncAt: null };
 };
+const TIMEZONE_OPTIONS: { value: string; label: string }[] = [
+  { value: "Asia/Shanghai", label: "北京 / 上海 (UTC+8)" },
+  { value: "Asia/Hong_Kong", label: "香港 (UTC+8)" },
+  { value: "Asia/Taipei", label: "台北 (UTC+8)" },
+  { value: "Asia/Tokyo", label: "东京 (UTC+9)" },
+  { value: "Asia/Seoul", label: "首尔 (UTC+9)" },
+  { value: "Asia/Singapore", label: "新加坡 (UTC+8)" },
+  { value: "Asia/Bangkok", label: "曼谷 (UTC+7)" },
+  { value: "Asia/Kolkata", label: "新德里 (UTC+5:30)" },
+  { value: "Asia/Dubai", label: "迪拜 (UTC+4)" },
+  { value: "Europe/London", label: "伦敦 (UTC+0/+1)" },
+  { value: "Europe/Paris", label: "巴黎 / 柏林 (UTC+1/+2)" },
+  { value: "Europe/Moscow", label: "莫斯科 (UTC+3)" },
+  { value: "America/New_York", label: "纽约 (UTC-5/-4)" },
+  { value: "America/Chicago", label: "芝加哥 (UTC-6/-5)" },
+  { value: "America/Denver", label: "丹佛 (UTC-7/-6)" },
+  { value: "America/Los_Angeles", label: "洛杉矶 (UTC-8/-7)" },
+  { value: "America/Sao_Paulo", label: "圣保罗 (UTC-3)" },
+  { value: "Australia/Sydney", label: "悉尼 (UTC+10/+11)" },
+  { value: "Pacific/Auckland", label: "奥克兰 (UTC+12/+13)" },
+  { value: "UTC", label: "UTC" },
+];
+
 
 export function FeishuSyncPanel() {
   const { items, addItems } = useSylva();
