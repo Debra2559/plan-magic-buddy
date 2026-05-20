@@ -16,6 +16,7 @@ export function HabitsView() {
   const { habits, toggleHabit, addHabit, updateHabit, removeHabit } = useSylva();
   const today = todayLocal();
   const [editing, setEditing] = useState<Habit | null>(null);
+  const [deleting, setDeleting] = useState<Habit | null>(null);
   const [creating, setCreating] = useState(false);
 
   const doneCount = habits.filter((h) => isHabitDoneOn(h, today)).length;
