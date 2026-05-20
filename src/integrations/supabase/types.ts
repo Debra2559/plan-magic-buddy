@@ -41,8 +41,10 @@ export type Database = {
       feishu_settings: {
         Row: {
           created_at: string
+          daily_recap_done_dates: string[]
           daily_recap_enabled: boolean
           daily_recap_hour: number
+          daily_recap_last_followup_date: string | null
           daily_recap_last_sent_date: string | null
           direction: string
           id: string
@@ -58,8 +60,10 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          daily_recap_done_dates?: string[]
           daily_recap_enabled?: boolean
           daily_recap_hour?: number
+          daily_recap_last_followup_date?: string | null
           daily_recap_last_sent_date?: string | null
           direction?: string
           id?: string
@@ -75,8 +79,10 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          daily_recap_done_dates?: string[]
           daily_recap_enabled?: boolean
           daily_recap_hour?: number
+          daily_recap_last_followup_date?: string | null
           daily_recap_last_sent_date?: string | null
           direction?: string
           id?: string
