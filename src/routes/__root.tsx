@@ -15,6 +15,7 @@ import { ReminderRunner } from "@/components/ReminderRunner";
 import { Toaster } from "sonner";
 import { AvatarStatsOverlay } from "@/components/AvatarStatsOverlay";
 import { QuickCaptureHotkey } from "@/components/QuickCaptureHotkey";
+import { FloatingBall } from "@/components/FloatingBall";
 import { AuthProvider } from "@/lib/auth-context";
 import { PersonaProvider } from "@/lib/persona";
 import { ThemeProvider, useTheme, themeBootScript } from "@/lib/theme";
