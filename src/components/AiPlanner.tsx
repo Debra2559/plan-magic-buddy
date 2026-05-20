@@ -28,12 +28,13 @@ const tagColors: Record<string, string> = {
 };
 
 export function AiPlanner() {
+  const { items: confirmedFull, addItems, replaceItems, removeItem, clearItems } = useSylva();
+  const confirmed = confirmedFull;
   const [mode, setMode] = useState<Mode>("create");
   const [idea, setIdea] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<Plan | null>(null);
-  const [confirmed, setConfirmed] = useState<PlanItem[]>([]);
   const planFn = useServerFn(generatePlan);
 
   const handleSubmit = async () => {
@@ -42,11 +43,12 @@ export function AiPlanner() {
     setError(null);
     setDraft(null);
     try {
+      const existing: PlanItem[] = confirmed.map(({ id: _id, done: _done, ...rest }) => rest);
       const result = await planFn({
         data: {
           idea: idea.trim(),
           mode,
-          existing: mode !== "create" ? confirmed : undefined,
+          existing: mode !== "create" ? existing : undefined,
         },
       });
       if (!result.ok) {
@@ -64,9 +66,9 @@ export function AiPlanner() {
   const confirmDraft = () => {
     if (!draft) return;
     if (mode === "add") {
-      setConfirmed([...confirmed, ...draft.items]);
+      addItems(draft.items);
     } else {
-      setConfirmed(draft.items);
+      replaceItems(draft.items);
     }
     setDraft(null);
     setIdea("");
@@ -74,11 +76,11 @@ export function AiPlanner() {
 
   const discardDraft = () => setDraft(null);
 
-  const removeConfirmed = (idx: number) => {
-    setConfirmed(confirmed.filter((_, i) => i !== idx));
+  const removeConfirmed = (id: string) => {
+    removeItem(id);
   };
 
-  const grouped = groupByDate(confirmed);
+  const grouped = groupByDateWithId(confirmed);
   const draftGrouped = draft ? groupByDate(draft.items) : null;
 
   return (
