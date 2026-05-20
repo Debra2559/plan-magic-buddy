@@ -77,13 +77,21 @@ function LoginPage() {
     setBusy(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password: pwd,
           options: { emailRedirectTo: window.location.origin + "/desktop" },
         });
         if (error) throw error;
-        toast.success("已注册，正在进入...");
+        // 若未返回 session（开启了邮箱验证），尝试立即用同一组凭据登录
+        if (!data.session) {
+          const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password: pwd });
+          if (signInErr) {
+            toast.success("注册成功，请查收邮件完成验证后再登录");
+            return;
+          }
+        }
+        toast.success("已注册并登录，正在进入...");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password: pwd });
         if (error) throw error;
