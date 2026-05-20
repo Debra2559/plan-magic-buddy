@@ -215,7 +215,7 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
       events: withIds.filter((i) => i.type === "event"),
       todos: withIds.filter((i) => i.type === "todo"),
       reminders: withIds.filter((i) => i.type === "reminder"),
-      appliedMode: draftMode,
+      appliedMode: "add",
     });
     const parts = [
       counts.event ? `日程 ${counts.event}` : "",
