@@ -363,13 +363,10 @@ function EditableRow({
         </>
       ) : (
         <>
-          <input
-            type="time"
+          <TimePicker
             value={item.time ?? ""}
-            onChange={(e) => onChange({ time: e.target.value || undefined })}
-            onClick={(e) => e.stopPropagation()}
-            title="点击编辑时间"
-            className="bg-black/30 border border-white/10 hover:border-white/25 rounded px-1 py-0.5 text-[10px] font-mono text-amber-glow/90 w-[68px] shrink-0 focus:outline-none cursor-pointer"
+            onChange={(v) => onChange({ time: v || undefined })}
+            size="sm"
           />
           <button
             onClick={() => setEditing(true)}
