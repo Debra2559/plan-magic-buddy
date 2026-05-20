@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { supabaseAdmin } from '@/integrations/supabase/client.server'
 import { z } from 'zod'
 import { getUserAccessToken } from './feishu-user-auth.functions'
+import { randomUUID } from 'crypto'
 
 const FEISHU_BASE = 'https://open.feishu.cn/open-apis'
 
@@ -555,12 +556,13 @@ type NotifySettings = {
   receive_id_type: 'open_id' | 'chat_id' | 'user_id' | 'email'
   notify_on_discover: boolean
   notify_on_accept: boolean
+  user_open_id?: string | null
 }
 
 async function loadNotifySettings(): Promise<NotifySettings | null> {
   const { data } = await supabaseAdmin
     .from('feishu_settings')
-    .select('notify_receive_id, notify_receive_id_type, notify_on_discover, notify_on_accept')
+    .select('notify_receive_id, notify_receive_id_type, notify_on_discover, notify_on_accept, user_open_id')
     .limit(1)
     .maybeSingle()
   if (!data) return null
@@ -569,6 +571,7 @@ async function loadNotifySettings(): Promise<NotifySettings | null> {
     receive_id_type: ((data as any).notify_receive_id_type ?? 'open_id') as NotifySettings['receive_id_type'],
     notify_on_discover: (data as any).notify_on_discover ?? true,
     notify_on_accept: (data as any).notify_on_accept ?? true,
+    user_open_id: (data as any).user_open_id ?? null,
   }
 }
 
