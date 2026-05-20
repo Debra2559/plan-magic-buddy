@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useSylva, isHabitDoneOn } from "@/lib/sylva-store";
-import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X, CheckCircle2, RotateCcw, Check, Sparkles, Flame } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X, CheckCircle2, RotateCcw, Check, Sparkles, Flame, BookHeart, StickyNote, ImageIcon, TrendingUp } from "lucide-react";
 import type { PlanItem } from "@/lib/plan.functions";
 import { TimePicker } from "@/components/ui/time-picker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -25,7 +25,7 @@ const tagColor: Record<string, string> = {
 const typeIcon = { event: CalIcon, todo: Clock, reminder: Bell } as const;
 
 export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void; onGoSettings?: () => void } = {}) {
-  const { items, habits, toggleHabitOn, addItems, updateItem, removeItem, toggleDone, isRecapDone, unmarkRecapDone, isRecentlySynced, markRecentlySynced, pendingIds, confirmPending, revertPending } = useSylva();
+  const { items, habits, notes, diary, comics, navigateTo, toggleHabitOn, addItems, updateItem, removeItem, toggleDone, isRecapDone, unmarkRecapDone, isRecentlySynced, markRecentlySynced, pendingIds, confirmPending, revertPending } = useSylva();
   const [cursor, setCursor] = useState(new Date(2026, 4, 1)); // May 2026
   const [selected, setSelected] = useState("2026-05-19");
   const [editorDate, setEditorDate] = useState<string | null>(null);
@@ -293,13 +293,18 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
 
 
       {/* Right detail */}
-      <aside className="w-72 shrink-0 bg-black/30 border-l border-white/10 p-5 overflow-auto">
-        <p className="text-[10px] tracking-widest text-amber-glow mb-1">所选日期</p>
-        <h3 className="font-display text-2xl text-white mb-1">{formatLong(selected)}</h3>
-        <p className="text-xs text-white/40 mb-5">{selectedItems.length} 项安排</p>
+      <aside className="w-80 shrink-0 bg-gradient-to-b from-black/40 to-black/20 border-l border-white/10 p-5 overflow-auto space-y-5">
+        <div>
+          <p className="text-[10px] tracking-widest text-amber-glow mb-1">所选日期</p>
+          <h3 className="font-display text-2xl text-white mb-1">{formatLong(selected)}</h3>
+          <p className="text-xs text-white/40">{selectedItems.length} 项安排</p>
+        </div>
+
+        {/* Day stats strip */}
+        <DayStats items={selectedItems} habits={habits} selected={selected} />
 
         {isRecapDone(selected) && (
-          <div className="p-3 rounded-xl bg-moss/15 border border-moss/30 mb-2 flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-moss/15 border border-moss/30 flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-moss shrink-0" />
             <div className="min-w-0 flex-1">
               <p className="text-xs text-moss font-medium">今日小结 · 已完成</p>
@@ -318,32 +323,35 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
           </div>
         )}
 
-        {selectedItems.length === 0 ? (
-          <div className="text-center py-10 text-xs text-white/40">这一天还没有安排</div>
-        ) : (
-          <div className="space-y-2">
-            {selectedItems.map((it) => (
-              <ItemCard
-                key={it.id}
-                item={it}
-                onChange={(patch) => updateItem(it.id, patch)}
-                onToggleDone={() => toggleDone(it.id)}
-                onDelete={() => removeItem(it.id)}
-                onConfirm={it.pending ? () => confirmAndFocus([it.id]) : undefined}
-                onRevert={it.pending ? () => revertPending([it.id]) : undefined}
-              />
-            ))}
-          </div>
-        )}
+        <section>
+          <SectionHeader icon={CalIcon} title="日程" count={selectedItems.length} accent="amber" />
+          {selectedItems.length === 0 ? (
+            <div className="text-center py-6 text-xs text-white/40 rounded-xl border border-dashed border-white/10">这一天还没有安排</div>
+          ) : (
+            <div className="space-y-2">
+              {selectedItems.map((it) => (
+                <ItemCard
+                  key={it.id}
+                  item={it}
+                  onChange={(patch) => updateItem(it.id, patch)}
+                  onToggleDone={() => toggleDone(it.id)}
+                  onDelete={() => removeItem(it.id)}
+                  onConfirm={it.pending ? () => confirmAndFocus([it.id]) : undefined}
+                  onRevert={it.pending ? () => revertPending([it.id]) : undefined}
+                />
+              ))}
+            </div>
+          )}
+        </section>
 
         {habits.length > 0 && (
-          <div className="mt-5 pt-4 border-t border-white/10">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] tracking-widest text-moss">习惯打卡</p>
-              <p className="text-[10px] text-white/40 font-mono">
-                {habits.filter((h) => isHabitDoneOn(h, selected)).length}/{habits.length}
-              </p>
-            </div>
+          <section>
+            <SectionHeader
+              icon={Flame}
+              title="习惯打卡"
+              count={`${habits.filter((h) => isHabitDoneOn(h, selected)).length}/${habits.length}`}
+              accent="moss"
+            />
             <div className="space-y-1.5">
               {habits.map((h) => {
                 const done = isHabitDoneOn(h, selected);
@@ -368,8 +376,14 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                 );
               })}
             </div>
-          </div>
+          </section>
         )}
+
+        <DayDiaryCard date={selected} diary={diary} onOpen={() => navigateTo?.("journal")} />
+
+        <DayNotesCard date={selected} notes={notes} onOpen={() => navigateTo?.("notes")} />
+
+        <DayComicCard date={selected} comics={comics} onOpen={() => navigateTo?.("journal")} />
 
         <QuickAdd date={selected} onAdd={(item) => addItems([item])} />
       </aside>
@@ -967,5 +981,150 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
     >
       {children}
     </button>
+  );
+}
+
+/* ---------- Right-panel rich modules ---------- */
+
+function SectionHeader({ icon: Icon, title, count, accent = "amber" }: { icon: any; title: string; count?: number | string; accent?: "amber" | "moss" | "accent" }) {
+  const color = accent === "moss" ? "text-moss" : accent === "accent" ? "text-accent" : "text-amber-glow";
+  return (
+    <div className="flex items-center justify-between mb-2">
+      <div className={`flex items-center gap-1.5 text-[10px] tracking-widest ${color}`}>
+        <Icon className="w-3 h-3" />
+        {title}
+      </div>
+      {count !== undefined && <span className="text-[10px] text-white/40 font-mono">{count}</span>}
+    </div>
+  );
+}
+
+function DayStats({ items, habits, selected }: { items: any[]; habits: any[]; selected: string }) {
+  const total = items.length;
+  const done = items.filter((i) => i.done).length;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const byType = {
+    event: items.filter((i) => i.type === "event").length,
+    todo: items.filter((i) => i.type === "todo").length,
+    reminder: items.filter((i) => i.type === "reminder").length,
+  };
+  const habitDone = habits.filter((h) => isHabitDoneOn(h, selected)).length;
+  const focusMin = items.filter((i) => i.done).reduce((s, i) => s + (i.duration_min ?? 0), 0);
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3.5 space-y-3">
+      <div>
+        <div className="flex items-center justify-between text-[11px] mb-1.5">
+          <span className="text-white/60 flex items-center gap-1"><TrendingUp className="w-3 h-3" />完成进度</span>
+          <span className="text-amber-glow font-mono">{done}/{total} · {pct}%</span>
+        </div>
+        <div className="h-1.5 rounded-full bg-white/8 overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-amber-glow to-moss transition-all" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+      <div className="grid grid-cols-4 gap-1.5 text-center">
+        <Stat label="事件" value={byType.event} />
+        <Stat label="待办" value={byType.todo} />
+        <Stat label="提醒" value={byType.reminder} />
+        <Stat label="习惯" value={`${habitDone}/${habits.length}`} />
+      </div>
+      {focusMin > 0 && (
+        <div className="text-[10px] text-white/45 text-center">已聚焦 <span className="text-moss font-mono">{focusMin}</span> 分钟</div>
+      )}
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="rounded-md bg-white/[0.04] py-1.5">
+      <div className="text-sm font-mono text-white">{value}</div>
+      <div className="text-[9px] text-white/40 tracking-wider">{label}</div>
+    </div>
+  );
+}
+
+const moodEmoji: Record<string, string> = { great: "😄", good: "🙂", normal: "😐", down: "😕", bad: "😣" };
+
+function DayDiaryCard({ date, diary, onOpen }: { date: string; diary: any[]; onOpen: () => void }) {
+  const entry = diary.find((d) => d.date === date);
+  return (
+    <section>
+      <SectionHeader icon={BookHeart} title="今日记录" />
+      <button
+        onClick={onOpen}
+        className="w-full text-left rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] p-3 transition group"
+      >
+        {entry ? (
+          <>
+            <div className="flex items-center gap-2 text-xs text-white/60 mb-1">
+              {entry.mood && <span className="text-base leading-none">{moodEmoji[entry.mood] ?? "•"}</span>}
+              <span>{entry.mood ? `心情：${entry.mood}` : "已记录"}</span>
+              <span className="ml-auto text-[10px] text-white/30 group-hover:text-amber-glow transition">查看 →</span>
+            </div>
+            <p className="text-xs text-white/75 line-clamp-3 leading-relaxed">{entry.content || "（空内容）"}</p>
+          </>
+        ) : (
+          <div className="text-xs text-white/45 text-center py-2">还没有当日记录 · 点击去写一条</div>
+        )}
+      </button>
+    </section>
+  );
+}
+
+function DayNotesCard({ date, notes, onOpen }: { date: string; notes: any[]; onOpen: () => void }) {
+  const dayNotes = notes
+    .filter((n) => typeof n.createdAt === "string" && n.createdAt.slice(0, 10) === date)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 3);
+  return (
+    <section>
+      <SectionHeader icon={StickyNote} title="当日随手记" count={dayNotes.length || undefined} />
+      {dayNotes.length === 0 ? (
+        <button onClick={onOpen} className="w-full text-xs text-white/45 text-center py-3 rounded-xl border border-dashed border-white/10 hover:bg-white/[0.04] transition">
+          这一天没有随手记
+        </button>
+      ) : (
+        <div className="space-y-1.5">
+          {dayNotes.map((n) => (
+            <button
+              key={n.id}
+              onClick={onOpen}
+              className="w-full text-left rounded-lg border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] p-2.5 transition"
+            >
+              <div className="flex items-center gap-1.5 mb-1">
+                {n.mood && <span className="text-[11px]">{moodEmoji[n.mood] ?? "•"}</span>}
+                {(n.tags ?? []).slice(0, 2).map((t: string) => (
+                  <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-white/8 text-white/55">{t}</span>
+                ))}
+                <span className="ml-auto text-[9px] text-white/30 font-mono">{n.createdAt.slice(11, 16)}</span>
+              </div>
+              <p className="text-[11px] text-white/75 line-clamp-2 leading-relaxed">{n.text}</p>
+            </button>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function DayComicCard({ date, comics, onOpen }: { date: string; comics: any[]; onOpen: () => void }) {
+  const comic = comics.find((c) => c.date === date);
+  if (!comic) return null;
+  return (
+    <section>
+      <SectionHeader icon={ImageIcon} title="当日漫画" />
+      <button
+        onClick={onOpen}
+        className="block w-full rounded-xl overflow-hidden border border-amber-glow/25 bg-black/40 hover:border-amber-glow/50 transition group"
+      >
+        <div className="aspect-square w-full overflow-hidden bg-black/40">
+          <img src={comic.imageUrl} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition" />
+        </div>
+        {comic.caption && (
+          <div className="px-3 py-2 text-[11px] text-white/70 line-clamp-2 leading-relaxed">{comic.caption}</div>
+        )}
+      </button>
+    </section>
   );
 }
