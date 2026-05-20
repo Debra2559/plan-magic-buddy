@@ -304,14 +304,20 @@ function DayEditor({
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
-          placeholder="添加一条安排…"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              submit();
+            }
+          }}
+          placeholder="添加一条安排…（Enter 提交）"
+          title="Enter 提交 · 单行输入框不支持换行"
           className="flex-1 bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-amber-glow/50"
         />
         <button
           onClick={submit}
           className="p-1.5 rounded bg-amber-glow/80 text-primary-foreground hover:bg-amber-glow"
-          title="添加"
+          title="添加（Enter）"
         >
           <Plus className="w-3.5 h-3.5" />
         </button>
