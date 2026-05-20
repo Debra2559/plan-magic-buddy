@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as DesktopRouteImport } from './routes/desktop'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicFeishuWebhookRouteImport } from './routes/api/public/feishu/webhook'
 
 const DesktopRoute = DesktopRouteImport.update({
   id: '/desktop',
@@ -22,31 +23,40 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicFeishuWebhookRoute = ApiPublicFeishuWebhookRouteImport.update({
+  id: '/api/public/feishu/webhook',
+  path: '/api/public/feishu/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/desktop': typeof DesktopRoute
+  '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/desktop': typeof DesktopRoute
+  '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/desktop': typeof DesktopRoute
+  '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/desktop'
+  fullPaths: '/' | '/desktop' | '/api/public/feishu/webhook'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/desktop'
-  id: '__root__' | '/' | '/desktop'
+  to: '/' | '/desktop' | '/api/public/feishu/webhook'
+  id: '__root__' | '/' | '/desktop' | '/api/public/feishu/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DesktopRoute: typeof DesktopRoute
+  ApiPublicFeishuWebhookRoute: typeof ApiPublicFeishuWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,13 +75,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/feishu/webhook': {
+      id: '/api/public/feishu/webhook'
+      path: '/api/public/feishu/webhook'
+      fullPath: '/api/public/feishu/webhook'
+      preLoaderRoute: typeof ApiPublicFeishuWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DesktopRoute: DesktopRoute,
+  ApiPublicFeishuWebhookRoute: ApiPublicFeishuWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
