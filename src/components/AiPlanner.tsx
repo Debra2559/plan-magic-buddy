@@ -583,10 +583,10 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
                   <X className="w-3 h-3" /> 丢弃
                 </button>
                 <button
-                  onClick={confirmDraft}
+                  onClick={openPreview}
                   className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs bg-moss text-primary-foreground hover:scale-[1.02] transition"
                 >
-                  <Check className="w-3 h-3" /> 确认 ({draft.items.length})
+                  <Eye className="w-3 h-3" /> 预览并确认 ({draft.items.length})
                 </button>
               </div>
             </div>
