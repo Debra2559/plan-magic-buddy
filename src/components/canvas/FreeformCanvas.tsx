@@ -139,7 +139,7 @@ export function FreeformCanvas({ kind, title }: Props) {
     if (tool === "note") {
       const item: NoteItem = { id, type: "note", x: cx - 90, y: cy - 50, w: 180, h: 120, text: "", color: noteColor };
       persist({ ...dataRef.current, items: [...dataRef.current.items, item] });
-      setSelected(id); setTool("select");
+      setSelected(id); setEditingId(id); setTool("select");
     } else if (tool === "pen") {
       drawing.current = { id, pts: [cx, cy] };
       const item: StrokeItem = { id, type: "stroke", points: [cx, cy], color: penColor, width: penWidth };
