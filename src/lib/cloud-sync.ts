@@ -32,7 +32,6 @@ export const itemToRow = (i: DoneItem) => ({
 });
 
 type NoteRow = {
-type NoteRow = {
   id: string; text: string; mood: string | null;
   tags: string[]; pinned: boolean; images: string[];
   videos?: string[] | null; audios?: string[] | null;
