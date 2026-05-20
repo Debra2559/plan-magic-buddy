@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth-context";
 import {
   MousePointer2, StickyNote, Pen, ArrowRight, Image as ImageIcon,
   Trash2, ZoomIn, ZoomOut, Maximize2, Loader2, Hand,
+  FileText, FileArchive, FileAudio, FileVideo, File as FileIcon, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -14,7 +15,8 @@ interface NoteItem extends BaseItem { type: "note"; x: number; y: number; w: num
 interface StrokeItem extends BaseItem { type: "stroke"; points: number[]; color: string; width: number; }
 interface ImageItem extends BaseItem { type: "image"; x: number; y: number; w: number; h: number; url: string; }
 interface EdgeItem extends BaseItem { type: "edge"; x1: number; y1: number; x2: number; y2: number; color: string; }
-type Item = NoteItem | StrokeItem | ImageItem | EdgeItem;
+interface FileItem extends BaseItem { type: "file"; x: number; y: number; w: number; h: number; url: string; name: string; mime: string; size: number; }
+type Item = NoteItem | StrokeItem | ImageItem | EdgeItem | FileItem;
 
 interface Viewport { x: number; y: number; scale: number; }
 interface CanvasData { items: Item[]; viewport: Viewport; }
@@ -198,29 +200,103 @@ export function FreeformCanvas({ kind, title }: Props) {
     }
   };
 
-  // ---- Image upload ----
+  // ---- Upload (images + generic files) ----
   const fileRef = useRef<HTMLInputElement>(null);
-  const handleImage = async (file: File) => {
+  const MAX_BYTES = 20 * 1024 * 1024;
+
+  const centerCanvasPoint = (clientX?: number, clientY?: number): [number, number] => {
+    const rect = wrapRef.current!.getBoundingClientRect();
+    const px = clientX ?? rect.left + rect.width / 2;
+    const py = clientY ?? rect.top + rect.height / 2;
+    return toCanvas(px, py);
+  };
+
+  const uploadToStorage = async (file: File): Promise<string> => {
+    const safeName = file.name.replace(/[^\w.\-]+/g, "_") || "file";
+    const ext = safeName.includes(".") ? safeName.split(".").pop()!.toLowerCase() : "bin";
+    const path = `${user!.id}/canvas-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await supabase.storage.from("avatars").upload(path, file, {
+      upsert: true, contentType: file.type || "application/octet-stream", cacheControl: "31536000",
+    });
+    if (error) throw error;
+    const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+    return pub.publicUrl;
+  };
+
+  const addImageItem = (url: string, atClient?: { x: number; y: number }) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxW = 320; const ratio = img.width > maxW ? maxW / img.width : 1;
+      const w = img.width * ratio, h = img.height * ratio;
+      const [cx, cy] = centerCanvasPoint(atClient?.x, atClient?.y);
+      const item: ImageItem = { id: crypto.randomUUID(), type: "image", x: cx - w / 2, y: cy - h / 2, w, h, url };
+      persist({ ...dataRef.current, items: [...dataRef.current.items, item] });
+    };
+    img.onerror = () => toast.error("图片加载失败");
+    img.src = url;
+  };
+
+  const addFileItem = (file: File, url: string, atClient?: { x: number; y: number }) => {
+    const w = 220, h = 84;
+    const [cx, cy] = centerCanvasPoint(atClient?.x, atClient?.y);
+    const item: FileItem = {
+      id: crypto.randomUUID(), type: "file",
+      x: cx - w / 2, y: cy - h / 2, w, h, url,
+      name: file.name || "未命名文件", mime: file.type || "application/octet-stream", size: file.size,
+    };
+    persist({ ...dataRef.current, items: [...dataRef.current.items, item] });
+  };
+
+  const handleAnyFile = async (file: File, atClient?: { x: number; y: number }) => {
     if (!user) return;
-    if (!file.type.startsWith("image/")) { toast.error("请选择图片"); return; }
-    if (file.size > 8 * 1024 * 1024) { toast.error("图片需小于 8MB"); return; }
+    if (file.size > MAX_BYTES) { toast.error(`文件需小于 ${Math.round(MAX_BYTES / 1024 / 1024)}MB`); return; }
+    const toastId = toast.loading(`上传 ${file.name || "文件"}…`);
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-      const path = `${user.id}/canvas-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type, cacheControl: "31536000" });
-      if (error) throw error;
-      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-      const img = new Image();
-      img.onload = () => {
-        const maxW = 320; const ratio = img.width > maxW ? maxW / img.width : 1;
-        const w = img.width * ratio, h = img.height * ratio;
-        const rect = wrapRef.current!.getBoundingClientRect();
-        const [cx, cy] = toCanvas(rect.left + rect.width / 2, rect.top + rect.height / 2);
-        const item: ImageItem = { id: crypto.randomUUID(), type: "image", x: cx - w / 2, y: cy - h / 2, w, h, url: pub.publicUrl };
-        persist({ ...dataRef.current, items: [...dataRef.current.items, item] });
-      };
-      img.src = pub.publicUrl;
-    } catch (e: any) { toast.error(e?.message ?? "上传失败"); }
+      const url = await uploadToStorage(file);
+      if (file.type.startsWith("image/")) addImageItem(url, atClient);
+      else addFileItem(file, url, atClient);
+      toast.success("已添加到画布", { id: toastId });
+    } catch (e: any) { toast.error(e?.message ?? "上传失败", { id: toastId }); }
+  };
+
+  // Back-compat: image-only entry point used by the file picker
+  const handleImage = (file: File) => {
+    if (!file.type.startsWith("image/")) { toast.error("请选择图片"); return; }
+    void handleAnyFile(file);
+  };
+
+  // ---- Paste & drag-drop ----
+  useEffect(() => {
+    if (!user) return;
+    const onPaste = async (e: ClipboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && target.closest("textarea,input,[contenteditable='true']")) return;
+      const cd = e.clipboardData; if (!cd) return;
+      const files: File[] = [];
+      for (const it of Array.from(cd.items)) {
+        if (it.kind === "file") { const f = it.getAsFile(); if (f) files.push(f); }
+      }
+      if (files.length === 0) return;
+      e.preventDefault();
+      for (const f of files) await handleAnyFile(f);
+    };
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  const [dragOver, setDragOver] = useState(false);
+  const onDragOver = (e: React.DragEvent) => {
+    if (Array.from(e.dataTransfer.types).includes("Files")) {
+      e.preventDefault(); setDragOver(true);
+    }
+  };
+  const onDragLeave = () => setDragOver(false);
+  const onDrop = async (e: React.DragEvent) => {
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0) return;
+    e.preventDefault(); setDragOver(false);
+    for (const f of files) await handleAnyFile(f, { x: e.clientX, y: e.clientY });
   };
 
   // ---- Item helpers ----
@@ -271,9 +347,9 @@ export function FreeformCanvas({ kind, title }: Props) {
         <ToolBtn active={tool === "note"} onClick={() => setTool("note")} icon={<StickyNote className="w-3.5 h-3.5" />} label="便签" />
         <ToolBtn active={tool === "pen"} onClick={() => setTool("pen")} icon={<Pen className="w-3.5 h-3.5" />} label="画笔" />
         <ToolBtn active={tool === "arrow"} onClick={() => setTool("arrow")} icon={<ArrowRight className="w-3.5 h-3.5" />} label="箭头" />
-        <ToolBtn active={tool === "image"} onClick={() => fileRef.current?.click()} icon={<ImageIcon className="w-3.5 h-3.5" />} label="图片" />
-        <input ref={fileRef} type="file" accept="image/*" className="hidden"
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImage(f); e.target.value = ""; }} />
+        <ToolBtn active={tool === "image"} onClick={() => fileRef.current?.click()} icon={<ImageIcon className="w-3.5 h-3.5" />} label="文件" />
+        <input ref={fileRef} type="file" multiple className="hidden"
+          onChange={(e) => { const fs = Array.from(e.target.files ?? []); fs.forEach((f) => void handleAnyFile(f)); e.target.value = ""; }} />
 
         <div className="w-px h-5 bg-white/10 mx-1" />
         {tool === "note" && (
@@ -309,12 +385,15 @@ export function FreeformCanvas({ kind, title }: Props) {
       {/* Canvas */}
       <div
         ref={wrapRef}
-        className="relative flex-1 overflow-hidden bg-white"
+        className={`relative flex-1 overflow-hidden bg-white ${dragOver ? "ring-2 ring-amber-glow/70 ring-inset" : ""}`}
         style={{ cursor, touchAction: "none" }}
         onWheel={onWheel}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
         onClick={(e) => { if ((e.target as HTMLElement).dataset.canvasBg) setSelected(null); }}
       >
         {/* dotted bg */}
@@ -428,13 +507,54 @@ export function FreeformCanvas({ kind, title }: Props) {
                 </div>
               );
             }
+            if (it.type === "file") {
+              const active = selected === it.id;
+              const Icon = pickFileIcon(it.mime, it.name);
+              return (
+                <div key={it.id}
+                  className={`absolute rounded-lg bg-white shadow-md ring-1 ring-black/10 ${active ? "ring-2 ring-amber-glow" : ""}`}
+                  style={{ left: it.x, top: it.y, width: it.w, height: it.h }}
+                  onPointerDown={(e) => {
+                    e.stopPropagation(); setSelected(it.id);
+                    const [cx, cy] = toCanvas(e.clientX, e.clientY);
+                    dragging.current = { id: it.id, offX: cx - it.x, offY: cy - it.y };
+                    (e.target as Element).setPointerCapture?.(e.pointerId);
+                  }}
+                  onPointerMove={onPointerMove} onPointerUp={onPointerUp}
+                  onDoubleClick={(e) => { e.stopPropagation(); window.open(it.url, "_blank", "noopener"); }}
+                  title="双击打开 · 拖拽移动"
+                >
+                  <div className="flex items-center gap-3 p-3 h-full">
+                    <div className="w-10 h-10 rounded-md bg-zinc-100 text-zinc-600 flex items-center justify-center shrink-0">
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] text-zinc-800 truncate font-medium">{it.name}</div>
+                      <div className="text-[11px] text-zinc-500 truncate">{formatBytes(it.size)} · {it.mime.split("/")[1] || it.mime || "file"}</div>
+                    </div>
+                    <a href={it.url} target="_blank" rel="noopener noreferrer" download={it.name}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
+                      className="p-1.5 rounded hover:bg-zinc-100 text-zinc-500 shrink-0" title="下载">
+                      <Download className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                  {active && <ResizeHandle item={it} onStart={(e) => {
+                    e.stopPropagation();
+                    const [cx, cy] = toCanvas(e.clientX, e.clientY);
+                    resizing.current = { id: it.id, sw: it.w, sh: it.h, sx: cx, sy: cy };
+                    (e.target as Element).setPointerCapture?.(e.pointerId);
+                  }} />}
+                </div>
+              );
+            }
             return null;
           })}
         </div>
 
         {data.items.length === 0 && !loading && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="text-zinc-400 text-xs">选个工具开始 · 滚轮平移 · ⌘/Ctrl + 滚轮缩放</div>
+            <div className="text-zinc-400 text-xs">选个工具开始 · 粘贴 / 拖入图片或文件 · ⌘/Ctrl + 滚轮缩放</div>
           </div>
         )}
       </div>
@@ -464,4 +584,24 @@ function strokeToPath(pts: number[]): string {
   let d = `M ${pts[0]} ${pts[1]}`;
   for (let i = 2; i < pts.length; i += 2) d += ` L ${pts[i]} ${pts[i + 1]}`;
   return d;
+}
+
+function formatBytes(n: number): string {
+  if (!n && n !== 0) return "";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  if (n < 1024 * 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
+
+function pickFileIcon(mime: string, name: string) {
+  const m = (mime || "").toLowerCase();
+  const ext = (name.split(".").pop() || "").toLowerCase();
+  if (m.startsWith("audio/")) return FileAudio;
+  if (m.startsWith("video/")) return FileVideo;
+  if (m === "application/pdf" || ext === "pdf") return FileText;
+  if (/zip|rar|7z|tar|gz/.test(m) || /^(zip|rar|7z|tar|gz)$/.test(ext)) return FileArchive;
+  if (m.startsWith("text/") || /^(md|txt|json|csv|log|xml|yml|yaml)$/.test(ext)) return FileText;
+  if (/(word|excel|powerpoint|spreadsheet|presentation|document)/.test(m)) return FileText;
+  return FileIcon;
 }
