@@ -70,6 +70,17 @@ function DesktopApp() {
     const allowed: SylvaView[] = ["schedule", "ai", "todos", "notes", "habits", "settings"];
     return (allowed as string[]).includes(v ?? "") ? (v as SylvaView) : "schedule";
   });
+  const [todosFilter, setTodosFilter] = useState<"todo" | "reminder" | "event" | "all">("all");
+  const { registerNavigate } = useSylva();
+
+  useEffect(() => {
+    registerNavigate((nextView, opts) => {
+      setView(nextView as SylvaView);
+      setAppOpen(true);
+      setActiveDock("sylva");
+      if (opts?.todosFilter) setTodosFilter(opts.todosFilter);
+    });
+  }, [registerNavigate]);
 
   useEffect(() => {
     setNow(new Date());
