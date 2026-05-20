@@ -284,6 +284,30 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
     return withIds.map((i) => i.id);
   };
 
+  const addItemsPending = (newOnes: PlanItem[]): string[] => {
+    const withIds = newOnes.map((i) => ({ ...i, id: nextId(), pending: true as const }));
+    setItems((prev) => [...prev, ...withIds as DoneItem[]]);
+    // 故意不调用 remote.upsertItems：待用户确认后再上云
+    return withIds.map((i) => i.id);
+  };
+
+  const confirmPending = (ids: string[]) => {
+    setItems((prev) => {
+      const idSet = new Set(ids);
+      const next = prev.map((i) => (idSet.has(i.id) && i.pending ? { ...i, pending: undefined } : i));
+      const toPush = next.filter((i) => idSet.has(i.id) && !i.pending);
+      if (toPush.length) void remote.upsertItems(toPush as DoneItem[]);
+      return next;
+    });
+  };
+
+  const revertPending = (ids: string[]) => {
+    const idSet = new Set(ids);
+    setItems((prev) => prev.filter((i) => !(idSet.has(i.id) && i.pending)));
+    // 未上云，无需 remote 删除
+  };
+
+
   const replaceItems = (newOnes: PlanItem[]): string[] => {
     const withIds = newOnes.map((i) => ({ ...i, id: nextId() }));
     setItems(withIds);
