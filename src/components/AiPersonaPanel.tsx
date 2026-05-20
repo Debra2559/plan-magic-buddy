@@ -60,7 +60,11 @@ export function AiPersonaPanel() {
     setUploadingAvatar(true);
     try {
       const path = `${user.id}/avatar-${Date.now()}.png`;
-      const { error: upErr } = await supabase.storage.from("avatars").upload(path, blob, { upsert: true, contentType: "image/png" });
+      const { error: upErr } = await supabase.storage.from("avatars").upload(path, blob, {
+        upsert: true,
+        contentType: "image/png",
+        cacheControl: "31536000", // 1 年，URL 自带时间戳，更新自动绕过缓存
+      });
       if (upErr) throw upErr;
       const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
       await commit({ avatar_url: pub.publicUrl });
