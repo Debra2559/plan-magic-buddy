@@ -12,6 +12,8 @@ import { NotesView } from "@/components/views/NotesView";
 import { HabitsView } from "@/components/views/HabitsView";
 import { JournalView } from "@/components/views/JournalView";
 import { SettingsView } from "@/components/views/SettingsView";
+import { SyncSummaryModal } from "@/components/SyncSummaryModal";
+import { useSylva } from "@/lib/sylva-store";
 import {
   Apple,
   Wifi,
