@@ -1077,7 +1077,7 @@ function ComicHistoryPanel({
   );
 }
 
-function JournalModeToggle({ mode, onChange }: { mode: "list" | "canvas"; onChange: (m: "list" | "canvas") => void }) {
+function JournalModeToggle({ mode, onChange }: { mode: "list" | "canvas" | "overview"; onChange: (m: "list" | "canvas" | "overview") => void }) {
   return (
     <div className="flex items-center gap-1 p-1 rounded-full bg-foreground/[0.05] border border-border shrink-0">
       <button
@@ -1085,6 +1085,12 @@ function JournalModeToggle({ mode, onChange }: { mode: "list" | "canvas"; onChan
         className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${mode === "list" ? "bg-foreground/15 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
       >
         <LayoutGrid className="w-3 h-3" /> 手帐
+      </button>
+      <button
+        onClick={() => onChange("overview")}
+        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${mode === "overview" ? "bg-amber-glow/20 text-amber-glow" : "text-muted-foreground hover:text-foreground"}`}
+      >
+        <BookOpen className="w-3 h-3" /> 全景
       </button>
       <button
         onClick={() => onChange("canvas")}
