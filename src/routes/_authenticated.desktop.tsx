@@ -172,12 +172,7 @@ function DesktopApp() {
             <div className="flex h-full">
               {/* Sidebar */}
               <aside className="w-52 shrink-0 bg-black/30 backdrop-blur-xl border-r border-white/8 p-4 flex flex-col gap-1 text-[13px]">
-                <div className="flex items-center gap-2 mb-5 px-2">
-                  <div className="w-6 h-6 rounded-md bg-amber-glow/90 flex items-center justify-center">
-                    <span className="font-display text-primary-foreground text-xs">S</span>
-                  </div>
-                  <span className="font-display text-base">Sylva</span>
-                </div>
+                <AssistantHeader />
                 <SidebarItem icon={CalIcon} label="日程" active={view === "schedule"} onClick={() => setView("schedule")} />
                 <SidebarItem icon={Sparkles} label="规划" active={view === "ai"} onClick={() => setView("ai")} />
                 <SidebarItem icon={CheckSquare} label="待办" active={view === "todos"} onClick={() => setView("todos")} />
