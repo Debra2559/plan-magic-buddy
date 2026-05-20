@@ -6,6 +6,7 @@ const Input = z.object({
   summary: z.string().min(1).max(4000),
   provider: z.enum(["gemini", "seedream"]),
   style: z.string().max(200).optional(),
+  model: z.string().max(100).optional(),
 });
 
 function buildPrompt(summary: string, style?: string) {
