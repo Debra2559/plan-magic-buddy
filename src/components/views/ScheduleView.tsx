@@ -5,6 +5,10 @@ import type { PlanItem } from "@/lib/plan.functions";
 import { TimePicker } from "@/components/ui/time-picker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AiPlanner } from "@/components/AiPlanner";
+import { FeishuQuickSyncBar } from "@/components/FeishuQuickSyncBar";
+import { HackathonInbox } from "@/components/HackathonInbox";
+import { AiNewsRadar } from "@/components/AiNewsRadar";
+
 
 
 const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
