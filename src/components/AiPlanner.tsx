@@ -106,10 +106,6 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
   const [chatStep, setChatStep] = useState<ChatStep | null>(null);
 
   const handleSubmit = async () => {
-    if (mode === "goal") {
-      await runChat(chatInput.trim() || idea.trim());
-      return;
-    }
     if (!idea.trim() || loading) return;
     setLoading(true);
     setError(null);
