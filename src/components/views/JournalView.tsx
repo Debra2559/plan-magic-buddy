@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FreeformCanvas } from "@/components/canvas/FreeformCanvas";
-import { LayoutGrid, Brush } from "lucide-react";
+import { JournalOverview } from "@/components/views/JournalOverview";
+import { LayoutGrid, Brush, BookOpen } from "lucide-react";
 import {
   useSylva,
   habitStreak,
@@ -193,9 +194,10 @@ export function JournalView({ embedded = false }: { embedded?: boolean } = {}) {
     return () => window.removeEventListener("keydown", onKey);
   }, [allDates, date, setDate]);
 
-  const [jMode, setJMode] = useState<"list" | "canvas">(() => {
+  const [jMode, setJMode] = useState<"list" | "canvas" | "overview">(() => {
     if (typeof window === "undefined") return "list";
-    return (window.localStorage.getItem("journal:mode") as "list" | "canvas") ?? "list";
+    const v = window.localStorage.getItem("journal:mode");
+    return (v === "list" || v === "canvas" || v === "overview") ? v : "list";
   });
   useEffect(() => { try { window.localStorage.setItem("journal:mode", jMode); } catch {} }, [jMode]);
 
@@ -211,6 +213,21 @@ export function JournalView({ embedded = false }: { embedded?: boolean } = {}) {
         </div>
         <div className="flex-1 mt-3 mx-7 mb-5 rounded-2xl overflow-hidden border border-border">
           <FreeformCanvas kind="journal" />
+        </div>
+      </div>
+    );
+  }
+
+  if (jMode === "overview") {
+    return (
+      <div className="h-full flex flex-col">
+        {!embedded && (
+          <div className="absolute top-4 right-6 z-20 no-print">
+            <JournalModeToggle mode={jMode} onChange={setJMode} />
+          </div>
+        )}
+        <div className="flex-1 min-h-0">
+          <JournalOverview />
         </div>
       </div>
     );
@@ -1060,7 +1077,7 @@ function ComicHistoryPanel({
   );
 }
 
-function JournalModeToggle({ mode, onChange }: { mode: "list" | "canvas"; onChange: (m: "list" | "canvas") => void }) {
+function JournalModeToggle({ mode, onChange }: { mode: "list" | "canvas" | "overview"; onChange: (m: "list" | "canvas" | "overview") => void }) {
   return (
     <div className="flex items-center gap-1 p-1 rounded-full bg-foreground/[0.05] border border-border shrink-0">
       <button
@@ -1068,6 +1085,12 @@ function JournalModeToggle({ mode, onChange }: { mode: "list" | "canvas"; onChan
         className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${mode === "list" ? "bg-foreground/15 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
       >
         <LayoutGrid className="w-3 h-3" /> 手帐
+      </button>
+      <button
+        onClick={() => onChange("overview")}
+        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${mode === "overview" ? "bg-amber-glow/20 text-amber-glow" : "text-muted-foreground hover:text-foreground"}`}
+      >
+        <BookOpen className="w-3 h-3" /> 全景
       </button>
       <button
         onClick={() => onChange("canvas")}
