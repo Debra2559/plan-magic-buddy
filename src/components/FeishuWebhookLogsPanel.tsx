@@ -218,48 +218,91 @@ export function FeishuWebhookLogsPanel() {
           </div>
         ) : (
           <div className="divide-y divide-border max-h-[480px] overflow-auto">
-            {rows.map((r) => {
-              const isOpen = expanded[r.id];
+            {groupByRequest(rows).map((t) => {
+              const tOpen = expanded[t.request_id] ?? false;
               return (
-                <div key={r.id} className="text-xs">
+                <div key={t.request_id} className="text-xs">
+                  {/* 会话标题：一个 request_id 一组 */}
                   <button
                     type="button"
-                    onClick={() => setExpanded((s) => ({ ...s, [r.id]: !isOpen }))}
+                    onClick={() => setExpanded((s) => ({ ...s, [t.request_id]: !tOpen }))}
                     className="w-full flex items-center gap-2 p-2 hover:bg-muted/50 text-left"
                   >
-                    {isOpen ? <ChevronDown className="h-3 w-3 shrink-0" /> : <ChevronRight className="h-3 w-3 shrink-0" />}
-                    <Badge variant="outline" className={`${levelStyle[r.level]} text-[10px] px-1.5 py-0`}>
-                      {r.level}
+                    {tOpen ? <ChevronDown className="h-3 w-3 shrink-0" /> : <ChevronRight className="h-3 w-3 shrink-0" />}
+                    <Badge variant="outline" className={`${levelStyle[t.level]} text-[10px] px-1.5 py-0`}>
+                      {t.ok ? "成功" : t.level === "error" ? "失败" : "警告"}
                     </Badge>
-                    <span className="font-mono text-muted-foreground shrink-0">{r.step}</span>
-                    {r.event_type && (
-                      <span className="font-mono text-muted-foreground shrink-0 truncate max-w-[180px]">
-                        {r.event_type}
-                      </span>
-                    )}
-                    <span className="flex-1 truncate">{r.message || r.error || "—"}</span>
-                    {typeof r.duration_ms === "number" && (
-                      <span className="text-muted-foreground shrink-0">{r.duration_ms}ms</span>
+                    <span className="font-medium shrink-0">{t.event_type ?? "—"}</span>
+                    <span className="flex-1 truncate text-muted-foreground">
+                      共 {t.rows.length} 步 · {summarize(t.rows[t.rows.length - 1])}
+                    </span>
+                    {typeof t.duration_ms === "number" && (
+                      <span className="text-muted-foreground shrink-0">{t.duration_ms}ms</span>
                     )}
                     <span className="text-muted-foreground shrink-0">
-                      {new Date(r.created_at).toLocaleTimeString()}
+                      {new Date(t.startedAt).toLocaleTimeString()}
                     </span>
                   </button>
-                  {isOpen && (
-                    <div className="px-3 pb-3 pt-1 space-y-2 bg-muted/30">
+
+                  {/* 步骤时间线 */}
+                  {tOpen && (
+                    <div className="px-3 pb-3 pt-1 bg-muted/20 space-y-2">
                       <div className="font-mono text-[10px] text-muted-foreground break-all">
-                        request_id: {r.request_id}
+                        request_id: {t.request_id}
                       </div>
-                      {r.error && (
-                        <pre className="text-[11px] text-destructive whitespace-pre-wrap break-all bg-destructive/5 p-2 rounded">
-                          {r.error}
-                        </pre>
-                      )}
-                      {r.payload && (
-                        <pre className="text-[11px] whitespace-pre-wrap break-all bg-background p-2 rounded border border-border max-h-64 overflow-auto">
-                          {JSON.stringify(r.payload, null, 2)}
-                        </pre>
-                      )}
+                      <ol className="relative border-l border-border/70 ml-2 pl-3 space-y-2">
+                        {t.rows.map((r, idx) => {
+                          const meta = stepMeta(r.step);
+                          const rowOpen = expanded[r.id] ?? false;
+                          const prev = idx > 0 ? t.rows[idx - 1] : null;
+                          const delta = prev ? +new Date(r.created_at) - +new Date(prev.created_at) : 0;
+                          return (
+                            <li key={r.id} className="relative">
+                              <span
+                                className={`absolute -left-[17px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-background ${
+                                  r.level === "error"
+                                    ? "bg-destructive"
+                                    : r.level === "warn"
+                                    ? "bg-yellow-500"
+                                    : "bg-foreground/60"
+                                }`}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setExpanded((s) => ({ ...s, [r.id]: !rowOpen }))}
+                                className="w-full flex items-baseline gap-2 text-left hover:bg-muted/40 rounded px-1.5 py-1"
+                              >
+                                <span className="font-medium text-foreground shrink-0">{meta.name}</span>
+                                <span className="text-muted-foreground/80 shrink-0 text-[10px]">{meta.desc}</span>
+                                <span className="flex-1 truncate">{summarize(r)}</span>
+                                {delta > 0 && (
+                                  <span className="text-muted-foreground shrink-0 text-[10px]">+{delta}ms</span>
+                                )}
+                                <span className="text-muted-foreground shrink-0 text-[10px]">
+                                  {new Date(r.created_at).toLocaleTimeString()}
+                                </span>
+                              </button>
+                              {rowOpen && (
+                                <div className="mt-1 space-y-2 pl-1.5">
+                                  {r.error && (
+                                    <pre className="text-[11px] text-destructive whitespace-pre-wrap break-all bg-destructive/5 p-2 rounded">
+                                      {r.error}
+                                    </pre>
+                                  )}
+                                  {r.payload && (
+                                    <pre className="text-[11px] whitespace-pre-wrap break-all bg-background p-2 rounded border border-border max-h-64 overflow-auto">
+                                      {JSON.stringify(r.payload, null, 2)}
+                                    </pre>
+                                  )}
+                                  {!r.error && !r.payload && (
+                                    <div className="text-[10px] text-muted-foreground">无附加数据</div>
+                                  )}
+                                </div>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ol>
                     </div>
                   )}
                 </div>
