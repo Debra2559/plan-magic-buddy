@@ -15,6 +15,7 @@ import { TodosView } from "@/components/views/TodosView";
 import { NotesView } from "@/components/views/NotesView";
 import { HabitsView } from "@/components/views/HabitsView";
 import { JournalView } from "@/components/views/JournalView";
+import { AbilityView } from "@/components/views/AbilityView";
 import { SettingsView } from "@/components/views/SettingsView";
 import { SyncSummaryModal } from "@/components/SyncSummaryModal";
 import { OnboardingHint } from "@/components/OnboardingHint";
@@ -38,6 +39,7 @@ import {
   Image as ImageIcon,
   BookHeart,
   Shield,
+  Brain,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/desktop")({
@@ -57,7 +59,7 @@ interface WinPos {
   y: number;
 }
 
-type SylvaView = "ai" | "schedule" | "todos" | "notes" | "habits" | "journal" | "settings";
+type SylvaView = "ai" | "schedule" | "todos" | "notes" | "habits" | "journal" | "ability" | "settings";
 
 function DesktopApp() {
   const [now, setNow] = useState<Date | null>(null);
@@ -182,6 +184,7 @@ function DesktopApp() {
                 <SidebarItem icon={StickyNote} label="随手记" active={view === "notes"} onClick={() => setView("notes")} />
                 <SidebarItem icon={Sparkles} label="习惯" active={view === "habits"} onClick={() => setView("habits")} />
                 <SidebarItem icon={BookHeart} label="记录" active={view === "journal"} onClick={() => setView("journal")} />
+                <SidebarItem icon={Brain} label="能力" active={view === "ability"} onClick={() => setView("ability")} />
                 <div className="mt-auto pt-4 border-t border-white/8">
                   <SidebarItem icon={Settings} label="设置" active={false} onClick={openSettings} muted />
                 </div>
@@ -195,6 +198,7 @@ function DesktopApp() {
                 {view === "notes" && <NotesView />}
                 {view === "habits" && <HabitsView />}
                 {view === "journal" && <JournalView />}
+                {view === "ability" && <AbilityView />}
               </div>
             </div>
           </AppWindow>
