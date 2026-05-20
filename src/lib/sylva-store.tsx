@@ -514,6 +514,126 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
 
 
 
+  // ---- 跨设备实时同步：首次拉远端 + Realtime 推送合并 ----
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const r = await fetchAllRemote();
+        if (cancelled) return;
+        if (r.hasAny) {
+          // 远端有数据 → 用远端覆盖本地
+          if (r.items.length) setItems(r.items);
+          if (r.notes.length) setNotes(r.notes);
+          if (r.habits.length) setHabits(r.habits);
+          if (r.diary.length) setDiary(r.diary);
+          if (r.comics.length) setComics(r.comics);
+        } else {
+          // 远端为空 → 把本地 seed/历史一次性推上去
+          void remote.upsertItems(items);
+          void remote.upsertHabits(habits);
+          for (const n of notes) void remote.upsertNote(n);
+          for (const d of diary) void remote.upsertDiary(d);
+          for (const c of comics) void remote.upsertComic(c);
+        }
+      } catch (e) {
+        console.warn("[cloud-sync] initial fetch failed", e);
+      }
+    })();
+
+    const ch = supabase
+      .channel("sylva-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "schedule_items" }, (p) => {
+        const row: any = p.new ?? p.old;
+        if (!row?.id) return;
+        if (p.eventType === "DELETE" || row.deleted_at) {
+          setItems((prev) => prev.filter((i) => i.id !== row.id));
+        } else {
+          const mapped = itemFromRow(row);
+          setItems((prev) => {
+            const idx = prev.findIndex((i) => i.id === mapped.id);
+            if (idx < 0) return [...prev, mapped];
+            const next = prev.slice();
+            next[idx] = mapped;
+            return next;
+          });
+        }
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "notes" }, (p) => {
+        const row: any = p.new ?? p.old;
+        if (!row?.id) return;
+        if (p.eventType === "DELETE" || row.deleted_at) {
+          setNotes((prev) => prev.filter((n) => n.id !== row.id));
+        } else {
+          const mapped = noteFromRow(row);
+          setNotes((prev) => {
+            const idx = prev.findIndex((n) => n.id === mapped.id);
+            if (idx < 0) return [mapped, ...prev];
+            const next = prev.slice();
+            next[idx] = mapped;
+            return next;
+          });
+        }
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "habits" }, (p) => {
+        const row: any = p.new ?? p.old;
+        if (!row?.id) return;
+        if (p.eventType === "DELETE" || row.deleted_at) {
+          setHabits((prev) => prev.filter((h) => h.id !== row.id));
+        } else {
+          const mapped = habitFromRow(row);
+          setHabits((prev) => {
+            const idx = prev.findIndex((h) => h.id === mapped.id);
+            if (idx < 0) return [...prev, mapped];
+            const next = prev.slice();
+            next[idx] = mapped;
+            return next;
+          });
+        }
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "diary_entries" }, (p) => {
+        const row: any = p.new ?? p.old;
+        if (!row?.date) return;
+        if (p.eventType === "DELETE") {
+          setDiary((prev) => prev.filter((d) => d.date !== row.date));
+        } else {
+          const mapped = diaryFromRow(row);
+          setDiary((prev) => {
+            const idx = prev.findIndex((d) => d.date === mapped.date);
+            if (idx < 0) return [mapped, ...prev];
+            const next = prev.slice();
+            next[idx] = mapped;
+            return next;
+          });
+        }
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "comics" }, (p) => {
+        const row: any = p.new ?? p.old;
+        if (!row?.date) return;
+        if (p.eventType === "DELETE") {
+          setComics((prev) => prev.filter((c) => c.date !== row.date));
+        } else {
+          const mapped = comicFromRow(row);
+          setComics((prev) => {
+            const idx = prev.findIndex((c) => c.date === mapped.date);
+            if (idx < 0) return [mapped, ...prev];
+            const next = prev.slice();
+            next[idx] = mapped;
+            return next;
+          });
+        }
+      })
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(ch);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+
   useEffect(() => {
     refreshRecapDoneDates();
     const onFocus = () => refreshRecapDoneDates();
