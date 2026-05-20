@@ -484,7 +484,7 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
           )}
         </div>
       </div>
-      </div>
+
 
       {/* 预览确认弹窗 */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
