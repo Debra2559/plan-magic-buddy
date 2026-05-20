@@ -47,10 +47,8 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
   const [draftMode, setDraftMode] = useState<"create" | "adjust" | "add">("create");
   const planFn = useServerFn(generatePlan);
   const chatFn = useServerFn(chatPlan);
-  const syncFn = useServerFn(syncToFeishu);
-  const [syncScope, setSyncScope] = useState<"all" | "draft" | "today" | "week" | "timed">("all");
-  const [syncing, setSyncing] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+
 
   // Goal-chat state
   const [chatMessages, setChatMessages] = useState<ChatMsg[]>([]);
