@@ -10,9 +10,10 @@ import { EnterHint } from "@/components/EnterHint";
 import { shouldSubmitOnKey } from "@/lib/keybinds";
 import { Sparkles, ArrowUp, Loader2, Calendar, CheckSquare, Bell, Plus, RefreshCw, Wand2, Check, X, Trash2, Target, Globe, Send, Settings as SettingsIcon } from "lucide-react";
 
-type Mode = "create" | "adjust" | "add" | "goal";
+type Mode = "auto" | "create" | "adjust" | "add" | "goal";
 
 const modeMeta: Record<Mode, { label: string; icon: typeof Wand2; hint: string }> = {
+  auto: { label: "智能识别", icon: Sparkles, hint: "不用选，AI 自动判断该新建/调整/追加" },
   create: { label: "全新规划", icon: Wand2, hint: "从 0 到 1 帮我排" },
   adjust: { label: "调整重排", icon: RefreshCw, hint: "重新平衡现有规划" },
   add: { label: "追加事项", icon: Plus, hint: "往现有规划里加" },
