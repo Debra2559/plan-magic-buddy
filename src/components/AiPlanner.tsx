@@ -217,7 +217,7 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
           <button
             onClick={handleSubmit}
             disabled={loading || !idea.trim()}
-            className="shrink-0 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition disabled:opacity-40 disabled:scale-100"
+            className="shrink-0 flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-white text-sm font-semibold shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 hover:scale-[1.02] transition disabled:opacity-40 disabled:scale-100 disabled:shadow-none"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {loading ? "生成中" : "生成规划"}
