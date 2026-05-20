@@ -253,18 +253,20 @@ export function AiPlanner() {
   );
 }
 
-function groupByDate(items: PlanItem[]) {
-  const map = new Map<string, { item: PlanItem; originalIdx: number }[]>();
-  items.forEach((item, originalIdx) => {
+type KeyedItem = PlanItem & { _key: string };
+
+function groupByDate(items: KeyedItem[]) {
+  const map = new Map<string, KeyedItem[]>();
+  items.forEach((item) => {
     const arr = map.get(item.date) ?? [];
-    arr.push({ item, originalIdx });
+    arr.push(item);
     map.set(item.date, arr);
   });
   return Array.from(map.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, entries]) => ({
       date,
-      entries: entries.sort((a, b) => (a.item.time ?? "99:99").localeCompare(b.item.time ?? "99:99")),
+      entries: entries.sort((a, b) => (a.time ?? "99:99").localeCompare(b.time ?? "99:99")),
     }));
 }
 
@@ -273,9 +275,9 @@ function ItemGroups({
   variant,
   onRemove,
 }: {
-  grouped: { date: string; entries: { item: PlanItem; originalIdx: number }[] }[];
+  grouped: { date: string; entries: KeyedItem[] }[];
   variant: "draft" | "confirmed";
-  onRemove?: (idx: number) => void;
+  onRemove?: (id: string) => void;
 }) {
   return (
     <div className="space-y-5">
@@ -289,12 +291,12 @@ function ItemGroups({
             <div className="flex-1 border-b border-foreground/10" />
           </div>
           <div className="space-y-1.5">
-            {entries.map(({ item, originalIdx }, i) => {
+            {entries.map((item) => {
               const Type = typeMeta[item.type];
               const TypeIcon = Type.icon;
               return (
                 <div
-                  key={i}
+                  key={item._key}
                   className={`group flex items-start gap-3 p-3 rounded-xl border transition
                     ${variant === "draft"
                       ? "bg-amber-glow/[0.06] border-amber-glow/15"
@@ -328,7 +330,7 @@ function ItemGroups({
                     </div>
                     {variant === "confirmed" && onRemove && (
                       <button
-                        onClick={() => onRemove(originalIdx)}
+                        onClick={() => onRemove(item._key)}
                         className="opacity-0 group-hover:opacity-100 transition text-foreground/30 hover:text-destructive p-1"
                         title="移除"
                       >
