@@ -68,17 +68,23 @@ export function AiPlanner({ onGoSettings }: { onGoSettings?: () => void } = {}) 
     setDraft(null);
     try {
       const existing: PlanItem[] = confirmed.map(({ id: _id, done: _done, ...rest }) => rest);
+      const sendMode = mode as "create" | "adjust" | "add" | "auto";
       const result = await planFn({
         data: {
           idea: idea.trim(),
-          mode: mode as "create" | "adjust" | "add",
-          existing: mode !== "create" ? existing : undefined,
+          mode: sendMode,
+          existing: sendMode !== "create" && existing.length ? existing : undefined,
         },
       });
       if (!result.ok) {
         setError(result.error);
       } else {
         setDraft(result.plan);
+        setDraftMode(result.mode);
+        if (mode === "auto") {
+          const label = result.mode === "add" ? "追加" : result.mode === "adjust" ? "调整重排" : "全新规划";
+          toast.message(`AI 识别为：${label}`, { duration: 2500 });
+        }
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "未知错误");
