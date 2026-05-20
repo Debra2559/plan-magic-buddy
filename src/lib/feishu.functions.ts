@@ -784,6 +784,114 @@ export const getFeishuPermissionStatus = createServerFn({ method: 'GET' }).handl
   }
 })
 
+// 捕获/错误明细诊断：列出最近的 webhook 错误、最近的 capture 尝试、最近的发送错误
+export const getFeishuCaptureDiagnostics = createServerFn({ method: 'GET' }).handler(async () => {
+  // 最近 10 条 capture_open_id 相关日志（含失败/info）
+  const { data: captureLogs } = await supabaseAdmin
+    .from('feishu_webhook_logs')
+    .select('id, created_at, level, step, event_type, message, error, payload, request_id')
+    .eq('step', 'capture_open_id')
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  // 最近 10 条 warn/error 级别的 webhook 日志
+  const { data: errorLogs } = await supabaseAdmin
+    .from('feishu_webhook_logs')
+    .select('id, created_at, level, step, event_type, message, error, request_id, status')
+    .in('level', ['warn', 'error'])
+    .order('created_at', { ascending: false })
+    .limit(15)
+
+  // 最近 5 条 send 相关日志（成功/失败都拿）
+  const { data: sendLogs } = await supabaseAdmin
+    .from('feishu_webhook_logs')
+    .select('id, created_at, level, step, message, error, request_id')
+    .ilike('step', '%send%')
+    .order('created_at', { ascending: false })
+    .limit(5)
+
+  // 推断缺失/错误原因
+  const reasons: { code: string; text: string; hint?: string }[] = []
+  const hasCapture = (captureLogs ?? []).some((l: any) => (l.payload as any)?.senderOpenId)
+  if (!hasCapture) {
+    const lastCap: any = (captureLogs ?? [])[0]
+    if (!lastCap) {
+      reasons.push({
+        code: 'no_message_event',
+        text: '尚未收到任何 im.message.receive_v1 事件，无法捕获 sender.open_id',
+        hint: '在飞书里给机器人私聊一条消息，并确认事件订阅已勾选「接收消息 v2.0」。',
+      })
+    } else if (lastCap.level === 'error') {
+      reasons.push({
+        code: 'capture_error',
+        text: `最近一次捕获失败：${lastCap.error ?? lastCap.message ?? '未知错误'}`,
+        hint: '检查事件订阅签名 / 校验 Token（FEISHU_VERIFICATION_TOKEN）是否一致。',
+      })
+    } else {
+      reasons.push({
+        code: 'capture_no_open_id',
+        text: '收到消息事件但未解析出 sender.open_id（payload 字段缺失）',
+        hint: '确认事件版本为 v2.0，且机器人已加入会话；如为群消息，请改为私聊机器人。',
+      })
+    }
+  }
+
+  for (const log of (sendLogs ?? []) as any[]) {
+    if (log.level === 'error') {
+      const txt = `${log.error ?? ''} ${log.message ?? ''}`
+      if (/99991672|99991663|99991661|scope|permission|access.?denied/i.test(txt)) {
+        reasons.push({
+          code: 'send_scope_missing',
+          text: `发送失败：缺少权限 · ${log.error ?? log.message}`,
+          hint: '开通 im:message:send_as_bot 并重新发布版本。',
+        })
+      } else if (/receive_id|invalid.?user|99991400|99991404/i.test(txt)) {
+        reasons.push({
+          code: 'invalid_receive_id',
+          text: `发送失败：接收人无效 · ${log.error ?? log.message}`,
+          hint: '通过私聊机器人重新捕获 sender.open_id 并覆盖保存。',
+        })
+      }
+      break
+    }
+  }
+
+  return {
+    reasons,
+    captureLogs: (captureLogs ?? []).map((l: any) => ({
+      id: l.id,
+      at: l.created_at,
+      level: l.level,
+      step: l.step,
+      eventType: l.event_type,
+      message: l.message,
+      error: l.error,
+      requestId: l.request_id,
+      senderOpenId: (l.payload as any)?.senderOpenId ?? null,
+    })),
+    errorLogs: (errorLogs ?? []).map((l: any) => ({
+      id: l.id,
+      at: l.created_at,
+      level: l.level,
+      step: l.step,
+      eventType: l.event_type,
+      message: l.message,
+      error: l.error,
+      requestId: l.request_id,
+      status: l.status,
+    })),
+    sendLogs: (sendLogs ?? []).map((l: any) => ({
+      id: l.id,
+      at: l.created_at,
+      level: l.level,
+      step: l.step,
+      message: l.message,
+      error: l.error,
+      requestId: l.request_id,
+    })),
+  }
+})
+
 const notifyConfigSchema = z.object({
   receiveId: z.string().max(200),
   receiveIdType: z.enum(['open_id', 'chat_id', 'user_id', 'email']),
