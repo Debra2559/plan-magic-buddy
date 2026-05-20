@@ -36,6 +36,7 @@ import {
   Mail,
   Image as ImageIcon,
   BookHeart,
+  Shield,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/desktop")({
