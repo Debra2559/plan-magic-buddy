@@ -25,7 +25,7 @@ const tagColor: Record<string, string> = {
 const typeIcon = { event: CalIcon, todo: Clock, reminder: Bell } as const;
 
 export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void; onGoSettings?: () => void } = {}) {
-  const { items, addItems, updateItem, removeItem, toggleDone, isRecapDone, unmarkRecapDone, isRecentlySynced, pendingIds, confirmPending, revertPending } = useSylva();
+  const { items, addItems, updateItem, removeItem, toggleDone, isRecapDone, unmarkRecapDone, isRecentlySynced, markRecentlySynced, pendingIds, confirmPending, revertPending } = useSylva();
   const [cursor, setCursor] = useState(new Date(2026, 4, 1)); // May 2026
   const [selected, setSelected] = useState("2026-05-19");
   const [editorDate, setEditorDate] = useState<string | null>(null);
@@ -36,6 +36,22 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
   useEffect(() => {
     if (pendingIds.length === 0 && pendingFilter.kind !== "all") setPendingFilter({ kind: "all" });
   }, [pendingIds.length, pendingFilter.kind]);
+
+  const confirmAndFocus = (ids: string[]) => {
+    if (ids.length === 0) return;
+    const idSet = new Set(ids);
+    const targets = items.filter((i) => idSet.has(i.id));
+    const dated = targets.filter((i) => i.date).map((i) => i.date!).sort();
+    const focusDate = dated[0];
+    confirmPending(ids);
+    markRecentlySynced(ids);
+    if (focusDate) {
+      setSelected(focusDate);
+      const [y, m] = focusDate.split("-").map(Number);
+      setCursor(new Date(y, m - 1, 1));
+    }
+    setPendingFilter({ kind: "all" });
+  };
 
 
   const year = cursor.getFullYear();
@@ -155,7 +171,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                   撤销选中
                 </button>
                 <button
-                  onClick={() => confirmPending(filteredIds)}
+                  onClick={() => confirmAndFocus(filteredIds)}
                   disabled={filteredIds.length === 0}
                   className="px-2.5 py-1 rounded-md bg-amber-glow text-primary-foreground hover:brightness-110 text-[11px] inline-flex items-center gap-1 disabled:opacity-40"
                 >
@@ -303,7 +319,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                 onChange={(patch) => updateItem(it.id, patch)}
                 onToggleDone={() => toggleDone(it.id)}
                 onDelete={() => removeItem(it.id)}
-                onConfirm={it.pending ? () => confirmPending([it.id]) : undefined}
+                onConfirm={it.pending ? () => confirmAndFocus([it.id]) : undefined}
                 onRevert={it.pending ? () => revertPending([it.id]) : undefined}
               />
             ))}
