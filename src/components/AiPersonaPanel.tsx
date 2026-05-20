@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Sparkles, Wand2, LogOut, Loader2, Camera, Trash2, Upload } from "lucide-react";
-import { usePersona } from "@/lib/persona";
+import { usePersona, resolveAvatarUrl, DEFAULT_AVATAR_URL } from "@/lib/persona";
 import { useAuth } from "@/lib/auth-context";
 import { generatePlan } from "@/lib/plan.functions";
 import { useServerFn } from "@tanstack/react-start";
