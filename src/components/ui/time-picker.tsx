@@ -112,6 +112,7 @@ export function TimePicker({
   return (
     <div ref={wrapRef} className={`relative inline-block ${className}`}>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={`group inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-md bg-white/5 border border-white/10 hover:border-amber-glow/40 hover:bg-amber-glow/[0.06] transition ${padded} font-mono tabular-nums ${
