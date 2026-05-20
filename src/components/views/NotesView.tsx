@@ -151,6 +151,7 @@ function NotesTab({ kind }: { kind: NoteKind }) {
       .map((t) => t.replace(/^#/, "").trim())
       .filter(Boolean);
     addNote(text.trim(), {
+      kind,
       mood,
       tags: tags.length ? tags : undefined,
       images: images.length ? images : undefined,
