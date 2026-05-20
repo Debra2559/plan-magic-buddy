@@ -51,9 +51,13 @@ const ExtractedSchema = z.object({
     .max(15),
 });
 
-async function extractWithAI(source: string, snippets: FirecrawlSearchItem[]) {
+async function extractWithAI(
+  source: string,
+  snippets: FirecrawlSearchItem[],
+): Promise<{ data: z.infer<typeof ExtractedSchema>; error?: string }> {
   const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey || snippets.length === 0) return { news: [] };
+  if (!apiKey) return { data: { news: [] }, error: "LOVABLE_API_KEY 未配置" };
+  if (snippets.length === 0) return { data: { news: [] } };
 
   const corpus = snippets
     .map(
@@ -62,32 +66,41 @@ async function extractWithAI(source: string, snippets: FirecrawlSearchItem[]) {
     )
     .join("\n\n---\n\n");
 
+  const now = new Date();
+  const ym = `${now.getFullYear()} 年 ${now.getMonth() + 1} 月`;
+
   const gateway = createLovableAiGatewayProvider(apiKey);
-  try {
-    const { object } = await generateObject({
-      model: gateway("google/gemini-3-flash-preview"),
-      schema: ExtractedSchema,
-      system: `你是一名 AI 行业新闻编辑。从搜索结果里提取「最近一周」真正重要的 AI 动态。
-当前是 2026 年 5 月。只保留:
-- 模型发布 / 重大更新 / Agent 进展 / 研究突破 / 重要融资 / 行业大事
-- url 必须是完整 https:// 链接
-- 跳过纯营销、招聘、教程、广告软文
+  const models = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash"] as const;
+  let lastErr = "";
+  for (const m of models) {
+    try {
+      const { object } = await generateObject({
+        model: gateway(m),
+        schema: ExtractedSchema,
+        system: `你是 AI 行业新闻编辑。从搜索结果里挑出和 AI/LLM/Agent/机器学习相关的条目。
+当前是 ${ym}。要求:
+- url 是完整 https:// 链接的都尽量保留, 不要因为信息不全就丢
+- 不确定发布日期就填 null, 不要因此丢条目
+- 跳过纯营销/招聘/广告/无关
+- 一次最多 12 条, 同一话题去重
 来源: ${source}`,
-      prompt: `从下面 ${snippets.length} 条搜索结果中提取 AI 新闻, 去重并补全字段:\n\n${corpus}`,
-    });
-    return object;
-  } catch {
-    return { news: [] };
+        prompt: `下面是 ${snippets.length} 条搜索结果, 提取相关 AI 新闻:\n\n${corpus}`,
+      });
+      return { data: object };
+    } catch (err) {
+      lastErr = err instanceof Error ? err.message : String(err);
+    }
   }
+  return { data: { news: [] }, error: lastErr };
 }
 
 const DEFAULT_SOURCES: Array<{ name: string; query: string; enabled: boolean }> = [
-  { name: "Hacker News", query: "site:news.ycombinator.com AI OR LLM OR agent", enabled: true },
-  { name: "TechCrunch", query: "site:techcrunch.com AI OR OpenAI OR Anthropic OR Google DeepMind", enabled: true },
-  { name: "The Verge", query: "site:theverge.com AI model release", enabled: true },
-  { name: "arXiv", query: "site:arxiv.org large language model OR agent OR reasoning", enabled: true },
-  { name: "机器之心", query: "site:jiqizhixin.com AI 大模型", enabled: true },
-  { name: "量子位", query: "site:qbitai.com AI 大模型 发布", enabled: true },
+  { name: "Hacker News", query: "hacker news AI OR LLM OR agent", enabled: true },
+  { name: "TechCrunch", query: "techcrunch AI OpenAI Anthropic DeepMind", enabled: true },
+  { name: "The Verge", query: "the verge AI model release", enabled: true },
+  { name: "arXiv", query: "arxiv large language model agent reasoning", enabled: true },
+  { name: "机器之心", query: "机器之心 AI 大模型", enabled: true },
+  { name: "量子位", query: "量子位 AI 大模型 发布", enabled: true },
 ];
 
 const SourceSchema = z.object({
@@ -244,39 +257,54 @@ export const scanAiNewsNow = createServerFn({ method: "POST" })
 
     const activeSources = settings.sources.filter((s) => s.enabled);
     const allFound: Array<{ source: string; item: z.infer<typeof ExtractedSchema>["news"][number] }> = [];
+    const debug: Array<{ source: string; query: string; snippets: number; extracted: number; kept: number; error?: string }> = [];
 
     for (const src of activeSources) {
       const snippets = await firecrawlSearch(src.query, settings.per_source_limit, settings.time_window);
-      if (snippets.length === 0) continue;
-      const { news } = await extractWithAI(src.name, snippets);
-      for (const n of news) {
+      if (snippets.length === 0) {
+        debug.push({ source: src.name, query: src.query, snippets: 0, extracted: 0, kept: 0, error: "firecrawl 0 结果" });
+        continue;
+      }
+      const { data: ex, error } = await extractWithAI(src.name, snippets);
+      let kept = 0;
+      for (const n of ex.news) {
         if (!n.url?.startsWith("http")) continue;
         const blob = `${n.title}\n${n.summary}\n${(n.tags ?? []).join(" ")}`;
         if (!matchesFilters(blob, n.tags ?? [], settings)) continue;
         allFound.push({ source: src.name, item: n });
+        kept += 1;
       }
+      debug.push({ source: src.name, query: src.query, snippets: snippets.length, extracted: ex.news.length, kept, error });
     }
 
     const byUrl = new Map<string, (typeof allFound)[number]>();
     for (const f of allFound) if (!byUrl.has(f.item.url)) byUrl.set(f.item.url, f);
 
     let inserted = 0;
+    const insertErrors: string[] = [];
     for (const { source, item } of byUrl.values()) {
       const { data: row, error } = await supabaseAdmin
         .from("ai_news")
-        .insert({
-          source,
-          url: item.url,
-          title: item.title,
-          published_at: item.published_at,
-          summary: item.summary,
-          tags: item.tags ?? [],
-          status: "pending",
-          raw: item,
-        })
+        .upsert(
+          {
+            source,
+            url: item.url,
+            title: item.title,
+            published_at: item.published_at,
+            summary: item.summary,
+            tags: item.tags ?? [],
+            status: "pending",
+            raw: item,
+          },
+          { onConflict: "url", ignoreDuplicates: true },
+        )
         .select("*")
         .maybeSingle();
-      if (!error && row) inserted += 1;
+      if (error) {
+        insertErrors.push(`${item.url}: ${error.message}`);
+        continue;
+      }
+      if (row) inserted += 1;
     }
 
     const result = { scanned: allFound.length, deduped: byUrl.size, inserted };
@@ -284,7 +312,7 @@ export const scanAiNewsNow = createServerFn({ method: "POST" })
       .from("ai_news_settings")
       .upsert({ id: "singleton", last_scanned_at: new Date().toISOString(), last_scan_result: result });
 
-    return { ok: true as const, ...result };
+    return { ok: true as const, ...result, debug, insertErrors };
   });
 
 export const listPendingAiNews = createServerFn({ method: "GET" }).handler(async () => {
