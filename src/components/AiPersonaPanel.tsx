@@ -249,7 +249,7 @@ export function AiPersonaPanel() {
                   className={`w-12 h-12 rounded-full overflow-hidden border-2 transition ${active ? "border-amber-glow ring-2 ring-amber-glow/40" : "border-white/10 hover:border-white/30"}`}
                   title="使用这个头像"
                 >
-                  <img src={url} alt="预设头像" className="w-full h-full object-cover bg-white/5" loading="lazy" />
+                  <CachedAvatar src={url} alt="预设头像" className="w-full h-full object-cover bg-white/5" />
                 </button>
               );
             })}
