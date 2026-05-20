@@ -276,7 +276,7 @@ function DesktopApp() {
 
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen} modal>
         <DialogContent
-          className="max-w-4xl w-[92vw] p-0 bg-[#1a1d24] border-white/10 text-white overflow-hidden"
+          className="max-w-4xl w-[92vw] p-0 bg-background border-border text-foreground overflow-hidden"
           onOpenAutoFocus={(e) => e.preventDefault()}
           onEscapeKeyDown={() => setSettingsOpen(false)}
           onPointerDownOutside={() => setSettingsOpen(false)}
