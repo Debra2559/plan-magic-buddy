@@ -142,13 +142,21 @@ const initialNotes: Note[] = [
   { id: "n2", text: "Coding Agent 演示要先抛痛点 30s，再看 demo。", createdAt: "2026-05-19T11:40:00" },
 ];
 
+function seedHabit(id: string, name: string, emoji: string, streak: number, doneToday: boolean): Habit {
+  const today = todayLocal();
+  const lastDay = doneToday ? today : addDays(today, -1);
+  const history: string[] = [];
+  for (let i = 0; i < streak; i++) history.push(addDays(lastDay, -i));
+  return { id, name, emoji, history };
+}
+
 const initialHabits: Habit[] = [
-  { id: "h1", name: "早起", emoji: "🌅", streak: 12, doneToday: true },
-  { id: "h2", name: "冥想", emoji: "🧘", streak: 5, doneToday: true },
-  { id: "h3", name: "阅读", emoji: "📖", streak: 23, doneToday: false },
-  { id: "h4", name: "运动", emoji: "🏃", streak: 7, doneToday: false },
-  { id: "h5", name: "英语", emoji: "🇬🇧", streak: 18, doneToday: true },
-  { id: "h6", name: "早睡", emoji: "🌙", streak: 3, doneToday: false },
+  seedHabit("h1", "早起", "🌅", 12, true),
+  seedHabit("h2", "冥想", "🧘", 5, true),
+  seedHabit("h3", "阅读", "📖", 23, false),
+  seedHabit("h4", "运动", "🏃", 7, false),
+  seedHabit("h5", "英语", "🇬🇧", 18, true),
+  seedHabit("h6", "早睡", "🌙", 3, false),
 ];
 
 let idCounter = 1000;
