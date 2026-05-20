@@ -1171,11 +1171,36 @@ export function FeishuSyncPanel() {
           ) : (
             <span className="text-white/40">还没有捕获到 sender.open_id（向机器人发一条私信即可）</span>
           )}
+          {capture?.openId && capture.openId !== notify.receiveId && (
+            <button
+              type="button"
+              onClick={async () => {
+                const next = {
+                  ...notify,
+                  receiveId: capture.openId!,
+                  receiveIdType: (capture.receiveIdType as any) || "open_id",
+                };
+                setNotify(next);
+                try {
+                  await runSetNotify({ data: next });
+                  setNotifySaved(true);
+                  setNotifyResult({ ok: true, msg: "已覆盖保存为最新捕获的 open_id" });
+                  setTimeout(() => setNotifySaved(false), 1500);
+                  refreshCapture();
+                } catch (e: any) {
+                  setNotifyResult({ ok: false, msg: e?.message ?? "保存失败" });
+                }
+              }}
+              className="ml-auto text-[10px] px-2 py-0.5 rounded bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110"
+            >
+              覆盖保存为接收人
+            </button>
+          )}
           <button
             type="button"
             onClick={refreshCapture}
             disabled={captureRefreshing}
-            className="ml-auto text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-50"
+            className={`${capture?.openId && capture.openId !== notify.receiveId ? "" : "ml-auto"} text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-50`}
           >
             {captureRefreshing ? "刷新中…" : "刷新"}
           </button>
