@@ -303,6 +303,7 @@ export const scanHackathonsNow = createServerFn({ method: "GET" }).handler(async
           title: item.title,
           deadline: item.deadline,
           starts_at: item.starts_at,
+          ends_at: item.ends_at,
           location: item.location,
           prize: item.prize,
           summary: item.summary,
