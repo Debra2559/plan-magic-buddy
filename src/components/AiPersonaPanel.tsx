@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Sparkles, Wand2, LogOut, Loader2, Camera, Trash2, Upload } from "lucide-react";
-import { usePersona, resolveAvatarUrl, DEFAULT_AVATAR_URL } from "@/lib/persona";
+import { usePersona } from "@/lib/persona";
+import { CachedAvatar } from "@/components/CachedAvatar";
 import { useAuth } from "@/lib/auth-context";
 import { generatePlan } from "@/lib/plan.functions";
 import { useServerFn } from "@tanstack/react-start";
@@ -175,14 +176,11 @@ export function AiPersonaPanel() {
         >
           <div className="relative">
             <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/15 bg-white/5 flex items-center justify-center text-2xl text-white/60 relative">
-              <img
-                src={resolveAvatarUrl(local.avatar_url)}
+              <CachedAvatar
+                src={local.avatar_url}
                 alt="头像"
+                lazy={false}
                 className={`w-full h-full object-cover transition ${uploadingAvatar ? "opacity-60 blur-[1px]" : ""}`}
-                onError={(e) => {
-                  const img = e.currentTarget;
-                  if (img.src !== DEFAULT_AVATAR_URL) img.src = DEFAULT_AVATAR_URL;
-                }}
               />
               {uploadingAvatar && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
@@ -251,7 +249,7 @@ export function AiPersonaPanel() {
                   className={`w-12 h-12 rounded-full overflow-hidden border-2 transition ${active ? "border-amber-glow ring-2 ring-amber-glow/40" : "border-white/10 hover:border-white/30"}`}
                   title="使用这个头像"
                 >
-                  <img src={url} alt="预设头像" className="w-full h-full object-cover bg-white/5" loading="lazy" />
+                  <CachedAvatar src={url} alt="预设头像" className="w-full h-full object-cover bg-white/5" />
                 </button>
               );
             })}
