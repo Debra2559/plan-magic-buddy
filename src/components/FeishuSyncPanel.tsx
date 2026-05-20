@@ -530,7 +530,7 @@ export function FeishuSyncPanel() {
       <div className="mt-2 flex items-start gap-1.5 text-[11px] text-white/40">
         <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
         <span>
-          已接入真接口：本地新增/修改/删除 1.5 秒后自动推到选中的飞书日历。回流（飞书→Sylva）还需配 Encrypt Key + 订阅事件。
+          已接入真接口：本地新增/修改/删除 1.5 秒后自动推到飞书；点「拉取」把飞书最近 60 天事件抓回本地（实时回流需另配 Encrypt Key + 订阅事件）。
         </span>
       </div>
     </div>
