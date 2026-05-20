@@ -4,6 +4,7 @@ import { generateObject } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createLovableAiGatewayProvider } from "./ai-gateway";
+import { fetchMemoryBlockForUser } from "./memories.functions";
 import { sendCardToFeishu } from "./feishu.functions";
 
 // ---------- Schema ----------
