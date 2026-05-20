@@ -193,32 +193,8 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
   const grouped = groupByDate(confirmed.map((c) => ({ ...c, _key: c.id })));
   const draftGrouped = draft ? groupByDate(draft.items.map((it, i) => ({ ...it, _key: `d-${i}` }))) : null;
 
-  const [quickIdea, setQuickIdea] = useState("");
-  const runQuick = async () => {
-    const text = quickIdea.trim();
-    if (!text || loading) return;
-    setMode("auto");
-    setIdea(text);
-    setLoading(true);
-    setError(null);
-    setDraft(null);
-    try {
-      const existing: PlanItem[] = confirmed.map(({ id: _id, done: _done, ...rest }) => rest);
-      const result = await planFn({ data: { idea: text, mode: "auto", existing: existing.length ? existing : undefined } });
-      if (!result.ok) setError(result.error);
-      else {
-        setDraft(result.plan);
-        setDraftMode(result.mode);
-        setQuickIdea("");
-        const label = result.mode === "add" ? "追加" : result.mode === "adjust" ? "调整重排" : "全新规划";
-        toast.message(`AI 识别为：${label}`, { duration: 2500 });
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "未知错误");
-    } finally {
-      setLoading(false);
-    }
-  };
+
+
 
   const pickSyncItems = (): PlanItem[] => {
     const source = syncScope === "draft" ? (draft?.items ?? []) : confirmed.map(({ id: _id, done: _done, ...rest }) => ({ ...rest }));
@@ -290,36 +266,154 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
 
   return (
     <div className="space-y-6">
-      {/* Quick generate bar */}
-      <div className="widget widget-glow p-5">
-        <div className="flex items-center gap-2 mb-2">
+      {/* 统一生成面板：输入 + 模式选择 */}
+      <div className="widget widget-glow p-6">
+        <div className="flex items-center gap-2 mb-3">
           <Wand2 className="w-4 h-4 text-amber-glow" />
           <span className="text-xs tracking-wider text-amber-glow">一键生成 · 直接把想法变成完整规划</span>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <input
-            value={quickIdea}
-            onChange={(e) => setQuickIdea(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-                e.preventDefault();
-                runQuick();
+
+        {mode === "goal" ? (
+          <div className="space-y-3">
+            {chatMessages.length > 0 && (
+              <div className="max-h-[260px] overflow-auto space-y-2 pr-1">
+                {chatMessages.map((m, i) => (
+                  <div
+                    key={i}
+                    className={`p-3 rounded-xl text-sm leading-relaxed whitespace-pre-wrap ${
+                      m.role === "user"
+                        ? "bg-amber-glow/15 border border-amber-glow/30 text-foreground/90 ml-6"
+                        : "bg-foreground/5 border border-foreground/10 text-foreground/85 mr-6"
+                    }`}
+                  >
+                    {m.content}
+                    {m.quickReplies && m.quickReplies.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {m.quickReplies.map((q) => (
+                          <button
+                            key={q}
+                            onClick={() => runChat(q)}
+                            disabled={loading}
+                            className="text-[11px] px-2.5 py-1 rounded-full bg-amber-glow/10 border border-amber-glow/30 text-amber-glow hover:bg-amber-glow/20 transition disabled:opacity-40"
+                          >
+                            {q}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {loading && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground p-2">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    {chatStep?.kind === "research" ? (
+                      <span className="flex items-center gap-1"><Globe className="w-3 h-3" /> 正在联网查方案…</span>
+                    ) : (
+                      "AI 思考中…"
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <textarea
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (shouldSubmitOnKey(e, enterToSubmit)) {
+                    e.preventDefault();
+                    handleSubmit();
+                  }
+                }}
+                placeholder={chatMessages.length === 0 ? "告诉我一个目标，例如：我要考雅思 / 想 3 个月跑下半马" : "继续回答…"}
+                rows={chatMessages.length === 0 ? 2 : 2}
+                className="flex-1 bg-foreground/5 border border-foreground/10 rounded-xl px-4 py-3 text-sm leading-relaxed resize-none outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
+              />
+              <button
+                onClick={handleSubmit}
+                disabled={loading || !chatInput.trim()}
+                className="shrink-0 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition disabled:opacity-40 disabled:scale-100"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                {loading ? "思考中" : chatMessages.length === 0 ? "开始拆解" : "发送"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row gap-2">
+            <textarea
+              value={idea}
+              onChange={(e) => setIdea(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  handleSubmit();
+                }
+              }}
+              placeholder={
+                mode === "create"
+                  ? "例如：下周要准备毕业答辩，同时跑通飞书提效系统，每天还要泛听英语..."
+                  : mode === "adjust"
+                  ? "例如：周三下午突然有个会，把那天的安排往后推..."
+                  : mode === "add"
+                  ? "例如：再加一个每天 30 分钟的力量训练..."
+                  : "一句话描述你想做的事，例如：这周冲毕业答辩 + 每天 30 分钟英语"
               }
-            }}
-            placeholder="一句话描述你想做的事，例如：这周冲毕业答辩 + 每天 30 分钟英语"
-            className="flex-1 bg-foreground/5 border border-foreground/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
-          />
-          <button
-            onClick={runQuick}
-            disabled={loading || !quickIdea.trim()}
-            className="shrink-0 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition disabled:opacity-40 disabled:scale-100"
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            {loading ? "生成中" : "生成规划"}
-          </button>
+              rows={2}
+              className="flex-1 bg-foreground/5 border border-foreground/10 rounded-xl px-4 py-3 text-sm leading-relaxed resize-none outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
+            />
+            <button
+              onClick={handleSubmit}
+              disabled={loading || !idea.trim()}
+              className="shrink-0 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition disabled:opacity-40 disabled:scale-100"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {loading ? "生成中" : "生成规划"}
+            </button>
+          </div>
+        )}
+
+        {/* Mode tabs（输入框下方） */}
+        <div className="flex gap-2 mt-3 flex-wrap items-center">
+          <span className="text-[10px] tracking-wider text-muted-foreground mr-1">模式</span>
+          {(Object.keys(modeMeta) as Mode[]).map((m) => {
+            const Icon = modeMeta[m].icon;
+            const active = mode === m;
+            const disabled = (m === "adjust" || m === "add") && confirmed.length === 0;
+            return (
+              <button
+                key={m}
+                disabled={disabled}
+                onClick={() => {
+                  setMode(m);
+                  if (m === "goal") resetChat();
+                }}
+                title={modeMeta[m].hint}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] border transition
+                  ${active ? "bg-amber-glow/20 border-amber-glow/50 text-amber-glow" : "bg-foreground/5 border-foreground/10 text-foreground/70 hover:bg-foreground/10"}
+                  ${disabled ? "opacity-30 cursor-not-allowed" : ""}`}
+              >
+                <Icon className="w-3 h-3" />
+                {modeMeta[m].label}
+              </button>
+            );
+          })}
+          {mode === "goal" && chatMessages.length > 0 && (
+            <button onClick={resetChat} className="ml-auto text-[10px] text-muted-foreground hover:text-foreground transition">重新开始</button>
+          )}
         </div>
-        <p className="mt-2 text-[10px] text-muted-foreground">Enter 直接生成 · 生成后在下方草稿确认即可写入日历</p>
+
+        {error && (
+          <div className="mt-3 p-3 rounded-xl bg-destructive/15 border border-destructive/30 text-xs text-destructive-foreground">
+            {error}
+          </div>
+        )}
+
+        <p className="mt-2 text-[10px] text-muted-foreground">
+          {mode === "auto" ? "Enter 直接生成 · 不用选模式，AI 自动判断该新建/调整/追加" : `Enter 直接生成 · 当前：${modeMeta[mode].hint}`}
+        </p>
       </div>
+
 
       {/* Feishu sync bar */}
       <div className="widget p-5">
@@ -374,196 +468,14 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
       </div>
 
 
-      <div className="grid lg:grid-cols-[1fr_1.2fr] gap-8 items-start">
-      {/* LEFT: Input */}
-      <div className="widget widget-glow p-7 lg:sticky lg:top-8">
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="w-4 h-4 text-amber-glow animate-pulse-glow" />
-          <span className="text-xs tracking-wider text-amber-glow">Sylva AI · 实时规划</span>
+      {/* Preview + Confirmed */}
+      <div className="grid lg:grid-cols-2 gap-6 items-start">
+        <div className="space-y-6">
+          <HackathonInbox />
+          <AiNewsRadar />
         </div>
+        <div className="space-y-6">
 
-        <h3 className="font-display text-2xl mb-4">{mode === "goal" ? "告诉我一个目标" : "说一个想法"}</h3>
-
-        {/* Mode tabs */}
-        <div className="flex gap-2 mb-4 flex-wrap">
-          {(Object.keys(modeMeta) as Mode[]).map((m) => {
-            const Icon = modeMeta[m].icon;
-            const active = mode === m;
-            const disabled = (m === "adjust" || m === "add") && confirmed.length === 0;
-            return (
-              <button
-                key={m}
-                disabled={disabled}
-                onClick={() => {
-                  setMode(m);
-                  if (m === "goal") resetChat();
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition
-                  ${active ? "bg-amber-glow/20 border-amber-glow/50 text-amber-glow" : "bg-foreground/5 border-foreground/10 text-foreground/70 hover:bg-foreground/10"}
-                  ${disabled ? "opacity-30 cursor-not-allowed" : ""}`}
-                title={modeMeta[m].hint}
-              >
-                <Icon className="w-3 h-3" />
-                {modeMeta[m].label}
-              </button>
-            );
-          })}
-        </div>
-
-        {mode === "goal" ? (
-          <div className="space-y-3">
-            {/* Chat history */}
-            {chatMessages.length > 0 && (
-              <div className="max-h-[280px] overflow-auto space-y-2 pr-1">
-                {chatMessages.map((m, i) => (
-                  <div
-                    key={i}
-                    className={`p-3 rounded-xl text-sm leading-relaxed whitespace-pre-wrap ${
-                      m.role === "user"
-                        ? "bg-amber-glow/15 border border-amber-glow/30 text-foreground/90 ml-6"
-                        : "bg-foreground/5 border border-foreground/10 text-foreground/85 mr-6"
-                    }`}
-                  >
-                    {m.content}
-                    {m.quickReplies && m.quickReplies.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {m.quickReplies.map((q) => (
-                          <button
-                            key={q}
-                            onClick={() => runChat(q)}
-                            disabled={loading}
-                            className="text-[11px] px-2.5 py-1 rounded-full bg-amber-glow/10 border border-amber-glow/30 text-amber-glow hover:bg-amber-glow/20 transition disabled:opacity-40"
-                          >
-                            {q}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {loading && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground p-2">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    {chatStep?.kind === "research" ? (
-                      <span className="flex items-center gap-1"><Globe className="w-3 h-3" /> 正在联网查方案…</span>
-                    ) : (
-                      "AI 思考中…"
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-            <textarea
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (shouldSubmitOnKey(e, enterToSubmit)) {
-                  e.preventDefault();
-                  handleSubmit();
-                }
-              }}
-              placeholder={chatMessages.length === 0 ? "例如：我要考雅思 / 想 3 个月跑下半马 / 准备申请研究生…" : "继续回答…"}
-              rows={chatMessages.length === 0 ? 4 : 2}
-              className="w-full bg-foreground/5 border border-foreground/10 rounded-2xl p-4 text-sm leading-relaxed resize-none outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
-            />
-          </div>
-        ) : (
-          <textarea
-            value={idea}
-            onChange={(e) => setIdea(e.target.value)}
-            onKeyDown={(e) => {
-              if (shouldSubmitOnKey(e, enterToSubmit)) {
-                e.preventDefault();
-                handleSubmit();
-              }
-            }}
-            placeholder={
-              mode === "create"
-                ? "例如：下周要准备毕业答辩，同时跑通飞书提效系统，每天还要泛听英语..."
-                : mode === "adjust"
-                ? "例如：周三下午突然有个会，把那天的安排往后推..."
-                : "例如：再加一个每天 30 分钟的力量训练..."
-            }
-            rows={5}
-            className="w-full bg-foreground/5 border border-foreground/10 rounded-2xl p-4 text-sm leading-relaxed resize-none outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
-          />
-        )}
-
-        <div className="flex items-center justify-between mt-3 gap-2">
-          <span className="text-[10px] text-muted-foreground tracking-wider flex items-center gap-3">
-            {mode === "goal" && chatMessages.length > 0 ? (
-              <button onClick={resetChat} className="hover:text-foreground transition">重新开始</button>
-            ) : null}
-            <EnterHint example={"我要在 3 个月内跑下半马 ↵（Shift+Enter）\n每周至少 4 次跑步训练"} />
-          </span>
-          <button
-            onClick={handleSubmit}
-            disabled={loading || (mode === "goal" ? !chatInput.trim() : !idea.trim())}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition disabled:opacity-40 disabled:scale-100"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                AI 思考中
-              </>
-            ) : (
-              <>
-                {mode === "goal" ? (chatMessages.length === 0 ? "开始拆解" : "发送") : "让 AI 拆解"}
-                <ArrowUp className="w-4 h-4" strokeWidth={2.5} />
-              </>
-            )}
-          </button>
-        </div>
-
-        {error && (
-          <div className="mt-4 p-3 rounded-xl bg-destructive/15 border border-destructive/30 text-xs text-destructive-foreground">
-            {error}
-          </div>
-        )}
-
-        {/* Example prompts */}
-        {!draft && !loading && mode !== "goal" && (
-          <div className="mt-5 pt-5 border-t border-foreground/10">
-            <p className="text-[10px] tracking-wider text-muted-foreground mb-2">试试看 →</p>
-            <div className="flex flex-wrap gap-2">
-              {[
-                "下周冲一份毕业答辩 PPT",
-                "三个月内雅思考到 7 分",
-                "周末搬家 + 布置新家",
-              ].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setIdea(s)}
-                  className="text-xs px-3 py-1.5 rounded-full bg-foreground/5 border border-foreground/10 text-foreground/70 hover:bg-foreground/10 transition"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {mode === "goal" && chatMessages.length === 0 && !loading && (
-          <div className="mt-5 pt-5 border-t border-foreground/10">
-            <p className="text-[10px] tracking-wider text-muted-foreground mb-2">试试看 →</p>
-            <div className="flex flex-wrap gap-2">
-              {["我想考雅思", "三个月跑下半马", "申请 26 fall 计算机硕士", "学钢琴入门"].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => runChat(s)}
-                  className="text-xs px-3 py-1.5 rounded-full bg-foreground/5 border border-foreground/10 text-foreground/70 hover:bg-foreground/10 transition"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* RIGHT: Preview + Confirmed */}
-      <div className="space-y-6">
-        <HackathonInbox />
-        <AiNewsRadar />
         {/* Draft preview */}
         {draft && draftGrouped && (
           <div className="widget widget-glow p-7 animate-in fade-in slide-in-from-bottom-2 duration-500">
