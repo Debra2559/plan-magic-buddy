@@ -190,6 +190,7 @@ export function JournalView() {
   }, [allDates, date, setDate]);
 
   return (
+    <JournalShell>
     <div className="flex h-full">
       {/* 手帐主页 */}
       <div className="flex-1 overflow-auto">
