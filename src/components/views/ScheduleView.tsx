@@ -893,3 +893,18 @@ function TimelineChip({
     </div>
   );
 }
+
+function FilterChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-2 py-0.5 rounded-full text-[10px] border transition ${
+        active
+          ? "bg-amber-glow text-primary-foreground border-amber-glow"
+          : "border-amber-glow/30 text-amber-glow/80 hover:border-amber-glow/60 hover:text-amber-glow"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
