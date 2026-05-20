@@ -701,7 +701,25 @@ export function FeishuSyncPanel() {
                 <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>
               ))}
             </select>
-            <span className="text-white/40">UTC+8</span>
+          </label>
+          <label className="flex items-center gap-1.5">
+            时区
+            <select
+              value={recap.timezone}
+              onChange={(e) => {
+                const next = { ...recap, timezone: e.target.value };
+                setRecap(next);
+                saveRecap(next);
+              }}
+              className="bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white/80 outline-none max-w-[200px]"
+            >
+              {TIMEZONE_OPTIONS.map((tz) => (
+                <option key={tz.value} value={tz.value}>{tz.label}</option>
+              ))}
+              {!TIMEZONE_OPTIONS.some((t) => t.value === recap.timezone) && (
+                <option value={recap.timezone}>{recap.timezone}（自定义）</option>
+              )}
+            </select>
           </label>
         </div>
         <div className="flex items-center gap-2">
