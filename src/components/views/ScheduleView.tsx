@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useSylva } from "@/lib/sylva-store";
-import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X, CheckCircle2, RotateCcw, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X, CheckCircle2, RotateCcw, Check, Sparkles } from "lucide-react";
 import type { PlanItem } from "@/lib/plan.functions";
 import { TimePicker } from "@/components/ui/time-picker";
 
@@ -18,7 +18,7 @@ const tagColor: Record<string, string> = {
 
 const typeIcon = { event: CalIcon, todo: Clock, reminder: Bell } as const;
 
-export function ScheduleView() {
+export function ScheduleView({ onGoPlan }: { onGoPlan?: () => void } = {}) {
   const { items, addItems, updateItem, removeItem, toggleDone, isRecapDone, unmarkRecapDone } = useSylva();
   const [cursor, setCursor] = useState(new Date(2026, 4, 1)); // May 2026
   const [selected, setSelected] = useState("2026-05-19");
@@ -62,6 +62,16 @@ export function ScheduleView() {
             <span className="text-xs text-white/40 tracking-widest">日程视图</span>
           </div>
           <div className="flex items-center gap-1">
+            {onGoPlan && (
+              <button
+                onClick={onGoPlan}
+                className="mr-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-primary-foreground bg-amber-glow/85 hover:bg-amber-glow transition"
+                title="去 AI 规划"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                AI 规划
+              </button>
+            )}
             <button
               onClick={() => setCursor(new Date(year, month - 1, 1))}
               className="p-2 rounded-lg hover:bg-white/10 text-white/70"
