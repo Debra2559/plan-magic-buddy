@@ -1461,3 +1461,43 @@ export const lookupFeishuOpenId = createServerFn({ method: 'POST' })
       return { ok: false as const, error: e?.message ?? '请求失败' }
     }
   })
+
+// ---------- 列出机器人所在群 ----------
+export const listFeishuChats = createServerFn({ method: 'POST' }).handler(async () => {
+  try {
+    const chats: Array<{ chat_id: string; name: string; description?: string }> = []
+    let pageToken: string | undefined = undefined
+    // 最多翻 5 页（500 个群足够展示）
+    for (let i = 0; i < 5; i++) {
+      const qs = new URLSearchParams({ page_size: '100' })
+      if (pageToken) qs.set('page_token', pageToken)
+      const res = await feishu<{
+        code: number
+        msg: string
+        data?: {
+          items?: Array<{ chat_id: string; name: string; description?: string }>
+          page_token?: string
+          has_more?: boolean
+        }
+      }>(`/im/v1/chats?${qs.toString()}`, { method: 'GET' })
+      if (res.code !== 0) {
+        return {
+          ok: false as const,
+          error: `飞书接口错误 code=${res.code} msg=${res.msg}`,
+          hint:
+            res.code === 99991672 || /scope/i.test(res.msg ?? '')
+              ? '应用缺少 im:chat:readonly 权限，请到飞书后台「权限管理」开通后重发布版本'
+              : undefined,
+        }
+      }
+      for (const it of res.data?.items ?? []) {
+        chats.push({ chat_id: it.chat_id, name: it.name || '(未命名群)', description: it.description })
+      }
+      if (!res.data?.has_more || !res.data.page_token) break
+      pageToken = res.data.page_token
+    }
+    return { ok: true as const, chats }
+  } catch (e: any) {
+    return { ok: false as const, error: e?.message ?? '请求失败' }
+  }
+})
