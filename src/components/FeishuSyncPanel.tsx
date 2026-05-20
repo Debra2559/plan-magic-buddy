@@ -320,8 +320,8 @@ export function FeishuSyncPanel() {
                 <Link2 className="w-4 h-4 text-white/50" />
               </div>
               <div className="flex-1">
-                <div className="text-sm text-white/90">连接飞书账号开始双向同步</div>
-                <div className="text-[11px] text-white/50">将打开飞书授权 · 当前为 Mock 流程</div>
+                <div className="text-sm text-white/90">从下方挑一个飞书日历开始同步</div>
+                <div className="text-[11px] text-white/50">选中后会自动把本地日程推到该日历</div>
               </div>
               <button
                 onClick={connect}
