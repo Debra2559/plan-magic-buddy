@@ -261,7 +261,7 @@ export function FeishuSyncPanel() {
     }
   };
 
-  const saveRecap = async (next?: { enabled: boolean; hour: number }) => {
+  const saveRecap = async (next?: { enabled: boolean; hour: number; timezone: string }) => {
     const payload = next ?? recap;
     try {
       await runSetRecap({ data: payload });
