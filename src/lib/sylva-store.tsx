@@ -148,6 +148,10 @@ interface SylvaContextValue {
   setRecapBackfillStrategy: (s: RecapBackfillStrategy) => void;
   enterToSubmit: boolean;
   setEnterToSubmit: (v: boolean) => void;
+  dateFlashEnabled: boolean;
+  setDateFlashEnabled: (v: boolean) => void;
+  dateFlashDurationMs: number;
+  setDateFlashDurationMs: (v: number) => void;
 }
 
 const SylvaContext = createContext<SylvaContextValue | null>(null);
