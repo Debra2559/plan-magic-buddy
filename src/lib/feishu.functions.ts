@@ -714,6 +714,29 @@ export const getFeishuNotifyConfig = createServerFn({ method: 'GET' }).handler(a
   }
 })
 
+export const getLastCapturedOpenId = createServerFn({ method: 'GET' }).handler(async () => {
+  const { data: settings } = await supabaseAdmin
+    .from('feishu_settings')
+    .select('notify_receive_id, notify_receive_id_type, updated_at')
+    .limit(1)
+    .maybeSingle()
+  const { data: lastLog } = await supabaseAdmin
+    .from('feishu_webhook_logs')
+    .select('created_at, event_type, level, message')
+    .eq('step', 'capture_open_id')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  return {
+    openId: (settings as any)?.notify_receive_id ?? null,
+    receiveIdType: (settings as any)?.notify_receive_id_type ?? null,
+    capturedAt: lastLog?.created_at ?? null,
+    eventType: lastLog?.event_type ?? null,
+    level: lastLog?.level ?? null,
+    message: lastLog?.message ?? null,
+  }
+})
+
 const notifyConfigSchema = z.object({
   receiveId: z.string().max(200),
   receiveIdType: z.enum(['open_id', 'chat_id', 'user_id', 'email']),
