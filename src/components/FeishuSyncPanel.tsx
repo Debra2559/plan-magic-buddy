@@ -97,6 +97,9 @@ export function FeishuSyncPanel() {
   const runGetNotify = useServerFn(getFeishuNotifyConfig);
   const runSetNotify = useServerFn(setFeishuNotifyConfig);
   const runTestNotify = useServerFn(testHackathonNotify);
+  const runGetRecap = useServerFn(getDailyRecapConfig);
+  const runSetRecap = useServerFn(setDailyRecapConfig);
+  const runSendRecapNow = useServerFn(sendDailyRecapNow);
 
   const [notify, setNotify] = useState<{
     receiveId: string;
@@ -107,6 +110,11 @@ export function FeishuSyncPanel() {
   const [notifySaved, setNotifySaved] = useState(false);
   const [notifySending, setNotifySending] = useState(false);
   const [notifyResult, setNotifyResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  const [recap, setRecap] = useState<{ enabled: boolean; hour: number }>({ enabled: false, hour: 21 });
+  const [recapSaved, setRecapSaved] = useState(false);
+  const [recapSending, setRecapSending] = useState(false);
+  const [recapResult, setRecapResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
   const doSync = useCallback(
     async (reason: string) => {
