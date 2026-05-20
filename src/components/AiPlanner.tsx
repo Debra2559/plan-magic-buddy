@@ -10,9 +10,10 @@ import { EnterHint } from "@/components/EnterHint";
 import { shouldSubmitOnKey } from "@/lib/keybinds";
 import { Sparkles, ArrowUp, Loader2, Calendar, CheckSquare, Bell, Plus, RefreshCw, Wand2, Check, X, Trash2, Target, Globe, Send, Settings as SettingsIcon } from "lucide-react";
 
-type Mode = "create" | "adjust" | "add" | "goal";
+type Mode = "auto" | "create" | "adjust" | "add" | "goal";
 
 const modeMeta: Record<Mode, { label: string; icon: typeof Wand2; hint: string }> = {
+  auto: { label: "智能识别", icon: Sparkles, hint: "不用选，AI 自动判断该新建/调整/追加" },
   create: { label: "全新规划", icon: Wand2, hint: "从 0 到 1 帮我排" },
   adjust: { label: "调整重排", icon: RefreshCw, hint: "重新平衡现有规划" },
   add: { label: "追加事项", icon: Plus, hint: "往现有规划里加" },
@@ -39,11 +40,12 @@ const tagColors: Record<string, string> = {
 export function AiPlanner({ onGoSettings }: { onGoSettings?: () => void } = {}) {
   const { items: confirmedFull, addItems, replaceItems, removeItem, clearItems, enterToSubmit } = useSylva();
   const confirmed = confirmedFull;
-  const [mode, setMode] = useState<Mode>("create");
+  const [mode, setMode] = useState<Mode>("auto");
   const [idea, setIdea] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<Plan | null>(null);
+  const [draftMode, setDraftMode] = useState<"create" | "adjust" | "add">("create");
   const planFn = useServerFn(generatePlan);
   const chatFn = useServerFn(chatPlan);
   const syncFn = useServerFn(syncToFeishu);
@@ -66,17 +68,23 @@ export function AiPlanner({ onGoSettings }: { onGoSettings?: () => void } = {}) 
     setDraft(null);
     try {
       const existing: PlanItem[] = confirmed.map(({ id: _id, done: _done, ...rest }) => rest);
+      const sendMode = mode as "create" | "adjust" | "add" | "auto";
       const result = await planFn({
         data: {
           idea: idea.trim(),
-          mode: mode as "create" | "adjust" | "add",
-          existing: mode !== "create" ? existing : undefined,
+          mode: sendMode,
+          existing: sendMode !== "create" && existing.length ? existing : undefined,
         },
       });
       if (!result.ok) {
         setError(result.error);
       } else {
         setDraft(result.plan);
+        setDraftMode(result.mode);
+        if (mode === "auto") {
+          const label = result.mode === "add" ? "追加" : result.mode === "adjust" ? "调整重排" : "全新规划";
+          toast.message(`AI 识别为：${label}`, { duration: 2500 });
+        }
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "未知错误");
@@ -142,7 +150,7 @@ export function AiPlanner({ onGoSettings }: { onGoSettings?: () => void } = {}) 
       },
       { event: 0, todo: 0, reminder: 0 } as Record<PlanItem["type"], number>,
     );
-    if (mode === "add") {
+    if (draftMode === "add") {
       addItems(draft.items);
     } else {
       replaceItems(draft.items);
@@ -152,7 +160,7 @@ export function AiPlanner({ onGoSettings }: { onGoSettings?: () => void } = {}) 
       counts.todo ? `待办 ${counts.todo}` : "",
       counts.reminder ? `提醒 ${counts.reminder}` : "",
     ].filter(Boolean).join(" · ");
-    toast.success(mode === "add" ? "已追加到我的规划" : "规划已同步", {
+    toast.success(draftMode === "add" ? "已追加到我的规划" : "规划已同步", {
       description: `${parts || `共 ${draft.items.length} 项`}　已写入日程 / 待办 / 提醒`,
       duration: 4000,
     });
@@ -173,15 +181,22 @@ export function AiPlanner({ onGoSettings }: { onGoSettings?: () => void } = {}) 
   const runQuick = async () => {
     const text = quickIdea.trim();
     if (!text || loading) return;
-    setMode("create");
+    setMode("auto");
     setIdea(text);
     setLoading(true);
     setError(null);
     setDraft(null);
     try {
-      const result = await planFn({ data: { idea: text, mode: "create" } });
+      const existing: PlanItem[] = confirmed.map(({ id: _id, done: _done, ...rest }) => rest);
+      const result = await planFn({ data: { idea: text, mode: "auto", existing: existing.length ? existing : undefined } });
       if (!result.ok) setError(result.error);
-      else { setDraft(result.plan); setQuickIdea(""); }
+      else {
+        setDraft(result.plan);
+        setDraftMode(result.mode);
+        setQuickIdea("");
+        const label = result.mode === "add" ? "追加" : result.mode === "adjust" ? "调整重排" : "全新规划";
+        toast.message(`AI 识别为：${label}`, { duration: 2500 });
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "未知错误");
     } finally {
