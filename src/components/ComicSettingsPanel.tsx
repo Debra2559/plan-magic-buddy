@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Upload, X as XIcon, Loader2, Check } from "lucide-react";
+import { Upload, X as XIcon, Loader2, Check, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { useSylva } from "@/lib/sylva-store";
 import { useAuth } from "@/lib/auth-context";
@@ -201,53 +201,12 @@ export function ComicSettingsPanel() {
       )}
 
       {/* Style preset gallery */}
-      <div className="widget overflow-hidden">
-        <div className="px-4 py-3 border-b border-white/8">
-          <div className="text-sm text-white/90">画面风格</div>
-          <div className="text-xs text-white/50 mt-0.5">
-            选一张参考图，每天的漫画会按这个风格生成
-          </div>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3">
-          {STYLE_PRESETS.map((p) => {
-            const active = comicStylePreset === p.id;
-            return (
-              <button
-                key={p.id}
-                onClick={() => selectPreset(p)}
-                className={`group relative aspect-square rounded-lg overflow-hidden border transition ${
-                  active
-                    ? "border-amber-glow ring-2 ring-amber-glow/40"
-                    : "border-white/10 hover:border-white/25"
-                }`}
-              >
-                {p.thumb ? (
-                  <img
-                    src={p.thumb}
-                    alt={p.label}
-                    loading="lazy"
-                    width={256}
-                    height={256}
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/[0.04] text-white/40 text-xs">
-                    自由发挥
-                  </div>
-                )}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-2 py-1.5">
-                  <div className="text-[11px] text-white/95 font-medium">{p.label}</div>
-                </div>
-                {active && (
-                  <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-amber-glow flex items-center justify-center">
-                    <Check className="w-3 h-3 text-black" />
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
+      <StyleGallery
+        active={comicStylePreset}
+        onSelect={selectPreset}
+      />
       </div>
+      ).slice(0, 1) /* placeholder so editor sees a valid expr */}
 
       {/* Custom style prompt (always shown, more weight when 自定义 selected) */}
       <div className="widget p-4 space-y-2">
