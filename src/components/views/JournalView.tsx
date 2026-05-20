@@ -105,6 +105,7 @@ export function JournalView() {
   const { items, habits, notes, diary, comics, isRecapDone, toggleHabitOn, addNote, upsertDiary, setComic, removeComic, comicHistory, addComicHistory, removeComicHistory } = useSylva();
   const [date, setDate] = useState<string>(todayLocal());
   const dateBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const [flashTick, setFlashTick] = useState(0);
 
   useEffect(() => {
     const el = dateBtnRefs.current[date];
@@ -112,6 +113,8 @@ export function JournalView() {
     // 用 scrollIntoView({ block: "start" }) 配合按钮上的 scroll-mt，
     // 让活跃日期始终停在 sticky「手帐翻页」标题正下方，不会被遮住。
     el.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+    // 触发一次高亮闪烁，便于确认定位
+    setFlashTick((t) => t + 1);
   }, [date]);
 
   const dayItems = useMemo(
@@ -453,8 +456,13 @@ export function JournalView() {
                         : "bg-transparent border-white/8 text-white/60 hover:bg-white/5 hover:text-white"
                     }`}
                   >
-                    <p className="font-display text-base leading-none">{f.big}</p>
-                    <p className="text-[10px] text-white/40 mt-1">{f.sub}</p>
+                    <span
+                      key={active ? `flash-${flashTick}` : "idle"}
+                      className={`block rounded-md ${active ? "animate-date-flash" : ""}`}
+                    >
+                      <p className="font-display text-base leading-none">{f.big}</p>
+                      <p className="text-[10px] text-white/40 mt-1">{f.sub}</p>
+                    </span>
                   </button>
                 );
               })}
