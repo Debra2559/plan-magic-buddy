@@ -1459,6 +1459,27 @@ export const lookupFeishuOpenId = createServerFn({ method: 'POST' })
         return { ok: true as const, openId: user.open_id }
       }
 
+      // 从 webhook 捕获的 open_id 兜底（用户给机器人发过消息时由 webhook 自动保存）
+      const fallbackFromWebhook = async (reason: string) => {
+        const { data: row } = await supabaseAdmin
+          .from('feishu_settings')
+          .select('notify_receive_id, notify_receive_id_type, user_open_id')
+          .limit(1)
+          .maybeSingle()
+        const openId =
+          row?.user_open_id ||
+          (row?.notify_receive_id_type === 'open_id' ? row?.notify_receive_id : null)
+        if (openId) {
+          return {
+            ok: true as const,
+            openId,
+            fallback: true as const,
+            note: `${reason}，已自动使用 webhook 捕获到的 open_id`,
+          }
+        }
+        return null
+      }
+
       // 工号 / 姓名：优先使用 user_access_token（用户授权）
       const userToken = await getUserAccessToken()
 
@@ -1473,15 +1494,17 @@ export const lookupFeishuOpenId = createServerFn({ method: 'POST' })
         )
         const res: any = await r.json()
         if (res.code !== 0 || !res.data?.user?.open_id) {
+          const isAuthErr = res.code === 99991663 || res.code === 99991661 || res.code === 99991672 || /scope|token/i.test(res.msg ?? '')
+          if (isAuthErr) {
+            const fb = await fallbackFromWebhook(`工号查询权限不足 (code=${res.code})`)
+            if (fb) return fb
+          }
           return {
             ok: false as const,
             error: `未按工号匹配到用户（code=${res.code} ${res.msg ?? ''}）`,
-            hint:
-              res.code === 99991663 || res.code === 99991661
-                ? '需要用户授权，请先点「授权飞书」'
-                : res.code === 99991672 || /scope/i.test(res.msg ?? '')
-                  ? '应用缺少 contact:user.base:readonly 权限'
-                  : '请确认输入的是企业「工号 / user_id」而非 open_id',
+            hint: isAuthErr
+              ? '权限不足且没有 webhook 兜底，请先「授权飞书」或在飞书里给机器人发一条消息再试'
+              : '请确认输入的是企业「工号 / user_id」而非 open_id',
           }
         }
         return { ok: true as const, openId: res.data.user.open_id, name: res.data.user.name }
@@ -1490,10 +1513,12 @@ export const lookupFeishuOpenId = createServerFn({ method: 'POST' })
       // 姓名：通讯录搜索（必须 user_access_token）
       if (data.type === 'name') {
         if (!userToken) {
+          const fb = await fallbackFromWebhook('按姓名搜索需要用户授权')
+          if (fb) return fb
           return {
             ok: false as const,
             error: '按姓名搜索需要用户授权',
-            hint: '请先点击「授权飞书」完成 OAuth，获取 user_access_token 后再试',
+            hint: '请先「授权飞书」，或在飞书里给机器人发一条消息让 webhook 自动捕获 open_id',
           }
         }
         const r = await fetch(
@@ -1502,19 +1527,21 @@ export const lookupFeishuOpenId = createServerFn({ method: 'POST' })
         )
         const res: any = await r.json()
         if (res.code !== 0) {
+          const isAuthErr = res.code === 99991663 || res.code === 99991661 || res.code === 99991672 || /scope|token/i.test(res.msg ?? '')
+          if (isAuthErr) {
+            const fb = await fallbackFromWebhook(`姓名搜索权限不足 (code=${res.code})`)
+            if (fb) return fb
+          }
           return {
             ok: false as const,
             error: `搜索接口错误 code=${res.code} msg=${res.msg}`,
-            hint:
-              res.code === 99991663 || res.code === 99991661
-                ? '用户令牌无效或已过期，请重新授权'
-                : res.code === 99991672 || /scope/i.test(res.msg ?? '')
-                  ? '应用缺少 search:user.id:readonly 权限'
-                  : undefined,
+            hint: isAuthErr ? '请重新「授权飞书」或先让机器人收到你的一条消息以触发 webhook 捕获' : undefined,
           }
         }
         const list = (res.data?.users ?? []).filter((u: any) => u.open_id)
         if (list.length === 0) {
+          const fb = await fallbackFromWebhook('未匹配到姓名相符的用户')
+          if (fb) return fb
           return { ok: false as const, error: '未匹配到姓名相符的用户' }
         }
         const exact = list.find((u: any) => u.name === data.value || u.en_name === data.value)
