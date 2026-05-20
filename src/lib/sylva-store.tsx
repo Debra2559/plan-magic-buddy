@@ -18,6 +18,14 @@ export interface Note {
   pinned?: boolean;
 }
 
+export interface DailyComic {
+  date: string;
+  imageUrl: string;
+  provider: "gemini" | "seedream";
+  caption?: string;
+  createdAt: string;
+}
+
 export interface DiaryEntry {
   date: string; // YYYY-MM-DD
   content: string;
