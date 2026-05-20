@@ -34,6 +34,16 @@ export function FreeformCanvas({ kind, title }: Props) {
   const [penColor, setPenColor] = useState("#1f2937");
   const [penWidth, setPenWidth] = useState(2);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const editingRef = useRef<HTMLTextAreaElement | null>(null);
+  useEffect(() => {
+    if (editingId && editingRef.current) {
+      const ta = editingRef.current;
+      ta.focus();
+      const len = ta.value.length;
+      ta.setSelectionRange(len, len);
+    }
+  }, [editingId]);
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -129,7 +139,7 @@ export function FreeformCanvas({ kind, title }: Props) {
     if (tool === "note") {
       const item: NoteItem = { id, type: "note", x: cx - 90, y: cy - 50, w: 180, h: 120, text: "", color: noteColor };
       persist({ ...dataRef.current, items: [...dataRef.current.items, item] });
-      setSelected(id); setTool("select");
+      setSelected(id); setEditingId(id); setTool("select");
     } else if (tool === "pen") {
       drawing.current = { id, pts: [cx, cy] };
       const item: StrokeItem = { id, type: "stroke", points: [cx, cy], color: penColor, width: penWidth };
@@ -352,25 +362,39 @@ export function FreeformCanvas({ kind, title }: Props) {
           {data.items.map((it) => {
             if (it.type === "note") {
               const active = selected === it.id;
+              const isEditing = editingId === it.id;
               return (
                 <div key={it.id}
-                  className={`absolute rounded-md shadow-md ${active ? "ring-2 ring-amber-glow" : "ring-1 ring-black/5"}`}
+                  className={`absolute rounded-md shadow-md ${active ? "ring-2 ring-amber-glow" : "ring-1 ring-black/5"} ${isEditing ? "cursor-text" : "cursor-move"}`}
                   style={{ left: it.x, top: it.y, width: it.w, height: it.h, background: it.color, transform: "rotate(-0.4deg)" }}
                   onPointerDown={(e) => {
-                    if ((e.target as HTMLElement).tagName === "TEXTAREA") return;
+                    if (isEditing) return;
                     e.stopPropagation(); setSelected(it.id);
                     const [cx, cy] = toCanvas(e.clientX, e.clientY);
                     dragging.current = { id: it.id, offX: cx - it.x, offY: cy - it.y };
                     (e.target as Element).setPointerCapture?.(e.pointerId);
                   }}
                   onPointerMove={onPointerMove} onPointerUp={onPointerUp}
+                  onDoubleClick={(e) => { e.stopPropagation(); setSelected(it.id); setEditingId(it.id); }}
+                  title={isEditing ? undefined : "双击编辑"}
                 >
                   <textarea
-                    value={it.text} onChange={(e) => updateItem(it.id, { text: e.target.value } as Partial<NoteItem>)}
-                    placeholder="写点什么…"
-                    className="w-full h-full p-3 bg-transparent outline-none resize-none text-zinc-800 text-sm leading-relaxed font-display placeholder:text-zinc-500/60"
-                    onFocus={() => setSelected(it.id)}
+                    ref={isEditing ? editingRef : undefined}
+                    value={it.text}
+                    readOnly={!isEditing}
+                    onChange={(e) => updateItem(it.id, { text: e.target.value } as Partial<NoteItem>)}
+                    onBlur={() => setEditingId((id) => (id === it.id ? null : id))}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") { e.preventDefault(); (e.target as HTMLTextAreaElement).blur(); }
+                    }}
+                    placeholder={isEditing ? "写点什么…" : ""}
+                    className={`w-full h-full p-3 bg-transparent outline-none resize-none text-zinc-800 text-sm leading-relaxed font-display placeholder:text-zinc-500/60 ${isEditing ? "" : "pointer-events-none select-none"}`}
                   />
+                  {!isEditing && !it.text && (
+                    <div className="absolute inset-0 flex items-center justify-center text-zinc-500/60 text-[11px] pointer-events-none">
+                      双击编辑
+                    </div>
+                  )}
                   {active && <ResizeHandle item={it} onStart={(e) => {
                     e.stopPropagation();
                     const [cx, cy] = toCanvas(e.clientX, e.clientY);
