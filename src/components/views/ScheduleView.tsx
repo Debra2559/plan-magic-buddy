@@ -37,6 +37,22 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
     if (pendingIds.length === 0 && pendingFilter.kind !== "all") setPendingFilter({ kind: "all" });
   }, [pendingIds.length, pendingFilter.kind]);
 
+  const confirmAndFocus = (ids: string[]) => {
+    if (ids.length === 0) return;
+    const idSet = new Set(ids);
+    const targets = items.filter((i) => idSet.has(i.id));
+    const dated = targets.filter((i) => i.date).map((i) => i.date!).sort();
+    const focusDate = dated[0];
+    confirmPending(ids);
+    markRecentlySynced(ids);
+    if (focusDate) {
+      setSelected(focusDate);
+      const [y, m] = focusDate.split("-").map(Number);
+      setCursor(new Date(y, m - 1, 1));
+    }
+    setPendingFilter({ kind: "all" });
+  };
+
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
