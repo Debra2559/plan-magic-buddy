@@ -450,6 +450,7 @@ export function FeishuSyncPanel() {
           setLogs((prev) => [mkLog("update", "sylva", `同步失败: ${msg}`, "conflict"), ...prev].slice(0, 12));
           setLastError({ scope: `${reason} · 推送`, msg, at: new Date().toISOString() });
           setLastSummary(null);
+          pushTLRef.current?.("sync", "fail", `${reason} · 推送失败：${msg}`);
           return;
         }
         const okCount = r.entries.filter((e) => e.status === "ok").length;
