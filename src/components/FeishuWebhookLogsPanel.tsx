@@ -36,6 +36,31 @@ export function FeishuWebhookLogsPanel() {
   const [requestId, setRequestId] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [err, setErr] = useState<string | null>(null);
+  const [testing, setTesting] = useState(false);
+
+  const sendTest = async () => {
+    setTesting(true);
+    const challenge = `test-${Date.now().toString(36)}`;
+    try {
+      const res = await fetch("/api/public/feishu/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "url_verification", challenge, token: "test", uuid: `test-${challenge}` }),
+      });
+      const text = await res.text();
+      if (res.ok && text.includes(challenge)) {
+        toast.success("测试回调已发送 ✓", { description: "刷新查看日志" });
+      } else {
+        toast.error("测试失败", { description: `HTTP ${res.status} · ${text.slice(0, 120)}` });
+      }
+      // 等数据库写入，再刷新
+      setTimeout(() => refresh(), 600);
+    } catch (e: any) {
+      toast.error("测试失败", { description: e?.message ?? "网络错误" });
+    } finally {
+      setTesting(false);
+    }
+  };
 
   const refresh = async () => {
     setLoading(true);
