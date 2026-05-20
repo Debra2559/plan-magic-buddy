@@ -149,6 +149,7 @@ export function FeishuSyncPanel() {
           calendarId: s.selectedCalendarId ?? prev.calendarId,
           direction: s.direction,
           lastSyncAt: s.lastSyncAt ?? prev.lastSyncAt,
+          status: s.selectedCalendarId ? "connected" : prev.status,
         }));
       } catch {}
       loadCalendars();
