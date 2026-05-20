@@ -81,7 +81,7 @@ function Index() {
               <h2 className="font-display text-4xl md:text-5xl max-w-xl">把规划钉在你最常看的地方。</h2>
             </div>
             <p className="text-sm text-foreground/60 max-w-sm">
-              日历、今日任务、随手记、习惯打卡 —— 钉在桌面或锁屏，一眼可见，单手可改。
+              日历、今日任务、记录、习惯打卡 —— 钉在桌面或锁屏，一眼可见，单手可改。
             </p>
           </div>
 
