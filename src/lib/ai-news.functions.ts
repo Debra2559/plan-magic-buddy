@@ -287,17 +287,18 @@ export const scanAiNewsNow = createServerFn({ method: "POST" })
       }
     }
 
-    const activeSources = settings.sources.filter((s) => s.enabled);
+    const activeSources = settings.sources.filter((s) => s.enabled).slice(0, 5);
     const allFound: Array<{ source: string; item: z.infer<typeof ExtractedSchema>["news"][number] }> = [];
     const debug: Array<{ source: string; query: string; snippets: number; extracted: number; kept: number; error?: string }> = [];
 
     for (const src of activeSources) {
-      const snippets = await firecrawlSearch(src.query, settings.per_source_limit, settings.time_window);
+      const snippets = await firecrawlSearch(src.query, Math.min(settings.per_source_limit, 6), settings.time_window);
       if (snippets.length === 0) {
         debug.push({ source: src.name, query: src.query, snippets: 0, extracted: 0, kept: 0, error: "firecrawl 0 结果" });
         continue;
       }
-      const { data: ex, error } = await extractWithAI(src.name, snippets);
+      const fallback = { data: { news: fallbackNews(src.name, snippets) }, error: "AI 提取超时，已用搜索结果兜底" };
+      const { data: ex, error } = await withTimeout(extractWithAI(src.name, snippets), 6_000, fallback);
       let kept = 0;
       for (const n of ex.news) {
         if (!n.url?.startsWith("http")) continue;
