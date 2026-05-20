@@ -44,15 +44,15 @@ export function NotesView() {
   if (mode === "canvas") {
     return (
       <div className="h-full flex flex-col">
-        <div className="flex items-center justify-between px-7 pt-5">
+        <div className="flex items-center justify-between px-7 pt-5 pb-3">
           <div>
             <p className="text-[10px] tracking-widest text-amber-glow mb-1">每日笔记</p>
-            <h2 className="font-display text-2xl text-white">自由画布 · 拖、画、贴</h2>
+            <h2 className="font-display text-2xl text-white">画布视图 · 拖动随手记</h2>
           </div>
           <ModeToggle mode={mode} onChange={setMode} />
         </div>
-        <div className="flex-1 mt-3 mx-7 mb-5 rounded-2xl overflow-hidden border border-white/10">
-          <FreeformCanvas kind="notes" />
+        <div className="flex-1 mx-7 mb-5 rounded-2xl overflow-hidden border border-white/10">
+          <NotesCanvas />
         </div>
       </div>
     );
