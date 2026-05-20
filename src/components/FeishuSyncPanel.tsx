@@ -357,6 +357,15 @@ export function FeishuSyncPanel() {
                 </div>
               </div>
               <button
+                onClick={doPull}
+                disabled={pulling}
+                className="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 disabled:opacity-50 flex items-center gap-1.5"
+                title="从飞书拉取选中日历的事件到本地"
+              >
+                {pulling ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                拉取
+              </button>
+              <button
                 onClick={syncNow}
                 disabled={syncing}
                 className="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 disabled:opacity-50 flex items-center gap-1.5"
