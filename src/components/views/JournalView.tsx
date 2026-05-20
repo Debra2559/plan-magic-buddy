@@ -194,9 +194,10 @@ export function JournalView({ embedded = false }: { embedded?: boolean } = {}) {
     return () => window.removeEventListener("keydown", onKey);
   }, [allDates, date, setDate]);
 
-  const [jMode, setJMode] = useState<"list" | "canvas">(() => {
+  const [jMode, setJMode] = useState<"list" | "canvas" | "overview">(() => {
     if (typeof window === "undefined") return "list";
-    return (window.localStorage.getItem("journal:mode") as "list" | "canvas") ?? "list";
+    const v = window.localStorage.getItem("journal:mode");
+    return (v === "list" || v === "canvas" || v === "overview") ? v : "list";
   });
   useEffect(() => { try { window.localStorage.setItem("journal:mode", jMode); } catch {} }, [jMode]);
 
@@ -212,6 +213,21 @@ export function JournalView({ embedded = false }: { embedded?: boolean } = {}) {
         </div>
         <div className="flex-1 mt-3 mx-7 mb-5 rounded-2xl overflow-hidden border border-border">
           <FreeformCanvas kind="journal" />
+        </div>
+      </div>
+    );
+  }
+
+  if (jMode === "overview") {
+    return (
+      <div className="h-full flex flex-col">
+        {!embedded && (
+          <div className="absolute top-4 right-6 z-20 no-print">
+            <JournalModeToggle mode={jMode} onChange={setJMode} />
+          </div>
+        )}
+        <div className="flex-1 min-h-0">
+          <JournalOverview />
         </div>
       </div>
     );
