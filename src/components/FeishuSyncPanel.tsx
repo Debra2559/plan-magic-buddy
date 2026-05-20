@@ -311,34 +311,58 @@ export function FeishuSyncPanel() {
         </div>
 
         <div className="px-4 py-3 border-b border-white/8">
-          <div className="text-[11px] text-white/50 mb-2 flex items-center gap-1.5">
-            <Calendar className="w-3 h-3" /> 选择要同步的日历
+          <div className="text-[11px] text-white/50 mb-2 flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <Calendar className="w-3 h-3" /> 选择要同步的日历
+            </span>
+            <button
+              onClick={loadCalendars}
+              disabled={loadingCalendars}
+              className="text-white/40 hover:text-white/70 flex items-center gap-1 disabled:opacity-50"
+            >
+              {loadingCalendars ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+              刷新
+            </button>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            {MOCK_CALENDARS.map((c) => {
-              const active = state.calendarId === c.id;
-              const disabled = state.status === "disconnected";
-              return (
-                <button
-                  key={c.id}
-                  disabled={disabled}
-                  onClick={() => setState((s) => ({ ...s, calendarId: c.id }))}
-                  className={`text-left px-3 py-2 rounded-lg border transition flex items-center gap-2.5 ${
-                    active
-                      ? "bg-amber-glow/15 border-amber-glow/40"
-                      : "bg-white/[0.03] border-white/8 hover:bg-white/[0.06]"
-                  } ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
-                >
-                  <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: c.color }} />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm text-white/90 truncate">{c.name}</div>
-                    <div className="text-[10px] text-white/40">{c.role} · {c.count} 个事件</div>
-                  </div>
-                  {active && <Check className="w-3.5 h-3.5 text-amber-glow shrink-0" />}
-                </button>
-              );
-            })}
-          </div>
+
+          {calendarsError ? (
+            <div className="text-[11px] text-rose-300 py-2">读取失败：{calendarsError}</div>
+          ) : loadingCalendars && calendars.length === 0 ? (
+            <div className="text-[11px] text-white/40 py-4 text-center flex items-center justify-center gap-1.5">
+              <Loader2 className="w-3 h-3 animate-spin" /> 正在拉取飞书日历…
+            </div>
+          ) : calendars.length === 0 ? (
+            <div className="text-[11px] text-white/40 py-4 text-center">
+              没有可见日历。请到飞书后台「权限管理」给应用开通 calendar:calendar 权限并把日历分享给应用。
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              {calendars.map((c, i) => {
+                const active = state.calendarId === c.id;
+                const color = CAL_COLORS[i % CAL_COLORS.length];
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => onSelectCalendar(c)}
+                    className={`text-left px-3 py-2 rounded-lg border transition flex items-center gap-2.5 ${
+                      active
+                        ? "bg-amber-glow/15 border-amber-glow/40"
+                        : "bg-white/[0.03] border-white/8 hover:bg-white/[0.06]"
+                    }`}
+                  >
+                    <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: color }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-white/90 truncate">{c.name}</div>
+                      <div className="text-[10px] text-white/40 truncate">
+                        {c.role || c.type || "日历"}
+                      </div>
+                    </div>
+                    {active && <Check className="w-3.5 h-3.5 text-amber-glow shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="px-4 py-3 border-b border-white/8 flex items-center gap-3">
@@ -352,7 +376,7 @@ export function FeishuSyncPanel() {
           </div>
           <div className="flex bg-white/5 border border-white/10 rounded-full p-0.5 text-[11px]">
             <button
-              onClick={() => setState((s) => ({ ...s, direction: "two-way" }))}
+              onClick={() => onSetDirection("two-way")}
               className={`px-3 py-1 rounded-full flex items-center gap-1 transition ${
                 state.direction === "two-way" ? "bg-white/10 text-white" : "text-white/50"
               }`}
@@ -360,7 +384,7 @@ export function FeishuSyncPanel() {
               <ArrowUpDown className="w-3 h-3" /> 双向
             </button>
             <button
-              onClick={() => setState((s) => ({ ...s, direction: "push-only" }))}
+              onClick={() => onSetDirection("push-only")}
               className={`px-3 py-1 rounded-full flex items-center gap-1 transition ${
                 state.direction === "push-only" ? "bg-white/10 text-white" : "text-white/50"
               }`}
