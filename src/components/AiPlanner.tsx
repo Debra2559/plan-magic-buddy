@@ -4,6 +4,7 @@ import { generatePlan, chatPlan, type Plan, type PlanItem, type ChatStep } from 
 import { useSylva } from "@/lib/sylva-store";
 import { HackathonInbox } from "./HackathonInbox";
 import { EnterHint } from "@/components/EnterHint";
+import { shouldSubmitOnKey } from "@/lib/keybinds";
 import { Sparkles, ArrowUp, Loader2, Calendar, CheckSquare, Bell, Plus, RefreshCw, Wand2, Check, X, Trash2, Target, Globe } from "lucide-react";
 
 type Mode = "create" | "adjust" | "add" | "goal";
