@@ -1,16 +1,20 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { generatePlan, type Plan, type PlanItem } from "@/lib/plan.functions";
+import { generatePlan, chatPlan, type Plan, type PlanItem, type ChatStep } from "@/lib/plan.functions";
 import { useSylva } from "@/lib/sylva-store";
-import { Sparkles, ArrowUp, Loader2, Calendar, CheckSquare, Bell, Plus, RefreshCw, Wand2, Check, X, Trash2 } from "lucide-react";
+import { HackathonInbox } from "./HackathonInbox";
+import { Sparkles, ArrowUp, Loader2, Calendar, CheckSquare, Bell, Plus, RefreshCw, Wand2, Check, X, Trash2, Target, Globe } from "lucide-react";
 
-type Mode = "create" | "adjust" | "add";
+type Mode = "create" | "adjust" | "add" | "goal";
 
 const modeMeta: Record<Mode, { label: string; icon: typeof Wand2; hint: string }> = {
   create: { label: "全新规划", icon: Wand2, hint: "从 0 到 1 帮我排" },
   adjust: { label: "调整重排", icon: RefreshCw, hint: "重新平衡现有规划" },
   add: { label: "追加事项", icon: Plus, hint: "往现有规划里加" },
+  goal: { label: "目标拆解", icon: Target, hint: "智能追问 + 联网找方案" },
 };
+
+type ChatMsg = { role: "user" | "assistant"; content: string; quickReplies?: string[] };
 
 const typeMeta: Record<PlanItem["type"], { icon: typeof Calendar; color: string; label: string }> = {
   event: { icon: Calendar, color: "text-amber-glow", label: "日程" },
