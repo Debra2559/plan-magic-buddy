@@ -241,8 +241,6 @@ export function FeishuSyncPanel() {
   const syncNow = async () => {
     await doSync("立即同步");
   };
-    setState((s) => ({ ...s, lastSyncAt: new Date().toISOString() }));
-  };
 
   return (
     <div>
