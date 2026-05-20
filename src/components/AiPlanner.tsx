@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { generatePlan, chatPlan, type Plan, type PlanItem, type ChatStep } from "@/lib/plan.functions";
 import { useSylva } from "@/lib/sylva-store";
 import { HackathonInbox } from "./HackathonInbox";
+import { EnterHint } from "@/components/EnterHint";
 import { Sparkles, ArrowUp, Loader2, Calendar, CheckSquare, Bell, Plus, RefreshCw, Wand2, Check, X, Trash2, Target, Globe } from "lucide-react";
 
 type Mode = "create" | "adjust" | "add" | "goal";
