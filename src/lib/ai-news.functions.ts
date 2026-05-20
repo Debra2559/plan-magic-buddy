@@ -297,8 +297,10 @@ export const scanAiNewsNow = createServerFn({ method: "POST" })
         debug.push({ source: src.name, query: src.query, snippets: 0, extracted: 0, kept: 0, error: "firecrawl 0 结果" });
         continue;
       }
-      const fallback = { data: { news: fallbackNews(src.name, snippets) }, error: "AI 提取超时，已用搜索结果兜底" };
-      const { data: ex, error } = await withTimeout(extractWithAI(src.name, snippets), 6_000, fallback);
+      const fallbackItems = fallbackNews(src.name, snippets);
+      const { data: ex, error } = fallbackItems.length > 0
+        ? { data: { news: fallbackItems }, error: undefined }
+        : await withTimeout(extractWithAI(src.name, snippets), 3_000, { data: { news: [] }, error: "AI 提取超时" });
       let kept = 0;
       for (const n of ex.news) {
         if (!n.url?.startsWith("http")) continue;
