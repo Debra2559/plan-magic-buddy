@@ -15,8 +15,20 @@ const MOODS: { value: Mood; emoji: string; label: string }[] = [
 
 const moodOf = (m?: Mood) => MOODS.find((x) => x.value === m);
 
+function readUrlParams() {
+  if (typeof window === "undefined") return { tab: null as Tab | null, date: null as string | null };
+  const p = new URLSearchParams(window.location.search);
+  const t = p.get("tab");
+  const d = p.get("date");
+  const tab = (t === "notes" || t === "diary" || t === "summary") ? (t as Tab) : null;
+  const date = d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null;
+  return { tab, date };
+}
+
 export function NotesView() {
-  const [tab, setTab] = useState<Tab>("notes");
+  const urlInit = readUrlParams();
+  const [tab, setTab] = useState<Tab>(urlInit.tab ?? "notes");
+  const initialDate = urlInit.date;
 
   return (
     <div className="p-7 overflow-auto h-full max-w-3xl mx-auto">
@@ -30,8 +42,8 @@ export function NotesView() {
       </div>
 
       {tab === "notes" && <NotesTab />}
-      {tab === "diary" && <DiaryTab />}
-      {tab === "summary" && <SummaryTab />}
+      {tab === "diary" && <DiaryTab initialDate={initialDate} />}
+      {tab === "summary" && <SummaryTab initialDate={initialDate} />}
     </div>
   );
 }
@@ -184,10 +196,10 @@ function NoteCard({ n, onRemove, onPin }: { n: Note; onRemove: () => void; onPin
 }
 
 /* ---------------- Diary ---------------- */
-function DiaryTab() {
+function DiaryTab({ initialDate }: { initialDate?: string | null }) {
   const { diary, upsertDiary } = useSylva();
   const today = todayStr();
-  const [date, setDate] = useState(today);
+  const [date, setDate] = useState(initialDate ?? today);
   const entry = diary.find((d) => d.date === date);
   const [content, setContent] = useState(entry?.content ?? "");
   const [mood, setMood] = useState<Mood | undefined>(entry?.mood);
@@ -282,9 +294,9 @@ function useMemoSync(key: string, fn: () => void) {
 }
 
 /* ---------------- Daily Summary ---------------- */
-function SummaryTab() {
+function SummaryTab({ initialDate }: { initialDate?: string | null }) {
   const { items, habits, diary, upsertDiary } = useSylva();
-  const [date, setDate] = useState(todayStr());
+  const [date, setDate] = useState(initialDate ?? todayStr());
 
   const dayItems = items.filter((i) => i.date === date);
   const done = dayItems.filter((i) => i.done);

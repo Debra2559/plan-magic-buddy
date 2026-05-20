@@ -60,7 +60,12 @@ function DesktopApp() {
   const [appPos, setAppPos] = useState<WinPos>({ x: 240, y: 90 });
   const [appMaximized, setAppMaximized] = useState(true);
   const [activeDock, setActiveDock] = useState<string>("sylva");
-  const [view, setView] = useState<SylvaView>("ai");
+  const [view, setView] = useState<SylvaView>(() => {
+    if (typeof window === "undefined") return "ai";
+    const v = new URLSearchParams(window.location.search).get("view");
+    const allowed: SylvaView[] = ["ai", "schedule", "todos", "notes", "habits", "settings"];
+    return (allowed as string[]).includes(v ?? "") ? (v as SylvaView) : "ai";
+  });
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000 * 30);
