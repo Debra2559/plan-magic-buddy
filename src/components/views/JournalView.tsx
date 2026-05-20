@@ -10,6 +10,7 @@ import {
   type Mood,
 } from "@/lib/sylva-store";
 import { generateDailyComic } from "@/lib/comic.functions";
+import { usePersona } from "@/lib/persona";
 import {
   BookHeart,
   Calendar as CalIcon,
