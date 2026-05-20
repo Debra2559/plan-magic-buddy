@@ -709,6 +709,134 @@ export const testHackathonNotify = createServerFn({ method: 'POST' }).handler(as
   )
 })
 
+// ============= 每日小结提醒 =============
+
+function dailyRecapCard(dateLabel: string) {
+  return {
+    config: { wide_screen_mode: true },
+    header: {
+      template: 'indigo',
+      title: { tag: 'plain_text', content: `📝 今日小结提醒 · ${dateLabel}` },
+    },
+    elements: [
+      {
+        tag: 'div',
+        text: {
+          tag: 'lark_md',
+          content:
+            '今天过得怎么样？花 1 分钟回顾一下吧：\n- ✅ 今天完成了哪些任务\n- 💭 写两句话日记 / 心情\n- 🌱 明天想优先做什么',
+        },
+      },
+      { tag: 'hr' },
+      {
+        tag: 'action',
+        actions: [
+          {
+            tag: 'button',
+            text: { tag: 'plain_text', content: '去 Sylva 填写 ✍️' },
+            type: 'primary',
+            url: 'https://id-preview--01545937-4efd-4487-a500-8dd999f2e87d.lovable.app/?view=notes',
+          },
+        ],
+      },
+    ],
+  }
+}
+
+/** 检查所有用户：到点且今天没发过 → 发送提醒卡片。由 cron 每小时调用一次。 */
+export async function runDailyRecapTick(): Promise<{
+  checked: number
+  sent: number
+  results: Array<{ ok: boolean; error?: string }>
+}> {
+  const now = new Date()
+  // UTC+8 当前小时与日期
+  const cn = new Date(now.getTime() + 8 * 3600 * 1000)
+  const hour = cn.getUTCHours()
+  const today = cn.toISOString().slice(0, 10)
+
+  const { data: rows } = await supabaseAdmin
+    .from('feishu_settings')
+    .select('id, notify_receive_id, notify_receive_id_type, daily_recap_enabled, daily_recap_hour, daily_recap_last_sent_date')
+
+  const results: Array<{ ok: boolean; error?: string }> = []
+  let sent = 0
+  for (const r of (rows ?? []) as any[]) {
+    if (!r.daily_recap_enabled) continue
+    if (!r.notify_receive_id) continue
+    if (Number(r.daily_recap_hour) !== hour) continue
+    if (r.daily_recap_last_sent_date === today) continue
+
+    try {
+      const res = await feishu<{ code: number; msg: string }>(
+        `/im/v1/messages?receive_id_type=${encodeURIComponent(r.notify_receive_id_type ?? 'open_id')}`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            receive_id: r.notify_receive_id,
+            msg_type: 'interactive',
+            content: JSON.stringify(dailyRecapCard(today)),
+          }),
+        },
+      )
+      if (res.code !== 0) {
+        results.push({ ok: false, error: `code=${res.code} msg=${res.msg}` })
+        continue
+      }
+      await supabaseAdmin
+        .from('feishu_settings')
+        .update({ daily_recap_last_sent_date: today } as any)
+        .eq('id', r.id)
+      sent++
+      results.push({ ok: true })
+    } catch (e: any) {
+      results.push({ ok: false, error: e?.message ?? '发送失败' })
+    }
+  }
+  return { checked: (rows ?? []).length, sent, results }
+}
+
+export const getDailyRecapConfig = createServerFn({ method: 'GET' }).handler(async () => {
+  const { data } = await supabaseAdmin
+    .from('feishu_settings')
+    .select('daily_recap_enabled, daily_recap_hour')
+    .limit(1)
+    .maybeSingle()
+  return {
+    enabled: ((data as any)?.daily_recap_enabled ?? false) as boolean,
+    hour: Number((data as any)?.daily_recap_hour ?? 21),
+  }
+})
+
+const dailyRecapSchema = z.object({
+  enabled: z.boolean(),
+  hour: z.number().int().min(0).max(23),
+})
+
+export const setDailyRecapConfig = createServerFn({ method: 'POST' })
+  .inputValidator((d) => dailyRecapSchema.parse(d))
+  .handler(async ({ data }) => {
+    const { data: row } = await supabaseAdmin
+      .from('feishu_settings')
+      .select('id')
+      .limit(1)
+      .maybeSingle()
+    const patch = { daily_recap_enabled: data.enabled, daily_recap_hour: data.hour }
+    if (!row) {
+      const { error } = await supabaseAdmin.from('feishu_settings').insert(patch as any)
+      if (error) throw new Error(error.message)
+    } else {
+      const { error } = await supabaseAdmin.from('feishu_settings').update(patch as any).eq('id', row.id)
+      if (error) throw new Error(error.message)
+    }
+    return { ok: true as const }
+  })
+
+export const sendDailyRecapNow = createServerFn({ method: 'POST' }).handler(async () => {
+  const today = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10)
+  return sendCardToFeishu(dailyRecapCard(today))
+})
+
 // ============= 卡片回调：参加 / 忽略 =============
 
 /**
