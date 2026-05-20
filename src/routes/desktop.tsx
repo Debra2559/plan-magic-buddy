@@ -313,14 +313,17 @@ function SidebarItem({
   label,
   active,
   muted,
+  onClick,
 }: {
   icon: typeof Sparkles;
   label: string;
   active?: boolean;
   muted?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <button
+      onClick={onClick}
       className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition
         ${active ? "bg-amber-glow/20 text-amber-glow" : muted ? "text-white/40 hover:bg-white/5" : "text-white/80 hover:bg-white/8"}`}
     >
