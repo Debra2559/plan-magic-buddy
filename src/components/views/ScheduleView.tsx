@@ -111,26 +111,80 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
           </div>
         </div>
 
-        {pendingIds.length > 0 && (
-          <div className="mb-3 flex items-center gap-3 px-3 py-2 rounded-xl border border-amber-glow/40 bg-amber-glow/10 text-amber-glow text-xs">
-            <Sparkles className="w-3.5 h-3.5 shrink-0" />
-            <span className="flex-1">
-              AI 新增了 <b>{pendingIds.length}</b> 项待确认安排，确认后才会同步到云端 / 飞书
-            </span>
-            <button
-              onClick={() => revertPending(pendingIds)}
-              className="px-2.5 py-1 rounded-md border border-white/15 text-white/70 hover:text-white hover:bg-white/10 text-[11px]"
-            >
-              全部撤销
-            </button>
-            <button
-              onClick={() => confirmPending(pendingIds)}
-              className="px-2.5 py-1 rounded-md bg-amber-glow text-primary-foreground hover:brightness-110 text-[11px] inline-flex items-center gap-1"
-            >
-              <Check className="w-3 h-3" /> 全部确认
-            </button>
-          </div>
-        )}
+        {pendingIds.length > 0 && (() => {
+          const pendingItems = items.filter((i) => i.pending);
+          const typeCount = pendingItems.reduce<Record<string, number>>((acc, it) => {
+            acc[it.type] = (acc[it.type] ?? 0) + 1;
+            return acc;
+          }, {});
+          const dateCount = pendingItems.reduce<Record<string, number>>((acc, it) => {
+            const k = it.date ?? "未排期";
+            acc[k] = (acc[k] ?? 0) + 1;
+            return acc;
+          }, {});
+          const dates = Object.keys(dateCount).sort();
+          const typeLabel: Record<string, string> = { event: "日程", todo: "待办", reminder: "提醒" };
+          const matchFilter = (it: typeof pendingItems[number]) => {
+            if (pendingFilter.kind === "all") return true;
+            if (pendingFilter.kind === "type") return it.type === pendingFilter.value;
+            return (it.date ?? "未排期") === pendingFilter.value;
+          };
+          const filteredIds = pendingItems.filter(matchFilter).map((i) => i.id);
+          const fmtDate = (d: string) => {
+            if (d === "未排期") return "未排期";
+            const [, m, day] = d.split("-");
+            return `${Number(m)}/${Number(day)}`;
+          };
+          return (
+            <div className="mb-3 px-3 py-2 rounded-xl border border-amber-glow/40 bg-amber-glow/10 text-amber-glow text-xs space-y-2">
+              <div className="flex items-center gap-3">
+                <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                <span className="flex-1">
+                  AI 新增 <b>{pendingIds.length}</b> 项待确认（当前选中 <b>{filteredIds.length}</b>），确认后才会同步到云端 / 飞书
+                </span>
+                <button
+                  onClick={() => revertPending(filteredIds)}
+                  disabled={filteredIds.length === 0}
+                  className="px-2.5 py-1 rounded-md border border-white/15 text-white/70 hover:text-white hover:bg-white/10 text-[11px] disabled:opacity-40"
+                >
+                  撤销选中
+                </button>
+                <button
+                  onClick={() => confirmPending(filteredIds)}
+                  disabled={filteredIds.length === 0}
+                  className="px-2.5 py-1 rounded-md bg-amber-glow text-primary-foreground hover:brightness-110 text-[11px] inline-flex items-center gap-1 disabled:opacity-40"
+                >
+                  <Check className="w-3 h-3" /> 确认选中
+                </button>
+              </div>
+              <div className="flex items-center flex-wrap gap-1.5 pt-1 border-t border-amber-glow/20">
+                <span className="text-[10px] text-amber-glow/60 mr-1">筛选：</span>
+                <FilterChip active={pendingFilter.kind === "all"} onClick={() => setPendingFilter({ kind: "all" })}>
+                  全部 {pendingIds.length}
+                </FilterChip>
+                {Object.entries(typeCount).map(([t, n]) => (
+                  <FilterChip
+                    key={`t-${t}`}
+                    active={pendingFilter.kind === "type" && pendingFilter.value === t}
+                    onClick={() => setPendingFilter({ kind: "type", value: t })}
+                  >
+                    {typeLabel[t] ?? t} {n}
+                  </FilterChip>
+                ))}
+                <span className="w-px h-3 bg-amber-glow/20 mx-1" />
+                {dates.map((d) => (
+                  <FilterChip
+                    key={`d-${d}`}
+                    active={pendingFilter.kind === "date" && pendingFilter.value === d}
+                    onClick={() => setPendingFilter({ kind: "date", value: d })}
+                  >
+                    {fmtDate(d)} {dateCount[d]}
+                  </FilterChip>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
 
 
