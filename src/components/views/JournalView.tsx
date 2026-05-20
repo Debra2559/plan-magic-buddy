@@ -343,7 +343,7 @@ export function JournalView({ embedded = false }: { embedded?: boolean } = {}) {
                 const logs = dayNotes.filter((n) => (n.kind ?? "log") === "log");
                 return (
                   <>
-                    <SectionHeader icon={<ListChecksIcon className="w-3.5 h-3.5" />} title={`事件 · ${logs.length}`} />
+                    <SectionHeader icon={<ListChecks className="w-3.5 h-3.5" />} title={`事件 · ${logs.length}`} />
                     {logs.length === 0 ? (
                       <EmptyLine text="今天还没有随手记下任何事件" />
                     ) : (
@@ -360,7 +360,7 @@ export function JournalView({ embedded = false }: { embedded?: boolean } = {}) {
                 const refs = dayNotes.filter((n) => n.kind === "reflection");
                 return (
                   <>
-                    <SectionHeader icon={<SparklesIcon className="w-3.5 h-3.5" />} title={`感受 & 思考 · ${refs.length}`} />
+                    <SectionHeader icon={<Sparkles className="w-3.5 h-3.5" />} title={`感受 & 思考 · ${refs.length}`} />
                     {refs.length === 0 ? (
                       <EmptyLine text="今天还没有写下任何感受或想法" />
                     ) : (
