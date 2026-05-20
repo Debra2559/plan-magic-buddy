@@ -133,7 +133,7 @@ export function InsightsSettingsPanel() {
           className="w-full px-3 py-2 rounded-lg bg-foreground/[0.05] border border-border text-foreground text-sm focus:outline-none focus:border-amber-glow/40 transition"
         >
           {TIMEZONES.map((t) => (
-            <option key={t.key} value={t.key} className="bg-[#0a0c0a]">
+            <option key={t.key} value={t.key} className="bg-background">
               {t.label} · {t.offset}
             </option>
           ))}

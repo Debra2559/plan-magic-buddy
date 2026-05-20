@@ -48,14 +48,14 @@ function AdminPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0e1014] text-foreground/75">
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground/75">
         正在验证管理员身份…
       </div>
     );
   }
   if (!data?.isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0e1014] text-foreground/85">
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground/85">
         <div className="text-center space-y-4">
           <Shield className="w-10 h-10 mx-auto text-red-400" />
           <p>你没有访问后台的权限。</p>
@@ -68,7 +68,7 @@ function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0e1014] text-foreground">
+    <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border/70 bg-background/50 backdrop-blur sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-3">
           <Link to="/desktop" className="flex items-center gap-1 text-muted-foreground hover:text-foreground text-xs">

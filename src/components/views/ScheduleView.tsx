@@ -520,7 +520,7 @@ function DayEditor({
     <div
       ref={ref}
       style={{ position: "fixed", left: x, top: yPos, width, maxHeight: height, zIndex: 100 }}
-      className="rounded-xl shadow-2xl border border-border bg-[#1d1d1f]/95 backdrop-blur-2xl flex flex-col overflow-hidden text-foreground"
+      className="rounded-xl shadow-2xl border border-border bg-card/95 backdrop-blur-2xl flex flex-col overflow-hidden text-foreground"
       onMouseDown={(e) => e.stopPropagation()}
     >
       <div className="h-9 shrink-0 flex items-center px-3 border-b border-border bg-background/50">

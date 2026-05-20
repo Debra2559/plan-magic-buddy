@@ -65,7 +65,7 @@ export function InsightsBell() {
       {open && (
         <div className="fixed inset-0 z-50 flex justify-end animate-fade-in" onClick={() => setOpen(false)}>
           <aside
-            className="relative w-full max-w-md h-full bg-[#080908]/95 backdrop-blur-2xl border-l border-border/50 shadow-[-20px_0_50px_rgba(0,0,0,0.5)] flex flex-col animate-slide-in-right"
+            className="relative w-full max-w-md h-full bg-background/95 backdrop-blur-2xl border-l border-border/50 shadow-[-20px_0_50px_rgba(0,0,0,0.5)] flex flex-col animate-slide-in-right"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Ambient glow */}
