@@ -325,6 +325,7 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
         recapDoneDates,
         isRecapDone,
         refreshRecapDoneDates,
+        unmarkRecapDone,
       }}
     >
       {children}
