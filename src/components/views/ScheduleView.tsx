@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSylva } from "@/lib/sylva-store";
-import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X } from "lucide-react";
+import type { PlanItem } from "@/lib/plan.functions";
+
 
 const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
 
