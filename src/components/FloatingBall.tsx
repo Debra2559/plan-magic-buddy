@@ -126,7 +126,7 @@ export function FloatingBall() {
   const goAI = () => { navigateTo("ai"); setOpen(false); };
   const goToday = () => { navigateTo("schedule"); setOpen(false); };
 
-  if (!pos.enabled) return null;
+  if (!mounted || !pos.enabled) return null;
 
   const snapLeft = pos.x < window.innerWidth / 2;
 
