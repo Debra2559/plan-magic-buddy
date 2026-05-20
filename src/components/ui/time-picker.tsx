@@ -33,7 +33,10 @@ export function TimePicker({
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
-      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (wrapRef.current?.contains(t)) return;
+      if (popRef.current?.contains(t)) return;
+      setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -43,6 +46,31 @@ export function TimePicker({
     return () => {
       document.removeEventListener("mousedown", onDoc);
       document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  // 计算下拉浮层的 fixed 位置
+  useLayoutEffect(() => {
+    if (!open) return;
+    const update = () => {
+      const r = triggerRef.current?.getBoundingClientRect();
+      if (!r) return;
+      const popW = 180;
+      const popH = 230;
+      const margin = 8;
+      let left = r.left;
+      let top = r.bottom + 6;
+      if (left + popW > window.innerWidth - margin) left = window.innerWidth - popW - margin;
+      if (left < margin) left = margin;
+      if (top + popH > window.innerHeight - margin) top = r.top - popH - 6;
+      setPos({ left, top });
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
     };
   }, [open]);
 
