@@ -96,8 +96,8 @@ async function uploadToBucket(file: Blob, ext: string): Promise<string> {
   return data.publicUrl;
 }
 
-export function MediaAttacher({ videos, audios, onChange, maxVideos = 2, maxAudios = 4 }: Props) {
-  const videoInputRef = useRef<HTMLInputElement>(null);
+export function MediaAttacher({ videos, audios, images = [], onChange, maxVideos = 2, maxAudios = 4, maxImages = 6 }: Props) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
   // —— 录音 ——
