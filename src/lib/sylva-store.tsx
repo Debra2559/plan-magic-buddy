@@ -276,6 +276,18 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
       })
     );
 
+  const addHabit: SylvaContextValue["addHabit"] = ({ name, emoji }) =>
+    setHabits((prev) => [
+      ...prev,
+      { id: `h-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, name: name.trim() || "新习惯", emoji: emoji?.trim() || "✨", history: [] },
+    ]);
+
+  const updateHabit: SylvaContextValue["updateHabit"] = (id, patch) =>
+    setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, ...patch } : h)));
+
+  const removeHabit: SylvaContextValue["removeHabit"] = (id) =>
+    setHabits((prev) => prev.filter((h) => h.id !== id));
+
 
   const upsertDiary: SylvaContextValue["upsertDiary"] = (date, patch) =>
     setDiary((prev) => {
