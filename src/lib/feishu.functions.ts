@@ -285,6 +285,10 @@ type SyncEntry = {
   error?: string
 }
 
+function isDeletedFeishuEventCode(code?: number) {
+  return code === 193003 || code === 195100
+}
+
 export const syncToFeishu = createServerFn({ method: 'POST' })
   .inputValidator((input) => pushSchema.parse(input))
   .handler(async ({ data }) => {
@@ -308,10 +312,13 @@ export const syncToFeishu = createServerFn({ method: 'POST' })
     const includeDone = (settings as any)?.push_include_done ?? false
 
     // 2) 按规则过滤
+    let skippedByType = 0
+    let skippedDone = 0
+    let skippedNoTime = 0
     const pushable = data.items.filter((i) => {
-      if (!allowedTypes.has(i.type)) return false
-      if (!includeDone && i.done) return false
-      if (requireTime && !i.time) return false
+      if (!allowedTypes.has(i.type)) { skippedByType++; return false }
+      if (!includeDone && i.done) { skippedDone++; return false }
+      if (requireTime && !i.time) { skippedNoTime++; return false }
       return true
     })
 
@@ -326,6 +333,32 @@ export const syncToFeishu = createServerFn({ method: 'POST' })
 
     const entries: SyncEntry[] = []
 
+    const createRemoteEvent = async (it: PushItem, body: ReturnType<typeof buildEventBody>) => {
+      const r = await feishu<{
+        code: number
+        msg: string
+        data?: { event?: { event_id?: string } }
+      }>(
+        `/calendar/v4/calendars/${encodeURIComponent(calendarId)}/events`,
+        { method: 'POST', body: JSON.stringify(body) }
+      )
+      const evId = r.data?.event?.event_id
+      if (r.code === 0 && evId) {
+        await supabaseAdmin.from('feishu_event_map').upsert(
+          {
+            local_id: it.id,
+            feishu_event_id: evId,
+            calendar_id: calendarId,
+            last_pushed_at: new Date().toISOString(),
+          },
+          { onConflict: 'local_id' }
+        )
+        entries.push({ op: 'create', localId: it.id, title: it.title, status: 'ok' })
+      } else {
+        entries.push({ op: 'create', localId: it.id, title: it.title, status: 'error', error: `${r.code} ${r.msg}` })
+      }
+    }
+
     // 4) create / update
     for (const it of pushable) {
       const body = buildEventBody(it, defaultTime)
@@ -337,34 +370,19 @@ export const syncToFeishu = createServerFn({ method: 'POST' })
             { method: 'PATCH', body: JSON.stringify(body) }
           )
           if (r.code === 0) {
+            await supabaseAdmin
+              .from('feishu_event_map')
+              .update({ last_pushed_at: new Date().toISOString() })
+              .eq('local_id', it.id)
             entries.push({ op: 'update', localId: it.id, title: it.title, status: 'ok' })
+          } else if (isDeletedFeishuEventCode(r.code)) {
+            await supabaseAdmin.from('feishu_event_map').delete().eq('local_id', it.id)
+            await createRemoteEvent(it, body)
           } else {
             entries.push({ op: 'update', localId: it.id, title: it.title, status: 'error', error: `${r.code} ${r.msg}` })
           }
         } else {
-          const r = await feishu<{
-            code: number
-            msg: string
-            data?: { event?: { event_id?: string } }
-          }>(
-            `/calendar/v4/calendars/${encodeURIComponent(calendarId)}/events`,
-            { method: 'POST', body: JSON.stringify(body) }
-          )
-          const evId = r.data?.event?.event_id
-          if (r.code === 0 && evId) {
-            await supabaseAdmin.from('feishu_event_map').upsert(
-              {
-                local_id: it.id,
-                feishu_event_id: evId,
-                calendar_id: calendarId,
-                last_pushed_at: new Date().toISOString(),
-              },
-              { onConflict: 'local_id' }
-            )
-            entries.push({ op: 'create', localId: it.id, title: it.title, status: 'ok' })
-          } else {
-            entries.push({ op: 'create', localId: it.id, title: it.title, status: 'error', error: `${r.code} ${r.msg}` })
-          }
+          await createRemoteEvent(it, body)
         }
       } catch (e: any) {
         entries.push({
@@ -387,8 +405,8 @@ export const syncToFeishu = createServerFn({ method: 'POST' })
           `/calendar/v4/calendars/${encodeURIComponent(m.calendar_id)}/events/${encodeURIComponent(m.feishu_event_id)}`,
           { method: 'DELETE' }
         )
-        if (r.code === 0 || r.code === 195100) {
-          // 195100 = 事件不存在，视为已删
+        if (r.code === 0 || isDeletedFeishuEventCode(r.code)) {
+          // 193003/195100 = 事件不存在或已删除，视为已删并清理映射
           await supabaseAdmin.from('feishu_event_map').delete().eq('local_id', m.local_id)
           entries.push({ op: 'delete', localId: m.local_id, title: `(${m.local_id.slice(-4)})`, status: 'ok' })
         } else {
@@ -407,7 +425,16 @@ export const syncToFeishu = createServerFn({ method: 'POST' })
 
     const okCount = entries.filter((e) => e.status === 'ok').length
     const errCount = entries.length - okCount
-    return { ok: true as const, entries, okCount, errCount }
+    return {
+      ok: true as const,
+      entries,
+      okCount,
+      errCount,
+      skipped: { byType: skippedByType, done: skippedDone, noTime: skippedNoTime },
+      skippedCount: skippedByType + skippedDone + skippedNoTime,
+      consideredCount: data.items.length,
+      pushableCount: pushable.length,
+    }
   })
 
 // ============= 真实拉取（飞书 → Sylva） =============
