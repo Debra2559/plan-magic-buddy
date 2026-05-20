@@ -1258,7 +1258,7 @@ export function FeishuSyncPanel() {
           )}
           <button
             type="button"
-            onClick={refreshCapture}
+            onClick={() => refreshCapture()}
             disabled={captureRefreshing}
             className={`${capture?.openId && capture.openId !== notify.receiveId ? "" : "ml-auto"} text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-50`}
           >
