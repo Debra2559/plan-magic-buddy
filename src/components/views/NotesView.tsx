@@ -66,12 +66,20 @@ function TabBtn({ active, onClick, icon, children }: { active: boolean; onClick:
 
 /* ---------------- Notes ---------------- */
 function NotesTab() {
-  const { notes, addNote, removeNote, updateNote, enterToSubmit } = useSylva();
+  const { notes, addNote, removeNote, updateNote, enterToSubmit, habits } = useSylva();
   const [text, setText] = useState("");
   const [mood, setMood] = useState<Mood | undefined>();
   const [tagsRaw, setTagsRaw] = useState("");
   const [query, setQuery] = useState("");
   const [diaryOpen, setDiaryOpen] = useState(false);
+
+  // —— 筛选状态 ——
+  const [dateFilter, setDateFilter] = useState<string>(""); // YYYY-MM-DD or ''
+  const [moodFilter, setMoodFilter] = useState<Mood | "all">("all");
+  const [habitFilter, setHabitFilter] = useState<string>("all"); // habit name
+  type TypeFilter = "all" | "pinned" | "withMood" | "withTags" | "plain";
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [showFilters, setShowFilters] = useState(false);
 
   const submit = () => {
     if (!text.trim()) return;
@@ -85,17 +93,46 @@ function NotesTab() {
     setTagsRaw("");
   };
 
+  const noteDate = (n: Note) => {
+    const d = new Date(n.createdAt);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+
+  const activeFilterCount =
+    (dateFilter ? 1 : 0) +
+    (moodFilter !== "all" ? 1 : 0) +
+    (habitFilter !== "all" ? 1 : 0) +
+    (typeFilter !== "all" ? 1 : 0);
+
+  const clearFilters = () => {
+    setDateFilter("");
+    setMoodFilter("all");
+    setHabitFilter("all");
+    setTypeFilter("all");
+  };
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = q
-      ? notes.filter(
-          (n) =>
-            n.text.toLowerCase().includes(q) ||
-            (n.tags ?? []).some((t) => t.toLowerCase().includes(q))
-        )
-      : notes;
+    let list = notes.filter((n) => {
+      if (q) {
+        const inText = n.text.toLowerCase().includes(q);
+        const inTags = (n.tags ?? []).some((t) => t.toLowerCase().includes(q));
+        if (!inText && !inTags) return false;
+      }
+      if (dateFilter && noteDate(n) !== dateFilter) return false;
+      if (moodFilter !== "all" && n.mood !== moodFilter) return false;
+      if (habitFilter !== "all") {
+        const tags = (n.tags ?? []).map((t) => t.toLowerCase());
+        if (!tags.includes(habitFilter.toLowerCase())) return false;
+      }
+      if (typeFilter === "pinned" && !n.pinned) return false;
+      if (typeFilter === "withMood" && !n.mood) return false;
+      if (typeFilter === "withTags" && !(n.tags && n.tags.length > 0)) return false;
+      if (typeFilter === "plain" && (n.mood || (n.tags && n.tags.length > 0))) return false;
+      return true;
+    });
     return [...list].sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned));
-  }, [notes, query]);
+  }, [notes, query, dateFilter, moodFilter, habitFilter, typeFilter]);
 
   return (
     <>
@@ -152,7 +189,8 @@ function NotesTab() {
 
       <QuickDiaryEditor open={diaryOpen} onToggle={() => setDiaryOpen((v) => !v)} />
 
-      <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-full bg-white/[0.04] border border-white/8">
+      {/* 搜索框 */}
+      <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-full bg-white/[0.04] border border-white/8">
         <Search className="w-3.5 h-3.5 text-white/40" />
         <input
           value={query}
@@ -160,12 +198,118 @@ function NotesTab() {
           placeholder="搜索内容或标签"
           className="flex-1 bg-transparent text-xs text-white/80 placeholder:text-white/30 outline-none"
         />
+        <button
+          onClick={() => setShowFilters((v) => !v)}
+          className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] border transition ${
+            activeFilterCount > 0 || showFilters
+              ? "bg-amber-glow/15 border-amber-glow/40 text-amber-glow"
+              : "border-white/10 text-white/50 hover:text-white"
+          }`}
+          title="筛选"
+        >
+          <Filter className="w-3 h-3" />
+          筛选{activeFilterCount > 0 ? ` · ${activeFilterCount}` : ""}
+        </button>
         <span className="text-[10px] text-white/40">{filtered.length} 条</span>
       </div>
 
+      {/* 筛选面板 */}
+      {showFilters && (
+        <div className="mb-4 p-3 rounded-xl bg-white/[0.03] border border-white/8 space-y-2.5">
+          {/* 日期 */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] tracking-widest text-white/40 w-10">日期</span>
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="bg-black/30 border border-white/10 rounded-md px-2 py-1 text-[11px] text-white/85 outline-none focus:border-amber-glow/50"
+            />
+            <button
+              onClick={() => setDateFilter(todayStr())}
+              className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 hover:bg-white/10 text-white/70"
+            >
+              今天
+            </button>
+            {dateFilter && (
+              <button
+                onClick={() => setDateFilter("")}
+                className="text-[10px] px-1.5 py-0.5 rounded-full text-white/40 hover:text-white"
+                title="清除日期"
+              >
+                <XIcon className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
+          {/* 心情 */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] tracking-widest text-white/40 w-10">心情</span>
+            <FilterChip active={moodFilter === "all"} onClick={() => setMoodFilter("all")}>全部</FilterChip>
+            {MOODS.map((m) => (
+              <FilterChip
+                key={m.value}
+                active={moodFilter === m.value}
+                onClick={() => setMoodFilter(moodFilter === m.value ? "all" : m.value)}
+                title={m.label}
+              >
+                {m.emoji} {m.label}
+              </FilterChip>
+            ))}
+          </div>
+
+          {/* 习惯（按标签匹配） */}
+          {habits.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] tracking-widest text-white/40 w-10">习惯</span>
+              <FilterChip active={habitFilter === "all"} onClick={() => setHabitFilter("all")}>全部</FilterChip>
+              {habits.map((h) => (
+                <FilterChip
+                  key={h.id}
+                  active={habitFilter === h.name}
+                  onClick={() => setHabitFilter(habitFilter === h.name ? "all" : h.name)}
+                  title={`标签包含 #${h.name}`}
+                >
+                  {h.emoji} {h.name}
+                </FilterChip>
+              ))}
+            </div>
+          )}
+
+          {/* 类型 */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] tracking-widest text-white/40 w-10">类型</span>
+            {([
+              ["all", "全部"],
+              ["pinned", "置顶"],
+              ["withMood", "带心情"],
+              ["withTags", "带标签"],
+              ["plain", "纯文字"],
+            ] as [TypeFilter, string][]).map(([v, label]) => (
+              <FilterChip key={v} active={typeFilter === v} onClick={() => setTypeFilter(v)}>
+                {label}
+              </FilterChip>
+            ))}
+          </div>
+
+          {activeFilterCount > 0 && (
+            <div className="flex justify-end pt-1">
+              <button
+                onClick={clearFilters}
+                className="text-[10px] text-white/50 hover:text-amber-glow flex items-center gap-1"
+              >
+                <XIcon className="w-3 h-3" /> 清除全部筛选
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="space-y-3">
         {filtered.length === 0 ? (
-          <div className="text-center py-16 text-white/40 text-sm">{query ? "没有匹配的记录" : "还没有任何记录"}</div>
+          <div className="text-center py-16 text-white/40 text-sm">
+            {query || activeFilterCount > 0 ? "没有匹配的记录" : "还没有任何记录"}
+          </div>
         ) : (
           filtered.map((n) => (
             <NoteCard key={n.id} n={n} onRemove={() => removeNote(n.id)} onPin={() => updateNote(n.id, { pinned: !n.pinned })} />
@@ -173,6 +317,7 @@ function NotesTab() {
         )}
       </div>
     </>
+
   );
 }
 
