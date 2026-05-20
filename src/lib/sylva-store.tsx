@@ -185,6 +185,9 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
   const removeItem = (id: string) =>
     setItems((prev) => prev.filter((i) => i.id !== id));
 
+  const updateItem: SylvaContextValue["updateItem"] = (id, patch) =>
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
+
   const toggleDone = (id: string) =>
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, done: !i.done } : i)));
 
