@@ -1063,3 +1063,22 @@ function ComicHistoryPanel({
     </div>
   );
 }
+
+function JournalModeToggle({ mode, onChange }: { mode: "list" | "canvas"; onChange: (m: "list" | "canvas") => void }) {
+  return (
+    <div className="flex items-center gap-1 p-1 rounded-full bg-white/[0.04] border border-white/10 shrink-0">
+      <button
+        onClick={() => onChange("list")}
+        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${mode === "list" ? "bg-white/15 text-white" : "text-white/60 hover:text-white"}`}
+      >
+        <LayoutGrid className="w-3 h-3" /> 手帐
+      </button>
+      <button
+        onClick={() => onChange("canvas")}
+        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs ${mode === "canvas" ? "bg-amber-glow/20 text-amber-glow" : "text-white/60 hover:text-white"}`}
+      >
+        <Brush className="w-3 h-3" /> 画布
+      </button>
+    </div>
+  );
+}
