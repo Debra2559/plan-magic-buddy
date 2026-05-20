@@ -361,14 +361,24 @@ function EditableRow({
           />
         </>
       ) : (
-        <button
-          onDoubleClick={() => setEditing(true)}
-          className="flex-1 flex items-center gap-1.5 text-left"
-          title="双击编辑"
-        >
-          {item.time && <span className="text-[10px] font-mono text-amber-glow/90 shrink-0">{item.time}</span>}
-          <span className="text-xs text-white/90 truncate">{item.title}</span>
-        </button>
+        <>
+          <input
+            type="time"
+            value={item.time ?? ""}
+            onChange={(e) => onChange({ time: e.target.value || undefined })}
+            onClick={(e) => e.stopPropagation()}
+            title="点击编辑时间"
+            className="bg-black/30 border border-white/10 hover:border-white/25 rounded px-1 py-0.5 text-[10px] font-mono text-amber-glow/90 w-[68px] shrink-0 focus:outline-none cursor-pointer"
+          />
+          <button
+            onClick={() => setEditing(true)}
+            className="flex-1 flex items-center gap-1.5 text-left"
+            title="点击编辑标题"
+          >
+            <span className="text-xs text-white/90 truncate">{item.title}</span>
+          </button>
+        </>
+
       )}
       <button
         onClick={onDelete}
