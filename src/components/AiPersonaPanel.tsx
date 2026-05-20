@@ -129,8 +129,13 @@ export function AiPersonaPanel() {
           </button>
         </div>
 
-        {/* 头像 + 称呼 */}
-        <div className="flex items-center gap-4">
+        {/* 头像 + 拖拽上传 */}
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={onDrop}
+          className={`flex items-center gap-4 p-3 rounded-xl border border-dashed transition ${dragOver ? "border-amber-glow/60 bg-amber-glow/5" : "border-white/10 bg-white/[0.02]"}`}
+        >
           <div className="relative">
             <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/15 bg-white/5 flex items-center justify-center text-2xl text-white/60">
               {local.avatar_url ? (
@@ -157,26 +162,30 @@ export function AiPersonaPanel() {
             />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-xs text-white/50 mb-1">头像</div>
-            <div className="flex items-center gap-2 text-[11px] text-white/60 flex-wrap">
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                disabled={uploadingAvatar}
-                className="px-2 py-1 rounded bg-white/5 border border-white/10 hover:bg-white/10"
-              >
-                上传图片
-              </button>
+            <div className="text-xs text-white/70 mb-1 flex items-center gap-1.5">
+              <Upload className="w-3 h-3" />
+              {dragOver ? "松开以选择该图片" : "拖拽图片到这里，或"}
+              {!dragOver && (
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="underline text-amber-glow hover:brightness-110"
+                >
+                  点击选择
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-2 text-[11px] text-white/50 flex-wrap">
+              <span>上传后可圆形/方形裁剪 · JPG/PNG · 5MB 内</span>
               {local.avatar_url && (
                 <button
                   type="button"
                   onClick={handleAvatarRemove}
-                  className="px-2 py-1 rounded bg-white/5 border border-white/10 hover:bg-rose-400/10 hover:text-rose-300 flex items-center gap-1"
+                  className="px-2 py-0.5 rounded bg-white/5 border border-white/10 hover:bg-rose-400/10 hover:text-rose-300 flex items-center gap-1"
                 >
                   <Trash2 className="w-3 h-3" /> 移除
                 </button>
               )}
-              <span className="text-white/35">JPG/PNG，5MB 内</span>
             </div>
           </div>
         </div>
