@@ -257,8 +257,21 @@ export function MediaAttacher({ videos, audios, images = [], onChange, maxVideos
         )}
       </div>
 
-      {(videos.length > 0 || audios.length > 0) && (
-        <div className="flex flex-wrap gap-2">
+      {(videos.length > 0 || audios.length > 0 || images.length > 0) && (
+        <div className="flex flex-wrap gap-2 items-center">
+          {images.map((src, i) => (
+            <div key={`i-${i}`} className="relative group">
+              <img src={src} alt="" className="w-12 h-12 object-cover rounded-md border border-white/10" />
+              <button
+                type="button"
+                onClick={() => removeImage(i)}
+                className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-background/90 border border-white/20 text-white/70 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
+                title="移除"
+              >
+                <X className="w-2.5 h-2.5" />
+              </button>
+            </div>
+          ))}
           {videos.map((src, i) => (
             <div key={`v-${i}`} className="relative group">
               <video
