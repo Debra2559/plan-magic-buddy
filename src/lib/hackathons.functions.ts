@@ -248,5 +248,18 @@ export const acceptHackathon = createServerFn({ method: "POST" })
       note: row.url ?? undefined,
     });
 
+    // 推一张「已加入日程」的飞书卡片
+    void notifyHackathonAccepted({
+      id: (row as any).id,
+      title: (row as any).title,
+      source: (row as any).source,
+      summary: (row as any).summary,
+      deadline: (row as any).deadline,
+      starts_at: (row as any).starts_at,
+      location: (row as any).location,
+      prize: (row as any).prize,
+      url: (row as any).url,
+    }).catch(() => {});
+
     return { ok: true as const, items, hackathon: row as HackathonRow };
   });
