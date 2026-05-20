@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlan, type Plan, type PlanItem } from "@/lib/plan.functions";
+import { useSylva } from "@/lib/sylva-store";
 import { Sparkles, ArrowUp, Loader2, Calendar, CheckSquare, Bell, Plus, RefreshCw, Wand2, Check, X, Trash2 } from "lucide-react";
 
 type Mode = "create" | "adjust" | "add";
