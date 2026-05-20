@@ -558,11 +558,12 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
           onBlur={save}
           onPaste={handlePaste}
           onKeyDown={(e) => {
-            if (shouldSubmitOnKey(e, enterToSubmit)) {
+            if (shouldSubmitOnKey(e as unknown as React.KeyboardEvent<HTMLTextAreaElement>, enterToSubmit)) {
               e.preventDefault();
               save();
             }
           }}
+
           data-placeholder="今天发生了什么？粘贴图片即可插入"
           className="diary-editor min-h-[240px] w-full bg-transparent outline-none text-sm leading-7 text-white/90 whitespace-pre-wrap break-words"
         />
