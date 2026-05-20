@@ -271,8 +271,14 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onBlur={save}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              save();
+            }
+          }}
           rows={10}
-          placeholder="今天发生了什么？做了什么、感受如何、想感谢谁……"
+          placeholder="今天发生了什么？Enter 保存 · Shift + Enter 换行"
           className="w-full bg-transparent outline-none text-sm leading-7 text-white/90 placeholder:text-white/30 resize-none"
         />
         <div className="flex items-center justify-between mt-2">
