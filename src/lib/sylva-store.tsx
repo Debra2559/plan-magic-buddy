@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { PlanItem } from "./plan.functions";
 
 export interface DoneItem extends PlanItem {
@@ -6,10 +6,22 @@ export interface DoneItem extends PlanItem {
   done?: boolean;
 }
 
+export type Mood = "great" | "good" | "ok" | "down" | "tired";
+
 export interface Note {
   id: string;
   text: string;
   createdAt: string; // ISO
+  mood?: Mood;
+  tags?: string[];
+  pinned?: boolean;
+}
+
+export interface DiaryEntry {
+  date: string; // YYYY-MM-DD
+  content: string;
+  mood?: Mood;
+  updatedAt: string;
 }
 
 export interface Habit {
@@ -24,17 +36,34 @@ interface SylvaContextValue {
   items: DoneItem[];
   notes: Note[];
   habits: Habit[];
+  diary: DiaryEntry[];
   addItems: (items: PlanItem[]) => void;
   replaceItems: (items: PlanItem[]) => void;
   removeItem: (id: string) => void;
   toggleDone: (id: string) => void;
   clearItems: () => void;
-  addNote: (text: string) => void;
+  addNote: (text: string, opts?: { mood?: Mood; tags?: string[] }) => void;
   removeNote: (id: string) => void;
+  updateNote: (id: string, patch: Partial<Pick<Note, "text" | "mood" | "tags" | "pinned">>) => void;
   toggleHabit: (id: string) => void;
+  upsertDiary: (date: string, patch: Partial<Pick<DiaryEntry, "content" | "mood">>) => void;
 }
 
 const SylvaContext = createContext<SylvaContextValue | null>(null);
+
+function loadLS<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+function saveLS<T>(key: string, value: T) {
+  if (typeof window === "undefined") return;
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+}
 
 const initialItems: DoneItem[] = [
   { id: "seed-1", type: "event", title: "准备毕业答辩的 PPT", date: "2026-05-19", time: "10:00", durationMin: 120, tag: "学习" },
@@ -64,9 +93,15 @@ let idCounter = 1000;
 const nextId = () => `i-${++idCounter}`;
 
 export function SylvaProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<DoneItem[]>(initialItems);
-  const [notes, setNotes] = useState<Note[]>(initialNotes);
-  const [habits, setHabits] = useState<Habit[]>(initialHabits);
+  const [items, setItems] = useState<DoneItem[]>(() => loadLS("sylva.items", initialItems));
+  const [notes, setNotes] = useState<Note[]>(() => loadLS("sylva.notes", initialNotes));
+  const [habits, setHabits] = useState<Habit[]>(() => loadLS("sylva.habits", initialHabits));
+  const [diary, setDiary] = useState<DiaryEntry[]>(() => loadLS<DiaryEntry[]>("sylva.diary", []));
+
+  useEffect(() => saveLS("sylva.items", items), [items]);
+  useEffect(() => saveLS("sylva.notes", notes), [notes]);
+  useEffect(() => saveLS("sylva.habits", habits), [habits]);
+  useEffect(() => saveLS("sylva.diary", diary), [diary]);
 
   const addItems = (newOnes: PlanItem[]) =>
     setItems((prev) => [...prev, ...newOnes.map((i) => ({ ...i, id: (i as any).id ?? nextId() }))]);
@@ -82,14 +117,17 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
 
   const clearItems = () => setItems([]);
 
-  const addNote = (text: string) =>
+  const addNote: SylvaContextValue["addNote"] = (text, opts) =>
     setNotes((prev) => [
-      { id: nextId(), text, createdAt: new Date().toISOString() },
+      { id: nextId(), text, createdAt: new Date().toISOString(), mood: opts?.mood, tags: opts?.tags },
       ...prev,
     ]);
 
   const removeNote = (id: string) =>
     setNotes((prev) => prev.filter((n) => n.id !== id));
+
+  const updateNote: SylvaContextValue["updateNote"] = (id, patch) =>
+    setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, ...patch } : n)));
 
   const toggleHabit = (id: string) =>
     setHabits((prev) =>
@@ -100,12 +138,26 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
       )
     );
 
+  const upsertDiary: SylvaContextValue["upsertDiary"] = (date, patch) =>
+    setDiary((prev) => {
+      const existing = prev.find((d) => d.date === date);
+      const updatedAt = new Date().toISOString();
+      if (existing) {
+        return prev.map((d) => (d.date === date ? { ...d, ...patch, updatedAt } : d));
+      }
+      return [
+        { date, content: patch.content ?? "", mood: patch.mood, updatedAt },
+        ...prev,
+      ];
+    });
+
   return (
     <SylvaContext.Provider
       value={{
         items,
         notes,
         habits,
+        diary,
         addItems,
         replaceItems,
         removeItem,
@@ -113,13 +165,16 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
         clearItems,
         addNote,
         removeNote,
+        updateNote,
         toggleHabit,
+        upsertDiary,
       }}
     >
       {children}
     </SylvaContext.Provider>
   );
 }
+
 
 export function useSylva() {
   const ctx = useContext(SylvaContext);
