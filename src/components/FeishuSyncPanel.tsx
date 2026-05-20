@@ -1018,7 +1018,82 @@ export function FeishuSyncPanel() {
           >
             列出群聊
           </button>
+          <button
+            type="button"
+            onClick={() => setBatch((s) => ({ ...s, open: !s.open, error: null }))}
+            className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 whitespace-nowrap"
+          >
+            批量查询
+          </button>
         </div>
+        {batch.open && (
+          <div className="mb-2 px-3 py-2 rounded-md border border-white/10 bg-white/[0.03] space-y-2">
+            <div className="text-[11px] text-white/60">
+              一行一个邮箱或手机号（也支持逗号/空格分隔），自动识别后批量返回 <code>open_id</code>。最多 50 条。
+            </div>
+            <textarea
+              value={batch.input}
+              onChange={(e) => setBatch((s) => ({ ...s, input: e.target.value, error: null }))}
+              rows={4}
+              placeholder={"name@company.com\n13800000000\n+8613900000000"}
+              className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-xs text-white/90 placeholder:text-white/30 outline-none font-mono"
+            />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={doBatchLookup}
+                disabled={batch.loading || !batch.input.trim()}
+                className="text-[11px] px-3 py-1 rounded-md bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-50 flex items-center gap-1"
+              >
+                {batch.loading ? <Loader2 className="w-3 h-3 animate-spin" /> : null} 查询
+              </button>
+              {batch.results.length > 0 && (
+                <button
+                  onClick={copyAllOpenIds}
+                  className="text-[11px] px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-white/80 hover:bg-white/10"
+                >
+                  {batch.copied ? "✓ 已复制" : "复制全部（TSV）"}
+                </button>
+              )}
+              {batch.results.length > 0 && (
+                <span className="text-[10px] text-white/50">
+                  成功 {batch.results.filter((r) => r.openId).length} / {batch.results.length}
+                </span>
+              )}
+            </div>
+            {batch.error && (
+              <div className="text-[11px] text-rose-300">
+                ✗ {batch.error}{batch.hint ? ` · ${batch.hint}` : ""}
+              </div>
+            )}
+            {batch.results.length > 0 && (
+              <div className="max-h-56 overflow-auto rounded-md border border-white/10 divide-y divide-white/5">
+                {batch.results.map((r, i) => (
+                  <div key={i} className="px-2 py-1.5 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-[11px] text-white/80 truncate">
+                        <span className="text-white/40 mr-1">[{r.kind === "email" ? "邮" : "手"}]</span>
+                        {r.input}
+                      </div>
+                      <div className={`text-[10px] font-mono truncate ${r.openId ? "text-emerald-300/90" : "text-rose-300/80"}`}>
+                        {r.openId ?? "未匹配"}
+                      </div>
+                    </div>
+                    {r.openId && (
+                      <button
+                        onClick={() => {
+                          setNotify((n) => ({ ...n, receiveId: r.openId!, receiveIdType: "open_id" }));
+                        }}
+                        className="text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-amber-glow hover:bg-white/10 shrink-0"
+                      >
+                        填入
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         {chats.open && (
           <div className="mb-2 px-3 py-2 rounded-md border border-white/10 bg-white/[0.03] space-y-2">
             <div className="flex items-center justify-between gap-2">
