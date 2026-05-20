@@ -16,6 +16,13 @@ export const Route = createFileRoute("/login")({
   }),
 });
 
+// HIBP 校验缓存（模块级，跨重渲染/跨组件共享）
+const PREFIX_TTL = 10 * 60 * 1000; // 10 分钟
+const FULL_TTL = 30 * 60 * 1000;   // 30 分钟
+const prefixCache = new Map<string, { map: Map<string, number>; exp: number }>();
+const fullHashCache = new Map<string, { count: number; exp: number }>();
+const prefixInflight = new Map<string, Promise<{ map: Map<string, number>; exp: number }>>();
+
 function LoginPage() {
   const nav = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
