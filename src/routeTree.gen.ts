@@ -17,6 +17,7 @@ import { Route as ApiPublicHooksScanHackathonsRouteImport } from './routes/api/p
 import { Route as ApiPublicHooksScanAiNewsRouteImport } from './routes/api/public/hooks/scan-ai-news'
 import { Route as ApiPublicHooksDailyRecapRouteImport } from './routes/api/public/hooks/daily-recap'
 import { Route as ApiPublicFeishuWebhookRouteImport } from './routes/api/public/feishu/webhook'
+import { Route as ApiPublicFeishuOauthCallbackRouteImport } from './routes/api/public/feishu/oauth/callback'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -60,6 +61,12 @@ const ApiPublicFeishuWebhookRoute = ApiPublicFeishuWebhookRouteImport.update({
   path: '/api/public/feishu/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicFeishuOauthCallbackRoute =
+  ApiPublicFeishuOauthCallbackRouteImport.update({
+    id: '/api/public/feishu/oauth/callback',
+    path: '/api/public/feishu/oauth/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -69,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
   '/api/public/hooks/scan-ai-news': typeof ApiPublicHooksScanAiNewsRoute
   '/api/public/hooks/scan-hackathons': typeof ApiPublicHooksScanHackathonsRoute
+  '/api/public/feishu/oauth/callback': typeof ApiPublicFeishuOauthCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +86,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
   '/api/public/hooks/scan-ai-news': typeof ApiPublicHooksScanAiNewsRoute
   '/api/public/hooks/scan-hackathons': typeof ApiPublicHooksScanHackathonsRoute
+  '/api/public/feishu/oauth/callback': typeof ApiPublicFeishuOauthCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +98,7 @@ export interface FileRoutesById {
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
   '/api/public/hooks/scan-ai-news': typeof ApiPublicHooksScanAiNewsRoute
   '/api/public/hooks/scan-hackathons': typeof ApiPublicHooksScanHackathonsRoute
+  '/api/public/feishu/oauth/callback': typeof ApiPublicFeishuOauthCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/daily-recap'
     | '/api/public/hooks/scan-ai-news'
     | '/api/public/hooks/scan-hackathons'
+    | '/api/public/feishu/oauth/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/daily-recap'
     | '/api/public/hooks/scan-ai-news'
     | '/api/public/hooks/scan-hackathons'
+    | '/api/public/feishu/oauth/callback'
   id:
     | '__root__'
     | '/'
@@ -119,6 +131,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/daily-recap'
     | '/api/public/hooks/scan-ai-news'
     | '/api/public/hooks/scan-hackathons'
+    | '/api/public/feishu/oauth/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -129,6 +142,7 @@ export interface RootRouteChildren {
   ApiPublicHooksDailyRecapRoute: typeof ApiPublicHooksDailyRecapRoute
   ApiPublicHooksScanAiNewsRoute: typeof ApiPublicHooksScanAiNewsRoute
   ApiPublicHooksScanHackathonsRoute: typeof ApiPublicHooksScanHackathonsRoute
+  ApiPublicFeishuOauthCallbackRoute: typeof ApiPublicFeishuOauthCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -189,6 +203,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicFeishuWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/feishu/oauth/callback': {
+      id: '/api/public/feishu/oauth/callback'
+      path: '/api/public/feishu/oauth/callback'
+      fullPath: '/api/public/feishu/oauth/callback'
+      preLoaderRoute: typeof ApiPublicFeishuOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -212,6 +233,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksDailyRecapRoute: ApiPublicHooksDailyRecapRoute,
   ApiPublicHooksScanAiNewsRoute: ApiPublicHooksScanAiNewsRoute,
   ApiPublicHooksScanHackathonsRoute: ApiPublicHooksScanHackathonsRoute,
+  ApiPublicFeishuOauthCallbackRoute: ApiPublicFeishuOauthCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

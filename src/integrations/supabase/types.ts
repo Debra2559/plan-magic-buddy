@@ -242,6 +242,13 @@ export type Database = {
           selected_calendar_id: string | null
           selected_calendar_name: string | null
           updated_at: string
+          user_access_token: string | null
+          user_name: string | null
+          user_open_id: string | null
+          user_refresh_expires_at: string | null
+          user_refresh_token: string | null
+          user_scope: string | null
+          user_token_expires_at: string | null
         }
         Insert: {
           created_at?: string
@@ -266,6 +273,13 @@ export type Database = {
           selected_calendar_id?: string | null
           selected_calendar_name?: string | null
           updated_at?: string
+          user_access_token?: string | null
+          user_name?: string | null
+          user_open_id?: string | null
+          user_refresh_expires_at?: string | null
+          user_refresh_token?: string | null
+          user_scope?: string | null
+          user_token_expires_at?: string | null
         }
         Update: {
           created_at?: string
@@ -290,6 +304,13 @@ export type Database = {
           selected_calendar_id?: string | null
           selected_calendar_name?: string | null
           updated_at?: string
+          user_access_token?: string | null
+          user_name?: string | null
+          user_open_id?: string | null
+          user_refresh_expires_at?: string | null
+          user_refresh_token?: string | null
+          user_scope?: string | null
+          user_token_expires_at?: string | null
         }
         Relationships: []
       }
