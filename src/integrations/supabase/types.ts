@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      ability_assessments: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          responses: Json
+          result: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind?: string
+          responses?: Json
+          result?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          responses?: Json
+          result?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ability_plans: {
+        Row: {
+          content: Json
+          created_at: string
+          focus_areas: string[]
+          id: string
+          status: string
+          tagline: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          focus_areas?: string[]
+          id?: string
+          status?: string
+          tagline?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          focus_areas?: string[]
+          id?: string
+          status?: string
+          tagline?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_insights: {
         Row: {
           content: string
@@ -701,6 +764,45 @@ export type Database = {
           type?: string
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_ability_profiles: {
+        Row: {
+          abilities: Json
+          created_at: string
+          growth_areas: string[]
+          initial_done: boolean
+          personality: Json
+          strengths: string[]
+          tagline: string
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          abilities?: Json
+          created_at?: string
+          growth_areas?: string[]
+          initial_done?: boolean
+          personality?: Json
+          strengths?: string[]
+          tagline?: string
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          abilities?: Json
+          created_at?: string
+          growth_areas?: string[]
+          initial_done?: boolean
+          personality?: Json
+          strengths?: string[]
+          tagline?: string
+          updated_at?: string
+          user_id?: string
+          version?: number
         }
         Relationships: []
       }
