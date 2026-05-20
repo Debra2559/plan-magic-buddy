@@ -269,10 +269,13 @@ export const generateMyInsightsNow = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ slot: z.enum(["morning", "noon", "evening", "auto"]).default("auto") }).parse(input))
   .handler(async ({ context, data }) => {
     const { userId } = context as any;
-    const slot = data.slot === "auto" ? currentSlot() : data.slot;
+    const tzRes = await supabaseAdmin.from("ai_insights_settings").select("timezone").eq("user_id", userId).maybeSingle();
+    const tz = (tzRes.data as any)?.timezone || DEFAULT_TZ;
+    const slot = data.slot === "auto" ? currentSlot(new Date(), tz) : data.slot;
     const r = await generateForUser(userId, slot);
     return r;
   });
+
 
 export const dismissInsight = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
