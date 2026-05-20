@@ -213,6 +213,19 @@ function DesktopApp() {
 
       <InsightsBell />
 
+      {/* Client closed hint */}
+      {!appOpen && (
+        <button
+          onClick={() => { setAppOpen(true); setActiveDock("sylva"); }}
+          className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-black/40 backdrop-blur-2xl border border-white/15 text-white/85 text-xs hover:bg-black/55 transition shadow-xl animate-in fade-in slide-in-from-bottom-2"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-amber-glow" />
+          客户端已关闭 · 桌面组件可继续使用 · 点击重新打开 Sylva
+        </button>
+      )}
+
+
+
 
 
       {/* Dock */}
