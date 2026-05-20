@@ -235,11 +235,15 @@ function NotesTab({ kind }: { kind: NoteKind }) {
             }
           }}
           rows={3}
-          placeholder="此刻在想什么？粘贴或拖入图片即可附加"
+          placeholder={kind === "reflection"
+            ? "此刻在想什么？写下感受、复盘、灵感…"
+            : "刚发生了什么？开会 / 健身 / 见了谁…粘贴或拖入图片即可附加"}
           className="w-full bg-transparent outline-none text-sm leading-relaxed text-white/90 placeholder:text-white/30 resize-none"
         />
         <div className="flex justify-end -mt-1 mb-1">
-          <EnterHint example={"灵感：把答辩比喻成森林徒步 ↵（Shift+Enter）\n开场用 30 秒抛痛点"} />
+          <EnterHint example={kind === "reflection"
+            ? "今天答辩前莫名紧张 ↵（Shift+Enter）\n其实是怕被问到那个含糊的点"
+            : "和导师碰了答辩节奏 ↵（Shift+Enter）\n#答辩"} />
         </div>
         <div className="mt-2">
           <MediaAttacher
