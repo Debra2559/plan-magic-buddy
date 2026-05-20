@@ -304,6 +304,22 @@ function NotesTab() {
           )}
         </div>
       )}
+
+      <div className="space-y-3">
+        {filtered.length === 0 ? (
+          <div className="text-center py-16 text-white/40 text-sm">
+            {query || activeFilterCount > 0 ? "没有匹配的记录" : "还没有任何记录"}
+          </div>
+        ) : (
+          filtered.map((n) => (
+            <NoteCard key={n.id} n={n} onRemove={() => removeNote(n.id)} onPin={() => updateNote(n.id, { pinned: !n.pinned })} />
+          ))
+        )}
+      </div>
+    </>
+  );
+}
+
 function FilterChip({ active, onClick, title, children }: { active: boolean; onClick: () => void; title?: string; children: React.ReactNode }) {
   return (
     <button
@@ -320,22 +336,6 @@ function FilterChip({ active, onClick, title, children }: { active: boolean; onC
   );
 }
 
-
-      <div className="space-y-3">
-        {filtered.length === 0 ? (
-          <div className="text-center py-16 text-white/40 text-sm">
-            {query || activeFilterCount > 0 ? "没有匹配的记录" : "还没有任何记录"}
-          </div>
-        ) : (
-          filtered.map((n) => (
-            <NoteCard key={n.id} n={n} onRemove={() => removeNote(n.id)} onPin={() => updateNote(n.id, { pinned: !n.pinned })} />
-          ))
-        )}
-      </div>
-    </>
-
-  );
-}
 
 function NoteCard({ n, onRemove, onPin }: { n: Note; onRemove: () => void; onPin: () => void }) {
   const m = moodOf(n.mood);
