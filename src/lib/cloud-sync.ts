@@ -88,9 +88,11 @@ export const remote = {
   // schedule_items
   upsertItem: (i: DoneItem) =>
     supabase.from("schedule_items").upsert(itemToRow(i)).then(({ error }) => swallow("upsertItem")(error)),
-  upsertItems: (xs: DoneItem[]) =>
-    xs.length &&
-    supabase.from("schedule_items").upsert(xs.map(itemToRow)).then(({ error }) => swallow("upsertItems")(error)),
+  upsertItems: (xs: DoneItem[]): Promise<void> =>
+    xs.length
+      ? supabase.from("schedule_items").upsert(xs.map(itemToRow)).then(({ error }) => swallow("upsertItems")(error))
+      : Promise.resolve(),
+
   softDeleteItem: (id: string) =>
     supabase.from("schedule_items").update({ deleted_at: new Date().toISOString() }).eq("id", id)
       .then(({ error }) => swallow("softDeleteItem")(error)),
