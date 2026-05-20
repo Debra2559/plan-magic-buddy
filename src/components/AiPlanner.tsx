@@ -290,36 +290,154 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
 
   return (
     <div className="space-y-6">
-      {/* Quick generate bar */}
-      <div className="widget widget-glow p-5">
-        <div className="flex items-center gap-2 mb-2">
+      {/* 统一生成面板：输入 + 模式选择 */}
+      <div className="widget widget-glow p-6">
+        <div className="flex items-center gap-2 mb-3">
           <Wand2 className="w-4 h-4 text-amber-glow" />
           <span className="text-xs tracking-wider text-amber-glow">一键生成 · 直接把想法变成完整规划</span>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <input
-            value={quickIdea}
-            onChange={(e) => setQuickIdea(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-                e.preventDefault();
-                runQuick();
+
+        {mode === "goal" ? (
+          <div className="space-y-3">
+            {chatMessages.length > 0 && (
+              <div className="max-h-[260px] overflow-auto space-y-2 pr-1">
+                {chatMessages.map((m, i) => (
+                  <div
+                    key={i}
+                    className={`p-3 rounded-xl text-sm leading-relaxed whitespace-pre-wrap ${
+                      m.role === "user"
+                        ? "bg-amber-glow/15 border border-amber-glow/30 text-foreground/90 ml-6"
+                        : "bg-foreground/5 border border-foreground/10 text-foreground/85 mr-6"
+                    }`}
+                  >
+                    {m.content}
+                    {m.quickReplies && m.quickReplies.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {m.quickReplies.map((q) => (
+                          <button
+                            key={q}
+                            onClick={() => runChat(q)}
+                            disabled={loading}
+                            className="text-[11px] px-2.5 py-1 rounded-full bg-amber-glow/10 border border-amber-glow/30 text-amber-glow hover:bg-amber-glow/20 transition disabled:opacity-40"
+                          >
+                            {q}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {loading && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground p-2">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    {chatStep?.kind === "research" ? (
+                      <span className="flex items-center gap-1"><Globe className="w-3 h-3" /> 正在联网查方案…</span>
+                    ) : (
+                      "AI 思考中…"
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <textarea
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (shouldSubmitOnKey(e, enterToSubmit)) {
+                    e.preventDefault();
+                    handleSubmit();
+                  }
+                }}
+                placeholder={chatMessages.length === 0 ? "告诉我一个目标，例如：我要考雅思 / 想 3 个月跑下半马" : "继续回答…"}
+                rows={chatMessages.length === 0 ? 2 : 2}
+                className="flex-1 bg-foreground/5 border border-foreground/10 rounded-xl px-4 py-3 text-sm leading-relaxed resize-none outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
+              />
+              <button
+                onClick={handleSubmit}
+                disabled={loading || !chatInput.trim()}
+                className="shrink-0 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition disabled:opacity-40 disabled:scale-100"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                {loading ? "思考中" : chatMessages.length === 0 ? "开始拆解" : "发送"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row gap-2">
+            <textarea
+              value={idea}
+              onChange={(e) => setIdea(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  handleSubmit();
+                }
+              }}
+              placeholder={
+                mode === "create"
+                  ? "例如：下周要准备毕业答辩，同时跑通飞书提效系统，每天还要泛听英语..."
+                  : mode === "adjust"
+                  ? "例如：周三下午突然有个会，把那天的安排往后推..."
+                  : mode === "add"
+                  ? "例如：再加一个每天 30 分钟的力量训练..."
+                  : "一句话描述你想做的事，例如：这周冲毕业答辩 + 每天 30 分钟英语"
               }
-            }}
-            placeholder="一句话描述你想做的事，例如：这周冲毕业答辩 + 每天 30 分钟英语"
-            className="flex-1 bg-foreground/5 border border-foreground/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
-          />
-          <button
-            onClick={runQuick}
-            disabled={loading || !quickIdea.trim()}
-            className="shrink-0 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition disabled:opacity-40 disabled:scale-100"
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            {loading ? "生成中" : "生成规划"}
-          </button>
+              rows={2}
+              className="flex-1 bg-foreground/5 border border-foreground/10 rounded-xl px-4 py-3 text-sm leading-relaxed resize-none outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
+            />
+            <button
+              onClick={handleSubmit}
+              disabled={loading || !idea.trim()}
+              className="shrink-0 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition disabled:opacity-40 disabled:scale-100"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {loading ? "生成中" : "生成规划"}
+            </button>
+          </div>
+        )}
+
+        {/* Mode tabs（输入框下方） */}
+        <div className="flex gap-2 mt-3 flex-wrap items-center">
+          <span className="text-[10px] tracking-wider text-muted-foreground mr-1">模式</span>
+          {(Object.keys(modeMeta) as Mode[]).map((m) => {
+            const Icon = modeMeta[m].icon;
+            const active = mode === m;
+            const disabled = (m === "adjust" || m === "add") && confirmed.length === 0;
+            return (
+              <button
+                key={m}
+                disabled={disabled}
+                onClick={() => {
+                  setMode(m);
+                  if (m === "goal") resetChat();
+                }}
+                title={modeMeta[m].hint}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] border transition
+                  ${active ? "bg-amber-glow/20 border-amber-glow/50 text-amber-glow" : "bg-foreground/5 border-foreground/10 text-foreground/70 hover:bg-foreground/10"}
+                  ${disabled ? "opacity-30 cursor-not-allowed" : ""}`}
+              >
+                <Icon className="w-3 h-3" />
+                {modeMeta[m].label}
+              </button>
+            );
+          })}
+          {mode === "goal" && chatMessages.length > 0 && (
+            <button onClick={resetChat} className="ml-auto text-[10px] text-muted-foreground hover:text-foreground transition">重新开始</button>
+          )}
         </div>
-        <p className="mt-2 text-[10px] text-muted-foreground">Enter 直接生成 · 生成后在下方草稿确认即可写入日历</p>
+
+        {error && (
+          <div className="mt-3 p-3 rounded-xl bg-destructive/15 border border-destructive/30 text-xs text-destructive-foreground">
+            {error}
+          </div>
+        )}
+
+        <p className="mt-2 text-[10px] text-muted-foreground">
+          {mode === "auto" ? "Enter 直接生成 · 不用选模式，AI 自动判断该新建/调整/追加" : `Enter 直接生成 · 当前：${modeMeta[mode].hint}`}
+        </p>
       </div>
+
 
       {/* Feishu sync bar */}
       <div className="widget p-5">
