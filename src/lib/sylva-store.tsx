@@ -69,7 +69,7 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
   const [habits, setHabits] = useState<Habit[]>(initialHabits);
 
   const addItems = (newOnes: PlanItem[]) =>
-    setItems((prev) => [...prev, ...newOnes.map((i) => ({ ...i, id: nextId() }))]);
+    setItems((prev) => [...prev, ...newOnes.map((i) => ({ ...i, id: (i as any).id ?? nextId() }))]);
 
   const replaceItems = (newOnes: PlanItem[]) =>
     setItems(newOnes.map((i) => ({ ...i, id: nextId() })));
