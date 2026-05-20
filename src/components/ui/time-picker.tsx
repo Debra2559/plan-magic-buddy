@@ -42,24 +42,34 @@ export function TimePicker({
     };
   }, [open]);
 
+  // 仅在「打开」那一刻做一次性定位，之后切换值不再滚动，避免列表跳动。
   useEffect(() => {
     if (!open) return;
-    // 滚动到当前选中
-    requestAnimationFrame(() => {
+    const raf = requestAnimationFrame(() => {
       const scroll = (el: HTMLDivElement | null, idx: number) => {
         if (!el) return;
         const item = el.children[idx] as HTMLElement | undefined;
-        if (item) el.scrollTop = item.offsetTop - el.clientHeight / 2 + item.clientHeight / 2;
+        if (!item) return;
+        const target = item.offsetTop - el.clientHeight / 2 + item.clientHeight / 2;
+        // 用 instant 行为，open 瞬间不要出现一段平滑滚动
+        el.scrollTo({ top: target, behavior: "auto" });
       };
       const hIdx = hh ? HOURS.indexOf(hh) : new Date().getHours();
-      const closestMin = mm
-        ? MINUTES.reduce((p, c) => (Math.abs(+c - +mm) < Math.abs(+p - +mm) ? c : p))
-        : "00";
-      const mIdx = MINUTES.indexOf(closestMin);
+      const mInit = mm ? closest(mm) : "00";
+      const mIdx = MINUTES.indexOf(mInit);
       scroll(hourColRef.current, hIdx >= 0 ? hIdx : 0);
       scroll(minColRef.current, mIdx >= 0 ? mIdx : 0);
     });
-  }, [open, hh, mm]);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  // 值变化时触发一次高亮闪烁（不动滚动位置）
+  const [flashKey, setFlashKey] = useState(0);
+  useEffect(() => {
+    if (!open) return;
+    setFlashKey((k) => k + 1);
+  }, [hh, mm, open]);
 
   const select = (newHh: string, newMm: string) => {
     onChange(`${newHh}:${newMm}`);
@@ -110,6 +120,7 @@ export function TimePicker({
               innerRef={hourColRef}
               items={HOURS}
               selected={hh}
+              flashKey={flashKey}
               onPick={(v) => select(v, mm || "00")}
             />
             <div className="w-px bg-white/8" />
@@ -117,8 +128,10 @@ export function TimePicker({
               innerRef={minColRef}
               items={MINUTES}
               selected={mm && MINUTES.includes(mm) ? mm : mm ? closest(mm) : ""}
+              flashKey={flashKey}
               onPick={(v) => select(hh || String(new Date().getHours()).padStart(2, "0"), v)}
             />
+
           </div>
           <div className="flex items-center justify-between px-2 py-1.5 border-t border-white/8 bg-black/30">
             <button
@@ -157,16 +170,18 @@ function Column({
   selected,
   onPick,
   innerRef,
+  flashKey,
 }: {
   items: string[];
   selected: string;
   onPick: (v: string) => void;
   innerRef: React.RefObject<HTMLDivElement | null>;
+  flashKey: number;
 }) {
   return (
     <div
       ref={innerRef}
-      className="flex-1 overflow-y-auto py-[72px] scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="flex-1 overflow-y-auto py-[72px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       {items.map((it) => {
         const active = it === selected;
@@ -175,13 +190,18 @@ function Column({
             key={it}
             type="button"
             onClick={() => onPick(it)}
-            className={`block w-full h-8 text-center font-mono tabular-nums text-sm transition ${
+            className={`block w-full h-8 text-center font-mono tabular-nums text-sm transition-colors ${
               active
                 ? "text-amber-glow font-semibold"
                 : "text-white/55 hover:text-white"
             }`}
           >
-            {it}
+            <span
+              key={active ? `flash-${flashKey}` : "idle"}
+              className={`inline-block px-2 rounded ${active ? "animate-date-flash" : ""}`}
+            >
+              {it}
+            </span>
           </button>
         );
       })}
