@@ -43,10 +43,11 @@ type PromptPanelProps = {
   onSaveDirect: () => void;
   onClose: () => void;
   onToggleEnabled: () => void;
+  onSourcesChange: (next: AiNewsSettings["sources"]) => void;
 };
 
 function SettingsPanel({
-  settings, prompt, onPromptChange, parsing, saving, onParse, onSaveDirect, onClose, onToggleEnabled,
+  settings, prompt, onPromptChange, parsing, saving, onParse, onSaveDirect, onClose, onToggleEnabled, onSourcesChange,
 }: PromptPanelProps) {
   if (!settings) {
     return (
