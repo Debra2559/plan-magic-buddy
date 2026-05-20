@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { FreeformCanvas } from "@/components/canvas/FreeformCanvas";
+import { LayoutGrid, Brush } from "lucide-react";
 import { useSylva, type Mood, type Note } from "@/lib/sylva-store";
 import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, NotebookPen, Filter, X as XIcon } from "lucide-react";
 import { markRecapDone, getDailyRecap } from "@/lib/feishu.functions";
