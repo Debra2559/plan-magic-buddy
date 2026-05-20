@@ -22,6 +22,7 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
 
   type PwdCheck = { status: "idle" | "checking" | "ok" | "weak" | "pwned"; msg: string; count?: number };
   const [pwdCheck, setPwdCheck] = useState<PwdCheck>({ status: "idle", msg: "" });
