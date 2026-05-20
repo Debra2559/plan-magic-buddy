@@ -177,9 +177,11 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                       className={`text-[10px] px-1.5 py-0.5 rounded truncate border ${
                         tagColor[it.tag] ?? "bg-white/10 text-white/70 border-white/15"
                       } ${it.done ? "opacity-50 line-through" : ""} ${
+                        it.pending ? "border-dashed border-amber-glow/70 text-amber-glow bg-amber-glow/5" : ""
+                      } ${
                         isRecentlySynced(it.id) ? "ring-1 ring-amber-glow/70 shadow-[0_0_8px_rgba(245,184,67,0.4)]" : ""
                       }`}
-                      title={it.title}
+                      title={it.pending ? `${it.title}（待确认）` : it.title}
                     >
                       {it.time && <span className="font-mono mr-1 opacity-70">{it.time}</span>}
                       {it.title}
