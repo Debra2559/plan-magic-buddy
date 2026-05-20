@@ -145,10 +145,10 @@ export function TimePicker({
           className="w-[180px] rounded-xl border border-white/15 bg-zinc-950/95 backdrop-blur-md shadow-2xl shadow-black/60 overflow-hidden"
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between px-3 py-2 border-b border-white/8">
-            <span className="text-[10px] tracking-widest text-amber-glow/80 uppercase">时间</span>
-            <span className="font-mono text-sm text-white/90 tabular-nums">
-              {hh || "--"}<span className="text-white/30 mx-0.5">:</span>{mm || "--"}
+          <div className="flex items-center justify-between px-3 py-2 border-b border-white/15">
+            <span className="text-[10px] tracking-widest text-amber-glow uppercase font-semibold">时间</span>
+            <span className="font-mono text-sm text-white tabular-nums">
+              {hh || "--"}<span className="text-white/70 mx-0.5">:</span>{mm || "--"}
             </span>
           </div>
           <div className="relative flex h-44">
@@ -179,7 +179,7 @@ export function TimePicker({
                 );
                 onChange(`${String(now.getHours()).padStart(2, "0")}:${closestMin}`);
               }}
-              className="px-2 py-0.5 text-[10px] rounded text-white/60 hover:text-amber-glow hover:bg-white/5"
+              className="px-2 py-0.5 text-[11px] rounded text-white/80 hover:text-amber-glow hover:bg-white/10"
             >
               现在
             </button>
@@ -268,7 +268,7 @@ function Column({
             className={`block w-full h-8 text-center font-mono tabular-nums text-sm transition-colors snap-center ${
               active
                 ? "text-amber-glow font-semibold"
-                : "text-white/55 hover:text-white"
+                : "text-white/75 hover:text-white"
             }`}
           >
             <span
