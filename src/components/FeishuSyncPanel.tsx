@@ -654,6 +654,42 @@ export function FeishuSyncPanel() {
         </div>
 
         <div className="px-4 py-3">
+          {(syncProgress || lastError || lastSummary) && (
+            <div className="mb-3 space-y-1.5">
+              {syncProgress && (
+                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-sky-400/10 border border-sky-400/30 text-[11px] text-sky-200">
+                  <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+                  <span className="truncate">{syncProgress}</span>
+                </div>
+              )}
+              {!syncProgress && lastError && (
+                <div className="flex items-start gap-2 px-2.5 py-1.5 rounded-md bg-rose-500/10 border border-rose-400/30 text-[11px] text-rose-200">
+                  <XCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-rose-100/90">{lastError.scope} 失败</div>
+                    <div className="text-rose-200/80 break-words">{lastError.msg}</div>
+                  </div>
+                  <button
+                    onClick={() => (lastError.scope.includes("拉取") ? doPull() : doSync("重试"))}
+                    disabled={syncing || pulling}
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-rose-400/20 border border-rose-300/30 text-rose-100 hover:bg-rose-400/30 disabled:opacity-50 shrink-0"
+                  >
+                    重试
+                  </button>
+                </div>
+              )}
+              {!syncProgress && !lastError && lastSummary && (
+                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-400/30 text-[11px] text-emerald-200">
+                  <CheckCircle2 className="w-3 h-3 shrink-0" />
+                  <span className="truncate">
+                    {lastSummary.scope} 完成 · 成功 {lastSummary.ok} 条
+                    {lastSummary.fail > 0 && ` · 失败 ${lastSummary.fail} 条`}
+                  </span>
+                  <span className="ml-auto text-emerald-200/60 shrink-0">{fmtClock(lastSummary.at)}</span>
+                </div>
+              )}
+            </div>
+          )}
           <div className="text-[11px] text-white/50 mb-2 flex items-center justify-between">
             <span>同步记录</span>
             {selected && (
