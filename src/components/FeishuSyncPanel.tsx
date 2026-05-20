@@ -31,6 +31,8 @@ import {
   Download,
   Bell,
   Send,
+  XCircle,
+  CheckCircle2,
 } from "lucide-react";
 
 type Status = "disconnected" | "connecting" | "connected";
@@ -97,7 +99,7 @@ const TIMEZONE_OPTIONS: { value: string; label: string }[] = [
 
 
 export function FeishuSyncPanel() {
-  const { items, addItems } = useSylva();
+  const { items, addItems, refreshRecapDoneDates } = useSylva();
   const [state, setState] = useState<Persisted>(loadPersisted);
   const [logs, setLogs] = useState<SyncLog[]>([]);
   const lastItemSignature = useRef<string>("");
@@ -108,6 +110,11 @@ export function FeishuSyncPanel() {
   const [calendarsError, setCalendarsError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [pulling, setPulling] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<string | null>(null);
+  const [lastError, setLastError] = useState<{ scope: string; msg: string; at: string } | null>(null);
+  const [lastSummary, setLastSummary] = useState<{ ok: number; fail: number; scope: string; at: string } | null>(null);
+  const [recapRefreshing, setRecapRefreshing] = useState(false);
+  const [recapRefreshResult, setRecapRefreshResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
   const runTest = useServerFn(testFeishuConnection);
   const runList = useServerFn(listFeishuCalendars);
@@ -143,6 +150,7 @@ export function FeishuSyncPanel() {
     async (reason: string) => {
       if (!state.calendarId) return;
       setSyncing(true);
+      setSyncProgress(`${reason} · 正在推送 ${items.length} 条本地日程…`);
       try {
         const r = await runSync({
           data: {
@@ -160,9 +168,15 @@ export function FeishuSyncPanel() {
           },
         });
         if (!r.ok) {
-          setLogs((prev) => [mkLog("update", "sylva", `同步失败: ${r.error}`, "conflict"), ...prev].slice(0, 12));
+          const msg = r.error ?? "未知错误";
+          setLogs((prev) => [mkLog("update", "sylva", `同步失败: ${msg}`, "conflict"), ...prev].slice(0, 12));
+          setLastError({ scope: `${reason} · 推送`, msg, at: new Date().toISOString() });
+          setLastSummary(null);
           return;
         }
+        const okCount = r.entries.filter((e) => e.status === "ok").length;
+        const failCount = r.entries.length - okCount;
+        const firstFail = r.entries.find((e) => e.status !== "ok");
         const newLogs: SyncLog[] = r.entries.slice(0, 8).map((e) =>
           mkLog(
             e.op === "delete" ? "delete" : e.op === "update" ? "update" : "create",
@@ -176,8 +190,23 @@ export function FeishuSyncPanel() {
         }
         setLogs((prev) => [...newLogs, ...prev].slice(0, 12));
         setState((s) => ({ ...s, lastSyncAt: new Date().toISOString() }));
+        setLastSummary({ ok: okCount, fail: failCount, scope: `${reason} · 推送`, at: new Date().toISOString() });
+        if (failCount > 0 && firstFail) {
+          setLastError({
+            scope: `${reason} · 推送`,
+            msg: `${failCount} 条失败，例如「${firstFail.title}」: ${firstFail.error ?? "未知错误"}`,
+            at: new Date().toISOString(),
+          });
+        } else {
+          setLastError(null);
+        }
+      } catch (e: any) {
+        const msg = e?.message ?? String(e);
+        setLogs((prev) => [mkLog("update", "sylva", `同步异常: ${msg}`, "conflict"), ...prev].slice(0, 12));
+        setLastError({ scope: `${reason} · 推送`, msg, at: new Date().toISOString() });
       } finally {
         setSyncing(false);
+        setSyncProgress(null);
       }
     },
     [items, runSync, state.calendarId]
@@ -186,17 +215,22 @@ export function FeishuSyncPanel() {
   const doPull = useCallback(async () => {
     if (!state.calendarId) return;
     setPulling(true);
+    setSyncProgress("正在从飞书拉取最近 60 天事件…");
     try {
       const r = await runPull();
       if (!r.ok) {
-        setLogs((prev) => [mkLog("pull", "feishu", `拉取失败: ${r.error}`, "conflict"), ...prev].slice(0, 12));
+        const msg = r.error ?? "未知错误";
+        setLogs((prev) => [mkLog("pull", "feishu", `拉取失败: ${msg}`, "conflict"), ...prev].slice(0, 12));
+        setLastError({ scope: "拉取", msg, at: new Date().toISOString() });
+        setLastSummary(null);
         return;
       }
       if (r.newItems.length === 0) {
         setLogs((prev) => [mkLog("pull", "feishu", `无新事件 (共 ${r.total} 条)`, "ok"), ...prev].slice(0, 12));
+        setLastSummary({ ok: 0, fail: 0, scope: `拉取 · 远端共 ${r.total} 条`, at: new Date().toISOString() });
+        setLastError(null);
         return;
       }
-      // 用 feishu_event_id 当本地 id，方便和映射表对齐
       const itemsToAdd = r.newItems.map((it) => ({
         id: `fs-${it._feishuEventId}`,
         type: it.type,
@@ -208,7 +242,6 @@ export function FeishuSyncPanel() {
         note: it.note,
       }));
       addItems(itemsToAdd as any);
-      // 写映射表，防止下次推送时重复
       await runRecord({
         data: {
           calendarId: r.calendarId,
@@ -218,7 +251,6 @@ export function FeishuSyncPanel() {
           })),
         },
       });
-      // 更新签名，避免触发自动推送
       lastItemSignature.current = "";
       const newLogs = itemsToAdd.slice(0, 6).map((it) =>
         mkLog("create", "feishu", it.title, "ok")
@@ -227,12 +259,31 @@ export function FeishuSyncPanel() {
         newLogs.push(mkLog("pull", "feishu", `… 还有 ${r.newItems.length - 6} 条`, "ok"));
       }
       setLogs((prev) => [...newLogs, ...prev].slice(0, 12));
+      setLastSummary({ ok: r.newItems.length, fail: 0, scope: "拉取", at: new Date().toISOString() });
+      setLastError(null);
     } catch (e: any) {
-      setLogs((prev) => [mkLog("pull", "feishu", `拉取异常: ${e?.message ?? e}`, "conflict"), ...prev].slice(0, 12));
+      const msg = e?.message ?? String(e);
+      setLogs((prev) => [mkLog("pull", "feishu", `拉取异常: ${msg}`, "conflict"), ...prev].slice(0, 12));
+      setLastError({ scope: "拉取", msg, at: new Date().toISOString() });
     } finally {
       setPulling(false);
+      setSyncProgress(null);
     }
   }, [state.calendarId, runPull, runRecord, addItems]);
+
+  const refreshTodayRecap = useCallback(async () => {
+    setRecapRefreshing(true);
+    setRecapRefreshResult(null);
+    try {
+      await refreshRecapDoneDates();
+      setRecapRefreshResult({ ok: true, msg: "已从飞书拉取最新的今日小结/日记" });
+    } catch (e: any) {
+      setRecapRefreshResult({ ok: false, msg: e?.message ?? "刷新失败" });
+    } finally {
+      setRecapRefreshing(false);
+      setTimeout(() => setRecapRefreshResult(null), 4000);
+    }
+  }, [refreshRecapDoneDates]);
 
   const loadCalendars = useCallback(async () => {
     setLoadingCalendars(true);
@@ -603,6 +654,42 @@ export function FeishuSyncPanel() {
         </div>
 
         <div className="px-4 py-3">
+          {(syncProgress || lastError || lastSummary) && (
+            <div className="mb-3 space-y-1.5">
+              {syncProgress && (
+                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-sky-400/10 border border-sky-400/30 text-[11px] text-sky-200">
+                  <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+                  <span className="truncate">{syncProgress}</span>
+                </div>
+              )}
+              {!syncProgress && lastError && (
+                <div className="flex items-start gap-2 px-2.5 py-1.5 rounded-md bg-rose-500/10 border border-rose-400/30 text-[11px] text-rose-200">
+                  <XCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-rose-100/90">{lastError.scope} 失败</div>
+                    <div className="text-rose-200/80 break-words">{lastError.msg}</div>
+                  </div>
+                  <button
+                    onClick={() => (lastError.scope.includes("拉取") ? doPull() : doSync("重试"))}
+                    disabled={syncing || pulling}
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-rose-400/20 border border-rose-300/30 text-rose-100 hover:bg-rose-400/30 disabled:opacity-50 shrink-0"
+                  >
+                    重试
+                  </button>
+                </div>
+              )}
+              {!syncProgress && !lastError && lastSummary && (
+                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-400/30 text-[11px] text-emerald-200">
+                  <CheckCircle2 className="w-3 h-3 shrink-0" />
+                  <span className="truncate">
+                    {lastSummary.scope} 完成 · 成功 {lastSummary.ok} 条
+                    {lastSummary.fail > 0 && ` · 失败 ${lastSummary.fail} 条`}
+                  </span>
+                  <span className="ml-auto text-emerald-200/60 shrink-0">{fmtClock(lastSummary.at)}</span>
+                </div>
+              )}
+            </div>
+          )}
           <div className="text-[11px] text-white/50 mb-2 flex items-center justify-between">
             <span>同步记录</span>
             {selected && (
@@ -759,6 +846,19 @@ export function FeishuSyncPanel() {
           >
             {recapSending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} 立即发送一次
           </button>
+          <button
+            onClick={refreshTodayRecap}
+            disabled={recapRefreshing}
+            className="text-[11px] px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 disabled:opacity-50 flex items-center gap-1"
+            title="重新从飞书拉取今日已提交的小结/日记/心情，并刷新日历与待办的完成标记"
+          >
+            {recapRefreshing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} 刷新今日小结
+          </button>
+          {recapRefreshResult && (
+            <span className={`text-[11px] ${recapRefreshResult.ok ? "text-emerald-300" : "text-rose-300"}`}>
+              {recapRefreshResult.ok ? "✓ " : "✗ "}{recapRefreshResult.msg}
+            </span>
+          )}
           {recapResult && (
             <span className={`text-[11px] ${recapResult.ok ? "text-emerald-300" : "text-rose-300"}`}>
               {recapResult.ok ? "✓ " : "✗ "}{recapResult.msg}
