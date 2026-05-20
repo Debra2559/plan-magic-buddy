@@ -112,15 +112,25 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     })();
 
-    // 跨设备实时同步：监听本用户 profile 行变更
+    // 跨设备实时同步：监听本用户 profile 行的所有变更
     const channel = supabase
       .channel(`user_profiles:${user.id}`)
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "user_profiles", filter: `user_id=eq.${user.id}` },
+        { event: "*", schema: "public", table: "user_profiles", filter: `user_id=eq.${user.id}` },
         (payload) => {
           if (cancelled) return;
-          setPersona((prev) => ({ ...(prev as PersonaProfile), ...(payload.new as PersonaProfile) }));
+          if (payload.eventType === "DELETE") {
+            setPersona({ user_id: user.id, ...DEFAULT_PERSONA });
+            return;
+          }
+          const next = payload.new as PersonaProfile | undefined;
+          if (!next) return;
+          if (payload.eventType === "INSERT") {
+            setPersona(next);
+          } else {
+            setPersona((prev) => ({ ...(prev as PersonaProfile), ...next }));
+          }
         },
       )
       .subscribe();
