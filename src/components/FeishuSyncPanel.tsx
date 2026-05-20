@@ -147,6 +147,21 @@ export function FeishuSyncPanel() {
   const [recapSending, setRecapSending] = useState(false);
   const [recapResult, setRecapResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
+  type PushRules = {
+    requireTime: boolean;
+    defaultTime: string;
+    allowedTypes: Array<"event" | "reminder" | "todo">;
+    includeDone: boolean;
+  };
+  const [pushRules, setPushRules] = useState<PushRules>({
+    requireTime: true,
+    defaultTime: "09:00",
+    allowedTypes: ["event", "reminder", "todo"],
+    includeDone: false,
+  });
+  const [pushRulesSaved, setPushRulesSaved] = useState(false);
+  const runSetPushRules = useServerFn(setFeishuPushRules);
+
   const doSync = useCallback(
     async (reason: string) => {
       if (!state.calendarId) return;
