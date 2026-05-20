@@ -12,13 +12,6 @@ import { useNavigate } from "@tanstack/react-router";
 type SimpleRow = { label: string; value: string; action: string };
 
 const simpleSections: Record<string, { rows: SimpleRow[] }> = {
-  general: {
-    rows: [
-      { label: "登录账户", value: "lov@sylva.app", action: "管理" },
-      { label: "界面语言", value: "简体中文", action: "切换" },
-      { label: "外观主题", value: "森林沉浸 · 自动", action: "更改" },
-    ],
-  },
   reminders: {
     rows: [
       { label: "桌面通知", value: "开启 · 不打扰：22:00 - 08:00", action: "调整" },
@@ -38,6 +31,68 @@ const simpleSections: Record<string, { rows: SimpleRow[] }> = {
     ],
   },
 };
+
+function AccountPanel() {
+  const { user, loading, signOut } = useAuth();
+  const navigate = useNavigate();
+  const email = user?.email ?? (loading ? "加载中…" : "未登录");
+  const provider = (user?.app_metadata?.provider as string | undefined) ?? "email";
+  const providerLabel = provider === "google" ? "Google 账号" : provider === "email" ? "邮箱登录" : provider;
+  const created = user?.created_at ? new Date(user.created_at).toLocaleDateString("zh-CN") : "—";
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate({ to: "/login" });
+  };
+
+  return (
+    <div className="widget overflow-hidden divide-y divide-white/8">
+      <div className="flex items-center px-4 py-3">
+        <div className="flex-1 min-w-0">
+          <div className="text-sm text-white/90">登录账户</div>
+          <div className="text-xs text-white/50 mt-0.5 truncate">{email}</div>
+        </div>
+        {user && (
+          <button
+            onClick={handleSignOut}
+            className="text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 inline-flex items-center gap-1"
+          >
+            <LogOut className="w-3 h-3" />
+            退出登录
+          </button>
+        )}
+        {!user && !loading && (
+          <button
+            onClick={() => navigate({ to: "/login" })}
+            className="text-xs px-3 py-1 rounded-full bg-amber-glow/20 border border-amber-glow/40 text-amber-glow hover:bg-amber-glow/30"
+          >
+            去登录
+          </button>
+        )}
+      </div>
+      <div className="flex items-center px-4 py-3">
+        <div className="flex-1">
+          <div className="text-sm text-white/90">登录方式</div>
+          <div className="text-xs text-white/50 mt-0.5">{providerLabel}</div>
+        </div>
+      </div>
+      <div className="flex items-center px-4 py-3">
+        <div className="flex-1">
+          <div className="text-sm text-white/90">注册时间</div>
+          <div className="text-xs text-white/50 mt-0.5">{created}</div>
+        </div>
+      </div>
+      <div className="flex items-center px-4 py-3">
+        <div className="flex-1">
+          <div className="text-sm text-white/90">界面语言</div>
+          <div className="text-xs text-white/50 mt-0.5">简体中文</div>
+        </div>
+        <button className="text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/70 hover:bg-white/10">切换</button>
+      </div>
+    </div>
+  );
+}
+
 
 function RowList({ rows }: { rows: SimpleRow[] }) {
   return (
