@@ -17,10 +17,14 @@ export interface DoneItem extends PlanItem {
 
 export type Mood = "great" | "good" | "ok" | "down" | "tired";
 
+export type NoteKind = "log" | "reflection";
+
 export interface Note {
   id: string;
   text: string;
   createdAt: string; // ISO
+  /** log = 事件流水；reflection = 感受 / 思考 / 反思 */
+  kind?: NoteKind;
   mood?: Mood;
   tags?: string[];
   pinned?: boolean;
