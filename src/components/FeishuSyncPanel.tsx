@@ -192,6 +192,25 @@ export function FeishuSyncPanel() {
     }
   }, [runGetPerm]);
 
+  const runGetDiag = useServerFn(getFeishuCaptureDiagnostics);
+  type DiagLog = { id: string; at: string; level: string; step: string; eventType?: string | null; message: string | null; error: string | null; requestId: string; senderOpenId?: string | null; status?: number | null };
+  type DiagReason = { code: string; text: string; hint?: string };
+  const [diag, setDiag] = useState<{ reasons: DiagReason[]; captureLogs: DiagLog[]; errorLogs: DiagLog[]; sendLogs: DiagLog[] } | null>(null);
+  const [diagOpen, setDiagOpen] = useState(false);
+  const [diagLoading, setDiagLoading] = useState(false);
+  const refreshDiag = useCallback(async () => {
+    setDiagLoading(true);
+    try {
+      const d = await runGetDiag();
+      setDiag(d as any);
+    } catch (e: any) {
+      pushTLRef.current?.("capture", "fail", `诊断拉取失败：${e?.message ?? "请求失败"}`);
+    } finally {
+      setDiagLoading(false);
+    }
+  }, [runGetDiag]);
+  useEffect(() => { refreshDiag(); }, [refreshDiag]);
+
   const [verify, setVerify] = useState<{ status: "idle" | "verifying" | "ok" | "fail"; msg?: string; at?: string }>({ status: "idle" });
 
   type TLKind = "overwrite" | "verify" | "config" | "sync" | "pull" | "schedule" | "perm" | "capture";
