@@ -536,6 +536,20 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
     setComicStyleState(v);
     saveLS("sylva.comicStyle", v);
   }, []);
+  const [comicStylePreset, setComicStylePresetState] = useState<string>(
+    () => loadLS<string>("sylva.comicStylePreset", "watercolor")
+  );
+  const setComicStylePreset = useCallback((v: string) => {
+    setComicStylePresetState(v);
+    saveLS("sylva.comicStylePreset", v);
+  }, []);
+  const [comicProtagonistUrl, setComicProtagonistUrlState] = useState<string | null>(
+    () => loadLS<string | null>("sylva.comicProtagonistUrl", null)
+  );
+  const setComicProtagonistUrl = useCallback((v: string | null) => {
+    setComicProtagonistUrlState(v);
+    saveLS("sylva.comicProtagonistUrl", v);
+  }, []);
 
   // ---- AI 同步高亮 & 汇总 ----
   const [recentlySyncedIds, setRecentlySyncedIds] = useState<Set<string>>(() => new Set());
