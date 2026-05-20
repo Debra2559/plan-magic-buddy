@@ -87,6 +87,63 @@ const AnalysisSchema = z.object({
   tagline: z.string().describe("一句话画像描述"),
 });
 
+// AI 只负责生成定性描述，定量由本地计算确定
+const QualitativeSchema = z.object({
+  personality_summary: z.string().min(4).max(160),
+  strengths: z.array(z.string()).min(1).max(6),
+  growth_areas: z.array(z.string()).min(1).max(6),
+  tagline: z.string().min(4).max(80).describe("一句话画像描述"),
+});
+
+// 维度中文名映射
+const DIM_LABELS: Record<string, string> = {
+  planning: "计划力",
+  focus: "专注力",
+  health: "健康力",
+  creativity: "创造力",
+  social: "社交力",
+  reflection: "反思力",
+  openness: "开放性",
+  conscientiousness: "尽责性",
+  extraversion: "外向性",
+  agreeableness: "宜人性",
+  neuroticism: "神经质",
+};
+
+function computeScores(responses: Record<string, number>) {
+  // 按 dim 基础名汇总（去掉 _inv），反向题先 6-score 反转
+  const buckets: Record<string, number[]> = {};
+  for (const q of ABILITY_QUESTIONS) {
+    const raw = responses[q.id];
+    const score = typeof raw === "number" ? Math.min(5, Math.max(1, raw)) : 3;
+    const isInv = q.dim.endsWith("_inv");
+    const base = isInv ? q.dim.slice(0, -4) : q.dim;
+    const v = isInv ? 6 - score : score;
+    (buckets[base] ??= []).push(v);
+  }
+  const out: Record<string, number> = {};
+  for (const [k, arr] of Object.entries(buckets)) {
+    const avg = arr.reduce((s, x) => s + x, 0) / arr.length; // 1..5
+    out[k] = Math.round(((avg - 1) / 4) * 100); // → 0..100
+  }
+  const abilities = {
+    planning: out.planning ?? 50,
+    focus: out.focus ?? 50,
+    health: out.health ?? 50,
+    creativity: out.creativity ?? 50,
+    social: out.social ?? 50,
+    reflection: out.reflection ?? 50,
+  };
+  const personalityScores = {
+    openness: out.openness ?? 50,
+    conscientiousness: out.conscientiousness ?? 50,
+    extraversion: out.extraversion ?? 50,
+    agreeableness: out.agreeableness ?? 50,
+    neuroticism: out.neuroticism ?? 50,
+  };
+  return { abilities, personalityScores };
+}
+
 const PlanItemSchema = z.object({
   area: z.string(),
   goal: z.string(),
@@ -164,27 +221,50 @@ export const submitAbilityAssessment = createServerFn({ method: "POST" })
 
     const gateway = createLovableAiGatewayProvider(apiKey);
 
-    const qaPairs = ABILITY_QUESTIONS.map((q) => ({
-      question: q.text,
-      dimension: q.dim,
-      score_1_to_5: data.responses[q.id] ?? 3,
-    }));
+    // 1) 本地确定性计分（避免模型把 schema 玩坏）
+    const { abilities, personalityScores } = computeScores(data.responses);
 
-    const { object } = await generateObject({
-      model: gateway("google/gemini-2.5-flash"),
-      schema: AnalysisSchema,
-      system: `你是专业的能力测评分析师。基于用户对 30 道李克特量表题（1=非常不符合, 5=非常符合）的作答，输出 6 维能力分（planning 计划力, focus 专注力, health 健康力, creativity 创造力, social 社交力, reflection 反思力）与大五人格分（openness, conscientiousness, extraversion, agreeableness, neuroticism，均 0-100），并给出 1-4 个优势、1-4 个成长方向，以及一句有温度感的画像 tagline。\n\n关键计分规则：\n- 每个能力维度有 3 题（含 1 题反向题，dim 以 _inv 结尾），大五人格每个维度 2-3 题。\n- 反向题（dim 以 _inv 结尾）需要按 6-score 反转后再与同维度正向题合并平均，再线性映射到 0-100（1→0, 5→100）。\n- 同维度题之间如果差异很大，倾向于取均值并适度向中位回归，避免被单题极端值带偏。\n- 分数要分散、有差异，不要集中在 50-60；优势/成长方向要从最高/最低维度自然导出，并写成日常化短语（如"擅长规划"而不是"planning 高"）。`,
-      prompt: `用户作答数据（含 dim 与 1-5 分）：\n${JSON.stringify(qaPairs, null, 0)}\n请严格按反向计分规则汇总每个维度，再给出 6 维能力分与大五人格分。`,
-    });
+    const sortedAbilities = Object.entries(abilities).sort((a, b) => b[1] - a[1]);
+    const topDims = sortedAbilities.slice(0, 3).map(([k, v]) => `${DIM_LABELS[k]}(${v})`);
+    const bottomDims = sortedAbilities.slice(-3).reverse().map(([k, v]) => `${DIM_LABELS[k]}(${v})`);
+    const bigfiveStr = Object.entries(personalityScores)
+      .map(([k, v]) => `${DIM_LABELS[k]}:${v}`)
+      .join(", ");
 
-    // upsert profile
+    // 2) 仅向 AI 索取定性描述（schema 极简，避免数值字段失败）
+    let qualitative: z.infer<typeof QualitativeSchema>;
+    try {
+      const { object } = await generateObject({
+        model: gateway("google/gemini-2.5-flash"),
+        schema: QualitativeSchema,
+        system: `你是亲切而专业的能力画像分析师。基于已经给出的分数，写出有温度、口语化的定性描述。\n- strengths：2-4 条，从最高维度自然导出，写成"擅长 XX / 在 XX 上有优势"，避免直接报分。\n- growth_areas：2-4 条，从最低维度导出，给出可改进方向，措辞鼓励而不是评判。\n- personality_summary：1-2 句，融合大五人格特征。\n- tagline：一句不超过 30 字、有画面感的画像。`,
+        prompt: `能力分（0-100）：\n${JSON.stringify(abilities)}\n大五人格分：\n${bigfiveStr}\n最高维度：${topDims.join("、")}\n最低维度：${bottomDims.join("、")}\n请输出上述四个字段。`,
+      });
+      qualitative = object;
+    } catch {
+      qualitative = {
+        personality_summary: `画像整体均衡（${bigfiveStr}）。`,
+        strengths: topDims.map((d) => `擅长${d.replace(/\(\d+\)/, "")}`),
+        growth_areas: bottomDims.map((d) => `可以继续培养${d.replace(/\(\d+\)/, "")}`),
+        tagline: `稳步前行的成长者 · ${topDims[0]?.replace(/\(\d+\)/, "") ?? "潜力派"}`,
+      };
+    }
+
+    const result = {
+      abilities,
+      personality: { ...personalityScores, summary: qualitative.personality_summary },
+      strengths: qualitative.strengths,
+      growth_areas: qualitative.growth_areas,
+      tagline: qualitative.tagline,
+    };
+
     const { error: upErr } = await supabaseAdmin.from("user_ability_profiles").upsert({
       user_id: userId,
-      abilities: object.abilities as any,
-      personality: object.personality as any,
-      strengths: object.strengths,
-      growth_areas: object.growth_areas,
-      tagline: object.tagline,
+      abilities: result.abilities as any,
+      personality: result.personality as any,
+      strengths: result.strengths,
+      growth_areas: result.growth_areas,
+      tagline: result.tagline,
       initial_done: true,
       updated_at: new Date().toISOString(),
     } as any, { onConflict: "user_id" });
@@ -194,10 +274,10 @@ export const submitAbilityAssessment = createServerFn({ method: "POST" })
       user_id: userId,
       kind: data.kind,
       responses: data.responses as any,
-      result: object as any,
+      result: result as any,
     });
 
-    return { ok: true, result: object };
+    return { ok: true, result };
   });
 
 export const generateMyAbilityPlan = createServerFn({ method: "POST" })
