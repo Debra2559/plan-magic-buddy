@@ -238,13 +238,15 @@ function NotesTab() {
           <EnterHint example={"灵感：把答辩比喻成森林徒步 ↵（Shift+Enter）\n开场用 30 秒抛痛点"} />
         </div>
         <div className="mt-2">
-          <ImageAttacher images={images} onChange={setImages} max={6} />
-        </div>
-        <div className="mt-2">
           <MediaAttacher
             videos={videos}
             audios={audios}
-            onChange={(next) => { setVideos(next.videos); setAudios(next.audios); }}
+            images={images}
+            onChange={(next) => {
+              setVideos(next.videos);
+              setAudios(next.audios);
+              if (next.images) setImages(next.images);
+            }}
           />
         </div>
         <div className="flex flex-wrap items-center gap-2 mt-3">

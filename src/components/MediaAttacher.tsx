@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Mic, Square, Video, Trash2, Loader2, Play, Pause } from "lucide-react";
+import { Mic, Square, ImagePlus, Trash2, Loader2, Play, Pause, X } from "lucide-react";
+import { fileToCompressedDataURL } from "@/components/ImageAttacher";
 
 function mmssShort(s: number) {
   if (!isFinite(s) || s < 0) s = 0;
@@ -71,9 +72,11 @@ import { toast } from "sonner";
 type Props = {
   videos: string[];
   audios: string[];
-  onChange: (next: { videos: string[]; audios: string[] }) => void;
+  images?: string[];
+  onChange: (next: { videos: string[]; audios: string[]; images?: string[] }) => void;
   maxVideos?: number;
   maxAudios?: number;
+  maxImages?: number;
 };
 
 const VIDEO_LIMIT_MB = 30;
@@ -93,8 +96,8 @@ async function uploadToBucket(file: Blob, ext: string): Promise<string> {
   return data.publicUrl;
 }
 
-export function MediaAttacher({ videos, audios, onChange, maxVideos = 2, maxAudios = 4 }: Props) {
-  const videoInputRef = useRef<HTMLInputElement>(null);
+export function MediaAttacher({ videos, audios, images = [], onChange, maxVideos = 2, maxAudios = 4, maxImages = 6 }: Props) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
   // —— 录音 ——
@@ -135,7 +138,7 @@ export function MediaAttacher({ videos, audios, onChange, maxVideos = 2, maxAudi
         setUploading(true);
         try {
           const url = await uploadToBucket(blob, "webm");
-          onChange({ videos, audios: [...audios, url] });
+          onChange({ videos, audios: [...audios, url], images });
         } catch (e: any) {
           toast.error("上传失败", { description: e?.message });
         } finally {
@@ -158,33 +161,55 @@ export function MediaAttacher({ videos, audios, onChange, maxVideos = 2, maxAudi
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
   };
 
-  const pickVideo = () => videoInputRef.current?.click();
-  const onVideoChosen = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const pickFile = () => fileInputRef.current?.click();
+  const onFileChosen = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
     e.target.value = "";
-    if (!file) return;
-    if (videos.length >= maxVideos) {
-      toast.warning(`最多 ${maxVideos} 段视频`);
-      return;
-    }
-    if (file.size > VIDEO_LIMIT_MB * 1024 * 1024) {
-      toast.error(`视频过大（>${VIDEO_LIMIT_MB}MB）`);
-      return;
-    }
+    if (files.length === 0) return;
+
+    const imgs = files.filter((f) => f.type.startsWith("image/"));
+    const vids = files.filter((f) => f.type.startsWith("video/"));
+
     setUploading(true);
     try {
-      const ext = (file.name.split(".").pop() || "mp4").toLowerCase();
-      const url = await uploadToBucket(file, ext);
-      onChange({ videos: [...videos, url], audios });
-    } catch (e: any) {
-      toast.error("上传失败", { description: e?.message });
+      let nextImages = images;
+      let nextVideos = videos;
+
+      // 图片：压缩为 dataURL（与 ImageAttacher 一致）
+      const imgSlots = Math.max(0, maxImages - nextImages.length);
+      const imgToAdd = imgs.slice(0, imgSlots);
+      if (imgs.length > imgSlots) toast.warning(`最多 ${maxImages} 张图片`);
+      if (imgToAdd.length > 0) {
+        const urls = await Promise.all(imgToAdd.map((f) => fileToCompressedDataURL(f)));
+        nextImages = [...nextImages, ...urls];
+      }
+
+      // 视频：上传到 bucket
+      for (const file of vids) {
+        if (nextVideos.length >= maxVideos) {
+          toast.warning(`最多 ${maxVideos} 段视频`);
+          break;
+        }
+        if (file.size > VIDEO_LIMIT_MB * 1024 * 1024) {
+          toast.error(`视频过大（>${VIDEO_LIMIT_MB}MB）`);
+          continue;
+        }
+        const ext = (file.name.split(".").pop() || "mp4").toLowerCase();
+        const url = await uploadToBucket(file, ext);
+        nextVideos = [...nextVideos, url];
+      }
+
+      onChange({ videos: nextVideos, audios, images: nextImages });
+    } catch (err: any) {
+      toast.error("上传失败", { description: err?.message });
     } finally {
       setUploading(false);
     }
   };
 
-  const removeVideo = (i: number) => onChange({ videos: videos.filter((_, idx) => idx !== i), audios });
-  const removeAudio = (i: number) => onChange({ videos, audios: audios.filter((_, idx) => idx !== i) });
+  const removeVideo = (i: number) => onChange({ videos: videos.filter((_, idx) => idx !== i), audios, images });
+  const removeAudio = (i: number) => onChange({ videos, audios: audios.filter((_, idx) => idx !== i), images });
+  const removeImage = (i: number) => onChange({ videos, audios, images: images.filter((_, idx) => idx !== i) });
 
   const mmss = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
@@ -208,20 +233,22 @@ export function MediaAttacher({ videos, audios, onChange, maxVideos = 2, maxAudi
 
         <button
           type="button"
-          onClick={pickVideo}
+          onClick={pickFile}
           disabled={uploading || recording}
           className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] border bg-white/[0.04] border-white/10 text-white/60 hover:text-amber-glow hover:border-amber-glow/40 transition disabled:opacity-40"
-          title={`选择视频文件（≤${VIDEO_LIMIT_MB}MB）`}
+          title={`图片或视频（视频 ≤${VIDEO_LIMIT_MB}MB）`}
         >
-          <Video className="w-3 h-3" /> 视频
+          <ImagePlus className="w-3 h-3" /> 图片 / 视频
         </button>
         <input
-          ref={videoInputRef}
+          ref={fileInputRef}
           type="file"
-          accept="video/*"
+          accept="image/*,video/*"
+          multiple
           className="hidden"
-          onChange={onVideoChosen}
+          onChange={onFileChosen}
         />
+
 
         {uploading && (
           <span className="flex items-center gap-1 text-[10px] text-white/50">
@@ -230,8 +257,21 @@ export function MediaAttacher({ videos, audios, onChange, maxVideos = 2, maxAudi
         )}
       </div>
 
-      {(videos.length > 0 || audios.length > 0) && (
-        <div className="flex flex-wrap gap-2">
+      {(videos.length > 0 || audios.length > 0 || images.length > 0) && (
+        <div className="flex flex-wrap gap-2 items-center">
+          {images.map((src, i) => (
+            <div key={`i-${i}`} className="relative group">
+              <img src={src} alt="" className="w-12 h-12 object-cover rounded-md border border-white/10" />
+              <button
+                type="button"
+                onClick={() => removeImage(i)}
+                className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-background/90 border border-white/20 text-white/70 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
+                title="移除"
+              >
+                <X className="w-2.5 h-2.5" />
+              </button>
+            </div>
+          ))}
           {videos.map((src, i) => (
             <div key={`v-${i}`} className="relative group">
               <video
