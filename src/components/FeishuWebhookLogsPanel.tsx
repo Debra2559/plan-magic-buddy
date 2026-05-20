@@ -132,18 +132,8 @@ export function FeishuWebhookLogsPanel() {
         </Button>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
-        <Input
-          value={requestId}
-          onChange={(e) => setRequestId(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && refresh()}
-          placeholder="按 request_id 过滤"
-          className="h-8 text-xs flex-1 min-w-[180px]"
-        />
-        <Button size="sm" variant="outline" onClick={refresh} disabled={loading}>
-          查询
-        </Button>
-      </div>
+
+
 
       {err && (
         <div className="text-xs text-destructive bg-destructive/10 rounded p-2">{err}</div>
