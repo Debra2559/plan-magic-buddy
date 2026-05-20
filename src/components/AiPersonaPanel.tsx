@@ -18,6 +18,27 @@ export function AiPersonaPanel() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
+  useEffect(() => setLocal(persona), [persona]);
+
+  if (loading || !local) {
+    return (
+      <div className="widget p-5 text-sm text-white/60 flex items-center gap-2">
+        <Loader2 className="w-4 h-4 animate-spin" /> 正在加载人设...
+      </div>
+    );
+  }
+
+  const patch = (p: Partial<typeof local>) => {
+    const next = { ...local, ...p };
+    setLocal(next);
+  };
+
+  const commit = async (p: Partial<typeof local>) => {
+    setSavingTip(true);
+    await save(p);
+    setTimeout(() => setSavingTip(false), 900);
+  };
+
   const handleAvatarPick = async (file: File) => {
     if (!user) return;
     if (!file.type.startsWith("image/")) { toast.error("请选择图片文件"); return; }
@@ -41,25 +62,6 @@ export function AiPersonaPanel() {
   const handleAvatarRemove = async () => {
     await commit({ avatar_url: null });
     toast.success("已移除头像");
-  };
-
-  if (loading || !local) {
-    return (
-      <div className="widget p-5 text-sm text-white/60 flex items-center gap-2">
-        <Loader2 className="w-4 h-4 animate-spin" /> 正在加载人设...
-      </div>
-    );
-  }
-
-  const patch = (p: Partial<typeof local>) => {
-    const next = { ...local, ...p };
-    setLocal(next);
-  };
-
-  const commit = async (p: Partial<typeof local>) => {
-    setSavingTip(true);
-    await save(p);
-    setTimeout(() => setSavingTip(false), 900);
   };
 
   const tryIt = async () => {
