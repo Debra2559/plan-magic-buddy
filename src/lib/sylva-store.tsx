@@ -510,6 +510,29 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
     saveLS("sylva.dateFlashDurationMs", clamped);
   }, []);
 
+  // ---- 漫画生成设置 ----
+  const [comicProvider, setComicProviderState] = useState<"gemini" | "seedream">(
+    () => loadLS<"gemini" | "seedream">("sylva.comicProvider", "gemini")
+  );
+  const setComicProvider = useCallback((v: "gemini" | "seedream") => {
+    setComicProviderState(v);
+    saveLS("sylva.comicProvider", v);
+  }, []);
+  const [comicSeedreamModel, setComicSeedreamModelState] = useState<string>(
+    () => loadLS<string>("sylva.comicSeedreamModel", "doubao-seedream-5-0-lite-251015")
+  );
+  const setComicSeedreamModel = useCallback((v: string) => {
+    setComicSeedreamModelState(v.trim());
+    saveLS("sylva.comicSeedreamModel", v.trim());
+  }, []);
+  const [comicStyle, setComicStyleState] = useState<string>(
+    () => loadLS<string>("sylva.comicStyle", "")
+  );
+  const setComicStyle = useCallback((v: string) => {
+    setComicStyleState(v);
+    saveLS("sylva.comicStyle", v);
+  }, []);
+
   // ---- AI 同步高亮 & 汇总 ----
   const [recentlySyncedIds, setRecentlySyncedIds] = useState<Set<string>>(() => new Set());
   const recentTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
