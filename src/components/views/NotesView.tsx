@@ -4,6 +4,7 @@ import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, NotebookPen, 
 import { markRecapDone, getDailyRecap } from "@/lib/feishu.functions";
 import { EnterHint } from "@/components/EnterHint";
 import { shouldSubmitOnKey } from "@/lib/keybinds";
+import { ImageAttacher, extractImagesFromEvent, fileToCompressedDataURL } from "@/components/ImageAttacher";
 
 type Tab = "notes" | "diary";
 
@@ -70,6 +71,7 @@ function NotesTab() {
   const [text, setText] = useState("");
   const [mood, setMood] = useState<Mood | undefined>();
   const [tagsRaw, setTagsRaw] = useState("");
+  const [images, setImages] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [diaryOpen, setDiaryOpen] = useState(false);
 
@@ -82,15 +84,28 @@ function NotesTab() {
   const [showFilters, setShowFilters] = useState(false);
 
   const submit = () => {
-    if (!text.trim()) return;
+    if (!text.trim() && images.length === 0) return;
     const tags = tagsRaw
       .split(/[,，#\s]+/)
       .map((t) => t.replace(/^#/, "").trim())
       .filter(Boolean);
-    addNote(text.trim(), { mood, tags: tags.length ? tags : undefined });
+    addNote(text.trim(), {
+      mood,
+      tags: tags.length ? tags : undefined,
+      images: images.length ? images : undefined,
+    });
     setText("");
     setMood(undefined);
     setTagsRaw("");
+    setImages([]);
+  };
+
+  const onPasteOrDrop = async (e: React.ClipboardEvent | React.DragEvent) => {
+    const files = extractImagesFromEvent(e);
+    if (files.length === 0) return;
+    e.preventDefault();
+    const urls = await Promise.all(files.map((f) => fileToCompressedDataURL(f)));
+    setImages((prev) => [...prev, ...urls].slice(0, 6));
   };
 
   const noteDate = (n: Note) => {
@@ -136,10 +151,15 @@ function NotesTab() {
 
   return (
     <>
-      <div className="widget p-4 mb-4 widget-glow">
+      <div
+        className="widget p-4 mb-4 widget-glow"
+        onDragOver={(e) => { if (e.dataTransfer?.types?.includes("Files")) e.preventDefault(); }}
+        onDrop={onPasteOrDrop}
+      >
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onPaste={onPasteOrDrop}
           onKeyDown={(e) => {
             if (shouldSubmitOnKey(e, enterToSubmit)) {
               e.preventDefault();
@@ -147,11 +167,14 @@ function NotesTab() {
             }
           }}
           rows={3}
-          placeholder="此刻在想什么？"
+          placeholder="此刻在想什么？粘贴或拖入图片即可附加"
           className="w-full bg-transparent outline-none text-sm leading-relaxed text-white/90 placeholder:text-white/30 resize-none"
         />
         <div className="flex justify-end -mt-1 mb-1">
           <EnterHint example={"灵感：把答辩比喻成森林徒步 ↵（Shift+Enter）\n开场用 30 秒抛痛点"} />
+        </div>
+        <div className="mt-2">
+          <ImageAttacher images={images} onChange={setImages} max={6} />
         </div>
         <div className="flex flex-wrap items-center gap-2 mt-3">
           <div className="flex items-center gap-1">
@@ -176,10 +199,10 @@ function NotesTab() {
           />
         </div>
         <div className="flex items-center justify-between mt-3">
-          <span className="text-[10px] text-white/40 tracking-wider">{text.length} 字</span>
+          <span className="text-[10px] text-white/40 tracking-wider">{text.length} 字{images.length > 0 ? ` · ${images.length} 张图片` : ""}</span>
           <button
             onClick={submit}
-            disabled={!text.trim()}
+            disabled={!text.trim() && images.length === 0}
             className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-glow text-primary-foreground text-xs font-medium disabled:opacity-30"
           >
             <Plus className="w-3 h-3" /> 保存
@@ -344,7 +367,18 @@ function NoteCard({ n, onRemove, onPin }: { n: Note; onRemove: () => void; onPin
       <div className="flex items-start gap-3">
         <StickyNote className="w-4 h-4 text-amber-glow mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-white/90 leading-relaxed whitespace-pre-wrap break-words">{n.text}</p>
+          {n.text && (
+            <p className="text-sm text-white/90 leading-relaxed whitespace-pre-wrap break-words">{n.text}</p>
+          )}
+          {n.images && n.images.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {n.images.map((src, i) => (
+                <a key={i} href={src} target="_blank" rel="noreferrer" className="block">
+                  <img src={src} alt="" className="max-h-40 rounded-lg border border-white/10 hover:border-amber-glow/40 transition" />
+                </a>
+              ))}
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-2 mt-2">
             <span className="text-[10px] text-white/40 tracking-wider">{fmt(n.createdAt)}</span>
             {m && <span className="text-[10px]" title={m.label}>{m.emoji}</span>}

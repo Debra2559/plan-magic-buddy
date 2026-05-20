@@ -16,6 +16,8 @@ export interface Note {
   mood?: Mood;
   tags?: string[];
   pinned?: boolean;
+  /** 内嵌的图片附件（data URL，已在客户端压缩） */
+  images?: string[];
 }
 
 export interface DailyComic {
@@ -142,7 +144,7 @@ interface SylvaContextValue {
   updateItem: (id: string, patch: Partial<PlanItem>) => void;
   toggleDone: (id: string) => void;
   clearItems: () => void;
-  addNote: (text: string, opts?: { mood?: Mood; tags?: string[] }) => void;
+  addNote: (text: string, opts?: { mood?: Mood; tags?: string[]; images?: string[] }) => void;
   removeNote: (id: string) => void;
   updateNote: (id: string, patch: Partial<Pick<Note, "text" | "mood" | "tags" | "pinned">>) => void;
   toggleHabit: (id: string) => void;
@@ -282,7 +284,7 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
 
   const addNote: SylvaContextValue["addNote"] = (text, opts) =>
     setNotes((prev) => [
-      { id: nextId(), text, createdAt: new Date().toISOString(), mood: opts?.mood, tags: opts?.tags },
+      { id: nextId(), text, createdAt: new Date().toISOString(), mood: opts?.mood, tags: opts?.tags, images: opts?.images },
       ...prev,
     ]);
 
