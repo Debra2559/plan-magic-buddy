@@ -88,16 +88,16 @@ const AnalysisSchema = z.object({
 });
 
 const PlanItemSchema = z.object({
-  area: z.string().max(20),
-  goal: z.string().max(60),
-  actions: z.array(z.string().max(80)).min(2).max(5),
-  cadence: z.string().max(30).describe("如：每周3次 / 每天15分钟"),
+  area: z.string(),
+  goal: z.string(),
+  actions: z.array(z.string()).min(2).max(6),
+  cadence: z.string().describe("如：每周3次 / 每天15分钟"),
 });
 const PlanSchema = z.object({
-  title: z.string().max(30),
-  tagline: z.string().max(60),
-  focus_areas: z.array(z.string().max(20)).min(1).max(3),
-  items: z.array(PlanItemSchema).min(2).max(5),
+  title: z.string(),
+  tagline: z.string(),
+  focus_areas: z.array(z.string()).min(1).max(4),
+  items: z.array(PlanItemSchema).min(2).max(6),
 });
 
 // ---------- Helpers ----------
