@@ -615,7 +615,7 @@ export function FeishuSyncPanel() {
     setRecapRefreshResult(null);
     try {
       await refreshRecapDoneDates();
-      setRecapRefreshResult({ ok: true, msg: "已从飞书拉取最新的今日小结/日记" });
+      setRecapRefreshResult({ ok: true, msg: "已从飞书拉取最新的今日小结/手帐" });
     } catch (e: any) {
       setRecapRefreshResult({ ok: false, msg: e?.message ?? "刷新失败" });
     } finally {
