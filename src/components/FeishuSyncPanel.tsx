@@ -19,6 +19,7 @@ import {
   setFeishuPushRules,
   lookupFeishuOpenId,
   listFeishuChats,
+  batchLookupFeishuOpenId,
 } from "@/lib/feishu.functions";
 import {
   Check,
