@@ -31,6 +31,9 @@ import {
   Download,
   Bell,
   Send,
+  Send,
+  XCircle,
+  CheckCircle2,
 } from "lucide-react";
 
 type Status = "disconnected" | "connecting" | "connected";
