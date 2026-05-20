@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSylva } from "@/lib/sylva-store";
 import { CheckCircle2, Circle, Trash2, Filter } from "lucide-react";
 
@@ -11,9 +11,10 @@ const tagColor: Record<string, string> = {
   习惯: "text-moss",
 };
 
-export function TodosView() {
-  const { items, toggleDone, removeItem } = useSylva();
-  const [filter, setFilter] = useState<"all" | "todo" | "reminder" | "event">("all");
+export function TodosView({ initialFilter = "all", filterKey }: { initialFilter?: "all" | "todo" | "reminder" | "event"; filterKey?: string } = {}) {
+  const { items, toggleDone, removeItem, isRecentlySynced } = useSylva();
+  const [filter, setFilter] = useState<"all" | "todo" | "reminder" | "event">(initialFilter);
+  useEffect(() => { setFilter(initialFilter); }, [initialFilter, filterKey]);
   const [tagFilter, setTagFilter] = useState<string>("all");
 
   const todos = useMemo(() => {
