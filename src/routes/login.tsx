@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import forestBg from "@/assets/forest-bg.jpg";
-import { Sparkles, Mail, Loader2 } from "lucide-react";
+import { Sparkles, Mail, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
@@ -22,6 +22,7 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
 
   type PwdCheck = { status: "idle" | "checking" | "ok" | "weak" | "pwned"; msg: string; count?: number };
   const [pwdCheck, setPwdCheck] = useState<PwdCheck>({ status: "idle", msg: "" });
@@ -77,13 +78,21 @@ function LoginPage() {
     setBusy(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password: pwd,
           options: { emailRedirectTo: window.location.origin + "/desktop" },
         });
         if (error) throw error;
-        toast.success("已注册，正在进入...");
+        // 若未返回 session（开启了邮箱验证），尝试立即用同一组凭据登录
+        if (!data.session) {
+          const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password: pwd });
+          if (signInErr) {
+            toast.success("注册成功，请查收邮件完成验证后再登录");
+            return;
+          }
+        }
+        toast.success("已注册并登录，正在进入...");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password: pwd });
         if (error) throw error;
@@ -145,15 +154,26 @@ function LoginPage() {
           </div>
           <div>
             <label className="text-xs text-foreground/60">密码</label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={pwd}
-              onChange={(e) => setPwd(e.target.value)}
-              className="mt-1 w-full px-3 py-2 rounded-lg bg-foreground/5 border border-foreground/10 text-sm outline-none focus:border-amber-glow/50"
-              placeholder="至少 6 位"
-            />
+            <div className="relative mt-1">
+              <input
+                type={showPwd ? "text" : "password"}
+                required
+                minLength={6}
+                value={pwd}
+                onChange={(e) => setPwd(e.target.value)}
+                className="w-full px-3 py-2 pr-10 rounded-lg bg-foreground/5 border border-foreground/10 text-sm outline-none focus:border-amber-glow/50"
+                placeholder="至少 6 位"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPwd((v) => !v)}
+                tabIndex={-1}
+                className="absolute inset-y-0 right-2 flex items-center px-1 text-foreground/40 hover:text-foreground/80"
+                title={showPwd ? "隐藏密码" : "显示密码"}
+              >
+                {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
             {mode === "signup" && pwdCheck.status !== "idle" && (
               <p
                 className={`mt-1 text-[11px] ${
