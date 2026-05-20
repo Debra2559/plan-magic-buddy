@@ -417,7 +417,8 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
 
       {/* Preview + Confirmed */}
       <div className="space-y-6">
-        <div className="space-y-6">
+
+
 
 
 
