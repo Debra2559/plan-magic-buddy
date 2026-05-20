@@ -153,7 +153,7 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
       },
       { event: 0, todo: 0, reminder: 0 } as Record<PlanItem["type"], number>,
     );
-    const ids = draftMode === "add" ? addItems(draft.items) : replaceItems(draft.items);
+    const ids = draftMode === "add" ? addItemsPending(draft.items) : replaceItems(draft.items);
     markRecentlySynced(ids);
     // 构造带 id 的快照，供汇总弹窗展示
     const withIds = draft.items.map((it, i) => ({ ...it, id: ids[i] }));
