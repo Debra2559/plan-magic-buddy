@@ -468,7 +468,7 @@ export function JournalView() {
 
             {/* 底部签名 */}
             <div className="px-9 pb-7 pt-2 text-right">
-              <p className="font-display text-sm text-white/35 italic">— Sylva ·  慢慢长出节奏 ·</p>
+              <p className="font-display text-sm text-white/35 italic">— {aiName} ·  慢慢长出节奏 ·</p>
             </div>
           </div>
         </div>
