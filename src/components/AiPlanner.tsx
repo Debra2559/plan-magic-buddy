@@ -227,7 +227,7 @@ export function AiPlanner() {
             </div>
             {confirmed.length > 0 && (
               <button
-                onClick={() => setConfirmed([])}
+                onClick={() => clearItems()}
                 className="text-xs text-foreground/40 hover:text-destructive transition"
               >
                 全部清空
