@@ -2090,10 +2090,25 @@ export async function aiReplyToFeishuChat(params: {
       // ignore，使用默认 persona
     }
 
+    // 拉取该用户的长期记忆块（单用户模式：用 profile 所属 user_id）
+    let memoryBlock = ""
+    try {
+      const { data: anyProfile } = await supabaseAdmin
+        .from('user_profiles')
+        .select('user_id')
+        .limit(1)
+        .maybeSingle()
+      if (anyProfile?.user_id) {
+        const { fetchMemoryBlockForUser } = await import('./memories.functions')
+        memoryBlock = await fetchMemoryBlockForUser(anyProfile.user_id)
+      }
+    } catch { /* ignore */ }
+
     const systemPrompt = [
       `你是 ${aiName}，用户在飞书中与你对话的 AI 伙伴。`,
       '请用自然、简洁、有温度的中文回复；除非用户要求，否则不要使用 Markdown 语法或代码块。',
       '回答控制在 200 字以内；如果用户在记录事件、感受或灵感，请先共情再轻轻回应。',
+      memoryBlock,
       personaPrompt,
     ]
       .filter(Boolean)
