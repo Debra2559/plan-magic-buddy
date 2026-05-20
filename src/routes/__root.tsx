@@ -119,6 +119,7 @@ function RootComponent() {
       <SylvaProvider>
         <Outlet />
         <ReminderRunner />
+        <Toaster position="top-right" theme="dark" richColors closeButton />
       </SylvaProvider>
     </QueryClientProvider>
   );
