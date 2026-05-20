@@ -241,7 +241,20 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
   const refreshRecapDoneDates = useCallback(async () => {
     try {
       const res = await getRecapDoneDates();
-      setRecapDoneDates(new Set(res.dates));
+      const nextSet = new Set(res.dates);
+      // 找出新增的"已完成"日期：把对应当日所有待办/日程也置为完成
+      setRecapDoneDates((prev) => {
+        const newlyDone = res.dates.filter((d) => !prev.has(d));
+        if (newlyDone.length) {
+          const newlyDoneSet = new Set(newlyDone);
+          setItems((its) =>
+            its.map((i) =>
+              i.date && newlyDoneSet.has(i.date) && !i.done ? { ...i, done: true } : i
+            )
+          );
+        }
+        return nextSet;
+      });
       // 顺手把今天的远端 recap 内容同步进本地 diary（若本地为空）
       const today = todayLocal();
       if (res.dates.includes(today)) {
@@ -271,6 +284,7 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
       }
     } catch {}
   }, []);
+
 
   useEffect(() => {
     refreshRecapDoneDates();
