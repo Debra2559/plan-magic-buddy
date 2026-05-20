@@ -304,6 +304,22 @@ function NotesTab() {
           )}
         </div>
       )}
+function FilterChip({ active, onClick, title, children }: { active: boolean; onClick: () => void; title?: string; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={`text-[11px] px-2 py-0.5 rounded-full border transition ${
+        active
+          ? "bg-amber-glow/20 border-amber-glow/50 text-amber-glow"
+          : "bg-white/[0.03] border-white/10 text-white/65 hover:text-white hover:border-white/25"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 
       <div className="space-y-3">
         {filtered.length === 0 ? (
