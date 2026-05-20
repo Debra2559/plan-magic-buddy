@@ -132,6 +132,35 @@ export function FeishuSyncPanel() {
   const runGetRecap = useServerFn(getDailyRecapConfig);
   const runSetRecap = useServerFn(setDailyRecapConfig);
   const runSendRecapNow = useServerFn(sendDailyRecapNow);
+  const runLookupOpenId = useServerFn(lookupFeishuOpenId);
+
+  const [lookup, setLookup] = useState<{
+    open: boolean;
+    type: "email" | "mobile";
+    value: string;
+    loading: boolean;
+    result: { ok: boolean; msg: string } | null;
+  }>({ open: false, type: "email", value: "", loading: false, result: null });
+
+  const doLookupOpenId = async () => {
+    if (!lookup.value.trim()) return;
+    setLookup((s) => ({ ...s, loading: true, result: null }));
+    try {
+      const res = await runLookupOpenId({ data: { type: lookup.type, value: lookup.value.trim() } });
+      if (res.ok) {
+        setNotify((n) => ({ ...n, receiveId: res.openId, receiveIdType: "open_id" }));
+        setLookup((s) => ({ ...s, loading: false, result: { ok: true, msg: "已填入 open_id ✓" } }));
+      } else {
+        setLookup((s) => ({
+          ...s,
+          loading: false,
+          result: { ok: false, msg: res.error + (res.hint ? ` · ${res.hint}` : "") },
+        }));
+      }
+    } catch (e: any) {
+      setLookup((s) => ({ ...s, loading: false, result: { ok: false, msg: e?.message ?? "请求失败" } }));
+    }
+  };
 
   const [notify, setNotify] = useState<{
     receiveId: string;
