@@ -928,6 +928,111 @@ export async function handleRecapCardAction(payload: {
   }
 }
 
+/**
+ * 处理飞书卡片表单提交：保存小结+日记到 daily_recaps、标记完成、并往选中的飞书日历推一条「✅ 今日小结」事件。
+ */
+export async function handleRecapSubmit(payload: {
+  date: string
+  summary?: string
+  diary?: string
+}): Promise<{ toast: { type: 'success' | 'info' | 'error'; content: string }; card?: any }> {
+  const date = payload.date
+  const summary = (payload.summary ?? '').trim()
+  const diary = (payload.diary ?? '').trim()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return { toast: { type: 'error', content: '日期参数错误' } }
+  }
+  if (!summary && !diary) {
+    return { toast: { type: 'info', content: '小结和日记都是空的哦~' } }
+  }
+
+  try {
+    // 1) upsert 到 daily_recaps
+    const { error: upErr } = await supabaseAdmin
+      .from('daily_recaps')
+      .upsert({ date, summary, diary, source: 'feishu_card' } as any, { onConflict: 'date' })
+    if (upErr) throw new Error(upErr.message)
+
+    // 2) 标记完成
+    await markRecapDoneInternal(date)
+
+    // 3) 往日历推一条「✅ 今日小结」事件（20:30, 15 分钟）
+    let calendarPushed = false
+    try {
+      const { data: settings } = await supabaseAdmin
+        .from('feishu_settings')
+        .select('selected_calendar_id')
+        .limit(1)
+        .maybeSingle()
+      const calendarId = (settings as any)?.selected_calendar_id
+      if (calendarId) {
+        const start = toUnixSeconds(date, '20:30')
+        const desc = [
+          summary ? `【今日小结】\n${summary}` : '',
+          diary ? `\n\n【日记】\n${diary}` : '',
+        ].join('').trim()
+        const r = await feishu<{ code: number; msg: string }>(
+          `/calendar/v4/calendars/${encodeURIComponent(calendarId)}/events`,
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              summary: `✅ 今日小结 · ${date}`,
+              description: desc,
+              start_time: { timestamp: String(start), timezone: TZ },
+              end_time: { timestamp: String(start + 15 * 60), timezone: TZ },
+            }),
+          },
+        )
+        if (r.code === 0) calendarPushed = true
+      }
+    } catch (e) {
+      console.warn('[recap] calendar push failed', (e as any)?.message)
+    }
+
+    return {
+      toast: {
+        type: 'success',
+        content: calendarPushed ? `已记录并在日历上打勾 ✅` : `已记录 ${date} 的小结 ✅`,
+      },
+      // 返回一张「已完成」的回执卡片替换原卡
+      card: recapDoneCard(date, { summary, diary, calendarPushed }),
+    }
+  } catch (e: any) {
+    return { toast: { type: 'error', content: e?.message ?? '保存失败' } }
+  }
+}
+
+function recapDoneCard(date: string, opts: { summary: string; diary: string; calendarPushed: boolean }) {
+  const parts: string[] = []
+  if (opts.summary) parts.push(`**今日小结**\n${opts.summary}`)
+  if (opts.diary) parts.push(`**日记 / 心情**\n${opts.diary}`)
+  return {
+    config: { wide_screen_mode: true, update_multi: true },
+    header: {
+      template: 'green',
+      title: { tag: 'plain_text', content: `✅ 已完成 · ${date}` },
+    },
+    elements: [
+      {
+        tag: 'div',
+        text: {
+          tag: 'lark_md',
+          content: parts.join('\n\n') || '_（未填写内容）_',
+        },
+      },
+      {
+        tag: 'note',
+        elements: [
+          {
+            tag: 'plain_text',
+            content: opts.calendarPushed ? '已同步到飞书日历' : '已记录到 Sylva',
+          },
+        ],
+      },
+    ],
+  }
+}
+
 export const markRecapDone = createServerFn({ method: 'POST' })
   .inputValidator((d: { date: string }) => z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(d))
   .handler(async ({ data }) => {
