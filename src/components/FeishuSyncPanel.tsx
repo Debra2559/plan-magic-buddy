@@ -997,7 +997,15 @@ export function FeishuSyncPanel() {
           </select>
           <input
             value={notify.receiveId}
-            onChange={(e) => setNotify({ ...notify, receiveId: e.target.value })}
+            onChange={(e) => {
+              const v = e.target.value.trim();
+              let t = notify.receiveIdType;
+              if (v.startsWith("ou_")) t = "open_id";
+              else if (v.startsWith("oc_")) t = "chat_id";
+              else if (v.includes("@")) t = "email";
+              else if (/^\d{16,}$/.test(v)) t = "chat_id"; // 长数字一般是 chat_id
+              setNotify({ ...notify, receiveId: e.target.value, receiveIdType: t });
+            }}
             placeholder="接收人 ID（推荐 open_id 或群 chat_id）"
             className="flex-1 bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white/90 placeholder:text-white/30 outline-none"
           />
