@@ -745,7 +745,6 @@ function dailyRecapCard(dateLabel: string, opts?: { missed?: boolean }) {
             label: { tag: 'plain_text', content: '今日小结' },
             placeholder: { tag: 'plain_text', content: '今天完成了哪些任务 / 收获…' },
             max_length: 1000,
-            value: { kind: 'recap', action: 'submit', date: dateLabel },
           },
           {
             tag: 'input',
@@ -753,7 +752,6 @@ function dailyRecapCard(dateLabel: string, opts?: { missed?: boolean }) {
             label: { tag: 'plain_text', content: '日记 / 心情' },
             placeholder: { tag: 'plain_text', content: '今天的感受、想法、明天的计划…' },
             max_length: 2000,
-            value: { kind: 'recap', action: 'submit', date: dateLabel },
           },
           {
             tag: 'action',
