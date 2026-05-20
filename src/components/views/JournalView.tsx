@@ -49,7 +49,7 @@ function fmtLong(iso: string) {
 }
 
 export function JournalView() {
-  const { items, habits, notes, diary, isRecapDone, toggleHabitOn } = useSylva();
+  const { items, habits, notes, diary, isRecapDone, toggleHabitOn, addNote, upsertDiary } = useSylva();
   const [date, setDate] = useState<string>(todayLocal());
 
   const dayItems = useMemo(
