@@ -178,10 +178,48 @@ function Column({
   innerRef: React.RefObject<HTMLDivElement | null>;
   flashKey: number;
 }) {
+  // 拖动 / 滚动时抑制点击，避免误触改值
+  const downRef = useRef<{ x: number; y: number; scrollTop: number } | null>(null);
+  const movedRef = useRef(false);
+  const scrollingUntilRef = useRef(0);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    downRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      scrollTop: innerRef.current?.scrollTop ?? 0,
+    };
+    movedRef.current = false;
+  };
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!downRef.current) return;
+    if (
+      Math.abs(e.clientX - downRef.current.x) > 6 ||
+      Math.abs(e.clientY - downRef.current.y) > 6
+    ) {
+      movedRef.current = true;
+    }
+  };
+  const markScrolling = () => {
+    scrollingUntilRef.current = Date.now() + 180;
+  };
+
+  const handlePick = (it: string) => {
+    if (movedRef.current) return;
+    if (Date.now() < scrollingUntilRef.current) return;
+    const d = downRef.current;
+    if (d && Math.abs((innerRef.current?.scrollTop ?? 0) - d.scrollTop) > 4) return;
+    onPick(it);
+  };
+
   return (
     <div
       ref={innerRef}
-      className="flex-1 overflow-y-auto py-[72px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onScroll={markScrolling}
+      onWheel={markScrolling}
+      className="flex-1 overflow-y-auto py-[72px] snap-y snap-mandatory overscroll-contain scroll-smooth touch-pan-y [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [-webkit-overflow-scrolling:touch]"
     >
       {items.map((it) => {
         const active = it === selected;
@@ -189,8 +227,8 @@ function Column({
           <button
             key={it}
             type="button"
-            onClick={() => onPick(it)}
-            className={`block w-full h-8 text-center font-mono tabular-nums text-sm transition-colors ${
+            onClick={() => handlePick(it)}
+            className={`block w-full h-8 text-center font-mono tabular-nums text-sm transition-colors snap-center ${
               active
                 ? "text-amber-glow font-semibold"
                 : "text-white/55 hover:text-white"
