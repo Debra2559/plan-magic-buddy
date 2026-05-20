@@ -531,6 +531,14 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
         setDateFlashEnabled,
         dateFlashDurationMs,
         setDateFlashDurationMs,
+        recentlySyncedIds,
+        isRecentlySynced,
+        markRecentlySynced,
+        clearRecentlySynced,
+        syncSummary,
+        setSyncSummary,
+        registerNavigate,
+        navigateTo,
       }}
     >
       {children}
