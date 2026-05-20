@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Cropper, { type Area } from "react-easy-crop";
 import { Loader2, X, Square, Circle as CircleIcon } from "lucide-react";
 
@@ -19,33 +19,17 @@ export function AvatarCropDialog({ open, file, onClose, onConfirm }: Props) {
   const [areaPixels, setAreaPixels] = useState<Area | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // 读 file → dataURL
-  useState(() => {
-    /* noop init */
-  });
-  if (file && !imageUrl && open) {
+  useEffect(() => {
+    if (!file || !open) { setImageUrl(null); return; }
     const reader = new FileReader();
     reader.onload = () => setImageUrl(reader.result as string);
     reader.readAsDataURL(file);
-  }
+  }, [file, open]);
 
-  const onCropComplete = useCallback((_: Area, pixels: Area) => {
-    setAreaPixels(pixels);
-  }, []);
+  const onCropComplete = useCallback((_: Area, pixels: Area) => setAreaPixels(pixels), []);
 
-  const reset = () => {
-    setImageUrl(null);
-    setCrop({ x: 0, y: 0 });
-    setZoom(1);
-    setAreaPixels(null);
-  };
-
-  const handleClose = () => {
-    if (busy) return;
-    reset();
-    onClose();
-  };
-
+  const reset = () => { setImageUrl(null); setCrop({ x: 0, y: 0 }); setZoom(1); setAreaPixels(null); };
+  const handleClose = () => { if (busy) return; reset(); onClose(); };
   const handleConfirm = async () => {
     if (!imageUrl || !areaPixels) return;
     setBusy(true);
@@ -96,7 +80,7 @@ export function AvatarCropDialog({ open, file, onClose, onConfirm }: Props) {
               crop={crop}
               zoom={zoom}
               aspect={1}
-              cropShape={shape}
+              cropShape={shape === "round" ? "round" : "rect"}
               showGrid={false}
               onCropChange={setCrop}
               onZoomChange={setZoom}
@@ -112,36 +96,26 @@ export function AvatarCropDialog({ open, file, onClose, onConfirm }: Props) {
         <div className="flex items-center gap-3">
           <span className="text-[11px] text-white/60 w-10">缩放</span>
           <input
-            type="range"
-            min={1}
-            max={4}
-            step={0.01}
+            type="range" min={1} max={4} step={0.01}
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
             className="flex-1 accent-amber-glow"
           />
         </div>
 
-        {/* 最终预览 */}
         <div className="flex items-center gap-4 pt-1 border-t border-white/10">
           <div className="text-xs text-white/60">最终效果</div>
-          <PreviewBox imageUrl={imageUrl} area={areaPixels} shape={shape} size={56} />
+          <PreviewBox imageUrl={imageUrl} area={areaPixels} shape={shape} size={64} />
           <PreviewBox imageUrl={imageUrl} area={areaPixels} shape={shape} size={32} />
         </div>
 
         <div className="flex justify-end gap-2 pt-2">
-          <button
-            onClick={handleClose}
-            disabled={busy}
-            className="px-3 py-1.5 rounded bg-white/5 border border-white/10 text-white/70 text-xs hover:bg-white/10"
-          >
+          <button onClick={handleClose} disabled={busy}
+            className="px-3 py-1.5 rounded bg-white/5 border border-white/10 text-white/70 text-xs hover:bg-white/10">
             取消
           </button>
-          <button
-            onClick={handleConfirm}
-            disabled={busy || !areaPixels}
-            className="px-3 py-1.5 rounded bg-amber-glow/20 border border-amber-glow/40 text-amber-glow text-xs hover:bg-amber-glow/30 disabled:opacity-50 flex items-center gap-1"
-          >
+          <button onClick={handleConfirm} disabled={busy || !areaPixels}
+            className="px-3 py-1.5 rounded bg-amber-glow/20 border border-amber-glow/40 text-amber-glow text-xs hover:bg-amber-glow/30 disabled:opacity-50 flex items-center gap-1">
             {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
             确认上传
           </button>
@@ -152,73 +126,36 @@ export function AvatarCropDialog({ open, file, onClose, onConfirm }: Props) {
 }
 
 function PreviewBox({
-  imageUrl,
-  area,
-  shape,
-  size,
-}: {
-  imageUrl: string | null;
-  area: Area | null;
-  shape: Shape;
-  size: number;
-}) {
-  if (!imageUrl || !area) {
+  imageUrl, area, shape, size,
+}: { imageUrl: string | null; area: Area | null; shape: Shape; size: number }) {
+  const radius = shape === "round" ? "9999px" : "8px";
+  if (!imageUrl || !area || area.width === 0) {
     return (
-      <div
-        style={{ width: size, height: size }}
-        className={`bg-white/5 border border-white/10 ${shape === "round" ? "rounded-full" : "rounded-md"}`}
-      />
+      <div style={{ width: size, height: size, borderRadius: radius }}
+        className="bg-white/5 border border-white/10" />
     );
   }
   const scale = size / area.width;
   return (
     <div
       style={{
-        width: size,
-        height: size,
+        width: size, height: size, borderRadius: radius,
         backgroundImage: `url(${imageUrl})`,
         backgroundRepeat: "no-repeat",
-        backgroundSize: `${(area.width === 0 ? 1 : 1) * (size / area.width) * 100}% auto`,
+        backgroundPosition: `${-area.x * scale}px ${-area.y * scale}px`,
+        backgroundSize: "auto",
       }}
-      className={`border border-white/10 overflow-hidden ${shape === "round" ? "rounded-full" : "rounded-md"}`}
-    >
-      {/* 用 img + transform 更稳 */}
-      <div
-        style={{
-          width: 0,
-          height: 0,
-        }}
-      />
-      <div
-        style={{
-          width: size,
-          height: size,
-          marginTop: -size,
-          overflow: "hidden",
-          position: "relative",
-        }}
-      >
-        <img
-          src={imageUrl}
-          alt="预览"
-          style={{
-            position: "absolute",
-            left: -area.x * scale,
-            top: -area.y * scale,
-            width: `calc(${scale} * var(--natural-w, 100%))`,
-            transform: "none",
-            maxWidth: "none",
-            // 用 transform 缩放整图
-            transformOrigin: "top left",
-          }}
-          onLoad={(e) => {
-            const img = e.currentTarget;
-            img.style.width = `${img.naturalWidth * scale}px`;
-            img.style.height = `${img.naturalHeight * scale}px`;
-          }}
-        />
-      </div>
-    </div>
+      className="border border-white/10 overflow-hidden"
+      ref={(el) => {
+        if (!el) return;
+        // 让 backgroundSize 反映 scale：先拿到原图宽高
+        const img = new Image();
+        img.onload = () => {
+          el.style.backgroundSize = `${img.naturalWidth * scale}px ${img.naturalHeight * scale}px`;
+        };
+        img.src = imageUrl;
+      }}
+    />
   );
 }
 
