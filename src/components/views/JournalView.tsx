@@ -55,7 +55,7 @@ function fmtLong(iso: string) {
 }
 
 export function JournalView() {
-  const { items, habits, notes, diary, comics, isRecapDone, toggleHabitOn, addNote, upsertDiary, setComic, removeComic } = useSylva();
+  const { items, habits, notes, diary, comics, isRecapDone, toggleHabitOn, addNote, upsertDiary, setComic, removeComic, comicHistory, addComicHistory, removeComicHistory } = useSylva();
   const [date, setDate] = useState<string>(todayLocal());
   const dateBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
@@ -325,13 +325,28 @@ export function JournalView() {
                 buildSummary={() =>
                   buildComicSummary({ date, fmt, dayItems, habitsDone: habits.filter((h) => isHabitDoneOn(h, date)), habitsMissed: habits.filter((h) => !isHabitDoneOn(h, date)), dayNotes, dayDiary })
                 }
-                onGenerated={(c) => setComic(c)}
+                onGenerated={(c) => {
+                  setComic(c);
+                  addComicHistory({ date: c.date, imageUrl: c.imageUrl, provider: c.provider, caption: c.caption, createdAt: c.createdAt });
+                }}
                 onRemove={() => removeComic(date)}
                 onCopyToDiary={(line) => {
                   const prev = diary.find((d) => d.date === date)?.content ?? "";
                   upsertDiary(date, { content: prev ? `${prev}\n\n${line}` : line });
                 }}
                 onCopyToNote={(line) => addNote(line, { tags: ["每日漫画"] })}
+              />
+
+              <ComicHistoryPanel
+                history={comicHistory}
+                currentDate={date}
+                onRecall={(item) => setComic({ date, imageUrl: item.imageUrl, provider: item.provider, caption: item.caption, createdAt: new Date().toISOString() })}
+                onDelete={(id) => removeComicHistory(id)}
+                onInsertDiary={(item) => {
+                  const prev = diary.find((d) => d.date === date)?.content ?? "";
+                  const line = `🖼️ 旧作回看（${item.provider} · ${item.date}）：${item.imageUrl}`;
+                  upsertDiary(date, { content: prev ? `${prev}\n\n${line}` : line });
+                }}
               />
 
               {/* —— 给未来的建议 —— */}
@@ -771,6 +786,158 @@ function ComicPanel({
         <p className="text-xs text-white/40 italic px-1 py-3">
           把这一天画成 {panels} 格漫画 —— 用 {provider === "gemini" ? "Lovable 内置 Gemini" : "火山 Seedream"} 生成。
         </p>
+      )}
+    </div>
+  );
+}
+
+function ComicHistoryPanel({
+  history,
+  currentDate,
+  onRecall,
+  onDelete,
+  onInsertDiary,
+}: {
+  history: import("@/lib/sylva-store").ComicHistoryItem[];
+  currentDate: string;
+  onRecall: (item: import("@/lib/sylva-store").ComicHistoryItem) => void;
+  onDelete: (id: string) => void;
+  onInsertDiary: (item: import("@/lib/sylva-store").ComicHistoryItem) => void;
+}) {
+  const [preview, setPreview] = useState<import("@/lib/sylva-store").ComicHistoryItem | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+
+  if (history.length === 0) {
+    return (
+      <div className="mb-7 rounded-2xl bg-white/[0.02] border border-white/8 p-4">
+        <p className="text-[11px] tracking-widest text-amber-glow/80 mb-2">Seedream 历史</p>
+        <p className="text-xs text-white/40 italic">还没有生成记录 —— 第一幅画即将诞生。</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-7 rounded-2xl bg-white/[0.03] border border-white/8 p-4">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-[11px] tracking-widest text-amber-glow/80">生成历史 · {history.length}</p>
+        <p className="text-[10px] text-white/35">点击缩略图查看大图</p>
+      </div>
+
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+        {history.map((item) => (
+          <div
+            key={item.id}
+            className="group relative rounded-lg overflow-hidden border border-white/10 bg-black/40 aspect-square"
+          >
+            <button
+              onClick={() => setPreview(item)}
+              className="block w-full h-full"
+              title="点击查看大图"
+            >
+              <img src={item.imageUrl} alt={item.date} className="w-full h-full object-cover transition group-hover:scale-105" />
+            </button>
+            <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded-full bg-black/70 text-[9px] text-white/85 border border-white/10">
+              {item.provider === "seedream" ? "Seedream" : "Gemini"}
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); setConfirmId(item.id); }}
+              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 hover:bg-red-500/70 text-white/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+              title="删除"
+            >
+              <XIcon className="w-3 h-3" />
+            </button>
+            <div className="absolute inset-x-0 bottom-0 px-1.5 py-1 bg-gradient-to-t from-black/85 to-transparent flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition">
+              <div className="flex items-center justify-between text-[9px] text-white/70">
+                <span>{item.date}</span>
+              </div>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => onRecall(item)}
+                  className="flex-1 px-1 py-0.5 rounded bg-amber-glow/30 hover:bg-amber-glow/50 text-[9px] text-white border border-amber-glow/40"
+                  title={`设为 ${currentDate} 的漫画`}
+                >
+                  设为今日
+                </button>
+                <button
+                  onClick={() => onInsertDiary(item)}
+                  className="flex-1 px-1 py-0.5 rounded bg-white/10 hover:bg-white/20 text-[9px] text-white/85 border border-white/15"
+                  title="插入到今日日记"
+                >
+                  → 日记
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {confirmId && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setConfirmId(null)}
+        >
+          <div
+            className="bg-zinc-900 border border-white/15 rounded-2xl p-5 max-w-xs w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-sm text-white/90 mb-4">确定删除这张漫画历史吗？此操作不可撤销。</p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setConfirmId(null)}
+                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-xs text-white/80"
+              >
+                取消
+              </button>
+              <button
+                onClick={() => { onDelete(confirmId); setConfirmId(null); }}
+                className="px-3 py-1.5 rounded-lg bg-red-500/80 hover:bg-red-500 text-xs text-white"
+              >
+                删除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {preview && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4"
+          onClick={() => setPreview(null)}
+        >
+          <div className="max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="relative rounded-2xl overflow-hidden border border-white/15 bg-black">
+              <img src={preview.imageUrl} alt={preview.date} className="w-full h-auto block" />
+              <button
+                onClick={() => setPreview(null)}
+                className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center"
+              >
+                <XIcon className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 mt-3 text-[11px] text-white/70">
+              <span className="px-2 py-0.5 rounded-full bg-white/10 border border-white/15">
+                {preview.provider === "seedream" ? "Seedream" : "Gemini"}
+              </span>
+              <span>原日期 · {preview.date}</span>
+              <span className="text-white/40">{new Date(preview.createdAt).toLocaleString()}</span>
+              <button
+                onClick={() => { onRecall(preview); setPreview(null); }}
+                className="ml-auto px-3 py-1 rounded-full bg-amber-glow/25 hover:bg-amber-glow/40 border border-amber-glow/40 text-amber-glow"
+              >
+                设为 {currentDate} 的漫画
+              </button>
+              <button
+                onClick={() => { onInsertDiary(preview); setPreview(null); }}
+                className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/15 border border-white/15"
+              >
+                插入到日记
+              </button>
+            </div>
+            {preview.caption && (
+              <p className="text-xs text-white/55 italic mt-2 px-1">{preview.caption}</p>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
