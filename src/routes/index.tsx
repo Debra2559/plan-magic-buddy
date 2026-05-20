@@ -125,13 +125,6 @@ function Index() {
         </div>
       </section>
 
-          </div>
-          <div className="flex justify-center lg:justify-end">
-            <AiInputWidget />
-          </div>
-        </div>
-      </section>
-
       {/* Feishu sync */}
       <section id="sync" className="relative px-8 lg:px-16 py-24">
         <div className="max-w-4xl mx-auto widget p-10 lg:p-14 text-center">
