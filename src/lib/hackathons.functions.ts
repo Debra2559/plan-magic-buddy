@@ -185,7 +185,7 @@ export const acceptHackathon = createServerFn({ method: "POST" })
       date: string;
       time?: string;
       durationMin?: number;
-      tag: string;
+      tag: "工作" | "学习" | "健康" | "生活" | "英语" | "习惯";
       note?: string;
     }> = [];
 
