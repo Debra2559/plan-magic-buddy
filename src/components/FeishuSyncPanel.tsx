@@ -239,9 +239,8 @@ export function FeishuSyncPanel() {
   };
 
   const syncNow = async () => {
-    if (state.status !== "connected") return;
-    setLogs((prev) => [mkLog("pull", "feishu", "手动同步 · 拉取远端变更"), ...prev].slice(0, 12));
-    await new Promise((r) => setTimeout(r, 600));
+    await doSync("立即同步");
+  };
     setState((s) => ({ ...s, lastSyncAt: new Date().toISOString() }));
   };
 
