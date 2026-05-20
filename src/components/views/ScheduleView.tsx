@@ -111,6 +111,29 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
           </div>
         </div>
 
+        {pendingIds.length > 0 && (
+          <div className="mb-3 flex items-center gap-3 px-3 py-2 rounded-xl border border-amber-glow/40 bg-amber-glow/10 text-amber-glow text-xs">
+            <Sparkles className="w-3.5 h-3.5 shrink-0" />
+            <span className="flex-1">
+              AI 新增了 <b>{pendingIds.length}</b> 项待确认安排，确认后才会同步到云端 / 飞书
+            </span>
+            <button
+              onClick={() => revertPending(pendingIds)}
+              className="px-2.5 py-1 rounded-md border border-white/15 text-white/70 hover:text-white hover:bg-white/10 text-[11px]"
+            >
+              全部撤销
+            </button>
+            <button
+              onClick={() => confirmPending(pendingIds)}
+              className="px-2.5 py-1 rounded-md bg-amber-glow text-primary-foreground hover:brightness-110 text-[11px] inline-flex items-center gap-1"
+            >
+              <Check className="w-3 h-3" /> 全部确认
+            </button>
+          </div>
+        )}
+
+
+
         <div className="grid grid-cols-7 gap-px bg-white/10 rounded-xl overflow-hidden border border-white/10">
           {weekdays.map((d) => (
             <div key={d} className="bg-black/30 py-2 text-center text-[11px] text-white/50 tracking-wider">
