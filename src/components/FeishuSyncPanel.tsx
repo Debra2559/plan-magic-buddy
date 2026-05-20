@@ -194,6 +194,56 @@ export function FeishuSyncPanel() {
     }
   };
 
+  // ---------- 飞书用户授权（OAuth） ----------
+  const runGetAuthUrl = useServerFn(getFeishuAuthUrl);
+  const runGetAuthStatus = useServerFn(getFeishuUserAuthStatus);
+  const runClearAuth = useServerFn(clearFeishuUserAuth);
+  const [userAuth, setUserAuth] = useState<{
+    loading: boolean;
+    authorized: boolean;
+    openId?: string | null;
+    name?: string | null;
+    expiresAt?: string | null;
+    expired?: boolean;
+  }>({ loading: false, authorized: false });
+
+  const refreshAuthStatus = async () => {
+    try {
+      const r: any = await runGetAuthStatus();
+      if (r.authorized) {
+        setUserAuth({ loading: false, authorized: true, openId: r.openId, name: r.name, expiresAt: r.expiresAt, expired: r.expired });
+      } else {
+        setUserAuth({ loading: false, authorized: false });
+      }
+    } catch {}
+  };
+
+  useEffect(() => { refreshAuthStatus(); }, []);
+
+  const startFeishuAuth = async () => {
+    setUserAuth((s) => ({ ...s, loading: true }));
+    try {
+      const r = await runGetAuthUrl({ data: { origin: window.location.origin } });
+      if (!r.ok) { alert(r.error); return; }
+      const w = window.open(r.url, "feishu-oauth", "width=520,height=720");
+      // 轮询：用户关闭窗口或 60s 后刷新状态
+      const start = Date.now();
+      const timer = setInterval(async () => {
+        if ((w && w.closed) || Date.now() - start > 60_000) {
+          clearInterval(timer);
+          await refreshAuthStatus();
+        }
+      }, 1500);
+    } finally {
+      setUserAuth((s) => ({ ...s, loading: false }));
+    }
+  };
+
+  const revokeFeishuAuth = async () => {
+    await runClearAuth();
+    setUserAuth({ loading: false, authorized: false });
+  };
+
   // ---------- 列出机器人所在群 ----------
   const runListChats = useServerFn(listFeishuChats);
   const [chats, setChats] = useState<{
