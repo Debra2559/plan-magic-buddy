@@ -464,7 +464,7 @@ export function FeishuSyncPanel() {
       <div className="mt-2 flex items-start gap-1.5 text-[11px] text-white/40">
         <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
         <span>
-          当前为 Mock 模式：所有同步动作仅在本地模拟。拿到飞书 App ID / Secret 后，告诉我即可切到真接口。
+          已接入真接口：本地新增/修改/删除 1.5 秒后自动推到选中的飞书日历。回流（飞书→Sylva）还需配 Encrypt Key + 订阅事件。
         </span>
       </div>
     </div>
