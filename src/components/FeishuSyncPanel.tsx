@@ -99,7 +99,7 @@ const TIMEZONE_OPTIONS: { value: string; label: string }[] = [
 
 
 export function FeishuSyncPanel() {
-  const { items, addItems } = useSylva();
+  const { items, addItems, refreshRecapDoneDates } = useSylva();
   const [state, setState] = useState<Persisted>(loadPersisted);
   const [logs, setLogs] = useState<SyncLog[]>([]);
   const lastItemSignature = useRef<string>("");
