@@ -209,14 +209,16 @@ function DayEditor({
   items,
   onClose,
   onUpdate,
+  onToggleDone,
   onDelete,
   onAdd,
 }: {
   date: string;
   anchor: { x: number; y: number } | null;
-  items: Array<PlanItem & { id: string }>;
+  items: Array<PlanItem & { id: string; done?: boolean }>;
   onClose: () => void;
   onUpdate: (id: string, patch: Partial<PlanItem>) => void;
+  onToggleDone: (id: string) => void;
   onDelete: (id: string) => void;
   onAdd: (item: PlanItem) => void;
 }) {
