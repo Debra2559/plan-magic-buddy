@@ -44,6 +44,10 @@ export type Database = {
           direction: string
           id: string
           last_sync_at: string | null
+          notify_on_accept: boolean
+          notify_on_discover: boolean
+          notify_receive_id: string | null
+          notify_receive_id_type: string
           page_token: string | null
           selected_calendar_id: string | null
           selected_calendar_name: string | null
@@ -54,6 +58,10 @@ export type Database = {
           direction?: string
           id?: string
           last_sync_at?: string | null
+          notify_on_accept?: boolean
+          notify_on_discover?: boolean
+          notify_receive_id?: string | null
+          notify_receive_id_type?: string
           page_token?: string | null
           selected_calendar_id?: string | null
           selected_calendar_name?: string | null
@@ -64,6 +72,10 @@ export type Database = {
           direction?: string
           id?: string
           last_sync_at?: string | null
+          notify_on_accept?: boolean
+          notify_on_discover?: boolean
+          notify_receive_id?: string | null
+          notify_receive_id_type?: string
           page_token?: string | null
           selected_calendar_id?: string | null
           selected_calendar_name?: string | null
