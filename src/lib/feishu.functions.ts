@@ -754,6 +754,18 @@ function dailyRecapCard(dateLabel: string, opts?: { missed?: boolean }) {
             max_length: 2000,
           },
           {
+            tag: 'select_static',
+            name: 'mood',
+            placeholder: { tag: 'plain_text', content: '今天的心情…（可选）' },
+            options: [
+              { text: { tag: 'plain_text', content: '😄 很棒' }, value: 'great' },
+              { text: { tag: 'plain_text', content: '🙂 不错' }, value: 'good' },
+              { text: { tag: 'plain_text', content: '😐 一般' }, value: 'ok' },
+              { text: { tag: 'plain_text', content: '🙁 低落' }, value: 'down' },
+              { text: { tag: 'plain_text', content: '😴 疲惫' }, value: 'tired' },
+            ],
+          },
+          {
             tag: 'action',
             actions: [
               {
