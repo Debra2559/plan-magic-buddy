@@ -171,7 +171,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                   撤销选中
                 </button>
                 <button
-                  onClick={() => confirmPending(filteredIds)}
+                  onClick={() => confirmAndFocus(filteredIds)}
                   disabled={filteredIds.length === 0}
                   className="px-2.5 py-1 rounded-md bg-amber-glow text-primary-foreground hover:brightness-110 text-[11px] inline-flex items-center gap-1 disabled:opacity-40"
                 >
