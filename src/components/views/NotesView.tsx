@@ -270,8 +270,9 @@ function DiaryTab() {
 }
 
 // Tiny helper: re-run effect when key changes (without importing useEffect everywhere we already did)
+// Re-sync local state when key changes
 function useMemoSync(key: string, fn: () => void) {
-  useMemo(() => { fn(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [key]);
+  useEffect(() => { fn(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [key]);
 }
 
 /* ---------------- Daily Summary ---------------- */
