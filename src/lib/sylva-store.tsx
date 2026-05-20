@@ -240,6 +240,7 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
         addItems,
         replaceItems,
         removeItem,
+        updateItem,
         toggleDone,
         clearItems,
         addNote,
