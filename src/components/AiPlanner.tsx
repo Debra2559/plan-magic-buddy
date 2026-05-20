@@ -290,10 +290,7 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
               <button
                 key={m}
                 disabled={disabled}
-                onClick={() => {
-                  setMode(m);
-                  if (m === "goal") resetChat();
-                }}
+                onClick={() => setMode(m)}
                 title={modeMeta[m].hint}
                 className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] border transition
                   ${active ? "bg-amber-glow/20 border-amber-glow/50 text-amber-glow" : "bg-foreground/5 border-foreground/10 text-foreground/70 hover:bg-foreground/10"}
@@ -304,9 +301,6 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
               </button>
             );
           })}
-          {mode === "goal" && chatMessages.length > 0 && (
-            <button onClick={resetChat} className="ml-auto text-[10px] text-muted-foreground hover:text-foreground transition">重新开始</button>
-          )}
         </div>
 
         {error && (
