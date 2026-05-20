@@ -554,6 +554,7 @@ export function FeishuSyncPanel() {
         const rc = await runGetRecap();
         setRecap(rc);
       } catch {}
+      refreshCapture();
       loadCalendars();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
