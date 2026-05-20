@@ -251,9 +251,8 @@ export function MediaAttacher({ videos, audios, onChange, maxVideos = 2, maxAudi
             </div>
           ))}
           {audios.map((src, i) => (
-            <div key={`a-${i}`} className="relative group flex items-center gap-2 pr-7 pl-2 py-1 rounded-full bg-white/[0.04] border border-white/10">
-              <Play className="w-3 h-3 text-amber-glow" />
-              <audio src={src} controls className="h-7 max-w-[200px]" />
+            <div key={`a-${i}`} className="relative group">
+              <AudioPill src={src} />
               <button
                 type="button"
                 onClick={() => removeAudio(i)}
