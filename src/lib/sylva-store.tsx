@@ -385,6 +385,7 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
   const addNote: SylvaContextValue["addNote"] = (text, opts) => {
     const n: Note = {
       id: nextId(), text, createdAt: new Date().toISOString(),
+      kind: opts?.kind ?? "log",
       mood: opts?.mood, tags: opts?.tags, images: opts?.images,
       videos: opts?.videos, audios: opts?.audios,
     };
