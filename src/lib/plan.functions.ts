@@ -142,8 +142,8 @@ export type ChatStep =
 
 function normalizeChatStep(raw: z.infer<typeof ChatStepRawSchema>): ChatStep | null {
   if (raw.kind === "clarify") {
-    if (!raw.question) return null;
-    return { kind: "clarify", question: raw.question, quickReplies: (raw.quickReplies ?? []).slice(0, 4) };
+    const q = raw.question?.trim() || "可以再多告诉我一些细节吗？比如时间、目标或当前水平。";
+    return { kind: "clarify", question: q, quickReplies: (raw.quickReplies ?? []).slice(0, 4) };
   }
   if (raw.kind === "research") {
     const qs = (raw.queries ?? []).filter(Boolean);
