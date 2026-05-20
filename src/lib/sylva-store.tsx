@@ -186,6 +186,13 @@ interface SylvaContextValue {
   setDateFlashEnabled: (v: boolean) => void;
   dateFlashDurationMs: number;
   setDateFlashDurationMs: (v: number) => void;
+  // ---- 漫画生成设置 ----
+  comicProvider: "gemini" | "seedream";
+  setComicProvider: (v: "gemini" | "seedream") => void;
+  comicSeedreamModel: string;
+  setComicSeedreamModel: (v: string) => void;
+  comicStyle: string;
+  setComicStyle: (v: string) => void;
   // ---- AI 同步高亮 & 汇总 ----
   recentlySyncedIds: Set<string>;
   isRecentlySynced: (id: string) => boolean;
