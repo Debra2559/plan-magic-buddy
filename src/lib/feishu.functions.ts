@@ -120,9 +120,50 @@ export const getFeishuSettings = createServerFn({ method: 'GET' }).handler(
       selectedCalendarName: data?.selected_calendar_name ?? null,
       direction: (data?.direction as 'two-way' | 'push-only') ?? 'two-way',
       lastSyncAt: data?.last_sync_at ?? null,
+      pushRules: {
+        requireTime: (data as any)?.push_require_time ?? true,
+        defaultTime: ((data as any)?.push_default_time as string) ?? '09:00',
+        allowedTypes: (((data as any)?.push_allowed_types as string[]) ?? ['event','reminder','todo']) as Array<'event'|'reminder'|'todo'>,
+        includeDone: (data as any)?.push_include_done ?? false,
+      },
     }
   }
 )
+
+// ---------- 设置：推送规则 ----------
+const pushRulesSchema = z.object({
+  requireTime: z.boolean(),
+  defaultTime: z.string().regex(/^\d{2}:\d{2}$/),
+  allowedTypes: z.array(z.enum(['event','reminder','todo'])).min(1).max(3),
+  includeDone: z.boolean(),
+})
+
+export const setFeishuPushRules = createServerFn({ method: 'POST' })
+  .inputValidator((input) => pushRulesSchema.parse(input))
+  .handler(async ({ data }) => {
+    const patch = {
+      push_require_time: data.requireTime,
+      push_default_time: data.defaultTime,
+      push_allowed_types: data.allowedTypes,
+      push_include_done: data.includeDone,
+    }
+    const { data: row } = await supabaseAdmin
+      .from('feishu_settings')
+      .select('id')
+      .limit(1)
+      .maybeSingle()
+    if (!row) {
+      const { error } = await supabaseAdmin.from('feishu_settings').insert(patch as any)
+      if (error) throw new Error(error.message)
+    } else {
+      const { error } = await supabaseAdmin
+        .from('feishu_settings')
+        .update(patch as any)
+        .eq('id', row.id)
+      if (error) throw new Error(error.message)
+    }
+    return { ok: true as const }
+  })
 
 // ---------- 设置：选中日历 ----------
 const selectSchema = z.object({
@@ -222,9 +263,8 @@ const pushSchema = z.object({
   ).max(500),
 })
 
-function buildEventBody(it: PushItem) {
-  // event 必有 time；reminder/todo 有 time 也按事件推（默认 30 分钟）
-  const time = it.time ?? '09:00'
+function buildEventBody(it: PushItem, defaultTime = '09:00') {
+  const time = it.time ?? defaultTime
   const start = toUnixSeconds(it.date, time)
   const dur = (it.durationMin ?? (it.type === 'event' ? 60 : 30)) * 60
   return {
@@ -246,10 +286,10 @@ type SyncEntry = {
 export const syncToFeishu = createServerFn({ method: 'POST' })
   .inputValidator((input) => pushSchema.parse(input))
   .handler(async ({ data }) => {
-    // 1) 读选中的日历
+    // 1) 读选中的日历 + 推送规则
     const { data: settings } = await supabaseAdmin
       .from('feishu_settings')
-      .select('selected_calendar_id')
+      .select('selected_calendar_id, push_require_time, push_default_time, push_allowed_types, push_include_done')
       .limit(1)
       .maybeSingle()
 
@@ -258,8 +298,20 @@ export const syncToFeishu = createServerFn({ method: 'POST' })
       return { ok: false as const, error: '请先在面板里选一个飞书日历' }
     }
 
-    // 2) 只推「能映射成事件」的条目：必须有 time
-    const pushable = data.items.filter((i) => i.time && !i.done)
+    const requireTime = (settings as any)?.push_require_time ?? true
+    const defaultTime = ((settings as any)?.push_default_time as string) ?? '09:00'
+    const allowedTypes = new Set<string>(
+      ((settings as any)?.push_allowed_types as string[]) ?? ['event', 'reminder', 'todo']
+    )
+    const includeDone = (settings as any)?.push_include_done ?? false
+
+    // 2) 按规则过滤
+    const pushable = data.items.filter((i) => {
+      if (!allowedTypes.has(i.type)) return false
+      if (!includeDone && i.done) return false
+      if (requireTime && !i.time) return false
+      return true
+    })
 
     // 3) 已有 mapping
     const { data: existingMaps } = await supabaseAdmin
@@ -274,7 +326,7 @@ export const syncToFeishu = createServerFn({ method: 'POST' })
 
     // 4) create / update
     for (const it of pushable) {
-      const body = buildEventBody(it)
+      const body = buildEventBody(it, defaultTime)
       const existing = mapByLocal.get(it.id)
       try {
         if (existing && existing.calendar_id === calendarId) {

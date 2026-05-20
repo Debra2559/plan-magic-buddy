@@ -16,6 +16,7 @@ import {
   getDailyRecapConfig,
   setDailyRecapConfig,
   sendDailyRecapNow,
+  setFeishuPushRules,
 } from "@/lib/feishu.functions";
 import {
   Check,
@@ -145,6 +146,21 @@ export function FeishuSyncPanel() {
   const [recapSaved, setRecapSaved] = useState(false);
   const [recapSending, setRecapSending] = useState(false);
   const [recapResult, setRecapResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  type PushRules = {
+    requireTime: boolean;
+    defaultTime: string;
+    allowedTypes: Array<"event" | "reminder" | "todo">;
+    includeDone: boolean;
+  };
+  const [pushRules, setPushRules] = useState<PushRules>({
+    requireTime: true,
+    defaultTime: "09:00",
+    allowedTypes: ["event", "reminder", "todo"],
+    includeDone: false,
+  });
+  const [pushRulesSaved, setPushRulesSaved] = useState(false);
+  const runSetPushRules = useServerFn(setFeishuPushRules);
 
   const doSync = useCallback(
     async (reason: string) => {
@@ -311,6 +327,7 @@ export function FeishuSyncPanel() {
           lastSyncAt: s.lastSyncAt ?? prev.lastSyncAt,
           status: s.selectedCalendarId ? "connected" : prev.status,
         }));
+        if (s.pushRules) setPushRules(s.pushRules);
       } catch {}
       try {
         const n = await runGetNotify();
@@ -652,6 +669,102 @@ export function FeishuSyncPanel() {
             </button>
           </div>
         </div>
+
+        <div className="px-4 py-3 border-b border-white/8 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="text-sm text-white/90">推送规则</div>
+            <div className="text-[11px] text-white/40">控制哪些日程项会被同步到飞书</div>
+            {pushRulesSaved && (
+              <span className="ml-auto text-[10px] text-emerald-300 flex items-center gap-1">
+                <Check className="w-3 h-3" /> 已保存
+              </span>
+            )}
+          </div>
+
+          {/* 类型 */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] text-white/50 w-16 shrink-0">同步类型</span>
+            {(["event", "reminder", "todo"] as const).map((t) => {
+              const on = pushRules.allowedTypes.includes(t);
+              const label = t === "event" ? "事件" : t === "reminder" ? "提醒" : "待办";
+              return (
+                <button
+                  key={t}
+                  onClick={async () => {
+                    const next = on
+                      ? pushRules.allowedTypes.filter((x) => x !== t)
+                      : [...pushRules.allowedTypes, t];
+                    if (next.length === 0) return; // 至少留一个
+                    const nr = { ...pushRules, allowedTypes: next as PushRules["allowedTypes"] };
+                    setPushRules(nr);
+                    try { await runSetPushRules({ data: nr }); setPushRulesSaved(true); setTimeout(() => setPushRulesSaved(false), 1200); } catch {}
+                  }}
+                  className={`text-[11px] px-2.5 py-1 rounded-full border transition ${
+                    on
+                      ? "bg-amber-glow/20 border-amber-glow/40 text-amber-100"
+                      : "bg-white/5 border-white/10 text-white/50 hover:text-white/80"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 必须有时间 + 默认时间 */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] text-white/50 w-16 shrink-0">时间要求</span>
+            <button
+              onClick={async () => {
+                const nr = { ...pushRules, requireTime: !pushRules.requireTime };
+                setPushRules(nr);
+                try { await runSetPushRules({ data: nr }); setPushRulesSaved(true); setTimeout(() => setPushRulesSaved(false), 1200); } catch {}
+              }}
+              className={`text-[11px] px-2.5 py-1 rounded-full border transition ${
+                pushRules.requireTime
+                  ? "bg-amber-glow/20 border-amber-glow/40 text-amber-100"
+                  : "bg-white/5 border-white/10 text-white/50 hover:text-white/80"
+              }`}
+            >
+              {pushRules.requireTime ? "仅推送有时间的" : "无时间也推送"}
+            </button>
+            {!pushRules.requireTime && (
+              <label className="flex items-center gap-1.5 text-[11px] text-white/60">
+                默认时间
+                <input
+                  type="time"
+                  value={pushRules.defaultTime}
+                  onChange={(e) => setPushRules((p) => ({ ...p, defaultTime: e.target.value || "09:00" }))}
+                  onBlur={async () => {
+                    try { await runSetPushRules({ data: pushRules }); setPushRulesSaved(true); setTimeout(() => setPushRulesSaved(false), 1200); } catch {}
+                  }}
+                  className="bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-white/90 text-[11px] outline-none focus:border-amber-glow/40"
+                />
+              </label>
+            )}
+          </div>
+
+          {/* 已完成 */}
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-white/50 w-16 shrink-0">已完成项</span>
+            <button
+              onClick={async () => {
+                const nr = { ...pushRules, includeDone: !pushRules.includeDone };
+                setPushRules(nr);
+                try { await runSetPushRules({ data: nr }); setPushRulesSaved(true); setTimeout(() => setPushRulesSaved(false), 1200); } catch {}
+              }}
+              className={`text-[11px] px-2.5 py-1 rounded-full border transition ${
+                pushRules.includeDone
+                  ? "bg-amber-glow/20 border-amber-glow/40 text-amber-100"
+                  : "bg-white/5 border-white/10 text-white/50 hover:text-white/80"
+              }`}
+            >
+              {pushRules.includeDone ? "保留已完成" : "完成后从飞书移除"}
+            </button>
+          </div>
+        </div>
+
+
 
         <div className="px-4 py-3">
           {(syncProgress || lastError || lastSummary) && (
