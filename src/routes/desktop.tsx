@@ -10,6 +10,7 @@ import { ScheduleView } from "@/components/views/ScheduleView";
 import { TodosView } from "@/components/views/TodosView";
 import { NotesView } from "@/components/views/NotesView";
 import { HabitsView } from "@/components/views/HabitsView";
+import { JournalView } from "@/components/views/JournalView";
 import { SettingsView } from "@/components/views/SettingsView";
 import {
   Apple,
@@ -27,6 +28,7 @@ import {
   Music,
   Mail,
   Image as ImageIcon,
+  BookHeart,
 } from "lucide-react";
 
 export const Route = createFileRoute("/desktop")({
@@ -46,7 +48,7 @@ interface WinPos {
   y: number;
 }
 
-type SylvaView = "ai" | "schedule" | "todos" | "notes" | "habits" | "settings";
+type SylvaView = "ai" | "schedule" | "todos" | "notes" | "habits" | "journal" | "settings";
 
 function DesktopApp() {
   const [now, setNow] = useState(new Date());
@@ -141,6 +143,7 @@ function DesktopApp() {
                 <SidebarItem icon={CheckSquare} label="待办" active={view === "todos"} onClick={() => setView("todos")} />
                 <SidebarItem icon={StickyNote} label="随手记" active={view === "notes"} onClick={() => setView("notes")} />
                 <SidebarItem icon={Sparkles} label="习惯" active={view === "habits"} onClick={() => setView("habits")} />
+                <SidebarItem icon={BookHeart} label="记录" active={view === "journal"} onClick={() => setView("journal")} />
                 <div className="mt-auto pt-4 border-t border-white/8">
                   <SidebarItem icon={Settings} label="设置" active={view === "settings"} onClick={() => setView("settings")} muted={view !== "settings"} />
                 </div>
@@ -153,6 +156,7 @@ function DesktopApp() {
                 {view === "todos" && <TodosView />}
                 {view === "notes" && <NotesView />}
                 {view === "habits" && <HabitsView />}
+                {view === "journal" && <JournalView />}
                 {view === "settings" && <SettingsView />}
               </div>
             </div>

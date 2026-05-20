@@ -119,3 +119,26 @@
   50% { opacity: 1; }
 }
 .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+
+/* ---------------- 手帐 · 纸张 ---------------- */
+.journal-paper {
+  background:
+    radial-gradient(1200px 600px at 0% 0%, oklch(0.78 0.13 70 / 0.06), transparent 60%),
+    radial-gradient(900px 500px at 100% 100%, oklch(0.55 0.09 145 / 0.06), transparent 60%),
+    linear-gradient(180deg, oklch(0.18 0.02 80 / 0.85), oklch(0.14 0.02 80 / 0.92));
+  border: 1px solid oklch(0.95 0.02 80 / 0.08);
+  box-shadow:
+    0 30px 60px -30px oklch(0 0 0 / 0.55),
+    inset 0 1px 0 oklch(1 0 0 / 0.04);
+}
+
+.journal-lines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 31px,
+    oklch(0.95 0.02 80 / 0.06) 31px,
+    oklch(0.95 0.02 80 / 0.06) 32px
+  );
+}
+
