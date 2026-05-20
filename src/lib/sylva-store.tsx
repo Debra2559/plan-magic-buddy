@@ -114,6 +114,17 @@ function migrateHabit(h: any): Habit {
 
 export type RecapBackfillStrategy = "overwrite" | "merge" | "fill-empty";
 
+export interface SyncSummary {
+  ts: number;
+  ids: string[];
+  events: DoneItem[];
+  todos: DoneItem[];
+  reminders: DoneItem[];
+  appliedMode: "create" | "adjust" | "add";
+}
+
+export type NavigateView = "ai" | "schedule" | "todos" | "notes" | "habits" | "journal" | "settings";
+
 interface SylvaContextValue {
   items: DoneItem[];
   notes: Note[];
@@ -125,8 +136,8 @@ interface SylvaContextValue {
   comicHistory: ComicHistoryItem[];
   addComicHistory: (item: Omit<ComicHistoryItem, "id">) => void;
   removeComicHistory: (id: string) => void;
-  addItems: (items: PlanItem[]) => void;
-  replaceItems: (items: PlanItem[]) => void;
+  addItems: (items: PlanItem[]) => string[];
+  replaceItems: (items: PlanItem[]) => string[];
   removeItem: (id: string) => void;
   updateItem: (id: string, patch: Partial<PlanItem>) => void;
   toggleDone: (id: string) => void;
@@ -152,6 +163,16 @@ interface SylvaContextValue {
   setDateFlashEnabled: (v: boolean) => void;
   dateFlashDurationMs: number;
   setDateFlashDurationMs: (v: number) => void;
+  // ---- AI 同步高亮 & 汇总 ----
+  recentlySyncedIds: Set<string>;
+  isRecentlySynced: (id: string) => boolean;
+  markRecentlySynced: (ids: string[]) => void;
+  clearRecentlySynced: () => void;
+  syncSummary: SyncSummary | null;
+  setSyncSummary: (s: SyncSummary | null) => void;
+  // 视图跳转（desktop.tsx 在挂载时注册）
+  registerNavigate: (fn: (view: NavigateView, opts?: { todosFilter?: "todo" | "reminder" | "event" }) => void) => void;
+  navigateTo: (view: NavigateView, opts?: { todosFilter?: "todo" | "reminder" | "event" }) => void;
 }
 
 const SylvaContext = createContext<SylvaContextValue | null>(null);
