@@ -105,7 +105,13 @@ const ExtractedSchema = z.object({
     .max(15),
 });
 
-type ExtractedHackathon = z.infer<typeof ExtractedSchema>["hackathons"][number];
+type HackathonDateFields = {
+  title?: string | null;
+  summary?: string | null;
+  deadline: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
+};
 
 function startOfToday(): Date {
   const d = new Date();
@@ -155,13 +161,13 @@ function inferDateFromText(text: string): string | null {
   return formatDate(dates.sort((a, b) => b.getTime() - a.getTime())[0]);
 }
 
-function normalizeHackathonDates<T extends Pick<ExtractedHackathon, "title" | "summary" | "deadline" | "starts_at" | "ends_at">>(item: T): T {
+function normalizeHackathonDates<T extends HackathonDateFields>(item: T): T {
   if (parseDateLike(item.deadline) || parseDateLike(item.ends_at) || parseDateLike(item.starts_at)) return item;
   const inferred = inferDateFromText(`${item.title ?? ""}\n${item.summary ?? ""}`);
-  return inferred ? { ...item, deadline: inferred } : item;
+  return inferred ? ({ ...item, deadline: inferred } as T) : item;
 }
 
-function isActionableHackathon(item: Pick<ExtractedHackathon, "title" | "summary" | "deadline" | "starts_at" | "ends_at">): boolean {
+function isActionableHackathon(item: HackathonDateFields): boolean {
   const today = startOfToday();
   const normalized = normalizeHackathonDates(item);
   const deadline = parseDateLike(normalized.deadline);
