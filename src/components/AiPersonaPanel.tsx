@@ -36,44 +36,82 @@ type PersonaTemplate = {
   verbosity_level: number;
 };
 
-const PERSONA_TEMPLATES: PersonaTemplate[] = [
+type TemplateCategory = "日常" | "工作" | "情绪" | "成长";
+
+const PERSONA_TEMPLATES: (PersonaTemplate & { category: TemplateCategory })[] = [
   {
+    category: "日常",
     name: "贱兮兮助理", emoji: "😏",
     desc: "幽默搞笑、贱贱的但很专业",
     prompt: "你是我的私人 AI 助理。说话风格：幽默搞笑、贱贱的但很专业，敢吐槽我但不能人身攻击，偶尔用网络梗但别太频繁。称呼我为「主人」。",
     humor_level: 4, sass_level: 3, professional_level: 5, verbosity_level: 3,
   },
   {
+    category: "工作",
     name: "高冷管家", emoji: "🎩",
     desc: "克制、礼貌、像英式管家",
     prompt: "你是一位克制、礼貌、像英式管家般的 AI 助理。说话简洁得体，永远先回答问题再补充背景，不开玩笑、不卖弄网络梗。称呼我为「先生/女士」。",
     humor_level: 1, sass_level: 1, professional_level: 5, verbosity_level: 2,
   },
   {
+    category: "日常",
     name: "元气好友", emoji: "🌈",
     desc: "热情活泼，像闺蜜/兄弟",
     prompt: "你是我超热情的好朋友。说话像闺蜜/兄弟一样自然、活泼、爱用感叹号和表情，永远先共情再给建议，不端着不说教。直接喊我名字就行。",
     humor_level: 5, sass_level: 2, professional_level: 3, verbosity_level: 4,
   },
   {
+    category: "工作",
     name: "极简效率脑", emoji: "⚡",
     desc: "只给结论、不废话",
     prompt: "你是极致高效的 AI 助理。回答永远先给结论，必要时列要点，禁用客套话、禁用「希望对你有帮助」之类结尾。能一句说清就别两句。",
     humor_level: 2, sass_level: 1, professional_level: 5, verbosity_level: 1,
   },
   {
+    category: "成长",
     name: "毒舌教练", emoji: "🔥",
     desc: "敢说真话，专治拖延",
     prompt: "你是我的私人执行力教练，敢说真话、不哄我。当我找借口时直接戳破，但永远给出下一步可执行动作。语气坚定不刻薄，称呼我为「队友」。",
     humor_level: 3, sass_level: 5, professional_level: 5, verbosity_level: 2,
   },
   {
+    category: "情绪",
     name: "温柔陪伴", emoji: "🫧",
     desc: "情绪稳定，先共情后建议",
     prompt: "你是一位情绪稳定、温柔的陪伴型 AI。永远先认真听、共情我的感受，再轻声给建议，不评判、不催促。语速放缓，多用「嗯」「我懂」这样的语气词。",
     humor_level: 2, sass_level: 1, professional_level: 3, verbosity_level: 4,
   },
+  {
+    category: "工作",
+    name: "克制商务", emoji: "💼",
+    desc: "正式书面、客户级口吻",
+    prompt: "你是一位以书面正式语写作的商务助理。用敬语、避免口语和俚语，输出结构化：背景→结论→下一步。称呼我为「您」。",
+    humor_level: 1, sass_level: 0, professional_level: 5, verbosity_level: 3,
+  },
+  {
+    category: "成长",
+    name: "学术导师", emoji: "🎓",
+    desc: "苏格拉底式追问，重逻辑",
+    prompt: "你是我的学术导师。回答时先指出我推理的关键假设与漏洞，再用 1-2 个反问推动我自己想清楚，最后才补充必要事实。引用要给出来源关键词。称呼我为「同学」。",
+    humor_level: 1, sass_level: 2, professional_level: 5, verbosity_level: 4,
+  },
+  {
+    category: "成长",
+    name: "创意伙伴", emoji: "🎨",
+    desc: "脑暴搭子，敢提怪点子",
+    prompt: "你是我的创意脑暴搭子。每次至少给 3 个角度差异化的方案（保守 / 主流 / 大胆），允许不靠谱但要标注风险。鼓励我「先发散再收敛」，不要急着否定我的想法。",
+    humor_level: 4, sass_level: 2, professional_level: 4, verbosity_level: 4,
+  },
+  {
+    category: "情绪",
+    name: "禅意陪谈", emoji: "🌿",
+    desc: "慢节奏、留白、像散文",
+    prompt: "你是一位禅意陪谈者。语速缓慢、句子短，多用留白与意象，少给建议、多陪我把想法说完。不催促、不评价。称呼我的名字。",
+    humor_level: 1, sass_level: 0, professional_level: 3, verbosity_level: 2,
+  },
 ];
+
+const CATEGORIES: ("全部" | TemplateCategory)[] = ["全部", "日常", "工作", "情绪", "成长"];
 
 
 
@@ -90,6 +128,7 @@ export function AiPersonaPanel() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [pickedFile, setPickedFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [templateCategory, setTemplateCategory] = useState<(typeof CATEGORIES)[number]>("全部");
 
   useEffect(() => setLocal(persona), [persona]);
 
@@ -341,34 +380,117 @@ export function AiPersonaPanel() {
         </div>
 
 
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-xs text-muted-foreground">人设描述（所有 AI 输出都会按这个口吻）</label>
-            <span className="text-[10px] text-muted-foreground/70">点击模版一键套用</span>
+            <label className="text-xs text-muted-foreground">人设模板库 · 一键切换，下方可继续微调</label>
+            <span className="text-[10px] text-muted-foreground/70">{PERSONA_TEMPLATES.length} 款风格</span>
           </div>
+
+          {/* 分类筛选 */}
           <div className="flex flex-wrap gap-1.5">
-            {PERSONA_TEMPLATES.map((t) => (
-              <button
-                key={t.name}
-                type="button"
-                onClick={() => {
-                  const next = {
-                    persona_prompt: t.prompt,
-                    humor_level: t.humor_level,
-                    sass_level: t.sass_level,
-                    professional_level: t.professional_level,
-                    verbosity_level: t.verbosity_level,
-                  };
-                  patch(next);
-                  commit(next);
-                  toast.success(`已套用「${t.name}」`);
-                }}
-                title={t.desc}
-                className="px-2.5 py-1 rounded-full text-xs bg-foreground/5 border border-border text-foreground/85 hover:border-amber-glow/50 hover:text-amber-glow transition-colors"
-              >
-                {t.emoji} {t.name}
-              </button>
-            ))}
+            {CATEGORIES.map((c) => {
+              const active = templateCategory === c;
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setTemplateCategory(c)}
+                  className={`px-2.5 py-1 rounded-full text-[11px] border transition ${
+                    active
+                      ? "bg-amber-glow/20 border-amber-glow/60 text-amber-glow"
+                      : "bg-foreground/5 border-border text-foreground/70 hover:border-amber-glow/30"
+                  }`}
+                >
+                  {c}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 模板卡片 */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {PERSONA_TEMPLATES.filter((t) => templateCategory === "全部" || t.category === templateCategory).map((t) => {
+              const applied = local.persona_prompt?.trim() === t.prompt.trim();
+              const bars: Array<{ k: string; v: number }> = [
+                { k: "幽默", v: t.humor_level },
+                { k: "贱度", v: t.sass_level },
+                { k: "专业", v: t.professional_level },
+                { k: "啰嗦", v: t.verbosity_level },
+              ];
+              return (
+                <div
+                  key={t.name}
+                  className={`group relative rounded-xl p-3 border transition flex flex-col gap-2 ${
+                    applied
+                      ? "border-amber-glow/60 bg-amber-glow/10 shadow-[0_0_0_1px_rgba(245,184,67,0.25)]"
+                      : "border-border bg-background/40 hover:border-amber-glow/40 hover:bg-background/60"
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <span className="text-xl leading-none">{t.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-medium text-foreground">{t.name}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-foreground/10 text-muted-foreground">
+                          {t.category}
+                        </span>
+                        {applied && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-glow/25 text-amber-glow border border-amber-glow/40">
+                            当前
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{t.desc}</div>
+                    </div>
+                  </div>
+
+                  {/* 风格指标条 */}
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {bars.map((b) => (
+                      <div key={b.k} className="flex flex-col gap-0.5">
+                        <div className="h-1 rounded-full bg-foreground/10 overflow-hidden">
+                          <div
+                            className="h-full bg-amber-glow/70"
+                            style={{ width: `${(b.v / 5) * 100}%` }}
+                          />
+                        </div>
+                        <div className="text-[9px] text-muted-foreground/80 text-center tabular-nums">
+                          {b.k} {b.v}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = {
+                        persona_prompt: t.prompt,
+                        humor_level: t.humor_level,
+                        sass_level: t.sass_level,
+                        professional_level: t.professional_level,
+                        verbosity_level: t.verbosity_level,
+                      };
+                      patch(next);
+                      commit(next);
+                      toast.success(`已套用「${t.name}」`, { description: "下方可继续微调" });
+                    }}
+                    disabled={applied}
+                    className={`mt-0.5 text-[11px] px-2.5 py-1 rounded-md border transition ${
+                      applied
+                        ? "bg-foreground/5 border-border text-muted-foreground cursor-default"
+                        : "bg-amber-glow/15 border-amber-glow/40 text-amber-glow hover:bg-amber-glow/25"
+                    }`}
+                  >
+                    {applied ? "已套用" : "套用此模板"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="text-[10px] text-muted-foreground/70 pt-1">
+            ↓ 套用后可在下方文本框 / 滑杆里继续微调，所有改动会自动保存。
           </div>
           <textarea
             value={local.persona_prompt}
@@ -378,6 +500,7 @@ export function AiPersonaPanel() {
             className="w-full px-3 py-2 rounded-lg bg-foreground/5 border border-border text-sm text-foreground outline-none focus:border-amber-glow/50 resize-none leading-relaxed"
           />
         </div>
+
 
 
 
