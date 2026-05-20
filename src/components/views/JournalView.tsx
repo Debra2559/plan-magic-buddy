@@ -751,7 +751,7 @@ function ComicPanel({
   onCopyToDiary: (line: string) => void;
   onCopyToNote: (line: string) => void;
 }) {
-  const { comicProvider, comicSeedreamModel, comicStyle } = useSylva();
+  const { comicProvider, comicSeedreamModel, comicStyle, comicProtagonistUrl } = useSylva();
   const provider = comicProvider;
 
   const [loading, setLoading] = useState(false);
