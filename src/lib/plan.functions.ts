@@ -76,3 +76,126 @@ ${data.existing && data.existing.length ? `EXISTING (用户当前已有的规划
       return { ok: false as const, error: `AI 规划失败: ${msg}` };
     }
   });
+
+// ====================================================================
+// 智能目标规划 (chatPlan) - 多轮对话, 必要时联网搜资料
+// ====================================================================
+
+const ChatMessage = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string(),
+});
+
+const ChatStepSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("clarify"),
+    question: z.string().describe("一个针对性的中文追问 (一次只问 1-2 个问题, 合并写在一句话里)"),
+    quickReplies: z.array(z.string()).max(4).describe("0-4 个建议的快捷回答按钮"),
+  }),
+  z.object({
+    kind: z.literal("research"),
+    queries: z.array(z.string()).min(1).max(3).describe("需要联网检索的搜索关键词 (中英文皆可)"),
+    reason: z.string().describe("一句话说明为什么需要联网"),
+  }),
+  z.object({
+    kind: z.literal("plan"),
+    summary: z.string().describe("一句中文总结, 不超过 50 字"),
+    items: z.array(PlanItemSchema).min(1).max(30),
+    sources: z.array(z.string()).optional().describe("如果有参考链接, 列在这里"),
+  }),
+]);
+
+export type ChatStep = z.infer<typeof ChatStepSchema>;
+
+const ChatPlanInput = z.object({
+  messages: z.array(ChatMessage).min(1),
+  existing: z.array(PlanItemSchema).optional(),
+});
+
+async function firecrawlSearchSnippets(query: string): Promise<string> {
+  const apiKey = process.env.FIRECRAWL_API_KEY;
+  if (!apiKey) return "";
+  try {
+    const res = await fetch("https://api.firecrawl.dev/v2/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({ query, limit: 5, scrapeOptions: { formats: ["markdown"] } }),
+    });
+    if (!res.ok) return "";
+    const data = (await res.json()) as { data?: { web?: Array<{ url?: string; title?: string; markdown?: string; description?: string }> } | Array<{ url?: string; title?: string; markdown?: string; description?: string }> };
+    const raw = data?.data;
+    const list = Array.isArray(raw) ? raw : raw?.web ?? [];
+    return list
+      .slice(0, 5)
+      .map((r, i) => `[${i + 1}] ${r.title ?? ""}\n${r.url ?? ""}\n${(r.markdown ?? r.description ?? "").slice(0, 600)}`)
+      .join("\n\n");
+  } catch {
+    return "";
+  }
+}
+
+export const chatPlan = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => ChatPlanInput.parse(input))
+  .handler(async ({ data }): Promise<{ ok: true; step: ChatStep } | { ok: false; error: string }> => {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) return { ok: false, error: "AI 服务未配置" };
+
+    const today = "2026-05-20 周三";
+
+    const baseSystem = `你是 Sylva, 一个智能目标规划助手。今天是 ${today}。
+用户会告诉你一个目标 (比如「考雅思」「跑半马」「做副业」)。
+你的工作流程:
+1. 如果关键参数缺失 (考试日期/目标分数/当前水平/可用时间...), 用 kind="clarify" 问 1-2 个最关键的问题, 并给 quickReplies 让用户一键回答。最多追问 2 轮。
+2. 如果需要最新外部信息 (比如最近的考位、推荐的备考资料、官方时间表), 用 kind="research" 输出 1-3 条搜索词。
+3. 信息齐全后, 用 kind="plan" 输出一份完整规划: items 拆解到具体的 event/todo/reminder。要求:
+   - event 必须有 time 和 durationMin
+   - 关键里程碑用 reminder
+   - 标题简洁不超过 20 字, 不带 emoji
+   - 同一天 event 总时长不超过 6 小时
+   - 总条目控制在 6-20 条最自然
+   - summary 用一句话概括节奏`;
+
+    const conversation = data.messages.map((m) => `${m.role === "user" ? "用户" : "AI"}: ${m.content}`).join("\n");
+    const existingBlock = data.existing && data.existing.length
+      ? `\n\n用户已有的安排:\n${JSON.stringify(data.existing, null, 2)}`
+      : "";
+
+    // Step 1: ask AI what to do
+    const gateway = createLovableAiGatewayProvider(apiKey);
+    let step: ChatStep;
+    try {
+      const { object } = await generateObject({
+        model: gateway("google/gemini-3-flash-preview"),
+        schema: ChatStepSchema,
+        system: baseSystem,
+        prompt: `对话记录:\n${conversation}${existingBlock}\n\n请输出下一步动作。`,
+      });
+      step = object;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("429")) return { ok: false, error: "请求过于频繁, 稍后再试" };
+      if (msg.includes("402")) return { ok: false, error: "AI 额度已用完, 请到工作区充值" };
+      return { ok: false, error: `AI 失败: ${msg}` };
+    }
+
+    // Step 2: if research, do it server-side and re-ask for plan
+    if (step.kind === "research") {
+      const snippets = (await Promise.all(step.queries.map((q) => firecrawlSearchSnippets(q)))).join("\n\n---\n\n");
+      try {
+        const { object } = await generateObject({
+          model: gateway("google/gemini-3-flash-preview"),
+          schema: ChatStepSchema,
+          system: baseSystem + `\n\n现在你已经获得了联网搜索结果, 必须输出 kind="plan", 不能再 research 或 clarify。`,
+          prompt: `对话记录:\n${conversation}${existingBlock}\n\n联网搜索结果 (queries=${JSON.stringify(step.queries)}):\n${snippets || "(没有可用结果, 凭常识规划)"}\n\n请直接输出完整 plan。`,
+        });
+        if (object.kind !== "plan") {
+          return { ok: false, error: "AI 未能给出最终规划, 请再试一次" };
+        }
+        return { ok: true, step: object };
+      } catch (err: unknown) {
+        return { ok: false, error: err instanceof Error ? err.message : "联网规划失败" };
+      }
+    }
+
+    return { ok: true, step };
+  });
