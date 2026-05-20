@@ -108,7 +108,10 @@ export function JournalView() {
 
   useEffect(() => {
     const el = dateBtnRefs.current[date];
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    if (!el) return;
+    // 用 scrollIntoView({ block: "start" }) 配合按钮上的 scroll-mt，
+    // 让活跃日期始终停在 sticky「手帐翻页」标题正下方，不会被遮住。
+    el.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
   }, [date]);
 
   const dayItems = useMemo(
