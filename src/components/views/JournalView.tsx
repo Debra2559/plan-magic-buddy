@@ -430,33 +430,37 @@ export function JournalView() {
       </div>
 
       {/* 右侧：过往 */}
-      <aside className="w-60 shrink-0 bg-black/30 border-l border-white/10 p-4 overflow-auto">
-        <p className="text-[10px] tracking-widest text-amber-glow mb-3">手帐翻页</p>
-        {allDates.length === 0 ? (
-          <p className="text-xs text-white/40">还没有任何记录</p>
-        ) : (
-          <div className="space-y-1">
-            {allDates.map((d) => {
-              const f = fmtLong(d);
-              const active = d === date;
-              return (
-                <button
-                  key={d}
-                  ref={(el) => { dateBtnRefs.current[d] = el; }}
-                  onClick={() => setDate(d)}
-                  className={`w-full text-left px-3 py-2 rounded-lg transition border ${
-                    active
-                      ? "bg-amber-glow/15 border-amber-glow/40 text-white"
-                      : "bg-transparent border-white/8 text-white/60 hover:bg-white/5 hover:text-white"
-                  }`}
-                >
-                  <p className="font-display text-base leading-none">{f.big}</p>
-                  <p className="text-[10px] text-white/40 mt-1">{f.sub}</p>
-                </button>
-              );
-            })}
-          </div>
-        )}
+      <aside className="w-60 shrink-0 bg-black/30 border-l border-white/10 overflow-auto [scroll-padding-top:2.75rem]">
+        <p className="sticky top-0 z-10 -mx-0 px-4 pt-4 pb-2 text-[10px] tracking-widest text-amber-glow bg-black/60 backdrop-blur-md border-b border-white/5">
+          手帐翻页
+        </p>
+        <div className="p-4 pt-2">
+          {allDates.length === 0 ? (
+            <p className="text-xs text-white/40">还没有任何记录</p>
+          ) : (
+            <div className="space-y-1">
+              {allDates.map((d) => {
+                const f = fmtLong(d);
+                const active = d === date;
+                return (
+                  <button
+                    key={d}
+                    ref={(el) => { dateBtnRefs.current[d] = el; }}
+                    onClick={() => setDate(d)}
+                    className={`w-full text-left px-3 py-2 rounded-lg transition border scroll-mt-12 ${
+                      active
+                        ? "bg-amber-glow/15 border-amber-glow/40 text-white"
+                        : "bg-transparent border-white/8 text-white/60 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <p className="font-display text-base leading-none">{f.big}</p>
+                    <p className="text-[10px] text-white/40 mt-1">{f.sub}</p>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </aside>
     </div>
   );
