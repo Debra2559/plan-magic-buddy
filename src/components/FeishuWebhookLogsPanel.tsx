@@ -122,6 +122,24 @@ export function FeishuWebhookLogsPanel() {
           placeholder="按 request_id 过滤"
           className="h-8 text-xs flex-1 min-w-[180px]"
         />
+        <Button size="sm" variant="outline" onClick={sendTest} disabled={testing}>
+          <Zap className={`h-3.5 w-3.5 mr-1 ${testing ? "animate-pulse" : ""}`} />
+          测试一次
+        </Button>
+        <Button size="sm" variant="outline" onClick={refresh} disabled={loading}>
+          <RefreshCw className={`h-3.5 w-3.5 mr-1 ${loading ? "animate-spin" : ""}`} />
+          刷新
+        </Button>
+      </div>
+
+      <div className="flex gap-2 flex-wrap">
+        <Input
+          value={requestId}
+          onChange={(e) => setRequestId(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && refresh()}
+          placeholder="按 request_id 过滤"
+          className="h-8 text-xs flex-1 min-w-[180px]"
+        />
         <Button size="sm" variant="outline" onClick={refresh} disabled={loading}>
           查询
         </Button>
