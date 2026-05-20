@@ -7,6 +7,7 @@ import { markRecapDone, getDailyRecap } from "@/lib/feishu.functions";
 import { EnterHint } from "@/components/EnterHint";
 import { shouldSubmitOnKey } from "@/lib/keybinds";
 import { ImageAttacher, extractImagesFromEvent, fileToCompressedDataURL } from "@/components/ImageAttacher";
+import { MediaAttacher } from "@/components/MediaAttacher";
 import { JournalView } from "@/components/views/JournalView";
 
 type Tab = "notes" | "diary" | "handbook";
@@ -129,6 +130,8 @@ function NotesTab() {
   const [mood, setMood] = useState<Mood | undefined>();
   const [tagsRaw, setTagsRaw] = useState("");
   const [images, setImages] = useState<string[]>([]);
+  const [videos, setVideos] = useState<string[]>([]);
+  const [audios, setAudios] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [diaryOpen, setDiaryOpen] = useState(false);
 
@@ -141,7 +144,7 @@ function NotesTab() {
   const [showFilters, setShowFilters] = useState(false);
 
   const submit = () => {
-    if (!text.trim() && images.length === 0) return;
+    if (!text.trim() && images.length === 0 && videos.length === 0 && audios.length === 0) return;
     const tags = tagsRaw
       .split(/[,，#\s]+/)
       .map((t) => t.replace(/^#/, "").trim())
@@ -150,11 +153,15 @@ function NotesTab() {
       mood,
       tags: tags.length ? tags : undefined,
       images: images.length ? images : undefined,
+      videos: videos.length ? videos : undefined,
+      audios: audios.length ? audios : undefined,
     });
     setText("");
     setMood(undefined);
     setTagsRaw("");
     setImages([]);
+    setVideos([]);
+    setAudios([]);
   };
 
   const onPasteOrDrop = async (e: React.ClipboardEvent | React.DragEvent) => {
