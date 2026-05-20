@@ -6,6 +6,11 @@ import { TodayWidget } from "@/components/widgets/TodayWidget";
 import { QuickNoteWidget } from "@/components/widgets/QuickNoteWidget";
 import { HabitsWidget } from "@/components/widgets/HabitsWidget";
 import { AiPlanner } from "@/components/AiPlanner";
+import { ScheduleView } from "@/components/views/ScheduleView";
+import { TodosView } from "@/components/views/TodosView";
+import { NotesView } from "@/components/views/NotesView";
+import { HabitsView } from "@/components/views/HabitsView";
+import { SettingsView } from "@/components/views/SettingsView";
 import {
   Apple,
   Wifi,
