@@ -17,10 +17,14 @@ export interface DoneItem extends PlanItem {
 
 export type Mood = "great" | "good" | "ok" | "down" | "tired";
 
+export type NoteKind = "log" | "reflection";
+
 export interface Note {
   id: string;
   text: string;
   createdAt: string; // ISO
+  /** log = 事件流水；reflection = 感受 / 思考 / 反思 */
+  kind?: NoteKind;
   mood?: Mood;
   tags?: string[];
   pinned?: boolean;
@@ -161,9 +165,9 @@ interface SylvaContextValue {
   updateItem: (id: string, patch: Partial<PlanItem>) => void;
   toggleDone: (id: string) => void;
   clearItems: () => void;
-  addNote: (text: string, opts?: { mood?: Mood; tags?: string[]; images?: string[]; videos?: string[]; audios?: string[] }) => void;
+  addNote: (text: string, opts?: { mood?: Mood; tags?: string[]; images?: string[]; videos?: string[]; audios?: string[]; kind?: NoteKind }) => void;
   removeNote: (id: string) => void;
-  updateNote: (id: string, patch: Partial<Pick<Note, "text" | "mood" | "tags" | "pinned" | "videos" | "audios">>) => void;
+  updateNote: (id: string, patch: Partial<Pick<Note, "text" | "mood" | "tags" | "pinned" | "videos" | "audios" | "kind">>) => void;
   toggleHabit: (id: string) => void;
   toggleHabitOn: (id: string, date: string) => void;
   addHabit: (input: { name: string; emoji?: string }) => void;
@@ -381,6 +385,7 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
   const addNote: SylvaContextValue["addNote"] = (text, opts) => {
     const n: Note = {
       id: nextId(), text, createdAt: new Date().toISOString(),
+      kind: opts?.kind ?? "log",
       mood: opts?.mood, tags: opts?.tags, images: opts?.images,
       videos: opts?.videos, audios: opts?.audios,
     };

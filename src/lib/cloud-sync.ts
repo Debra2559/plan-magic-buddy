@@ -35,10 +35,12 @@ type NoteRow = {
   id: string; text: string; mood: string | null;
   tags: string[]; pinned: boolean; images: string[];
   videos?: string[] | null; audios?: string[] | null;
+  kind?: string | null;
   created_at: string; updated_at: string; deleted_at: string | null;
 };
 export const noteFromRow = (r: NoteRow): Note => ({
   id: r.id, text: r.text, createdAt: r.created_at,
+  kind: (r.kind as any) === "reflection" ? "reflection" : "log",
   mood: (r.mood as any) ?? undefined,
   tags: r.tags?.length ? r.tags : undefined,
   pinned: r.pinned || undefined,
@@ -50,6 +52,7 @@ export const noteToRow = (n: Note) => ({
   id: n.id, text: n.text, mood: n.mood ?? null,
   tags: n.tags ?? [], pinned: !!n.pinned, images: n.images ?? [],
   videos: n.videos ?? [], audios: n.audios ?? [],
+  kind: n.kind ?? "log",
   created_at: n.createdAt, deleted_at: null,
 });
 

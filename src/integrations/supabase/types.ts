@@ -690,6 +690,7 @@ export type Database = {
           deleted_at: string | null
           id: string
           images: string[]
+          kind: string
           mood: string | null
           pinned: boolean
           tags: string[]
@@ -704,6 +705,7 @@ export type Database = {
           deleted_at?: string | null
           id: string
           images?: string[]
+          kind?: string
           mood?: string | null
           pinned?: boolean
           tags?: string[]
@@ -718,6 +720,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           images?: string[]
+          kind?: string
           mood?: string | null
           pinned?: boolean
           tags?: string[]
