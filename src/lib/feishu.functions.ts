@@ -226,6 +226,65 @@ export const setFeishuDirection = createServerFn({ method: 'POST' })
     return { ok: true as const }
   })
 
+// ---------- 分享日历给用户（让事件出现在用户飞书日历 App 中）----------
+const shareSchema = z.object({
+  calendarId: z.string().min(1).max(200).optional(),
+  openId: z.string().min(1).max(200).optional(),
+  role: z.enum(['reader', 'writer', 'owner']).optional(),
+})
+
+export const shareFeishuCalendarToUser = createServerFn({ method: 'POST' })
+  .inputValidator((input) => shareSchema.parse(input ?? {}))
+  .handler(async ({ data }) => {
+    try {
+      let calendarId = data.calendarId
+      if (!calendarId) {
+        const { data: s } = await supabaseAdmin
+          .from('feishu_settings')
+          .select('selected_calendar_id')
+          .limit(1)
+          .maybeSingle()
+        calendarId = (s as any)?.selected_calendar_id ?? undefined
+      }
+      if (!calendarId) return { ok: false as const, error: '尚未选中日历' }
+
+      let openId = data.openId
+      if (!openId) {
+        const { data: s } = await supabaseAdmin
+          .from('feishu_settings')
+          .select('notify_receive_id, notify_receive_id_type, user_open_id')
+          .limit(1)
+          .maybeSingle()
+        const s2 = s as any
+        if (s2?.notify_receive_id_type === 'open_id' && s2?.notify_receive_id) {
+          openId = s2.notify_receive_id
+        } else if (s2?.user_open_id) {
+          openId = s2.user_open_id
+        }
+      }
+      if (!openId) return { ok: false as const, error: '尚未捕获到你的 open_id，请先向机器人发一条私信' }
+
+      const role = data.role ?? 'writer'
+      const json = await feishu<{ code: number; msg: string; data?: { acl_id?: string } }>(
+        `/calendar/v4/calendars/${encodeURIComponent(calendarId)}/acls?user_id_type=open_id`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            scope: { type: 'user', user_id: openId },
+            role,
+          }),
+        }
+      )
+
+      if (json.code !== 0) {
+        return { ok: false as const, error: `code=${json.code} msg=${json.msg}`, calendarId, openId }
+      }
+      return { ok: true as const, aclId: json.data?.acl_id ?? null, calendarId, openId, role }
+    } catch (e: any) {
+      return { ok: false as const, error: e?.message ?? '请求失败' }
+    }
+  })
+
 // ============= 真实推送 =============
 
 const TZ = 'Asia/Shanghai'
