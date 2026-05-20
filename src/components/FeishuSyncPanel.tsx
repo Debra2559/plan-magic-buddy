@@ -1351,15 +1351,15 @@ export function FeishuSyncPanel() {
             onClick={() => { setDiagOpen((v) => !v); if (!diag) refreshDiag(); }}
             className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] text-foreground/75 hover:bg-foreground/[0.05]"
           >
-            <AlertTriangle className="w-3 h-3 text-amber-300" />
+            <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-300" />
             <span className="font-medium">捕获 / 错误明细</span>
             {diag && diag.reasons.length > 0 && (
-              <span className="px-1.5 py-0.5 rounded bg-rose-400/15 text-rose-300 text-[10px]">{diag.reasons.length} 项问题</span>
+              <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-700 dark:text-rose-300 text-[10px] font-medium">{diag.reasons.length} 项问题</span>
             )}
             {diag && diag.reasons.length === 0 && (
-              <span className="px-1.5 py-0.5 rounded bg-emerald-400/15 text-emerald-300 text-[10px]">未发现明显问题</span>
+              <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[10px] font-medium">未发现明显问题</span>
             )}
-            <span className="ml-auto text-muted-foreground/70">{diagOpen ? "收起" : "展开"}</span>
+            <span className="ml-auto text-muted-foreground">{diagOpen ? "收起" : "展开"}</span>
           </button>
           {diagOpen && (
             <div className="px-2.5 pb-2 space-y-2 text-[11px]">
