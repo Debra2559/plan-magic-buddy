@@ -100,7 +100,7 @@ const SOURCES: Array<{ name: string; query: string }> = [
   { name: "稀土掘金", query: "site:juejin.cn 黑客松 2026" },
 ];
 
-export const scanHackathonsNow = createServerFn({ method: "POST" }).handler(async () => {
+export const scanHackathonsNow = createServerFn({ method: "GET" }).handler(async () => {
   const allFound: Array<{ source: string; item: z.infer<typeof ExtractedSchema>["hackathons"][number] }> = [];
 
   for (const src of SOURCES) {
