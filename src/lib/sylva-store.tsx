@@ -111,6 +111,9 @@ interface SylvaContextValue {
   updateNote: (id: string, patch: Partial<Pick<Note, "text" | "mood" | "tags" | "pinned">>) => void;
   toggleHabit: (id: string) => void;
   upsertDiary: (date: string, patch: Partial<Pick<DiaryEntry, "content" | "mood">>) => void;
+  recapDoneDates: Set<string>;
+  isRecapDone: (date: string) => boolean;
+  refreshRecapDoneDates: () => Promise<void>;
 }
 
 const SylvaContext = createContext<SylvaContextValue | null>(null);
