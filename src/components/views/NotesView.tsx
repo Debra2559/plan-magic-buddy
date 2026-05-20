@@ -4,6 +4,7 @@ import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, NotebookPen, 
 import { markRecapDone, getDailyRecap } from "@/lib/feishu.functions";
 import { EnterHint } from "@/components/EnterHint";
 import { shouldSubmitOnKey } from "@/lib/keybinds";
+import { ImageAttacher, extractImagesFromEvent, fileToCompressedDataURL } from "@/components/ImageAttacher";
 
 type Tab = "notes" | "diary";
 
