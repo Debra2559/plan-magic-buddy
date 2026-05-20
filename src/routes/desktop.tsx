@@ -131,19 +131,24 @@ function DesktopApp() {
                   </div>
                   <span className="font-display text-base">Sylva</span>
                 </div>
-                <SidebarItem icon={Sparkles} label="AI 规划" active />
-                <SidebarItem icon={CalIcon} label="日程" />
-                <SidebarItem icon={CheckSquare} label="待办" />
-                <SidebarItem icon={StickyNote} label="随手记" />
-                <SidebarItem icon={CalIcon} label="习惯" />
+                <SidebarItem icon={Sparkles} label="AI 规划" active={view === "ai"} onClick={() => setView("ai")} />
+                <SidebarItem icon={CalIcon} label="日程" active={view === "schedule"} onClick={() => setView("schedule")} />
+                <SidebarItem icon={CheckSquare} label="待办" active={view === "todos"} onClick={() => setView("todos")} />
+                <SidebarItem icon={StickyNote} label="随手记" active={view === "notes"} onClick={() => setView("notes")} />
+                <SidebarItem icon={Sparkles} label="习惯" active={view === "habits"} onClick={() => setView("habits")} />
                 <div className="mt-auto pt-4 border-t border-white/8">
-                  <SidebarItem icon={Settings} label="设置" muted />
+                  <SidebarItem icon={Settings} label="设置" active={view === "settings"} onClick={() => setView("settings")} muted={view !== "settings"} />
                 </div>
               </aside>
 
               {/* Content */}
-              <div className="flex-1 overflow-auto p-6">
-                <AiPlanner />
+              <div className="flex-1 overflow-hidden">
+                {view === "ai" && <div className="overflow-auto h-full p-6"><AiPlanner /></div>}
+                {view === "schedule" && <ScheduleView />}
+                {view === "todos" && <TodosView />}
+                {view === "notes" && <NotesView />}
+                {view === "habits" && <HabitsView />}
+                {view === "settings" && <SettingsView />}
               </div>
             </div>
           </AppWindow>
