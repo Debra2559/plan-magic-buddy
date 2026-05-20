@@ -368,6 +368,8 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
         isRecapDone,
         refreshRecapDoneDates,
         unmarkRecapDone,
+        recapBackfillStrategy,
+        setRecapBackfillStrategy,
       }}
     >
       {children}
