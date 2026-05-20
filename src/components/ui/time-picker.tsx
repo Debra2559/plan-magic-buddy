@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Clock, X } from "lucide-react";
 
 interface TimePickerProps {
@@ -21,15 +22,21 @@ export function TimePicker({
 }: TimePickerProps) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
   const hourColRef = useRef<HTMLDivElement>(null);
   const minColRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
 
   const [hh, mm] = value ? value.split(":") : ["", ""];
 
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
-      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (wrapRef.current?.contains(t)) return;
+      if (popRef.current?.contains(t)) return;
+      setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -39,6 +46,31 @@ export function TimePicker({
     return () => {
       document.removeEventListener("mousedown", onDoc);
       document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  // 计算下拉浮层的 fixed 位置
+  useLayoutEffect(() => {
+    if (!open) return;
+    const update = () => {
+      const r = triggerRef.current?.getBoundingClientRect();
+      if (!r) return;
+      const popW = 180;
+      const popH = 230;
+      const margin = 8;
+      let left = r.left;
+      let top = r.bottom + 6;
+      if (left + popW > window.innerWidth - margin) left = window.innerWidth - popW - margin;
+      if (left < margin) left = margin;
+      if (top + popH > window.innerHeight - margin) top = r.top - popH - 6;
+      setPos({ left, top });
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
     };
   }, [open]);
 
@@ -80,6 +112,7 @@ export function TimePicker({
   return (
     <div ref={wrapRef} className={`relative inline-block ${className}`}>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={`group inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-md bg-white/5 border border-white/10 hover:border-amber-glow/40 hover:bg-amber-glow/[0.06] transition ${padded} font-mono tabular-nums ${
@@ -105,8 +138,13 @@ export function TimePicker({
         )}
       </button>
 
-      {open && (
-        <div className="absolute left-0 z-50 mt-1.5 w-[180px] rounded-xl border border-white/15 bg-zinc-950/95 backdrop-blur-md shadow-2xl shadow-black/60 overflow-hidden">
+      {open && pos && typeof document !== "undefined" && createPortal(
+        <div
+          ref={popRef}
+          style={{ position: "fixed", left: pos.left, top: pos.top, zIndex: 1000 }}
+          className="w-[180px] rounded-xl border border-white/15 bg-zinc-950/95 backdrop-blur-md shadow-2xl shadow-black/60 overflow-hidden"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           <div className="flex items-center justify-between px-3 py-2 border-b border-white/8">
             <span className="text-[10px] tracking-widest text-amber-glow/80 uppercase">时间</span>
             <span className="font-mono text-sm text-white/90 tabular-nums">
@@ -114,7 +152,6 @@ export function TimePicker({
             </span>
           </div>
           <div className="relative flex h-44">
-            {/* 选中高亮 */}
             <div className="pointer-events-none absolute inset-x-2 top-1/2 -translate-y-1/2 h-8 rounded-md bg-amber-glow/10 border border-amber-glow/25" />
             <Column
               innerRef={hourColRef}
@@ -131,7 +168,6 @@ export function TimePicker({
               flashKey={flashKey}
               onPick={(v) => select(hh || String(new Date().getHours()).padStart(2, "0"), v)}
             />
-
           </div>
           <div className="flex items-center justify-between px-2 py-1.5 border-t border-white/8 bg-black/30">
             <button
@@ -155,7 +191,8 @@ export function TimePicker({
               完成
             </button>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
