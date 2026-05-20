@@ -574,6 +574,61 @@ export function FeishuSyncPanel() {
         </div>
       </div>
 
+      {/* 黑客松通知配置 */}
+      <div className="widget mt-3 px-4 py-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Bell className="w-3.5 h-3.5 text-amber-glow" />
+          <h4 className="text-sm text-white/90">黑客松雷达 · 飞书推送</h4>
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          <select
+            value={notify.receiveIdType}
+            onChange={(e) => setNotify({ ...notify, receiveIdType: e.target.value as any })}
+            className="bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white/80 outline-none"
+          >
+            <option value="open_id">open_id</option>
+            <option value="user_id">user_id</option>
+            <option value="chat_id">chat_id</option>
+            <option value="email">email</option>
+          </select>
+          <input
+            value={notify.receiveId}
+            onChange={(e) => setNotify({ ...notify, receiveId: e.target.value })}
+            placeholder="接收人 ID（推荐 open_id 或群 chat_id）"
+            className="flex-1 bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white/90 placeholder:text-white/30 outline-none"
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-3 mb-2 text-[11px] text-white/70">
+          <label className="flex items-center gap-1.5">
+            <input type="checkbox" checked={notify.notifyOnDiscover} onChange={(e) => setNotify({ ...notify, notifyOnDiscover: e.target.checked })} /> 发现新比赛时推送
+          </label>
+          <label className="flex items-center gap-1.5">
+            <input type="checkbox" checked={notify.notifyOnAccept} onChange={(e) => setNotify({ ...notify, notifyOnAccept: e.target.checked })} /> 加入日程后推回执
+          </label>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={saveNotify} className="text-[11px] px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10">
+            {notifySaved ? "已保存 ✓" : "保存"}
+          </button>
+          <button
+            onClick={sendTestNotify}
+            disabled={notifySending || !notify.receiveId}
+            className="text-[11px] px-3 py-1 rounded-full bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-50 flex items-center gap-1"
+          >
+            {notifySending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} 发送测试卡片
+          </button>
+          {notifyResult && (
+            <span className={`text-[11px] ${notifyResult.ok ? "text-emerald-300" : "text-rose-300"}`}>
+              {notifyResult.ok ? "✓ " : "✗ "}{notifyResult.msg}
+            </span>
+          )}
+        </div>
+        <p className="text-[10px] text-white/40 mt-2 leading-relaxed">
+          飞书后台需为应用开启 <code>im:message</code> 权限，并把「事件订阅 · 卡片回调」指向 <code>/api/public/feishu/webhook</code>。点击卡片「参加」会自动加入选中日历的日程。
+        </p>
+      </div>
+
+
       <div className="mt-2 flex items-start gap-1.5 text-[11px] text-white/40">
         <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
         <span>
