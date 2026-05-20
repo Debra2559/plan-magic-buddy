@@ -6,6 +6,7 @@ import { useAuth } from "./auth-context";
 export interface PersonaProfile {
   user_id: string;
   display_name: string;
+  ai_nickname: string;
   avatar_url: string | null;
   persona_prompt: string;
   humor_level: number;
@@ -20,6 +21,7 @@ export interface PersonaProfile {
 
 const DEFAULT_PERSONA: Omit<PersonaProfile, "user_id" | "version"> = {
   display_name: "主人",
+  ai_nickname: "Sylva",
   avatar_url: null,
   persona_prompt:
     "你是我的私人 AI 助理。说话风格：幽默搞笑、贱贱的但很专业，敢吐槽我但不能人身攻击，偶尔用网络梗但别太频繁。称呼我为「主人」。",
