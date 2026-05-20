@@ -196,10 +196,10 @@ function NoteCard({ n, onRemove, onPin }: { n: Note; onRemove: () => void; onPin
 }
 
 /* ---------------- Diary ---------------- */
-function DiaryTab() {
+function DiaryTab({ initialDate }: { initialDate?: string | null }) {
   const { diary, upsertDiary } = useSylva();
   const today = todayStr();
-  const [date, setDate] = useState(today);
+  const [date, setDate] = useState(initialDate ?? today);
   const entry = diary.find((d) => d.date === date);
   const [content, setContent] = useState(entry?.content ?? "");
   const [mood, setMood] = useState<Mood | undefined>(entry?.mood);
