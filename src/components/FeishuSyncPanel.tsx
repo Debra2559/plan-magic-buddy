@@ -1079,6 +1079,34 @@ export function FeishuSyncPanel() {
           <Bell className="w-3.5 h-3.5 text-amber-glow" />
           <h4 className="text-sm text-white/90">黑客松雷达 · 飞书推送</h4>
         </div>
+        <div className="mb-2 rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[11px] text-white/70 flex items-center gap-2 flex-wrap">
+          <span className="text-white/50 shrink-0">最近捕获：</span>
+          {capture?.openId ? (
+            <>
+              <code className="font-mono text-amber-glow/90 truncate max-w-[260px]" title={capture.openId}>{capture.openId}</code>
+              <span className="text-white/40">({capture.receiveIdType ?? "open_id"})</span>
+              {capture.eventType && <span className="px-1.5 py-0.5 rounded bg-sky-400/15 text-sky-300 text-[10px]">{capture.eventType}</span>}
+              {capture.capturedAt && (
+                <span className="text-white/40 tabular-nums" title={capture.capturedAt}>
+                  {new Date(capture.capturedAt).toLocaleString()}
+                </span>
+              )}
+              {capture.level && capture.level !== "info" && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded ${capture.level === "error" ? "bg-rose-400/15 text-rose-300" : "bg-amber-400/15 text-amber-300"}`}>{capture.level}</span>
+              )}
+            </>
+          ) : (
+            <span className="text-white/40">还没有捕获到 sender.open_id（向机器人发一条私信即可）</span>
+          )}
+          <button
+            type="button"
+            onClick={refreshCapture}
+            disabled={captureRefreshing}
+            className="ml-auto text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-50"
+          >
+            {captureRefreshing ? "刷新中…" : "刷新"}
+          </button>
+        </div>
         <div className="flex items-center gap-2 mb-2">
           <select
             value={notify.receiveIdType}
