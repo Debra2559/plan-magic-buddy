@@ -103,7 +103,7 @@ function NotesTab() {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+            if (shouldSubmitOnKey(e, enterToSubmit)) {
               e.preventDefault();
               submit();
             }
