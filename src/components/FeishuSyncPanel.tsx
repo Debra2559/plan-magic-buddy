@@ -577,9 +577,27 @@ export function FeishuSyncPanel() {
     setNotifySending(true);
     setNotifyResult(null);
     try {
-      await runSetNotify({ data: notify });
+      // 自动从 DB（webhook 已捕获的 sender.open_id）回填到输入框
+      let effective = notify;
+      try {
+        const latest = await runGetNotify();
+        if (latest?.receiveId) {
+          const changed =
+            latest.receiveId !== notify.receiveId ||
+            latest.receiveIdType !== notify.receiveIdType;
+          if (changed) {
+            effective = { ...notify, receiveId: latest.receiveId, receiveIdType: latest.receiveIdType };
+            setNotify(effective);
+          }
+        }
+      } catch {}
+      await runSetNotify({ data: effective });
       const r = await runTestNotify();
-      setNotifyResult(r.ok ? { ok: true, msg: "已发送测试卡片到飞书" } : { ok: false, msg: r.error ?? "发送失败" });
+      setNotifyResult(
+        r.ok
+          ? { ok: true, msg: effective.receiveId !== notify.receiveId ? `已自动回填接收人并发送测试卡片` : "已发送测试卡片到飞书" }
+          : { ok: false, msg: r.error ?? "发送失败" }
+      );
     } catch (e: any) {
       setNotifyResult({ ok: false, msg: e?.message ?? "发送失败" });
     } finally {
