@@ -205,7 +205,7 @@ function NoteCard({ n, onRemove, onPin }: { n: Note; onRemove: () => void; onPin
 
 /* ---------------- Diary ---------------- */
 function DiaryTab({ initialDate }: { initialDate?: string | null }) {
-  const { diary, upsertDiary } = useSylva();
+  const { diary, upsertDiary, enterToSubmit } = useSylva();
   const today = todayStr();
   const [date, setDate] = useState(initialDate ?? today);
   const entry = diary.find((d) => d.date === date);
