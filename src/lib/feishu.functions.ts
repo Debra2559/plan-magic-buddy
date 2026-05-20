@@ -1501,3 +1501,53 @@ export const listFeishuChats = createServerFn({ method: 'POST' }).handler(async 
     return { ok: false as const, error: e?.message ?? '请求失败' }
   }
 })
+
+// ---------- 批量查询 open_id ----------
+export const batchLookupFeishuOpenId = createServerFn({ method: 'POST' })
+  .inputValidator((input) =>
+    z
+      .object({
+        emails: z.array(z.string().min(3).max(120)).max(50).optional(),
+        mobiles: z.array(z.string().min(3).max(40)).max(50).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    try {
+      const body: Record<string, string[]> = {}
+      if (data.emails?.length) body.emails = data.emails
+      if (data.mobiles?.length) body.mobiles = data.mobiles
+      if (!body.emails && !body.mobiles) {
+        return { ok: false as const, error: '请至少输入一个邮箱或手机号' }
+      }
+      const res = await feishu<{
+        code: number
+        msg: string
+        data?: {
+          user_list?: Array<{ email?: string; mobile?: string; open_id?: string; user_id?: string }>
+        }
+      }>('/contact/v3/users/batch_get_id?user_id_type=open_id', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      })
+      if (res.code !== 0) {
+        return {
+          ok: false as const,
+          error: `飞书接口错误 code=${res.code} msg=${res.msg}`,
+          hint:
+            res.code === 99991672 || /scope/i.test(res.msg ?? '')
+              ? '应用缺少 contact:user.base:readonly 权限，请到飞书后台开通后重发布版本'
+              : undefined,
+        }
+      }
+      const list = res.data?.user_list ?? []
+      const results = list.map((u) => ({
+        input: u.email ?? u.mobile ?? '',
+        kind: u.email ? ('email' as const) : ('mobile' as const),
+        openId: u.open_id ?? null,
+      }))
+      return { ok: true as const, results }
+    } catch (e: any) {
+      return { ok: false as const, error: e?.message ?? '请求失败' }
+    }
+  })
