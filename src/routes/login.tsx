@@ -174,20 +174,47 @@ function LoginPage() {
                 {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            {mode === "signup" && pwdCheck.status !== "idle" && (
-              <p
-                className={`mt-1 text-[11px] ${
-                  pwdCheck.status === "ok"
-                    ? "text-moss"
-                    : pwdCheck.status === "checking"
-                      ? "text-foreground/50"
-                      : "text-destructive"
-                }`}
-              >
-                {pwdCheck.status === "checking" ? "⏳ " : pwdCheck.status === "ok" ? "✓ " : "⚠ "}
-                {pwdCheck.msg}
-              </p>
-            )}
+            {mode === "signup" && pwd && (() => {
+              // 评分 0-4: 长度、字母、数字、符号；pwned 直接打 0；checking 显示最近一次评分
+              let score = 0;
+              if (pwd.length >= 8) score++;
+              if (pwd.length >= 12) score++;
+              if (/[A-Za-z]/.test(pwd) && /[0-9]/.test(pwd)) score++;
+              if (/[^A-Za-z0-9]/.test(pwd)) score++;
+              if (pwdCheck.status === "pwned") score = 0;
+              if (pwdCheck.status === "ok" && score < 3) score = 3;
+              const labels = ["很弱", "较弱", "一般", "良好", "强"];
+              const barColors = ["bg-destructive", "bg-destructive/80", "bg-amber-glow/70", "bg-amber-glow", "bg-moss"];
+              const textColor =
+                pwdCheck.status === "pwned" || pwdCheck.status === "weak"
+                  ? "text-destructive"
+                  : pwdCheck.status === "checking"
+                    ? "text-foreground/50"
+                    : pwdCheck.status === "ok"
+                      ? "text-moss"
+                      : "text-foreground/60";
+              return (
+                <div className="mt-1.5 space-y-1">
+                  <div className="flex gap-1">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <div
+                        key={i}
+                        className={`h-1 flex-1 rounded-full transition-colors ${
+                          i < score ? barColors[score - 1] : "bg-foreground/10"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className={textColor}>
+                      {pwdCheck.status === "checking" ? "⏳ " : pwdCheck.status === "ok" ? "✓ " : pwdCheck.status === "idle" ? "" : "⚠ "}
+                      {pwdCheck.msg || `强度：${labels[Math.max(0, score - 1)] ?? labels[0]}`}
+                    </span>
+                    <span className="text-foreground/40">{score}/4</span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
           <button
             type="submit"
