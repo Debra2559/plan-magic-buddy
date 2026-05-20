@@ -49,16 +49,16 @@ function AccountPanel() {
   };
 
   return (
-    <div className="widget overflow-hidden divide-y divide-white/8">
+    <div className="widget overflow-hidden divide-y divide-border/70">
       <div className="flex items-center px-4 py-3">
         <div className="flex-1 min-w-0">
-          <div className="text-sm text-white/90">登录账户</div>
-          <div className="text-xs text-white/50 mt-0.5 truncate">{email}</div>
+          <div className="text-sm text-foreground">登录账户</div>
+          <div className="text-xs text-muted-foreground mt-0.5 truncate">{email}</div>
         </div>
         {user && (
           <button
             onClick={handleSignOut}
-            className="text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 inline-flex items-center gap-1"
+            className="text-xs px-3 py-1 rounded-full bg-foreground/5 border border-border text-foreground/80 hover:bg-foreground/10 inline-flex items-center gap-1"
           >
             <LogOut className="w-3 h-3" />
             退出登录
@@ -75,22 +75,22 @@ function AccountPanel() {
       </div>
       <div className="flex items-center px-4 py-3">
         <div className="flex-1">
-          <div className="text-sm text-white/90">登录方式</div>
-          <div className="text-xs text-white/50 mt-0.5">{providerLabel}</div>
+          <div className="text-sm text-foreground">登录方式</div>
+          <div className="text-xs text-muted-foreground mt-0.5">{providerLabel}</div>
         </div>
       </div>
       <div className="flex items-center px-4 py-3">
         <div className="flex-1">
-          <div className="text-sm text-white/90">注册时间</div>
-          <div className="text-xs text-white/50 mt-0.5">{created}</div>
+          <div className="text-sm text-foreground">注册时间</div>
+          <div className="text-xs text-muted-foreground mt-0.5">{created}</div>
         </div>
       </div>
       <div className="flex items-center px-4 py-3">
         <div className="flex-1">
-          <div className="text-sm text-white/90">界面语言</div>
-          <div className="text-xs text-white/50 mt-0.5">简体中文</div>
+          <div className="text-sm text-foreground">界面语言</div>
+          <div className="text-xs text-muted-foreground mt-0.5">简体中文</div>
         </div>
-        <button className="text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/70 hover:bg-white/10">切换</button>
+        <button className="text-xs px-3 py-1 rounded-full bg-foreground/5 border border-border text-foreground/80 hover:bg-foreground/10">切换</button>
       </div>
     </div>
   );
@@ -99,14 +99,14 @@ function AccountPanel() {
 
 function RowList({ rows }: { rows: SimpleRow[] }) {
   return (
-    <div className="widget overflow-hidden divide-y divide-white/8">
+    <div className="widget overflow-hidden divide-y divide-border/70">
       {rows.map((row) => (
-        <div key={row.label} className="flex items-center px-4 py-3 hover:bg-white/[0.03]">
+        <div key={row.label} className="flex items-center px-4 py-3 hover:bg-foreground/[0.04]">
           <div className="flex-1">
-            <div className="text-sm text-white/90">{row.label}</div>
-            <div className="text-xs text-white/50 mt-0.5">{row.value}</div>
+            <div className="text-sm text-foreground">{row.label}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">{row.value}</div>
           </div>
-          <button className="text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/70 hover:bg-white/10">
+          <button className="text-xs px-3 py-1 rounded-full bg-foreground/5 border border-border text-foreground/80 hover:bg-foreground/10">
             {row.action}
           </button>
         </div>
@@ -118,11 +118,11 @@ function RowList({ rows }: { rows: SimpleRow[] }) {
 function DateFlashPanel() {
   const { dateFlashEnabled, setDateFlashEnabled, dateFlashDurationMs, setDateFlashDurationMs } = useSylva();
   return (
-    <div className="widget overflow-hidden divide-y divide-white/8">
+    <div className="widget overflow-hidden divide-y divide-border/70">
       <div className="flex items-center px-4 py-3">
         <div className="flex-1">
-          <div className="text-sm text-white/90">切换日期时闪烁高亮</div>
-          <div className="text-xs text-white/50 mt-0.5">选中日期卡片会短暂发光以确认定位</div>
+          <div className="text-sm text-foreground">切换日期时闪烁高亮</div>
+          <div className="text-xs text-muted-foreground mt-0.5">选中日期卡片会短暂发光以确认定位</div>
         </div>
         <button
           type="button"
@@ -132,7 +132,7 @@ function DateFlashPanel() {
           className={`relative h-6 w-11 rounded-full transition border ${
             dateFlashEnabled
               ? "bg-amber-glow/40 border-amber-glow/60"
-              : "bg-white/10 border-white/15"
+              : "bg-foreground/10 border-border"
           }`}
         >
           <span
@@ -144,8 +144,8 @@ function DateFlashPanel() {
       </div>
       <div className={`px-4 py-3 ${!dateFlashEnabled ? "opacity-50 pointer-events-none" : ""}`}>
         <div className="flex items-center justify-between mb-2">
-          <div className="text-sm text-white/90">闪烁持续时间</div>
-          <div className="text-xs text-white/60 tabular-nums">{(dateFlashDurationMs / 1000).toFixed(1)}s</div>
+          <div className="text-sm text-foreground">闪烁持续时间</div>
+          <div className="text-xs text-muted-foreground tabular-nums">{(dateFlashDurationMs / 1000).toFixed(1)}s</div>
         </div>
         <input
           type="range"
@@ -156,7 +156,7 @@ function DateFlashPanel() {
           onChange={(e) => setDateFlashDurationMs(Number(e.target.value))}
           className="w-full accent-amber-glow"
         />
-        <div className="flex justify-between text-[10px] text-white/40 mt-1">
+        <div className="flex justify-between text-[10px] text-muted-foreground/70 mt-1">
           <span>0.2s</span>
           <span>3.0s</span>
         </div>
@@ -304,14 +304,14 @@ export function SettingsView() {
         <div className="space-y-4">
           <div className="widget p-4 flex items-center justify-between">
             <div>
-              <div className="text-sm text-white/90">主题模式</div>
-              <div className="text-xs text-white/50 mt-0.5">切换亮色 / 暗色外观</div>
+              <div className="text-sm text-foreground">主题模式</div>
+              <div className="text-xs text-muted-foreground mt-0.5">切换亮色 / 暗色外观</div>
             </div>
             <ThemeToggle />
           </div>
           <RowList rows={simpleSections.appearance.rows} />
           <div>
-            <div className="text-[10px] uppercase tracking-widest text-white/35 mb-2 px-1 flex items-center gap-1.5">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground/70 mb-2 px-1 flex items-center gap-1.5">
               <Sparkles className="w-3 h-3 text-amber-glow" />
               手帐 · 日期高亮
             </div>
@@ -322,10 +322,10 @@ export function SettingsView() {
       case "shortcuts": return <RowList rows={simpleSections.shortcuts.rows} />;
       case "about":
         return (
-          <div className="widget p-5 text-sm text-white/70 space-y-2">
-            <div className="text-white/90 font-medium">Sylva v0.9.0</div>
+          <div className="widget p-5 text-sm text-foreground/80 space-y-2">
+            <div className="text-foreground font-medium">Sylva v0.9.0</div>
             <div>像森林一样陪你长出节奏。</div>
-            <div className="text-xs text-white/40 pt-2">© Sylva — 私人 AI 工作台</div>
+            <div className="text-xs text-muted-foreground/70 pt-2">© Sylva — 私人 AI 工作台</div>
           </div>
         );
     }
@@ -338,7 +338,7 @@ export function SettingsView() {
         <aside className="w-56 shrink-0 hidden md:flex flex-col gap-5 overflow-y-auto pr-1">
           <div>
             <p className="text-[10px] tracking-widest text-amber-glow mb-1">偏好设置</p>
-            <h2 className="font-display text-2xl text-white leading-tight">让 {aiName}<br/>长成你的样子。</h2>
+            <h2 className="font-display text-2xl text-foreground leading-tight">让 {aiName}<br/>长成你的样子。</h2>
           </div>
           <nav className="flex flex-col gap-3">
             {NAV.map((group) => {
@@ -349,7 +349,7 @@ export function SettingsView() {
                   <button
                     type="button"
                     onClick={() => toggleGroup(group.label)}
-                    className="w-full flex items-center gap-1 px-2 mb-1.5 text-[10px] uppercase tracking-widest text-white/35 hover:text-white/60 transition"
+                    className="w-full flex items-center gap-1 px-2 mb-1.5 text-[10px] uppercase tracking-widest text-muted-foreground/70 hover:text-muted-foreground transition"
                   >
                     <ChevronDown
                       className={`w-3 h-3 transition-transform ${isOpen ? "rotate-0" : "-rotate-90"} ${
@@ -370,13 +370,13 @@ export function SettingsView() {
                             onClick={(e) => { e.preventDefault(); select(item.key); }}
                             className={`group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition border ${
                               isActive
-                                ? "bg-white/[0.06] border-white/15 text-white"
-                                : "border-transparent text-white/65 hover:bg-white/[0.04] hover:text-white"
+                                ? "bg-foreground/[0.08] border-border text-foreground"
+                                : "border-transparent text-muted-foreground hover:bg-foreground/[0.05] hover:text-foreground"
                             }`}
                           >
-                            <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-amber-glow" : "text-white/50"}`} />
+                            <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-amber-glow" : "text-muted-foreground"}`} />
                             <span className="flex-1 text-left truncate">{item.title}</span>
-                            {isActive && <ChevronRight className="w-3.5 h-3.5 text-white/40" />}
+                            {isActive && <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/70" />}
                           </a>
                         );
                       })}
@@ -393,7 +393,7 @@ export function SettingsView() {
           <select
             value={active}
             onChange={(e) => select(e.target.value as NavKey)}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+            className="w-full bg-foreground/5 border border-border rounded-lg px-3 py-2 text-sm text-foreground"
           >
             {NAV.map((g) => (
               <optgroup key={g.label} label={g.label}>
@@ -407,10 +407,10 @@ export function SettingsView() {
 
         {/* 右侧内容 */}
         <main className="flex-1 min-w-0 overflow-y-auto">
-          <header className="mb-5 pb-4 border-b border-white/8">
-            <div className="text-[10px] uppercase tracking-widest text-white/35 mb-1">{groupOfKey(active)}</div>
-            <h3 className="font-display text-2xl text-white">{meta.title}</h3>
-            <p className="text-xs text-white/50 mt-1">{meta.desc}</p>
+          <header className="mb-5 pb-4 border-b border-border/70">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground/70 mb-1">{groupOfKey(active)}</div>
+            <h3 className="font-display text-2xl text-foreground">{meta.title}</h3>
+            <p className="text-xs text-muted-foreground mt-1">{meta.desc}</p>
           </header>
           <div className="pb-10">
             {renderContent}
