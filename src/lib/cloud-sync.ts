@@ -162,7 +162,12 @@ export async function fetchAllRemote() {
     supabase.from("comics").select("*"),
   ]);
   return {
-    items: (items.data ?? []).map(itemFromRow as any),
+    items: ((items.data ?? []) as any[]).map(itemFromRow) as DoneItem[],
+    notes: ((notes.data ?? []) as any[]).map(noteFromRow) as Note[],
+    habits: ((habits.data ?? []) as any[]).map(habitFromRow) as Habit[],
+    diary: ((diary.data ?? []) as any[]).map(diaryFromRow) as DiaryEntry[],
+    comics: ((comics.data ?? []) as any[]).map(comicFromRow) as DailyComic[],
+
     notes: (notes.data ?? []).map(noteFromRow as any),
     habits: (habits.data ?? []).map(habitFromRow as any),
     diary: (diary.data ?? []).map(diaryFromRow as any),
