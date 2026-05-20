@@ -142,11 +142,15 @@ export function AiPersonaPanel() {
         >
           <div className="relative">
             <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/15 bg-white/5 flex items-center justify-center text-2xl text-white/60">
-              {local.avatar_url ? (
-                <img src={local.avatar_url} alt="头像" className="w-full h-full object-cover" />
-              ) : (
-                <span>{(local.display_name || "主").slice(0, 1)}</span>
-              )}
+              <img
+                src={resolveAvatarUrl(local.avatar_url)}
+                alt="头像"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  if (img.src !== DEFAULT_AVATAR_URL) img.src = DEFAULT_AVATAR_URL;
+                }}
+              />
             </div>
             <button
               type="button"
