@@ -729,7 +729,7 @@ function hackathonCard(opts: {
   }
 }
 
-async function sendCardToFeishu(card: unknown): Promise<{ ok: boolean; error?: string }> {
+export async function sendCardToFeishu(card: unknown): Promise<{ ok: boolean; error?: string }> {
   const s = await loadNotifySettings()
   if (!s || !s.receive_id) return { ok: false, error: '未配置飞书接收人' }
   const requestId = randomUUID()
