@@ -78,6 +78,23 @@ export function AiNewsRadar() {
     }
   };
 
+  const onAddTodo = (n: AiNewsRow) => {
+    const title = n.title.length > 24 ? n.title.slice(0, 22) + "…" : n.title;
+    const noteParts: string[] = [];
+    if (n.summary) noteParts.push(n.summary);
+    noteParts.push(`来源: ${n.source} · ${n.url}`);
+    addItems([
+      {
+        type: "todo",
+        title: `看 AI 动态: ${title}`,
+        date: todayLocal(),
+        tag: "学习",
+        note: noteParts.join(" · "),
+      },
+    ]);
+    setAddedIds((s) => new Set(s).add(n.id));
+  };
+
   return (
     <div className="widget p-5">
       <div className="flex items-center justify-between mb-3">
