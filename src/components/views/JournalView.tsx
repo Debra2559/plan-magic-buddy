@@ -516,8 +516,8 @@ function SuggestionCard({
         <s.Icon className="w-3.5 h-3.5 text-amber-glow" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs tracking-widest font-semibold text-amber-700 dark:text-amber-glow mb-1">{s.tag}</p>
-        <p className="text-sm text-foreground/90 leading-relaxed">{s.text}</p>
+        <p className="text-xs tracking-widest font-semibold text-amber-800 dark:text-amber-glow mb-1.5">{s.tag}</p>
+        <p className="text-sm text-amber-950/90 dark:text-foreground/95 leading-relaxed">{s.text}</p>
       </div>
     </div>
   );
