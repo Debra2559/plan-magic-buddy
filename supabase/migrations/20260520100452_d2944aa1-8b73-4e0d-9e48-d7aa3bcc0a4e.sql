@@ -1,0 +1,1 @@
+ALTER TABLE public.ai_news_settings ENABLE ROW LEVEL SECURITY;

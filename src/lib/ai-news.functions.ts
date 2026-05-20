@@ -81,52 +81,172 @@ async function extractWithAI(source: string, snippets: FirecrawlSearchItem[]) {
   }
 }
 
-const SOURCES: Array<{ name: string; query: string }> = [
-  { name: "Hacker News", query: "site:news.ycombinator.com AI OR LLM OR agent" },
-  { name: "TechCrunch", query: "site:techcrunch.com AI OR OpenAI OR Anthropic OR Google DeepMind" },
-  { name: "The Verge", query: "site:theverge.com AI model release" },
-  { name: "arXiv", query: "site:arxiv.org large language model OR agent OR reasoning" },
-  { name: "机器之心", query: "site:jiqizhixin.com AI 大模型" },
-  { name: "量子位", query: "site:qbitai.com AI 大模型 发布" },
+const DEFAULT_SOURCES: Array<{ name: string; query: string; enabled: boolean }> = [
+  { name: "Hacker News", query: "site:news.ycombinator.com AI OR LLM OR agent", enabled: true },
+  { name: "TechCrunch", query: "site:techcrunch.com AI OR OpenAI OR Anthropic OR Google DeepMind", enabled: true },
+  { name: "The Verge", query: "site:theverge.com AI model release", enabled: true },
+  { name: "arXiv", query: "site:arxiv.org large language model OR agent OR reasoning", enabled: true },
+  { name: "机器之心", query: "site:jiqizhixin.com AI 大模型", enabled: true },
+  { name: "量子位", query: "site:qbitai.com AI 大模型 发布", enabled: true },
 ];
 
-export const scanAiNewsNow = createServerFn({ method: "GET" }).handler(async () => {
-  const allFound: Array<{ source: string; item: z.infer<typeof ExtractedSchema>["news"][number] }> = [];
+const SourceSchema = z.object({
+  name: z.string().trim().min(1).max(40),
+  query: z.string().trim().min(1).max(300),
+  enabled: z.boolean(),
+});
 
-  for (const src of SOURCES) {
-    const snippets = await firecrawlSearch(src.query, 6, "qdr:w");
-    if (snippets.length === 0) continue;
-    const { news } = await extractWithAI(src.name, snippets);
-    for (const n of news) {
-      if (!n.url?.startsWith("http")) continue;
-      allFound.push({ source: src.name, item: n });
+const SettingsSchema = z.object({
+  enabled: z.boolean(),
+  sources: z.array(SourceSchema).min(1).max(20),
+  include_keywords: z.array(z.string().trim().min(1).max(40)).max(30),
+  exclude_keywords: z.array(z.string().trim().min(1).max(40)).max(30),
+  tag_filters: z.array(z.string().trim().min(1).max(30)).max(30),
+  scan_interval_hours: z.number().int().min(1).max(168),
+  time_window: z.enum(["qdr:h", "qdr:d", "qdr:w", "qdr:m", "qdr:y"]),
+  per_source_limit: z.number().int().min(1).max(20),
+});
+
+export type AiNewsSettings = z.infer<typeof SettingsSchema> & {
+  last_scanned_at: string | null;
+};
+
+const DEFAULT_SETTINGS: AiNewsSettings = {
+  enabled: true,
+  sources: DEFAULT_SOURCES,
+  include_keywords: [],
+  exclude_keywords: [],
+  tag_filters: [],
+  scan_interval_hours: 24,
+  time_window: "qdr:w",
+  per_source_limit: 6,
+  last_scanned_at: null,
+};
+
+async function loadSettings(): Promise<AiNewsSettings> {
+  const { data } = await supabaseAdmin
+    .from("ai_news_settings")
+    .select("*")
+    .eq("id", "singleton")
+    .maybeSingle();
+  if (!data) return DEFAULT_SETTINGS;
+  return {
+    enabled: data.enabled ?? true,
+    sources:
+      Array.isArray(data.sources) && data.sources.length > 0
+        ? (data.sources as unknown as AiNewsSettings["sources"])
+        : DEFAULT_SOURCES,
+    include_keywords: data.include_keywords ?? [],
+    exclude_keywords: data.exclude_keywords ?? [],
+    tag_filters: data.tag_filters ?? [],
+    scan_interval_hours: data.scan_interval_hours ?? 24,
+    time_window: (data.time_window ?? "qdr:w") as AiNewsSettings["time_window"],
+    per_source_limit: data.per_source_limit ?? 6,
+    last_scanned_at: data.last_scanned_at ?? null,
+  };
+}
+
+function matchesFilters(
+  text: string,
+  tags: string[],
+  s: AiNewsSettings,
+): boolean {
+  const lower = text.toLowerCase();
+  const tagLower = tags.map((t) => t.toLowerCase());
+  if (s.exclude_keywords.length > 0) {
+    for (const k of s.exclude_keywords) {
+      if (lower.includes(k.toLowerCase())) return false;
     }
   }
-
-  const byUrl = new Map<string, (typeof allFound)[number]>();
-  for (const f of allFound) if (!byUrl.has(f.item.url)) byUrl.set(f.item.url, f);
-
-  let inserted = 0;
-  for (const { source, item } of byUrl.values()) {
-    const { data: row, error } = await supabaseAdmin
-      .from("ai_news")
-      .insert({
-        source,
-        url: item.url,
-        title: item.title,
-        published_at: item.published_at,
-        summary: item.summary,
-        tags: item.tags ?? [],
-        status: "pending",
-        raw: item,
-      })
-      .select("*")
-      .maybeSingle();
-    if (!error && row) inserted += 1;
+  if (s.include_keywords.length > 0) {
+    const hit = s.include_keywords.some((k) => lower.includes(k.toLowerCase()));
+    if (!hit) return false;
   }
+  if (s.tag_filters.length > 0) {
+    const hit = s.tag_filters.some((t) => tagLower.includes(t.toLowerCase()));
+    if (!hit) return false;
+  }
+  return true;
+}
 
-  return { ok: true as const, scanned: allFound.length, deduped: byUrl.size, inserted };
+export const getAiNewsSettings = createServerFn({ method: "GET" }).handler(async () => {
+  const s = await loadSettings();
+  return { ok: true as const, settings: s };
 });
+
+export const updateAiNewsSettings = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => SettingsSchema.parse(d))
+  .handler(async ({ data }) => {
+    const { error } = await supabaseAdmin
+      .from("ai_news_settings")
+      .upsert({ id: "singleton", ...data, updated_at: new Date().toISOString() });
+    if (error) return { ok: false as const, error: error.message };
+    return { ok: true as const };
+  });
+
+export const scanAiNewsNow = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({ force: z.boolean().optional() }).optional().parse(d) ?? {},
+  )
+  .handler(async ({ data }) => {
+    const settings = await loadSettings();
+    const force = data?.force === true;
+
+    if (!settings.enabled && !force) {
+      return { ok: true as const, skipped: "disabled", scanned: 0, deduped: 0, inserted: 0 };
+    }
+    if (!force && settings.last_scanned_at) {
+      const last = new Date(settings.last_scanned_at).getTime();
+      const minMs = settings.scan_interval_hours * 3600 * 1000;
+      if (Date.now() - last < minMs) {
+        return { ok: true as const, skipped: "interval", scanned: 0, deduped: 0, inserted: 0 };
+      }
+    }
+
+    const activeSources = settings.sources.filter((s) => s.enabled);
+    const allFound: Array<{ source: string; item: z.infer<typeof ExtractedSchema>["news"][number] }> = [];
+
+    for (const src of activeSources) {
+      const snippets = await firecrawlSearch(src.query, settings.per_source_limit, settings.time_window);
+      if (snippets.length === 0) continue;
+      const { news } = await extractWithAI(src.name, snippets);
+      for (const n of news) {
+        if (!n.url?.startsWith("http")) continue;
+        const blob = `${n.title}\n${n.summary}\n${(n.tags ?? []).join(" ")}`;
+        if (!matchesFilters(blob, n.tags ?? [], settings)) continue;
+        allFound.push({ source: src.name, item: n });
+      }
+    }
+
+    const byUrl = new Map<string, (typeof allFound)[number]>();
+    for (const f of allFound) if (!byUrl.has(f.item.url)) byUrl.set(f.item.url, f);
+
+    let inserted = 0;
+    for (const { source, item } of byUrl.values()) {
+      const { data: row, error } = await supabaseAdmin
+        .from("ai_news")
+        .insert({
+          source,
+          url: item.url,
+          title: item.title,
+          published_at: item.published_at,
+          summary: item.summary,
+          tags: item.tags ?? [],
+          status: "pending",
+          raw: item,
+        })
+        .select("*")
+        .maybeSingle();
+      if (!error && row) inserted += 1;
+    }
+
+    const result = { scanned: allFound.length, deduped: byUrl.size, inserted };
+    await supabaseAdmin
+      .from("ai_news_settings")
+      .upsert({ id: "singleton", last_scanned_at: new Date().toISOString(), last_scan_result: result });
+
+    return { ok: true as const, ...result };
+  });
 
 export const listPendingAiNews = createServerFn({ method: "GET" }).handler(async () => {
   const { data, error } = await supabaseAdmin

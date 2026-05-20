@@ -7,7 +7,7 @@ export const Route = createFileRoute("/api/public/hooks/scan-ai-news")({
     handlers: {
       POST: async () => {
         try {
-          const result = await scanAiNewsNow();
+          const result = await scanAiNewsNow({ data: {} });
           return new Response(JSON.stringify(result), {
             status: 200,
             headers: { "Content-Type": "application/json" },
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/api/public/hooks/scan-ai-news")({
         }
       },
       GET: async () => {
-        const result = await scanAiNewsNow();
+        const result = await scanAiNewsNow({ data: { force: true } });
         return new Response(JSON.stringify(result, null, 2), {
           status: 200,
           headers: { "Content-Type": "application/json" },

@@ -56,6 +56,54 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_news_settings: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          exclude_keywords: string[]
+          id: string
+          include_keywords: string[]
+          last_scan_result: Json | null
+          last_scanned_at: string | null
+          per_source_limit: number
+          scan_interval_hours: number
+          sources: Json
+          tag_filters: string[]
+          time_window: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          exclude_keywords?: string[]
+          id?: string
+          include_keywords?: string[]
+          last_scan_result?: Json | null
+          last_scanned_at?: string | null
+          per_source_limit?: number
+          scan_interval_hours?: number
+          sources?: Json
+          tag_filters?: string[]
+          time_window?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          exclude_keywords?: string[]
+          id?: string
+          include_keywords?: string[]
+          last_scan_result?: Json | null
+          last_scanned_at?: string | null
+          per_source_limit?: number
+          scan_interval_hours?: number
+          sources?: Json
+          tag_filters?: string[]
+          time_window?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_recaps: {
         Row: {
           created_at: string
