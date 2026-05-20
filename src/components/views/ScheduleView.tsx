@@ -266,6 +266,16 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                     <div className="text-[9px] text-white/50 px-1.5">+{dayItems.length - 3} 项</div>
                   )}
                 </div>
+                {habits.length > 0 && (() => {
+                  const doneCount = habits.filter((h) => isHabitDoneOn(h, cell.iso)).length;
+                  const emojis = habits.filter((h) => isHabitDoneOn(h, cell.iso)).slice(0, 3).map((h) => h.emoji).join("");
+                  return (
+                    <div className="absolute bottom-1 left-1.5 right-1.5 flex items-center gap-1 text-[9px] text-moss/85">
+                      <span className="truncate">{emojis || "·"}</span>
+                      <span className="ml-auto font-mono tabular-nums opacity-80">{doneCount}/{habits.length}</span>
+                    </div>
+                  );
+                })()}
               </button>
             );
           })}
