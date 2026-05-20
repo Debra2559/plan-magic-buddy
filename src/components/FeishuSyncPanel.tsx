@@ -188,6 +188,36 @@ export function FeishuSyncPanel() {
     }
   };
 
+  // ---------- 列出机器人所在群 ----------
+  const runListChats = useServerFn(listFeishuChats);
+  const [chats, setChats] = useState<{
+    open: boolean;
+    loading: boolean;
+    items: Array<{ chat_id: string; name: string; description?: string }>;
+    error: string | null;
+    hint?: string;
+    filter: string;
+  }>({ open: false, loading: false, items: [], error: null, filter: "" });
+
+  const doListChats = async () => {
+    setChats((s) => ({ ...s, open: true, loading: true, error: null }));
+    try {
+      const res = await runListChats();
+      if (res.ok) {
+        setChats((s) => ({ ...s, loading: false, items: res.chats, error: null }));
+      } else {
+        setChats((s) => ({ ...s, loading: false, items: [], error: res.error, hint: res.hint }));
+      }
+    } catch (e: any) {
+      setChats((s) => ({ ...s, loading: false, error: e?.message ?? "请求失败" }));
+    }
+  };
+
+  const pickChat = (chat_id: string) => {
+    setNotify((n) => ({ ...n, receiveId: chat_id, receiveIdType: "chat_id" }));
+    setChats((s) => ({ ...s, open: false }));
+  };
+
   const [notify, setNotify] = useState<{
     receiveId: string;
     receiveIdType: "open_id" | "chat_id" | "user_id" | "email";
