@@ -285,6 +285,25 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
 
   const isRecapDone = useCallback((date: string) => recapDoneDates.has(date), [recapDoneDates]);
 
+  const unmarkRecapDone = useCallback(async (date: string) => {
+    // 乐观更新
+    setRecapDoneDates((prev) => {
+      if (!prev.has(date)) return prev;
+      const next = new Set(prev);
+      next.delete(date);
+      return next;
+    });
+    // 清掉对应当天 diary（如果是从飞书同步过来的，里面没有用户后续新加的内容时直接清空）
+    setDiary((prev) => prev.filter((d) => d.date !== date));
+    try {
+      await unmarkRecapDoneFn({ data: { date } });
+    } catch (e) {
+      // 失败时回滚
+      await refreshRecapDoneDates();
+      throw e;
+    }
+  }, [refreshRecapDoneDates]);
+
   return (
     <SylvaContext.Provider
       value={{
