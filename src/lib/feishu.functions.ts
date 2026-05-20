@@ -892,6 +892,50 @@ export const getFeishuCaptureDiagnostics = createServerFn({ method: 'GET' }).han
   }
 })
 
+// 一键测试 webhook 可达性：向自身 /api/public/feishu/webhook 发一个 url_verification challenge
+export const pingFeishuWebhook = createServerFn({ method: 'POST' }).handler(async () => {
+  const { getRequest } = await import('@tanstack/react-start/server')
+  const req = getRequest()
+  const origin = new URL(req.url).origin
+  const url = `${origin}/api/public/feishu/webhook`
+  const challenge = `lovable-ping-${Date.now()}`
+  const startedAt = Date.now()
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'url_verification',
+        challenge,
+        token: process.env.FEISHU_VERIFICATION_TOKEN ?? '',
+      }),
+    })
+    const text = await res.text()
+    let parsed: any = null
+    try { parsed = JSON.parse(text) } catch {}
+    const echoed = parsed?.challenge === challenge
+    return {
+      ok: res.ok && echoed,
+      status: res.status,
+      url,
+      durationMs: Date.now() - startedAt,
+      echoed,
+      response: text.slice(0, 300),
+      error: res.ok && echoed ? null : `webhook 未正确回显 challenge（status=${res.status}）`,
+    }
+  } catch (e: any) {
+    return {
+      ok: false,
+      status: 0,
+      url,
+      durationMs: Date.now() - startedAt,
+      echoed: false,
+      response: '',
+      error: e?.message ?? '请求失败',
+    }
+  }
+})
+
 const notifyConfigSchema = z.object({
   receiveId: z.string().max(200),
   receiveIdType: z.enum(['open_id', 'chat_id', 'user_id', 'email']),
