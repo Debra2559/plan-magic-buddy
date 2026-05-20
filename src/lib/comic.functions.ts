@@ -5,8 +5,9 @@ const Input = z.object({
   date: z.string().min(8).max(10),
   summary: z.string().min(1).max(4000),
   provider: z.enum(["gemini", "seedream"]),
-  style: z.string().max(200).optional(),
+  style: z.string().max(500).optional(),
   model: z.string().max(100).optional(),
+  protagonistImageUrl: z.string().url().max(2000).optional(),
 });
 
 function buildPrompt(summary: string, style?: string) {
@@ -28,11 +29,21 @@ function buildPrompt(summary: string, style?: string) {
 export const generateDailyComic = createServerFn({ method: "POST" })
   .inputValidator((d: z.infer<typeof Input>) => Input.parse(d))
   .handler(async ({ data }) => {
-    const prompt = buildPrompt(data.summary, data.style);
+    const hasProtagonist = !!data.protagonistImageUrl;
+    const protagonistNote = hasProtagonist
+      ? "\n\nIMPORTANT: The attached image shows the protagonist. Use this person's likeness (face, hairstyle, clothing vibe) as the recurring main character across every panel. Keep them recognizable and consistent."
+      : "";
+    const prompt = buildPrompt(data.summary, data.style) + protagonistNote;
 
     if (data.provider === "gemini") {
       const key = process.env.LOVABLE_API_KEY;
       if (!key) throw new Error("LOVABLE_API_KEY 未配置");
+      const userContent: any = hasProtagonist
+        ? [
+            { type: "text", text: prompt },
+            { type: "image_url", image_url: { url: data.protagonistImageUrl } },
+          ]
+        : prompt;
       const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -41,7 +52,7 @@ export const generateDailyComic = createServerFn({ method: "POST" })
         },
         body: JSON.stringify({
           model: "google/gemini-3.1-flash-image-preview",
-          messages: [{ role: "user", content: prompt }],
+          messages: [{ role: "user", content: userContent }],
           modalities: ["image", "text"],
         }),
       });
