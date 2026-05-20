@@ -284,14 +284,7 @@ export function FeishuSyncPanel() {
       setRecapSending(false);
     }
   };
-    try {
-      await runSetNotify({ data: notify });
-      setNotifySaved(true);
-      setTimeout(() => setNotifySaved(false), 1500);
-    } catch (e: any) {
-      setNotifyResult({ ok: false, msg: e?.message ?? "保存失败" });
-    }
-  };
+
 
   const sendTestNotify = async () => {
     setNotifySending(true);
