@@ -464,6 +464,9 @@ function AssistantHeader() {
       <div className="mt-1 ml-10 text-[10px] text-white/40">你的 AI 助手</div>
     </div>
   );
+}
+
+
 
 function DockIcon({
   label,
