@@ -138,14 +138,14 @@ export function AiPersonaPanel() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-xs text-white/50 mb-1">头像</div>
-            <div className="flex items-center gap-2 text-[11px] text-white/60">
+            <div className="flex items-center gap-2 text-[11px] text-white/60 flex-wrap">
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploadingAvatar}
                 className="px-2 py-1 rounded bg-white/5 border border-white/10 hover:bg-white/10"
               >
-                {local.avatar_url ? "更换" : "上传"}
+                上传图片
               </button>
               {local.avatar_url && (
                 <button
@@ -156,8 +156,29 @@ export function AiPersonaPanel() {
                   <Trash2 className="w-3 h-3" /> 移除
                 </button>
               )}
-              <span className="text-white/35">支持 JPG / PNG，5MB 以内</span>
+              <span className="text-white/35">JPG/PNG，5MB 内</span>
             </div>
+          </div>
+        </div>
+
+        {/* 默认头像库 */}
+        <div className="space-y-2">
+          <div className="text-xs text-white/60">或从默认头像库挑一个</div>
+          <div className="flex flex-wrap gap-2">
+            {PRESET_AVATARS.map((url) => {
+              const active = local.avatar_url === url;
+              return (
+                <button
+                  key={url}
+                  type="button"
+                  onClick={() => commit({ avatar_url: url })}
+                  className={`w-12 h-12 rounded-full overflow-hidden border-2 transition ${active ? "border-amber-glow ring-2 ring-amber-glow/40" : "border-white/10 hover:border-white/30"}`}
+                  title="使用这个头像"
+                >
+                  <img src={url} alt="预设头像" className="w-full h-full object-cover bg-white/5" loading="lazy" />
+                </button>
+              );
+            })}
           </div>
         </div>
 
