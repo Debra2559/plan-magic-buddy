@@ -770,6 +770,7 @@ function ComicPanel({
           provider,
           ...(provider === "seedream" && comicSeedreamModel ? { model: comicSeedreamModel } : {}),
           ...(comicStyle.trim() ? { style: comicStyle.trim() } : {}),
+          ...(provider === "gemini" && comicProtagonistUrl ? { protagonistImageUrl: comicProtagonistUrl } : {}),
         },
       });
       onGenerated({
