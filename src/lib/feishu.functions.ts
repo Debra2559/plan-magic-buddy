@@ -1150,6 +1150,17 @@ export const markRecapDone = createServerFn({ method: 'POST' })
     return { ok: true as const }
   })
 
+/** 返回最近 60 天内被标记为「已完成小结」的日期数组 */
+export const getRecapDoneDates = createServerFn({ method: 'GET' }).handler(async () => {
+  const { data } = await supabaseAdmin
+    .from('feishu_settings')
+    .select('daily_recap_done_dates')
+    .limit(1)
+    .maybeSingle()
+  const list = (data as any)?.daily_recap_done_dates
+  return { dates: (Array.isArray(list) ? list : []) as string[] }
+})
+
 export const getDailyRecap = createServerFn({ method: 'GET' })
   .inputValidator((d: { date: string }) => z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(d))
   .handler(async ({ data }) => {
