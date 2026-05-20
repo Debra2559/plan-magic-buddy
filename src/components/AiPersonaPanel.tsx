@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AvatarCropDialog } from "@/components/AvatarCropDialog";
 import { ProfileHistoryPanel } from "@/components/ProfileHistoryPanel";
+import { PersonaPreviewPanel } from "@/components/PersonaPreviewPanel";
 
 // 精选两组风格：极简线条肖像（notionists-neutral）+ 抽象几何渐变（shapes）
 // 整体走 Linear / Notion / Apple 设计审美，避免花哨的卡通 emoji
@@ -408,6 +409,14 @@ export function AiPersonaPanel() {
               "{demoLine}"
             </div>
           )}
+        </div>
+
+        <div className="pt-3 border-t border-border">
+          <PersonaPreviewPanel
+            personaPrompt={buildLocalPrefix(local)}
+            displayName={local.display_name || "你"}
+            aiNickname={local.ai_nickname || "Sylva"}
+          />
         </div>
 
         <ProfileHistoryPanel />
