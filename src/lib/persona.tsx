@@ -58,11 +58,42 @@ interface PersonaCtxValue {
   persona: PersonaProfile | null;
   loading: boolean;
   save: (patch: Partial<PersonaProfile>) => Promise<void>;
+  /** 把当前人设字段回写到云端（用于"恢复"被回退/清空的人设） */
+  regenerate: (snapshot?: Partial<PersonaProfile>) => Promise<void>;
   /** 把人设拼成 system prompt 前缀，所有 AI 调用统一加上 */
   systemPrefix: () => string;
 }
 
 const Ctx = createContext<PersonaCtxValue | null>(null);
+
+/** 判断是否回退到默认人设（忽略 user_id / version / avatar_url / updated 等元字段） */
+function isDefaultPersona(p: PersonaProfile | null | undefined): boolean {
+  if (!p) return false;
+  return (
+    p.display_name === DEFAULT_PERSONA.display_name &&
+    p.persona_prompt === DEFAULT_PERSONA.persona_prompt &&
+    p.humor_level === DEFAULT_PERSONA.humor_level &&
+    p.sass_level === DEFAULT_PERSONA.sass_level &&
+    p.professional_level === DEFAULT_PERSONA.professional_level &&
+    p.verbosity_level === DEFAULT_PERSONA.verbosity_level &&
+    (p.tone_examples ?? "") === DEFAULT_PERSONA.tone_examples &&
+    (p.taboos?.length ?? 0) === 0
+  );
+}
+
+/** 提取可被"重新生成"恢复的人设字段 */
+function snapshotPersona(p: PersonaProfile): Partial<PersonaProfile> {
+  return {
+    display_name: p.display_name,
+    persona_prompt: p.persona_prompt,
+    humor_level: p.humor_level,
+    sass_level: p.sass_level,
+    professional_level: p.professional_level,
+    verbosity_level: p.verbosity_level,
+    tone_examples: p.tone_examples,
+    taboos: p.taboos,
+  };
+}
 
 export function buildPersonaSystemPrompt(p: PersonaProfile | null): string {
   if (!p) return "";
