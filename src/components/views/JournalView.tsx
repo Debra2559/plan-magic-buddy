@@ -104,7 +104,7 @@ async function shareComicImage(url: string, filename: string, title: string) {
   await downloadComicImage(url, filename);
 }
 
-export function JournalView() {
+export function JournalView({ embedded = false }: { embedded?: boolean } = {}) {
   const { items, habits, notes, diary, comics, isRecapDone, toggleHabitOn, addNote, upsertDiary, setComic, removeComic, comicHistory, addComicHistory, removeComicHistory, dateFlashEnabled, dateFlashDurationMs } = useSylva();
   const { persona } = usePersona();
   const aiName = (persona?.ai_nickname || "").trim() || "Sylva";
