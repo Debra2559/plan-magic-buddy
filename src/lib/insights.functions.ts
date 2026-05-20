@@ -318,9 +318,11 @@ export const getMyInsightsSettings = createServerFn({ method: "GET" })
         push_feishu: false,
         scope: ["schedule", "notes", "habits", "insights"],
         lookback_days: 2,
+        timezone: DEFAULT_TZ,
         last_generated_at: null,
         last_slot: null,
       },
+
     };
   });
 
