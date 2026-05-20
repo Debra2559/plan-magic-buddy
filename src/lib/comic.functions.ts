@@ -76,7 +76,9 @@ export const generateDailyComic = createServerFn({ method: "POST" })
     }
     // 多模型回退：优先使用环境变量指定的模型，然后依次回退
     const envModel = process.env.ARK_SEEDREAM_MODEL?.trim();
-    // 火山方舟模型 ID 通常带日期后缀；优先 5.0-lite 系列，再回退 4.0 / 3.0
+    // 模型优先级：调用方传入的 model > 环境变量 ARK_SEEDREAM_MODEL > 内置回退
+    const envModel = process.env.ARK_SEEDREAM_MODEL?.trim();
+    const userModel = data.model?.trim();
     const fallbackModels = [
       "doubao-seedream-5-0-lite-251015",
       "doubao-seedream-5-0-lite-250915",
@@ -85,7 +87,7 @@ export const generateDailyComic = createServerFn({ method: "POST" })
       "doubao-seedream-3-0-t2i-250415",
     ];
     const candidates = Array.from(
-      new Set([envModel, ...fallbackModels].filter(Boolean) as string[]),
+      new Set([userModel, envModel, ...fallbackModels].filter(Boolean) as string[]),
     );
 
     const attempts: string[] = [];
