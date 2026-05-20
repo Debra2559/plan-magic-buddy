@@ -227,10 +227,39 @@ export function FeishuSyncPanel() {
           status: s.selectedCalendarId ? "connected" : prev.status,
         }));
       } catch {}
+      try {
+        const n = await runGetNotify();
+        setNotify(n);
+      } catch {}
       loadCalendars();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const saveNotify = async () => {
+    try {
+      await runSetNotify({ data: notify });
+      setNotifySaved(true);
+      setTimeout(() => setNotifySaved(false), 1500);
+    } catch (e: any) {
+      setNotifyResult({ ok: false, msg: e?.message ?? "保存失败" });
+    }
+  };
+
+  const sendTestNotify = async () => {
+    setNotifySending(true);
+    setNotifyResult(null);
+    try {
+      await runSetNotify({ data: notify });
+      const r = await runTestNotify();
+      setNotifyResult(r.ok ? { ok: true, msg: "已发送测试卡片到飞书" } : { ok: false, msg: r.error ?? "发送失败" });
+    } catch (e: any) {
+      setNotifyResult({ ok: false, msg: e?.message ?? "发送失败" });
+    } finally {
+      setNotifySending(false);
+    }
+  };
+
 
   const onTest = async () => {
     setTesting(true);
