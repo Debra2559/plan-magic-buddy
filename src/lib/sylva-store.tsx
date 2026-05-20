@@ -165,7 +165,9 @@ const nextId = () => `i-${++idCounter}`;
 export function SylvaProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<DoneItem[]>(() => loadLS("sylva.items", initialItems));
   const [notes, setNotes] = useState<Note[]>(() => loadLS("sylva.notes", initialNotes));
-  const [habits, setHabits] = useState<Habit[]>(() => loadLS("sylva.habits", initialHabits));
+  const [habits, setHabits] = useState<Habit[]>(() =>
+    loadLS<any[]>("sylva.habits", initialHabits as any).map(migrateHabit)
+  );
   const [diary, setDiary] = useState<DiaryEntry[]>(() => loadLS<DiaryEntry[]>("sylva.diary", []));
 
   useEffect(() => saveLS("sylva.items", items), [items]);
