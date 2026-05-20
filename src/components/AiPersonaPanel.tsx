@@ -15,6 +15,57 @@ const PRESET_AVATARS: string[] = [
   "owl", "penguin", "monkey", "lion", "wolf", "frog", "duck", "pig",
 ].map((seed) => `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${seed}&backgroundType=gradientLinear`);
 
+type PersonaTemplate = {
+  name: string;
+  emoji: string;
+  desc: string;
+  prompt: string;
+  humor_level: number;
+  sass_level: number;
+  professional_level: number;
+  verbosity_level: number;
+};
+
+const PERSONA_TEMPLATES: PersonaTemplate[] = [
+  {
+    name: "贱兮兮助理", emoji: "😏",
+    desc: "幽默搞笑、贱贱的但很专业",
+    prompt: "你是我的私人 AI 助理。说话风格：幽默搞笑、贱贱的但很专业，敢吐槽我但不能人身攻击，偶尔用网络梗但别太频繁。称呼我为「主人」。",
+    humor_level: 4, sass_level: 3, professional_level: 5, verbosity_level: 3,
+  },
+  {
+    name: "高冷管家", emoji: "🎩",
+    desc: "克制、礼貌、像英式管家",
+    prompt: "你是一位克制、礼貌、像英式管家般的 AI 助理。说话简洁得体，永远先回答问题再补充背景，不开玩笑、不卖弄网络梗。称呼我为「先生/女士」。",
+    humor_level: 1, sass_level: 1, professional_level: 5, verbosity_level: 2,
+  },
+  {
+    name: "元气好友", emoji: "🌈",
+    desc: "热情活泼，像闺蜜/兄弟",
+    prompt: "你是我超热情的好朋友。说话像闺蜜/兄弟一样自然、活泼、爱用感叹号和表情，永远先共情再给建议，不端着不说教。直接喊我名字就行。",
+    humor_level: 5, sass_level: 2, professional_level: 3, verbosity_level: 4,
+  },
+  {
+    name: "极简效率脑", emoji: "⚡",
+    desc: "只给结论、不废话",
+    prompt: "你是极致高效的 AI 助理。回答永远先给结论，必要时列要点，禁用客套话、禁用「希望对你有帮助」之类结尾。能一句说清就别两句。",
+    humor_level: 2, sass_level: 1, professional_level: 5, verbosity_level: 1,
+  },
+  {
+    name: "毒舌教练", emoji: "🔥",
+    desc: "敢说真话，专治拖延",
+    prompt: "你是我的私人执行力教练，敢说真话、不哄我。当我找借口时直接戳破，但永远给出下一步可执行动作。语气坚定不刻薄，称呼我为「队友」。",
+    humor_level: 3, sass_level: 5, professional_level: 5, verbosity_level: 2,
+  },
+  {
+    name: "温柔陪伴", emoji: "🫧",
+    desc: "情绪稳定，先共情后建议",
+    prompt: "你是一位情绪稳定、温柔的陪伴型 AI。永远先认真听、共情我的感受，再轻声给建议，不评判、不催促。语速放缓，多用「嗯」「我懂」这样的语气词。",
+    humor_level: 2, sass_level: 1, professional_level: 3, verbosity_level: 4,
+  },
+];
+
+
 
 export function AiPersonaPanel() {
   const { persona, loading, save } = usePersona();
@@ -268,8 +319,35 @@ export function AiPersonaPanel() {
           />
         </div>
 
-        <div className="space-y-1">
-          <label className="text-xs text-white/60">人设描述（所有 AI 输出都会按这个口吻）</label>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs text-white/60">人设描述（所有 AI 输出都会按这个口吻）</label>
+            <span className="text-[10px] text-white/40">点击模版一键套用</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {PERSONA_TEMPLATES.map((t) => (
+              <button
+                key={t.name}
+                type="button"
+                onClick={() => {
+                  const next = {
+                    persona_prompt: t.prompt,
+                    humor_level: t.humor_level,
+                    sass_level: t.sass_level,
+                    professional_level: t.professional_level,
+                    verbosity_level: t.verbosity_level,
+                  };
+                  patch(next);
+                  commit(next);
+                  toast.success(`已套用「${t.name}」`);
+                }}
+                title={t.desc}
+                className="px-2.5 py-1 rounded-full text-xs bg-white/5 border border-white/10 text-white/80 hover:border-amber-glow/50 hover:text-amber-glow transition-colors"
+              >
+                {t.emoji} {t.name}
+              </button>
+            ))}
+          </div>
           <textarea
             value={local.persona_prompt}
             onChange={(e) => patch({ persona_prompt: e.target.value })}
@@ -278,6 +356,7 @@ export function AiPersonaPanel() {
             className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white outline-none focus:border-amber-glow/50 resize-none leading-relaxed"
           />
         </div>
+
 
         <div className="grid grid-cols-2 gap-4">
           {([
