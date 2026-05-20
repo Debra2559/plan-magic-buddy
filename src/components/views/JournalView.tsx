@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   useSylva,
   habitStreak,
@@ -57,6 +57,12 @@ function fmtLong(iso: string) {
 export function JournalView() {
   const { items, habits, notes, diary, comics, isRecapDone, toggleHabitOn, addNote, upsertDiary, setComic, removeComic } = useSylva();
   const [date, setDate] = useState<string>(todayLocal());
+  const dateBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    const el = dateBtnRefs.current[date];
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [date]);
 
   const dayItems = useMemo(
     () =>
@@ -371,6 +377,7 @@ export function JournalView() {
               return (
                 <button
                   key={d}
+                  ref={(el) => { dateBtnRefs.current[d] = el; }}
                   onClick={() => setDate(d)}
                   className={`w-full text-left px-3 py-2 rounded-lg transition border ${
                     active
