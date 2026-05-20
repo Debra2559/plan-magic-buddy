@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useSylva } from "@/lib/sylva-store";
-import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X, CheckCircle2 } from "lucide-react";
 import type { PlanItem } from "@/lib/plan.functions";
 
 
@@ -18,7 +18,7 @@ const tagColor: Record<string, string> = {
 const typeIcon = { event: CalIcon, todo: Clock, reminder: Bell } as const;
 
 export function ScheduleView() {
-  const { items, addItems, updateItem, removeItem } = useSylva();
+  const { items, addItems, updateItem, removeItem, isRecapDone } = useSylva();
   const [cursor, setCursor] = useState(new Date(2026, 4, 1)); // May 2026
   const [selected, setSelected] = useState("2026-05-19");
   const [editorDate, setEditorDate] = useState<string | null>(null);
@@ -111,7 +111,12 @@ export function ScheduleView() {
                   <span className={`text-sm ${isToday ? "text-amber-glow font-bold" : "text-white/85"}`}>
                     {cell.day}
                   </span>
-                  {isToday && <span className="text-[9px] text-amber-glow">今</span>}
+                  <div className="flex items-center gap-1">
+                    {isRecapDone(cell.iso) && (
+                      <CheckCircle2 className="w-3 h-3 text-moss" aria-label="今日小结已提交" />
+                    )}
+                    {isToday && <span className="text-[9px] text-amber-glow">今</span>}
+                  </div>
                 </div>
                 <div className="space-y-0.5">
                   {dayItems.slice(0, 3).map((it) => (
@@ -142,7 +147,17 @@ export function ScheduleView() {
         <h3 className="font-display text-2xl text-white mb-1">{formatLong(selected)}</h3>
         <p className="text-xs text-white/40 mb-5">{selectedItems.length} 项安排</p>
 
-        {selectedItems.length === 0 ? (
+        {isRecapDone(selected) && (
+          <div className="p-3 rounded-xl bg-moss/15 border border-moss/30 mb-2 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-moss shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs text-moss font-medium">今日小结 · 已完成</p>
+              <p className="text-[10px] text-white/50 mt-0.5">已通过飞书卡片提交并同步到日历</p>
+            </div>
+          </div>
+        )}
+
+        {selectedItems.length === 0 && !isRecapDone(selected) ? (
           <div className="text-center py-10 text-xs text-white/40">这一天还没有安排</div>
         ) : (
           <div className="space-y-2">

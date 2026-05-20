@@ -315,8 +315,10 @@ function useMemoSync(key: string, fn: () => void) {
 
 /* ---------------- Daily Summary ---------------- */
 function SummaryTab({ initialDate }: { initialDate?: string | null }) {
-  const { items, habits, diary, upsertDiary } = useSylva();
+  const { items, habits, diary, upsertDiary, isRecapDone, refreshRecapDoneDates } = useSylva();
   const [date, setDate] = useState(initialDate ?? todayStr());
+  useEffect(() => { refreshRecapDoneDates(); }, [refreshRecapDoneDates]);
+  const recapDone = isRecapDone(date);
 
   const dayItems = items.filter((i) => i.date === date);
   const done = dayItems.filter((i) => i.done);
@@ -367,12 +369,19 @@ function SummaryTab({ initialDate }: { initialDate?: string | null }) {
   return (
     <>
       <div className="flex items-center justify-between mb-4">
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="bg-transparent text-sm text-white/90 outline-none border border-white/10 rounded-md px-2 py-1"
-        />
+        <div className="flex items-center gap-2">
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="bg-transparent text-sm text-white/90 outline-none border border-white/10 rounded-md px-2 py-1"
+          />
+          {recapDone && (
+            <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-moss/15 border border-moss/30 text-[10px] text-moss" title="已通过飞书卡片提交并同步到日历">
+              <CheckCircle2 className="w-3 h-3" /> 飞书已提交
+            </span>
+          )}
+        </div>
         <button
           onClick={generateRecap}
           disabled={!dayItems.length && !habits.length}
