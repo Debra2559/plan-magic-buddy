@@ -215,10 +215,18 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
         if (!row) return;
         const remote = [row.summary, row.diary].filter(Boolean).join("\n\n");
         const local = (diary.find((d) => d.date === date)?.content ?? "").trim();
+        const localMood = diary.find((d) => d.date === date)?.mood;
+        const remoteMood = (row.mood as Mood | undefined) || undefined;
+        const patch: { content?: string; mood?: Mood } = {};
         if (remote && !local) {
           setContent(remote);
-          upsertDiary(date, { content: remote });
+          patch.content = remote;
         }
+        if (remoteMood && !localMood) {
+          setMood(remoteMood);
+          patch.mood = remoteMood;
+        }
+        if (Object.keys(patch).length > 0) upsertDiary(date, patch);
       })
       .catch(() => {});
   });
