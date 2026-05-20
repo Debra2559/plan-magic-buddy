@@ -377,6 +377,7 @@ export function JournalView() {
               return (
                 <button
                   key={d}
+                  ref={(el) => { dateBtnRefs.current[d] = el; }}
                   onClick={() => setDate(d)}
                   className={`w-full text-left px-3 py-2 rounded-lg transition border ${
                     active
