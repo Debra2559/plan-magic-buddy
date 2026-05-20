@@ -194,6 +194,7 @@ export function ScheduleView() {
           items={(itemsByDate[editorDate] ?? []).sort((a, b) => (a.time ?? "99:99").localeCompare(b.time ?? "99:99"))}
           onClose={() => setEditorDate(null)}
           onUpdate={(id, patch) => updateItem(id, patch)}
+          onToggleDone={(id) => toggleDone(id)}
           onDelete={(id) => removeItem(id)}
           onAdd={(item) => addItems([item])}
         />
