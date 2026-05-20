@@ -507,6 +507,47 @@ export function FreeformCanvas({ kind, title }: Props) {
                 </div>
               );
             }
+            if (it.type === "file") {
+              const active = selected === it.id;
+              const Icon = pickFileIcon(it.mime, it.name);
+              return (
+                <div key={it.id}
+                  className={`absolute rounded-lg bg-white shadow-md ring-1 ring-black/10 ${active ? "ring-2 ring-amber-glow" : ""}`}
+                  style={{ left: it.x, top: it.y, width: it.w, height: it.h }}
+                  onPointerDown={(e) => {
+                    e.stopPropagation(); setSelected(it.id);
+                    const [cx, cy] = toCanvas(e.clientX, e.clientY);
+                    dragging.current = { id: it.id, offX: cx - it.x, offY: cy - it.y };
+                    (e.target as Element).setPointerCapture?.(e.pointerId);
+                  }}
+                  onPointerMove={onPointerMove} onPointerUp={onPointerUp}
+                  onDoubleClick={(e) => { e.stopPropagation(); window.open(it.url, "_blank", "noopener"); }}
+                  title="双击打开 · 拖拽移动"
+                >
+                  <div className="flex items-center gap-3 p-3 h-full">
+                    <div className="w-10 h-10 rounded-md bg-zinc-100 text-zinc-600 flex items-center justify-center shrink-0">
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] text-zinc-800 truncate font-medium">{it.name}</div>
+                      <div className="text-[11px] text-zinc-500 truncate">{formatBytes(it.size)} · {it.mime.split("/")[1] || it.mime || "file"}</div>
+                    </div>
+                    <a href={it.url} target="_blank" rel="noopener noreferrer" download={it.name}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
+                      className="p-1.5 rounded hover:bg-zinc-100 text-zinc-500 shrink-0" title="下载">
+                      <Download className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                  {active && <ResizeHandle item={it} onStart={(e) => {
+                    e.stopPropagation();
+                    const [cx, cy] = toCanvas(e.clientX, e.clientY);
+                    resizing.current = { id: it.id, sw: it.w, sh: it.h, sx: cx, sy: cy };
+                    (e.target as Element).setPointerCapture?.(e.pointerId);
+                  }} />}
+                </div>
+              );
+            }
             return null;
           })}
         </div>
