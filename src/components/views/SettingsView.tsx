@@ -104,7 +104,7 @@ function DateFlashPanel() {
   );
 }
 
-type NavKey = "general" | "persona" | "feishu" | "webhook" | "dateflash" | "reminders" | "appearance" | "shortcuts" | "about";
+type NavKey = "general" | "persona" | "feishu" | "webhook" | "reminders" | "appearance" | "shortcuts" | "about";
 type NavGroup = { label: string; items: { key: NavKey; title: string; icon: typeof User; subtitle?: string }[] };
 
 const NAV: NavGroup[] = [
@@ -125,9 +125,8 @@ const NAV: NavGroup[] = [
   {
     label: "外观与体验",
     items: [
-      { key: "dateflash", title: "手帐 · 日期高亮", icon: Sparkles },
-      { key: "reminders", title: "提醒", icon: Bell },
       { key: "appearance", title: "外观", icon: Palette },
+      { key: "reminders", title: "提醒", icon: Bell },
       { key: "shortcuts", title: "快捷键", icon: Keyboard },
     ],
   },
@@ -144,9 +143,8 @@ const TITLES: Record<NavKey, { title: string; desc: string }> = {
   persona: { title: "AI 人格", desc: "调整 AI 的说话风格与语气" },
   feishu: { title: "飞书同步", desc: "日历推送、接收人捕获与诊断" },
   webhook: { title: "Webhook 日志", desc: "查看最近的飞书事件回调" },
-  dateflash: { title: "手帐 · 日期高亮", desc: "切换日期时的视觉反馈" },
   reminders: { title: "提醒", desc: "桌面通知与每日总结" },
-  appearance: { title: "外观", desc: "壁纸、字体与主题细节" },
+  appearance: { title: "外观", desc: "壁纸、字体、主题与手帐日期高亮" },
   shortcuts: { title: "快捷键", desc: "常用操作的键盘绑定" },
   about: { title: "关于", desc: "版本与项目信息" },
 };
@@ -232,9 +230,19 @@ export function SettingsView() {
       case "persona": return <AiPersonaPanel />;
       case "feishu": return <FeishuSyncPanel />;
       case "webhook": return <FeishuWebhookLogsPanel />;
-      case "dateflash": return <DateFlashPanel />;
       case "reminders": return <RowList rows={simpleSections.reminders.rows} />;
-      case "appearance": return <RowList rows={simpleSections.appearance.rows} />;
+      case "appearance": return (
+        <div className="space-y-4">
+          <RowList rows={simpleSections.appearance.rows} />
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-white/35 mb-2 px-1 flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3 text-amber-glow" />
+              手帐 · 日期高亮
+            </div>
+            <DateFlashPanel />
+          </div>
+        </div>
+      );
       case "shortcuts": return <RowList rows={simpleSections.shortcuts.rows} />;
       case "about":
         return (
