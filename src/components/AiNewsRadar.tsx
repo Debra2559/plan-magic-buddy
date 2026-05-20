@@ -30,6 +30,15 @@ export function AiNewsRadar() {
   const saveFn = useServerFn(saveAiNews);
   const dismissFn = useServerFn(dismissAiNews);
   const scanFn = useServerFn(scanAiNewsNow);
+  const getSettingsFn = useServerFn(getAiNewsSettings);
+  const updateSettingsFn = useServerFn(updateAiNewsSettings);
+
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settings, setSettings] = useState<AiNewsSettings | null>(null);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [includeText, setIncludeText] = useState("");
+  const [excludeText, setExcludeText] = useState("");
+  const [tagsText, setTagsText] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
