@@ -74,7 +74,7 @@ export function AiPersonaPanel() {
   const [savingTip, setSavingTip] = useState(false);
   const [tryingTip, setTryingTip] = useState(false);
   const [demoLine, setDemoLine] = useState<string>("");
-  const planFn = useServerFn(generatePlan);
+  const tryFn = useServerFn(tryPersonaLine);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
