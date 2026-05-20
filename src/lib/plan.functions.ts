@@ -58,7 +58,12 @@ export const generatePlan = createServerFn({ method: "POST" })
 
     const today = "2026-05-19 周二";
 
-    const modeInstructions: Record<typeof data.mode, string> = {
+    const gateway = createLovableAiGatewayProvider(apiKey);
+    const hasExisting = !!(data.existing && data.existing.length);
+    const effectiveMode: EffectiveMode =
+      data.mode === "auto" ? await detectMode(gateway, data.idea, hasExisting) : data.mode;
+
+    const modeInstructions: Record<EffectiveMode, string> = {
       create: "用户给出一个全新的想法, 从 0 到 1 帮 ta 把这个想法拆成可执行的日程、待办、提醒。覆盖未来 1-2 周内的关键节点。",
       adjust: "用户已有一份规划(在 EXISTING 里), 现在想要调整。基于用户新的想法重新平衡时间/优先级, 输出完整的新规划。",
       add: "用户已有一份规划(在 EXISTING 里), 现在想往里追加一些新事项。只输出新增的事项, 不要重复 EXISTING 里的内容。",
@@ -74,13 +79,12 @@ export const generatePlan = createServerFn({ method: "POST" })
 - 同一天内不要安排过满 (一天 event 总时长不超过 6 小时)
 - 单次输出 3-12 条最自然`;
 
-    const userPrompt = `${modeInstructions[data.mode]}
+    const userPrompt = `${modeInstructions[effectiveMode]}
 
 用户想法: ${data.idea}
 
-${data.existing && data.existing.length ? `EXISTING (用户当前已有的规划):\n${JSON.stringify(data.existing, null, 2)}` : ""}`;
+${hasExisting ? `EXISTING (用户当前已有的规划):\n${JSON.stringify(data.existing, null, 2)}` : ""}`;
 
-    const gateway = createLovableAiGatewayProvider(apiKey);
     const models = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash", "google/gemini-2.5-flash-lite"] as const;
     let lastMsg = "";
     for (const m of models) {
@@ -95,7 +99,7 @@ ${data.existing && data.existing.length ? `EXISTING (用户当前已有的规划
           lastMsg = "模型返回的 items 为空";
           continue;
         }
-        return { ok: true as const, plan: object };
+        return { ok: true as const, plan: object, mode: effectiveMode };
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         lastMsg = msg;
