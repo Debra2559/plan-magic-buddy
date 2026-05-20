@@ -14,6 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_insights: {
+        Row: {
+          content: string
+          created_at: string
+          date: string
+          dismissed: boolean
+          id: string
+          kind: string
+          priority: number
+          pushed_feishu: boolean
+          related: Json | null
+          slot: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          date: string
+          dismissed?: boolean
+          id?: string
+          kind: string
+          priority?: number
+          pushed_feishu?: boolean
+          related?: Json | null
+          slot: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          date?: string
+          dismissed?: boolean
+          id?: string
+          kind?: string
+          priority?: number
+          pushed_feishu?: boolean
+          related?: Json | null
+          slot?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_insights_settings: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          last_generated_at: string | null
+          last_slot: string | null
+          lookback_days: number
+          push_feishu: boolean
+          scope: string[]
+          slots: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          last_generated_at?: string | null
+          last_slot?: string | null
+          lookback_days?: number
+          push_feishu?: boolean
+          scope?: string[]
+          slots?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          last_generated_at?: string | null
+          last_slot?: string | null
+          lookback_days?: number
+          push_feishu?: boolean
+          scope?: string[]
+          slots?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_news: {
         Row: {
           decided_at: string | null
