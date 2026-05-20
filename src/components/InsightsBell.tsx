@@ -49,7 +49,7 @@ export function InsightsBell() {
       {/* Floating bell */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed top-12 right-4 z-40 group flex items-center gap-1.5 px-3 py-2 rounded-full bg-background/60 hover:bg-background/75 backdrop-blur-xl border border-border text-foreground text-xs transition shadow-lg"
+        className="fixed top-12 right-4 z-40 group flex items-center gap-1.5 px-3 py-2 rounded-full bg-card/90 hover:bg-card backdrop-blur-xl border border-border text-foreground text-xs transition shadow-lg"
         aria-label="AI 行为洞察"
       >
         <Sparkles className="w-3.5 h-3.5 text-amber-glow" />
