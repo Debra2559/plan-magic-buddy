@@ -844,7 +844,7 @@ export function FeishuSyncPanel() {
         <button
           onClick={onTest}
           disabled={testing}
-          className="ml-auto text-[11px] px-2.5 py-1 rounded-full bg-foreground/5 border border-border text-foreground/75 hover:bg-foreground/10 disabled:opacity-50 flex items-center gap-1.5"
+          className="ml-auto text-[11px] px-2.5 py-1 rounded-full bg-foreground/5 border border-border text-foreground/75 hover:bg-foreground/10 disabled:opacity-80 flex items-center gap-1.5"
           title="用 App ID/Secret 换 tenant_access_token，验证凭证"
         >
           {testing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
@@ -884,7 +884,7 @@ export function FeishuSyncPanel() {
               <button
                 onClick={doPull}
                 disabled={pulling}
-                className="text-xs px-3 py-1.5 rounded-full bg-foreground/5 border border-border text-foreground/85 hover:bg-foreground/10 disabled:opacity-50 flex items-center gap-1.5"
+                className="text-xs px-3 py-1.5 rounded-full bg-foreground/5 border border-border text-foreground/85 hover:bg-foreground/10 disabled:opacity-80 flex items-center gap-1.5"
                 title="从飞书拉取选中日历的事件到本地"
               >
                 {pulling ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
@@ -893,7 +893,7 @@ export function FeishuSyncPanel() {
               <button
                 onClick={syncNow}
                 disabled={syncing}
-                className="text-xs px-3 py-1.5 rounded-full bg-foreground/5 border border-border text-foreground/85 hover:bg-foreground/10 disabled:opacity-50 flex items-center gap-1.5"
+                className="text-xs px-3 py-1.5 rounded-full bg-foreground/5 border border-border text-foreground/85 hover:bg-foreground/10 disabled:opacity-80 flex items-center gap-1.5"
               >
                 {syncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
                 立即同步
@@ -941,7 +941,7 @@ export function FeishuSyncPanel() {
             <button
               onClick={loadCalendars}
               disabled={loadingCalendars}
-              className="text-muted-foreground/70 hover:text-foreground/75 flex items-center gap-1 disabled:opacity-50"
+              className="text-muted-foreground/70 hover:text-foreground/75 flex items-center gap-1 disabled:opacity-80"
             >
               {loadingCalendars ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
               刷新
@@ -1132,7 +1132,7 @@ export function FeishuSyncPanel() {
                   <button
                     onClick={() => (lastError.scope.includes("拉取") ? doPull() : doSync("重试"))}
                     disabled={syncing || pulling}
-                    className="text-[10px] px-2 py-0.5 rounded-full bg-rose-400/20 border border-rose-300/30 text-rose-100 hover:bg-rose-400/30 disabled:opacity-50 shrink-0"
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-rose-400/20 border border-rose-300/30 text-rose-100 hover:bg-rose-400/30 disabled:opacity-80 shrink-0"
                   >
                     重试
                   </button>
@@ -1214,7 +1214,7 @@ export function FeishuSyncPanel() {
                   type="button"
                   onClick={() => refreshPerm()}
                   disabled={permRefreshing}
-                  className="ml-auto text-[10px] px-2 py-0.5 rounded bg-foreground/10 border border-border text-foreground hover:bg-foreground/15 disabled:opacity-50 font-medium"
+                  className="ml-auto text-[10px] px-2 py-0.5 rounded bg-foreground/10 border border-border text-foreground hover:bg-foreground/15 disabled:opacity-80 font-medium"
                 >
                   {permRefreshing ? "检测中…" : "重新检测"}
                 </button>
@@ -1339,7 +1339,7 @@ export function FeishuSyncPanel() {
             type="button"
             onClick={() => refreshCapture()}
             disabled={captureRefreshing}
-            className={`${capture?.openId && capture.openId !== notify.receiveId ? "" : "ml-auto"} text-[10px] px-2 py-0.5 rounded bg-foreground/5 border border-border text-foreground/75 hover:bg-foreground/10 disabled:opacity-50`}
+            className={`${capture?.openId && capture.openId !== notify.receiveId ? "" : "ml-auto"} text-[10px] px-2 py-0.5 rounded bg-foreground/5 border border-border text-foreground/75 hover:bg-foreground/10 disabled:opacity-80`}
           >
             {captureRefreshing ? "刷新中…" : "刷新"}
           </button>
@@ -1368,7 +1368,7 @@ export function FeishuSyncPanel() {
                   type="button"
                   onClick={doPingWebhook}
                   disabled={pinging}
-                  className="text-[10px] px-2 py-0.5 rounded bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-50 flex items-center gap-1"
+                  className="text-[10px] px-2 py-0.5 rounded bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-80 flex items-center gap-1"
                 >
                   {pinging ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
                   {pinging ? "测试中…" : "一键重新捕获 / 测试 Webhook"}
@@ -1377,7 +1377,7 @@ export function FeishuSyncPanel() {
                   type="button"
                   onClick={refreshDiag}
                   disabled={diagLoading}
-                  className="text-[10px] px-2 py-0.5 rounded bg-foreground/5 border border-border text-foreground/75 hover:bg-foreground/10 disabled:opacity-50"
+                  className="text-[10px] px-2 py-0.5 rounded bg-foreground/5 border border-border text-foreground/75 hover:bg-foreground/10 disabled:opacity-80"
                 >
                   {diagLoading ? "刷新中…" : "刷新明细"}
                 </button>
@@ -1582,7 +1582,7 @@ export function FeishuSyncPanel() {
               <button
                 onClick={doBatchLookup}
                 disabled={batch.loading || !batch.input.trim()}
-                className="text-[11px] px-3 py-1 rounded-md bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-50 flex items-center gap-1"
+                className="text-[11px] px-3 py-1 rounded-md bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-80 flex items-center gap-1"
               >
                 {batch.loading ? <Loader2 className="w-3 h-3 animate-spin" /> : null} 查询
               </button>
@@ -1712,7 +1712,7 @@ export function FeishuSyncPanel() {
                   <button
                     onClick={startFeishuAuth}
                     disabled={userAuth.loading}
-                    className="px-2 py-0.5 rounded bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-50"
+                    className="px-2 py-0.5 rounded bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-80"
                   >
                     授权飞书
                   </button>
@@ -1759,7 +1759,7 @@ export function FeishuSyncPanel() {
               <button
                 onClick={doLookupOpenId}
                 disabled={lookup.loading || !lookup.value.trim()}
-                className="text-[11px] px-3 py-1 rounded-md bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-50 flex items-center gap-1"
+                className="text-[11px] px-3 py-1 rounded-md bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-80 flex items-center gap-1"
               >
                 {lookup.loading ? <Loader2 className="w-3 h-3 animate-spin" /> : null} 查询
               </button>
@@ -1784,7 +1784,7 @@ export function FeishuSyncPanel() {
                       <button
                         onClick={fillAndSaveOpenId}
                         disabled={lookup.saving}
-                        className="text-[11px] px-2.5 py-1 rounded-md bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-50 flex items-center gap-1"
+                        className="text-[11px] px-2.5 py-1 rounded-md bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-80 flex items-center gap-1"
                       >
                         {lookup.saving ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                         {notifySaved ? "✓ 已填入并保存" : "填入并保存"}
@@ -1811,7 +1811,7 @@ export function FeishuSyncPanel() {
           <button
             onClick={sendTestNotify}
             disabled={notifySending || !notify.receiveId}
-            className="text-[11px] px-3 py-1 rounded-full bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-50 flex items-center gap-1"
+            className="text-[11px] px-3 py-1 rounded-full bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-80 flex items-center gap-1"
           >
             {notifySending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} 发送测试卡片
           </button>
@@ -1946,14 +1946,14 @@ export function FeishuSyncPanel() {
           <button
             onClick={sendRecapNow}
             disabled={recapSending || !notify.receiveId}
-            className="text-[11px] px-3 py-1 rounded-full bg-indigo-400/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-50 flex items-center gap-1"
+            className="text-[11px] px-3 py-1 rounded-full bg-indigo-400/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-80 flex items-center gap-1"
           >
             {recapSending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} 立即发送一次
           </button>
           <button
             onClick={refreshTodayRecap}
             disabled={recapRefreshing}
-            className="text-[11px] px-3 py-1 rounded-full bg-foreground/5 border border-border text-foreground/85 hover:bg-foreground/10 disabled:opacity-50 flex items-center gap-1"
+            className="text-[11px] px-3 py-1 rounded-full bg-foreground/5 border border-border text-foreground/85 hover:bg-foreground/10 disabled:opacity-80 flex items-center gap-1"
             title="重新从飞书拉取今日已提交的小结/手帐/心情，并刷新日历与待办的完成标记"
           >
             {recapRefreshing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} 刷新今日小结
