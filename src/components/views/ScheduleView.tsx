@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useSylva } from "@/lib/sylva-store";
-import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X, CheckCircle2, RotateCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X, CheckCircle2, RotateCcw, Check } from "lucide-react";
 import type { PlanItem } from "@/lib/plan.functions";
 import { TimePicker } from "@/components/ui/time-picker";
 
@@ -19,7 +19,7 @@ const tagColor: Record<string, string> = {
 const typeIcon = { event: CalIcon, todo: Clock, reminder: Bell } as const;
 
 export function ScheduleView() {
-  const { items, addItems, updateItem, removeItem, isRecapDone, unmarkRecapDone } = useSylva();
+  const { items, addItems, updateItem, removeItem, toggleDone, isRecapDone, unmarkRecapDone } = useSylva();
   const [cursor, setCursor] = useState(new Date(2026, 4, 1)); // May 2026
   const [selected, setSelected] = useState("2026-05-19");
   const [editorDate, setEditorDate] = useState<string | null>(null);
@@ -125,7 +125,7 @@ export function ScheduleView() {
                       key={it.id}
                       className={`text-[10px] px-1.5 py-0.5 rounded truncate border ${
                         tagColor[it.tag] ?? "bg-white/10 text-white/70 border-white/15"
-                      }`}
+                      } ${it.done ? "opacity-50 line-through" : ""}`}
                       title={it.title}
                     >
                       {it.time && <span className="font-mono mr-1 opacity-70">{it.time}</span>}
@@ -177,6 +177,7 @@ export function ScheduleView() {
                 key={it.id}
                 item={it}
                 onChange={(patch) => updateItem(it.id, patch)}
+                onToggleDone={() => toggleDone(it.id)}
                 onDelete={() => removeItem(it.id)}
               />
             ))}
@@ -193,6 +194,7 @@ export function ScheduleView() {
           items={(itemsByDate[editorDate] ?? []).sort((a, b) => (a.time ?? "99:99").localeCompare(b.time ?? "99:99"))}
           onClose={() => setEditorDate(null)}
           onUpdate={(id, patch) => updateItem(id, patch)}
+          onToggleDone={(id) => toggleDone(id)}
           onDelete={(id) => removeItem(id)}
           onAdd={(item) => addItems([item])}
         />
@@ -207,14 +209,16 @@ function DayEditor({
   items,
   onClose,
   onUpdate,
+  onToggleDone,
   onDelete,
   onAdd,
 }: {
   date: string;
   anchor: { x: number; y: number } | null;
-  items: Array<PlanItem & { id: string }>;
+  items: Array<PlanItem & { id: string; done?: boolean }>;
   onClose: () => void;
   onUpdate: (id: string, patch: Partial<PlanItem>) => void;
+  onToggleDone: (id: string) => void;
   onDelete: (id: string) => void;
   onAdd: (item: PlanItem) => void;
 }) {
@@ -283,6 +287,7 @@ function DayEditor({
             key={it.id}
             item={it}
             onChange={(patch) => onUpdate(it.id, patch)}
+            onToggleDone={() => onToggleDone(it.id)}
             onDelete={() => onDelete(it.id)}
           />
         ))}
@@ -319,15 +324,18 @@ function DayEditor({
 function EditableRow({
   item,
   onChange,
+  onToggleDone,
   onDelete,
 }: {
-  item: PlanItem & { id: string };
+  item: PlanItem & { id: string; done?: boolean };
   onChange: (patch: Partial<PlanItem>) => void;
+  onToggleDone: () => void;
   onDelete: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(item.title);
   const [time, setTime] = useState(item.time ?? "");
+  const done = !!item.done;
 
   const commit = () => {
     const t = title.trim();
@@ -341,7 +349,8 @@ function EditableRow({
   };
 
   return (
-    <div className="group flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-white/5 border border-white/10 hover:border-white/20">
+    <div className={`group flex items-center gap-1.5 px-2 py-1.5 rounded-md border transition ${done ? "bg-moss/10 border-moss/25" : "bg-white/5 border-white/10 hover:border-white/20"}`}>
+      <DoneCheckbox done={done} onToggle={onToggleDone} size="sm" />
       {editing ? (
         <>
           <TimePicker value={time} onChange={setTime} size="sm" />
@@ -373,7 +382,7 @@ function EditableRow({
             className="flex-1 flex items-center gap-1.5 text-left"
             title="点击编辑标题"
           >
-            <span className="text-xs text-white/90 truncate">{item.title}</span>
+            <span className={`text-xs truncate ${done ? "text-white/40 line-through" : "text-white/90"}`}>{item.title}</span>
           </button>
         </>
 
@@ -389,19 +398,43 @@ function EditableRow({
   );
 }
 
+function DoneCheckbox({ done, onToggle, size = "md" }: { done: boolean; onToggle: () => void; size?: "sm" | "md" }) {
+  const dim = size === "sm" ? "w-4 h-4" : "w-5 h-5";
+  const iconDim = size === "sm" ? "w-2.5 h-2.5" : "w-3 h-3";
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={done}
+      onClick={(e) => { e.stopPropagation(); onToggle(); }}
+      title={done ? "标记为未完成" : "标记为已完成"}
+      className={`shrink-0 ${dim} rounded-md flex items-center justify-center border transition ${
+        done
+          ? "bg-moss border-moss text-primary-foreground"
+          : "bg-white/5 border-white/25 hover:border-white/60 text-transparent"
+      }`}
+    >
+      <Check className={`${iconDim}`} strokeWidth={3} />
+    </button>
+  );
+}
+
 /* ---------- Editable Card (aside) ---------- */
 function ItemCard({
   item,
   onChange,
+  onToggleDone,
   onDelete,
 }: {
-  item: PlanItem & { id: string };
+  item: PlanItem & { id: string; done?: boolean };
   onChange: (patch: Partial<PlanItem>) => void;
+  onToggleDone: () => void;
   onDelete: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(item.title);
   const Icon = typeIcon[item.type];
+  const done = !!item.done;
 
   const commit = () => {
     const t = title.trim();
@@ -411,8 +444,9 @@ function ItemCard({
   };
 
   return (
-    <div className="group relative p-3 rounded-xl bg-white/[0.04] border border-white/10 hover:border-white/20 transition">
+    <div className={`group relative p-3 rounded-xl border transition ${done ? "bg-moss/10 border-moss/30" : "bg-white/[0.04] border-white/10 hover:border-white/20"}`}>
       <div className="flex items-center gap-2 mb-1.5">
+        <DoneCheckbox done={done} onToggle={onToggleDone} />
         <Icon className="w-3.5 h-3.5 text-amber-glow/80 shrink-0" />
         <span className={`text-[10px] px-1.5 py-0.5 rounded-md border ${tagColor[item.tag] ?? "bg-white/10 text-white/70 border-white/15"}`}>
           {item.tag}
@@ -448,7 +482,7 @@ function ItemCard({
         <div
           onClick={() => setEditing(true)}
           title="点击编辑"
-          className="text-sm text-white/90 leading-snug cursor-text"
+          className={`text-sm leading-snug cursor-text ${done ? "text-white/45 line-through" : "text-white/90"}`}
         >
           {item.title}
         </div>
