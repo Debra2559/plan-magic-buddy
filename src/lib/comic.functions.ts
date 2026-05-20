@@ -5,16 +5,16 @@ const Input = z.object({
   date: z.string().min(8).max(10),
   summary: z.string().min(1).max(4000),
   provider: z.enum(["gemini", "seedream"]),
-  panels: z.number().int().min(2).max(9).optional(),
   style: z.string().max(200).optional(),
 });
 
-function buildPrompt(summary: string, panels: number, style?: string) {
+function buildPrompt(summary: string, style?: string) {
   const styleLine =
     style?.trim() ||
     "warm, cozy, hand-drawn watercolor diary comic, soft amber & moss palette, gentle linework, slight grain";
   return [
-    `Create a ${panels}-panel daily life comic that visually narrates the user's day.`,
+    `Create a daily life comic that visually narrates the user's day.`,
+    `Decide the number of panels yourself based on how rich the day is — use 2-3 panels for a quiet day, 4-6 for a typical day, and up to 9 for an eventful one. Choose whatever count best tells the story.`,
     `Each panel should clearly read as a sequential moment (morning → day → evening / reflection).`,
     `Lay the panels out on a single image in a clean grid with thin gutters.`,
     `Add a short, legible English or Chinese caption inside each panel if helpful — keep typography minimal.`,
@@ -27,8 +27,7 @@ function buildPrompt(summary: string, panels: number, style?: string) {
 export const generateDailyComic = createServerFn({ method: "POST" })
   .inputValidator((d: z.infer<typeof Input>) => Input.parse(d))
   .handler(async ({ data }) => {
-    const panels = data.panels ?? 4;
-    const prompt = buildPrompt(data.summary, panels, data.style);
+    const prompt = buildPrompt(data.summary, data.style);
 
     if (data.provider === "gemini") {
       const key = process.env.LOVABLE_API_KEY;

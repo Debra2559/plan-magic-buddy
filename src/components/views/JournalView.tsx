@@ -752,7 +752,7 @@ function ComicPanel({
   onCopyToNote: (line: string) => void;
 }) {
   const [provider, setProvider] = useState<Provider>(comic?.provider ?? "gemini");
-  const [panels, setPanels] = useState<number>(4);
+  
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState<"diary" | "note" | null>(null);
@@ -763,7 +763,7 @@ function ComicPanel({
     try {
       const summary = buildSummary();
       const res = await generateDailyComic({
-        data: { date, summary, provider, panels },
+        data: { date, summary, provider },
       });
       onGenerated({
         date,
@@ -802,18 +802,6 @@ function ComicPanel({
               {p === "gemini" ? "Gemini" : "Seedream"}
             </button>
           ))}
-        </div>
-        <div className="flex items-center gap-1 text-[11px] text-white/55">
-          <span>格数</span>
-          <select
-            value={panels}
-            onChange={(e) => setPanels(Number(e.target.value))}
-            className="bg-black/40 border border-white/10 rounded px-1.5 py-0.5 text-white/80"
-          >
-            {[2, 3, 4, 6, 8, 9].map((n) => (
-              <option key={n} value={n}>{n}</option>
-            ))}
-          </select>
         </div>
         <button
           onClick={run}
@@ -891,7 +879,7 @@ function ComicPanel({
         </div>
       ) : (
         <p className="text-xs text-white/40 italic px-1 py-3">
-          把这一天画成 {panels} 格漫画 —— 用 {provider === "gemini" ? "Lovable 内置 Gemini" : "火山 Seedream"} 生成。
+          把这一天画成漫画 —— 用 {provider === "gemini" ? "Lovable 内置 Gemini" : "火山 Seedream"} 生成，格数由模型自行判断。
         </p>
       )}
     </div>
