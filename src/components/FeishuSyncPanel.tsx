@@ -179,6 +179,8 @@ export function FeishuSyncPanel() {
     try { setPerm(await runGetPerm()); } catch {} finally { setPermRefreshing(false); }
   }, [runGetPerm]);
 
+  const [verify, setVerify] = useState<{ status: "idle" | "verifying" | "ok" | "fail"; msg?: string; at?: string }>({ status: "idle" });
+
   const [lookup, setLookup] = useState<{
     open: boolean;
     type: "email" | "mobile" | "name" | "employee_id";
@@ -1200,9 +1202,25 @@ export function FeishuSyncPanel() {
                     }));
                   } catch {}
                   setNotifySaved(true);
-                  setNotifyResult({ ok: true, msg: "已覆盖并应用到飞书同步设置，后续同步将使用新接收人" });
+                  setNotifyResult({ ok: true, msg: "已覆盖并应用到飞书同步设置，正在验证…" });
                   setTimeout(() => setNotifySaved(false), 1500);
                   refreshCapture();
+                  refreshPerm();
+                  // 自动验证：用新接收人发送一张测试卡片，确认同步链路通畅
+                  setVerify({ status: "verifying" });
+                  try {
+                    const r = await runTestNotify();
+                    if (r.ok) {
+                      setVerify({ status: "ok", msg: "已用新接收人成功投递测试卡片", at: new Date().toISOString() });
+                      setNotifyResult({ ok: true, msg: "验证通过：后续日程同步将使用新接收人" });
+                    } else {
+                      setVerify({ status: "fail", msg: r.error ?? "测试投递失败", at: new Date().toISOString() });
+                      setNotifyResult({ ok: false, msg: `验证失败：${r.error ?? "测试投递失败"}` });
+                    }
+                  } catch (e: any) {
+                    setVerify({ status: "fail", msg: e?.message ?? "验证请求失败", at: new Date().toISOString() });
+                    setNotifyResult({ ok: false, msg: `验证失败：${e?.message ?? "请求失败"}` });
+                  }
                   refreshPerm();
                 } catch (e: any) {
                   setNotifyResult({ ok: false, msg: e?.message ?? "保存失败" });
@@ -1222,6 +1240,40 @@ export function FeishuSyncPanel() {
             {captureRefreshing ? "刷新中…" : "刷新"}
           </button>
         </div>
+        {verify.status !== "idle" && (
+          <div className={`mb-2 rounded-md border px-2.5 py-1.5 text-[11px] flex items-center gap-2 flex-wrap ${
+            verify.status === "ok" ? "border-emerald-400/30 bg-emerald-400/5 text-emerald-200"
+              : verify.status === "fail" ? "border-rose-400/30 bg-rose-400/10 text-rose-200"
+              : "border-white/10 bg-white/[0.03] text-white/70"
+          }`}>
+            <span className="font-medium">同步验证</span>
+            {verify.status === "verifying" && <><Loader2 className="w-3 h-3 animate-spin" /><span>正在用新接收人发送测试卡片…</span></>}
+            {verify.status === "ok" && <span>✓ {verify.msg}</span>}
+            {verify.status === "fail" && <span>✗ {verify.msg}</span>}
+            {verify.at && verify.status !== "verifying" && (
+              <span className="text-white/40 tabular-nums ml-auto">{new Date(verify.at).toLocaleTimeString()}</span>
+            )}
+            {verify.status === "fail" && (
+              <button
+                type="button"
+                onClick={async () => {
+                  setVerify({ status: "verifying" });
+                  try {
+                    const r = await runTestNotify();
+                    setVerify(r.ok
+                      ? { status: "ok", msg: "已用新接收人成功投递测试卡片", at: new Date().toISOString() }
+                      : { status: "fail", msg: r.error ?? "测试投递失败", at: new Date().toISOString() });
+                  } catch (e: any) {
+                    setVerify({ status: "fail", msg: e?.message ?? "请求失败", at: new Date().toISOString() });
+                  }
+                }}
+                className="text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/80 hover:bg-white/10"
+              >
+                重试验证
+              </button>
+            )}
+          </div>
+        )}
         <div className="flex items-center gap-2 mb-2">
           <select
             value={notify.receiveIdType}
