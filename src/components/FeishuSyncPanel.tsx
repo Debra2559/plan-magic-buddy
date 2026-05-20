@@ -205,6 +205,7 @@ export function FeishuSyncPanel() {
     ].slice(0, 30));
   }, []);
   useEffect(() => { pushTLRef.current = pushTL; }, [pushTL]);
+  const [nextAutoSyncAt, setNextAutoSyncAt] = useState<string | null>(null);
 
   const [lookup, setLookup] = useState<{
     open: boolean;
