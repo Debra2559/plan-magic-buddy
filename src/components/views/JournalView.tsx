@@ -21,6 +21,8 @@ import {
   Leaf,
   ChevronLeft,
   ChevronRight,
+  NotebookPen,
+  Check,
 } from "lucide-react";
 
 const MOODS: Record<Mood, { emoji: string; label: string }> = {
