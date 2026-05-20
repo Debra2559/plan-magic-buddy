@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { handleHackathonCardAction } from '@/lib/feishu.functions'
+import { handleHackathonCardAction, handleRecapCardAction } from '@/lib/feishu.functions'
 
 /**
  * 飞书事件回调入口
