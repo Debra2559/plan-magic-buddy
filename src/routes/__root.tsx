@@ -10,6 +10,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { SylvaProvider } from "@/lib/sylva-store";
+import { ReminderRunner } from "@/components/ReminderRunner";
 
 function NotFoundComponent() {
   return (
@@ -116,6 +117,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <SylvaProvider>
         <Outlet />
+        <ReminderRunner />
       </SylvaProvider>
     </QueryClientProvider>
   );
