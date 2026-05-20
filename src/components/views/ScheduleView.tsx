@@ -75,7 +75,8 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-primary-foreground bg-amber-glow/85 hover:bg-amber-glow transition"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                AI 规划
+                AI 新增规划
+
               </button>
               <div className="pointer-events-none absolute right-0 top-full mt-2 w-72 rounded-xl border border-white/10 bg-zinc-950/95 backdrop-blur-md shadow-2xl p-3 text-[11px] text-white/75 leading-relaxed opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition z-50">
                 <p className="text-amber-glow/90 font-medium mb-1.5 flex items-center gap-1">
