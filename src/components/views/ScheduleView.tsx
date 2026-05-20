@@ -388,3 +388,166 @@ function formatLong(iso: string) {
   const w = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][date.getDay()];
   return `${m} 月 ${d} 日 · ${w}`;
 }
+
+/* ---------- Drag-to-time Day Timeline ---------- */
+const HOUR_START = 6;
+const HOUR_END = 24; // exclusive
+const ROW_H = 36; // px per hour
+
+function DayTimeline({
+  items,
+  onSetTime,
+  onClearTime,
+}: {
+  items: Array<PlanItem & { id: string }>;
+  onSetTime: (id: string, time: string) => void;
+  onClearTime: (id: string) => void;
+}) {
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [hoverHour, setHoverHour] = useState<number | null>(null);
+
+  const unscheduled = items.filter((it) => !it.time);
+  const scheduled = items.filter((it) => !!it.time);
+
+  const onDragStart = (id: string) => (e: React.DragEvent) => {
+    setDragId(id);
+    e.dataTransfer.setData("text/plain", id);
+    e.dataTransfer.effectAllowed = "move";
+  };
+  const onDragEnd = () => { setDragId(null); setHoverHour(null); };
+
+  const hourFromEvent = (e: React.DragEvent, baseHour: number) => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const offsetY = e.clientY - rect.top;
+    const frac = Math.max(0, Math.min(1, offsetY / rect.height));
+    // snap to 15min
+    const minutes = Math.round((frac * 60) / 15) * 15;
+    const hh = baseHour + Math.floor(minutes / 60);
+    const mm = minutes % 60;
+    return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+  };
+
+  const onHourDrop = (hour: number) => (e: React.DragEvent) => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData("text/plain") || dragId;
+    if (!id) return;
+    const time = hourFromEvent(e, hour);
+    onSetTime(id, time);
+    onDragEnd();
+  };
+
+  const onTrayDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData("text/plain") || dragId;
+    if (!id) return;
+    onClearTime(id);
+    onDragEnd();
+  };
+
+  if (items.length === 0) {
+    return <div className="text-center py-10 text-xs text-white/40">这一天还没有安排</div>;
+  }
+
+  return (
+    <div>
+      {/* Unscheduled tray */}
+      <div
+        onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
+        onDrop={onTrayDrop}
+        className="mb-3 p-2 rounded-xl border border-dashed border-white/15 bg-white/[0.03]"
+      >
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[10px] tracking-widest text-white/40">未排时</span>
+          <span className="text-[10px] text-white/30">{unscheduled.length} 项 · 拖到下方时间轴</span>
+        </div>
+        {unscheduled.length === 0 ? (
+          <div className="text-[11px] text-white/30 text-center py-2">把已排时的拖回这里可清除时间</div>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {unscheduled.map((it) => (
+              <TimelineChip key={it.id} item={it} dragging={dragId === it.id}
+                onDragStart={onDragStart(it.id)} onDragEnd={onDragEnd} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Timeline */}
+      <div className="relative rounded-xl border border-white/10 bg-black/20 overflow-hidden">
+        {Array.from({ length: HOUR_END - HOUR_START }, (_, i) => {
+          const hour = HOUR_START + i;
+          const isHover = hoverHour === hour;
+          return (
+            <div
+              key={hour}
+              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setHoverHour(hour); }}
+              onDragLeave={() => setHoverHour((h) => (h === hour ? null : h))}
+              onDrop={onHourDrop(hour)}
+              style={{ height: ROW_H }}
+              className={`relative flex items-start border-t border-white/5 transition ${
+                isHover ? "bg-amber-glow/10" : "hover:bg-white/[0.02]"
+              }`}
+            >
+              <span className="text-[10px] font-mono text-white/35 w-10 pl-2 pt-1 select-none">
+                {String(hour).padStart(2, "0")}:00
+              </span>
+            </div>
+          );
+        })}
+
+        {/* Scheduled items absolutely positioned */}
+        {scheduled.map((it) => {
+          const [hh, mm] = (it.time ?? "00:00").split(":").map(Number);
+          const minutesFromStart = (hh - HOUR_START) * 60 + (mm || 0);
+          if (minutesFromStart < 0 || hh >= HOUR_END) return null;
+          const top = (minutesFromStart / 60) * ROW_H;
+          return (
+            <div
+              key={it.id}
+              draggable
+              onDragStart={onDragStart(it.id)}
+              onDragEnd={onDragEnd}
+              style={{ top, left: 48, right: 8, opacity: dragId === it.id ? 0.4 : 1 }}
+              className={`absolute cursor-grab active:cursor-grabbing rounded-md border px-1.5 py-1 text-[11px] leading-tight ${
+                tagColor[it.tag] ?? "bg-white/10 text-white/80 border-white/15"
+              }`}
+              title={`${it.time} · ${it.title}（拖动改时间）`}
+            >
+              <span className="font-mono mr-1 opacity-70">{it.time}</span>
+              <span className="truncate">{it.title}</span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-[10px] text-white/30 mt-2 text-center">提示：拖到 15 分钟刻度，松手即设置时间</p>
+    </div>
+  );
+}
+
+function TimelineChip({
+  item,
+  dragging,
+  onDragStart,
+  onDragEnd,
+}: {
+  item: PlanItem & { id: string };
+  dragging: boolean;
+  onDragStart: (e: React.DragEvent) => void;
+  onDragEnd: () => void;
+}) {
+  const Icon = typeIcon[item.type];
+  return (
+    <div
+      draggable
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      className={`cursor-grab active:cursor-grabbing flex items-center gap-1 px-2 py-1 rounded-full border text-[11px] ${
+        tagColor[item.tag] ?? "bg-white/10 text-white/80 border-white/15"
+      } ${dragging ? "opacity-40" : ""}`}
+      title="拖到右侧时间轴排进某个时段"
+    >
+      <Icon className="w-3 h-3 opacity-70" />
+      <span className="truncate max-w-[140px]">{item.title}</span>
+    </div>
+  );
+}
