@@ -13,11 +13,6 @@ const PRESET_AVATARS: string[] = [
   "owl", "penguin", "monkey", "lion", "wolf", "frog", "duck", "pig",
 ].map((seed) => `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${seed}&backgroundType=gradientLinear`);
 
-export function AiPersonaPanel() {
-  const { persona, loading, save } = usePersona();
-  const { user, signOut } = useAuth();
-  const [local, setLocal] = useState(persona);
-  const [savingTip, setSavingTip] = useState(false);
 
 export function AiPersonaPanel() {
   const { persona, loading, save } = usePersona();
