@@ -516,8 +516,8 @@ function SuggestionCard({
         <s.Icon className="w-3.5 h-3.5 text-amber-glow" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs tracking-widest text-amber-glow/90 mb-0.5">{s.tag}</p>
-        <p className="text-sm text-white/85 leading-snug">{s.text}</p>
+        <p className="text-xs tracking-widest font-semibold text-amber-700 dark:text-amber-glow mb-1">{s.tag}</p>
+        <p className="text-sm text-foreground/90 leading-relaxed">{s.text}</p>
         <div className="flex items-center gap-1.5 mt-2 opacity-60 group-hover:opacity-100 transition">
           <button
             onClick={() => flash("diary", onCopyToDiary)}
