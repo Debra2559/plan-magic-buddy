@@ -229,6 +229,10 @@ export type Database = {
           notify_receive_id: string | null
           notify_receive_id_type: string
           page_token: string | null
+          push_allowed_types: string[]
+          push_default_time: string
+          push_include_done: boolean
+          push_require_time: boolean
           selected_calendar_id: string | null
           selected_calendar_name: string | null
           updated_at: string
@@ -249,6 +253,10 @@ export type Database = {
           notify_receive_id?: string | null
           notify_receive_id_type?: string
           page_token?: string | null
+          push_allowed_types?: string[]
+          push_default_time?: string
+          push_include_done?: boolean
+          push_require_time?: boolean
           selected_calendar_id?: string | null
           selected_calendar_name?: string | null
           updated_at?: string
@@ -269,6 +277,10 @@ export type Database = {
           notify_receive_id?: string | null
           notify_receive_id_type?: string
           page_token?: string | null
+          push_allowed_types?: string[]
+          push_default_time?: string
+          push_include_done?: boolean
+          push_require_time?: boolean
           selected_calendar_id?: string | null
           selected_calendar_name?: string | null
           updated_at?: string
