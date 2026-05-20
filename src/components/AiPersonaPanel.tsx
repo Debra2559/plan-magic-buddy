@@ -130,6 +130,7 @@ export function AiPersonaPanel() {
   const [pickedFile, setPickedFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [templateCategory, setTemplateCategory] = useState<(typeof CATEGORIES)[number]>("全部");
+  const [templatesOpen, setTemplatesOpen] = useState(false);
 
   useEffect(() => setLocal(persona), [persona]);
 
