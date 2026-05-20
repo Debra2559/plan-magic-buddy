@@ -291,18 +291,21 @@ export function FeishuSyncPanel() {
                 <Check className="w-4 h-4 text-emerald-300" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm text-white/90">飞书工作台 · sylva@dev</div>
+                <div className="text-sm text-white/90 truncate">
+                  {selected ? selected.name : "已选日历"}
+                </div>
                 <div className="text-[11px] text-white/50">
                   {state.lastSyncAt ? `上次同步 ${fmtTime(state.lastSyncAt)}` : "尚未同步"}
-                  {" · "}
-                  <span className="text-amber-glow/80">Mock 模式</span>
+                  {syncing && <span className="ml-2 text-amber-glow/80">同步中…</span>}
                 </div>
               </div>
               <button
                 onClick={syncNow}
-                className="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 flex items-center gap-1.5"
+                disabled={syncing}
+                className="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 disabled:opacity-50 flex items-center gap-1.5"
               >
-                <RefreshCw className="w-3 h-3" /> 立即同步
+                {syncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                立即同步
               </button>
               <button
                 onClick={disconnect}
