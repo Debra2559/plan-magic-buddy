@@ -255,6 +255,15 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
   const strategyRef = useRef<RecapBackfillStrategy>(recapBackfillStrategy);
   useEffect(() => { strategyRef.current = recapBackfillStrategy; }, [recapBackfillStrategy]);
 
+  // 全局输入行为：Enter 直接发送 vs 仅 ⌘/Ctrl+Enter 发送
+  const [enterToSubmit, setEnterToSubmitState] = useState<boolean>(
+    () => loadLS<boolean>("sylva.enterToSubmit", true)
+  );
+  const setEnterToSubmit = useCallback((v: boolean) => {
+    setEnterToSubmitState(v);
+    saveLS("sylva.enterToSubmit", v);
+  }, []);
+
   const refreshRecapDoneDates = useCallback(async () => {
     try {
       const res = await getRecapDoneDates();
