@@ -139,7 +139,13 @@ export function TimePicker({
       </button>
 
       {open && (
-        <div className="absolute left-0 z-50 mt-1.5 w-[180px] rounded-xl border border-white/15 bg-zinc-950/95 backdrop-blur-md shadow-2xl shadow-black/60 overflow-hidden">
+      {open && pos && typeof document !== "undefined" && createPortal(
+        <div
+          ref={popRef}
+          style={{ position: "fixed", left: pos.left, top: pos.top, zIndex: 1000 }}
+          className="w-[180px] rounded-xl border border-white/15 bg-zinc-950/95 backdrop-blur-md shadow-2xl shadow-black/60 overflow-hidden"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           <div className="flex items-center justify-between px-3 py-2 border-b border-white/8">
             <span className="text-[10px] tracking-widest text-amber-glow/80 uppercase">时间</span>
             <span className="font-mono text-sm text-white/90 tabular-nums">
@@ -147,7 +153,6 @@ export function TimePicker({
             </span>
           </div>
           <div className="relative flex h-44">
-            {/* 选中高亮 */}
             <div className="pointer-events-none absolute inset-x-2 top-1/2 -translate-y-1/2 h-8 rounded-md bg-amber-glow/10 border border-amber-glow/25" />
             <Column
               innerRef={hourColRef}
@@ -164,7 +169,6 @@ export function TimePicker({
               flashKey={flashKey}
               onPick={(v) => select(hh || String(new Date().getHours()).padStart(2, "0"), v)}
             />
-
           </div>
           <div className="flex items-center justify-between px-2 py-1.5 border-t border-white/8 bg-black/30">
             <button
@@ -188,7 +192,8 @@ export function TimePicker({
               完成
             </button>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
