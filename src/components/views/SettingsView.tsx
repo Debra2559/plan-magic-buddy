@@ -163,7 +163,7 @@ function DateFlashPanel() {
   );
 }
 
-type NavKey = "general" | "persona" | "feishu" | "webhook" | "reminders" | "appearance" | "shortcuts" | "about";
+type NavKey = "general" | "persona" | "insights" | "feishu" | "webhook" | "reminders" | "appearance" | "shortcuts" | "about";
 type NavGroup = { label: string; items: { key: NavKey; title: string; icon: typeof User; subtitle?: string }[] };
 
 const NAV: NavGroup[] = [
@@ -172,6 +172,7 @@ const NAV: NavGroup[] = [
     items: [
       { key: "general", title: "通用", icon: User },
       { key: "persona", title: "AI 人格", icon: Bot },
+      { key: "insights", title: "AI 行为洞察", icon: Lightbulb },
     ],
   },
   {
