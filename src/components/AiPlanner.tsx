@@ -446,11 +446,9 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-auto">
           <DialogHeader>
-            <DialogTitle className="font-display text-xl">
-              {draftMode === "add" ? "追加预览" : draftMode === "adjust" ? "调整重排预览" : "写入预览"}
-            </DialogTitle>
+            <DialogTitle className="font-display text-xl">追加预览</DialogTitle>
             <DialogDescription>
-              {draft ? <>本次将{draftMode === "adjust" ? "替换" : draftMode === "add" ? "追加" : "写入"} <b className="text-foreground">{draft.items.length}</b> 项 · {buildPreviewMeta(draft.items)}</> : null}
+              {draft ? <>本次将追加 <b className="text-foreground">{draft.items.length}</b> 项 · {buildPreviewMeta(draft.items)}（不会删除原有规划）</> : null}
             </DialogDescription>
           </DialogHeader>
           {draft && (
