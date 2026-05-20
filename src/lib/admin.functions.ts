@@ -246,7 +246,7 @@ export const adminGetStats = createServerFn({ method: "GET" })
     const counts: Record<string, number> = {};
     await Promise.all(
       tables.map(async (t) => {
-        const { count } = await supabaseAdmin
+        const { count } = await (supabaseAdmin as any)
           .from(t)
           .select("*", { count: "exact", head: true });
         counts[t] = count ?? 0;
@@ -256,7 +256,7 @@ export const adminGetStats = createServerFn({ method: "GET" })
       page: 1,
       perPage: 1,
     });
-    return { counts, totalUsers: userList?.total ?? null };
+    return { counts, totalUsers: (userList as any)?.total ?? null };
   });
 
 export const adminListLogs = createServerFn({ method: "GET" })
