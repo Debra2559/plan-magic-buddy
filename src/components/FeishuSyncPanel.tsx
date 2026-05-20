@@ -1048,7 +1048,7 @@ export function FeishuSyncPanel() {
                   }}
                   className={`text-[11px] px-2.5 py-1 rounded-full border transition ${
                     on
-                      ? "bg-amber-glow/20 border-amber-glow/40 text-amber-100"
+                      ? "bg-amber-glow/30 border-amber-glow/70 text-foreground font-medium shadow-sm"
                       : "bg-foreground/5 border-border text-muted-foreground hover:text-foreground/85"
                   }`}
                 >
@@ -1069,7 +1069,7 @@ export function FeishuSyncPanel() {
               }}
               className={`text-[11px] px-2.5 py-1 rounded-full border transition ${
                 pushRules.requireTime
-                  ? "bg-amber-glow/20 border-amber-glow/40 text-amber-100"
+                  ? "bg-amber-glow/30 border-amber-glow/70 text-foreground font-medium shadow-sm"
                   : "bg-foreground/5 border-border text-muted-foreground hover:text-foreground/85"
               }`}
             >
@@ -1102,7 +1102,7 @@ export function FeishuSyncPanel() {
               }}
               className={`text-[11px] px-2.5 py-1 rounded-full border transition ${
                 pushRules.includeDone
-                  ? "bg-amber-glow/20 border-amber-glow/40 text-amber-100"
+                  ? "bg-amber-glow/30 border-amber-glow/70 text-foreground font-medium shadow-sm"
                   : "bg-foreground/5 border-border text-muted-foreground hover:text-foreground/85"
               }`}
             >
