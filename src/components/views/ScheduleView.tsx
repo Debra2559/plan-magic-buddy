@@ -235,8 +235,11 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                     {cell.day}
                   </span>
                   <div className="flex items-center gap-1">
+                    {dayItems.length > 0 && dayItems.every((it) => it.done) && (
+                      <CheckCircle2 className="w-3 h-3 text-moss" aria-label="今日日程全部完成" />
+                    )}
                     {isRecapDone(cell.iso) && (
-                      <CheckCircle2 className="w-3 h-3 text-moss" aria-label="今日小结已提交" />
+                      <BookHeart className="w-3 h-3 text-amber-glow/80" aria-label="今日小结已提交" />
                     )}
                     {isToday && <span className="text-[9px] text-amber-glow">今</span>}
                   </div>
