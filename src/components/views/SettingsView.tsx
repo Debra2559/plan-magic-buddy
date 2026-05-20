@@ -8,6 +8,7 @@ import { AiPersonaPanel } from "@/components/AiPersonaPanel";
 import { useSylva } from "@/lib/sylva-store";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/lib/auth-context";
+import { usePersona } from "@/lib/persona";
 import { useNavigate } from "@tanstack/react-router";
 
 
