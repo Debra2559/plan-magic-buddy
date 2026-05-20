@@ -518,24 +518,6 @@ function SuggestionCard({
       <div className="min-w-0 flex-1">
         <p className="text-xs tracking-widest font-semibold text-amber-700 dark:text-amber-glow mb-1">{s.tag}</p>
         <p className="text-sm text-foreground/90 leading-relaxed">{s.text}</p>
-        <div className="flex items-center gap-1.5 mt-2 opacity-60 group-hover:opacity-100 transition">
-          <button
-            onClick={() => flash("diary", onCopyToDiary)}
-            className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-foreground/5 hover:bg-amber-glow/20 border border-border hover:border-amber-glow/40 text-[10px] text-foreground/75 hover:text-amber-glow transition"
-            title="追加到今日日记"
-          >
-            {copied === "diary" ? <Check className="w-3 h-3" /> : <BookHeart className="w-3 h-3" />}
-            {copied === "diary" ? "已追加" : "→ 日记"}
-          </button>
-          <button
-            onClick={() => flash("note", onCopyToNote)}
-            className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-foreground/5 hover:bg-amber-glow/20 border border-border hover:border-amber-glow/40 text-[10px] text-foreground/75 hover:text-amber-glow transition"
-            title="保存为随手记"
-          >
-            {copied === "note" ? <Check className="w-3 h-3" /> : <NotebookPen className="w-3 h-3" />}
-            {copied === "note" ? "已保存" : "→ 随手记"}
-          </button>
-        </div>
       </div>
     </div>
   );
