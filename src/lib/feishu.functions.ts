@@ -736,19 +736,42 @@ function dailyRecapCard(dateLabel: string, opts?: { missed?: boolean }) {
       },
       { tag: 'hr' },
       {
-        tag: 'action',
-        actions: [
+        tag: 'form',
+        name: 'recap_form',
+        elements: [
           {
-            tag: 'button',
-            text: { tag: 'plain_text', content: '去 Sylva 填写 ✍️' },
-            type: 'primary',
-            url: `https://id-preview--01545937-4efd-4487-a500-8dd999f2e87d.lovable.app/desktop?view=notes&tab=${missed ? 'diary' : 'summary'}&date=${encodeURIComponent(dateLabel)}`,
+            tag: 'input',
+            name: 'summary',
+            label: { tag: 'plain_text', content: '今日小结' },
+            placeholder: { tag: 'plain_text', content: '今天完成了哪些任务 / 收获…' },
+            max_length: 1000,
+            value: { kind: 'recap', action: 'submit', date: dateLabel },
           },
           {
-            tag: 'button',
-            text: { tag: 'plain_text', content: '✅ 已完成' },
-            type: 'default',
-            value: { kind: 'recap', action: 'done', date: dateLabel },
+            tag: 'input',
+            name: 'diary',
+            label: { tag: 'plain_text', content: '日记 / 心情' },
+            placeholder: { tag: 'plain_text', content: '今天的感受、想法、明天的计划…' },
+            max_length: 2000,
+            value: { kind: 'recap', action: 'submit', date: dateLabel },
+          },
+          {
+            tag: 'action',
+            actions: [
+              {
+                tag: 'button',
+                text: { tag: 'plain_text', content: '✅ 提交并打勾' },
+                type: 'primary',
+                action_type: 'form_submit',
+                value: { kind: 'recap', action: 'submit', date: dateLabel },
+              },
+              {
+                tag: 'button',
+                text: { tag: 'plain_text', content: '去 Sylva 填写 ✍️' },
+                type: 'default',
+                url: `https://id-preview--01545937-4efd-4487-a500-8dd999f2e87d.lovable.app/desktop?view=notes&tab=${missed ? 'diary' : 'summary'}&date=${encodeURIComponent(dateLabel)}`,
+              },
+            ],
           },
         ],
       },
