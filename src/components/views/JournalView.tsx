@@ -973,6 +973,20 @@ function ComicHistoryPanel({
               <span>原日期 · {preview.date}</span>
               <span className="text-white/40">{new Date(preview.createdAt).toLocaleString()}</span>
               <button
+                onClick={() => downloadComicImage(preview.imageUrl, `sylva-${preview.date}.png`)}
+                className="ml-auto flex items-center gap-1 px-3 py-1 rounded-full bg-white/10 hover:bg-white/15 border border-white/15"
+                title="导出为图片"
+              >
+                <Download className="w-3 h-3" /> 导出
+              </button>
+              <button
+                onClick={() => shareComicImage(preview.imageUrl, `sylva-${preview.date}.png`, `Sylva · ${preview.date} 漫画`)}
+                className="flex items-center gap-1 px-3 py-1 rounded-full bg-amber-glow/15 hover:bg-amber-glow/30 border border-amber-glow/40 text-amber-glow"
+                title="移动端可保存到相册"
+              >
+                <Share2 className="w-3 h-3" /> 保存到相册
+              </button>
+              <button
                 onClick={() => { onRecall(preview); setPreview(null); }}
                 className="ml-auto px-3 py-1 rounded-full bg-amber-glow/25 hover:bg-amber-glow/40 border border-amber-glow/40 text-amber-glow"
               >
