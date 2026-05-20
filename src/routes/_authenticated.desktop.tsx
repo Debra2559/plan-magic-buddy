@@ -178,19 +178,18 @@ function DesktopApp() {
                 <SidebarItem icon={Sparkles} label="习惯" active={view === "habits"} onClick={() => setView("habits")} />
                 <SidebarItem icon={BookHeart} label="记录" active={view === "journal"} onClick={() => setView("journal")} />
                 <div className="mt-auto pt-4 border-t border-white/8">
-                  <SidebarItem icon={Settings} label="设置" active={view === "settings"} onClick={() => setView("settings")} muted={view !== "settings"} />
+                  <SidebarItem icon={Settings} label="设置" active={false} onClick={openSettings} muted />
                 </div>
               </aside>
 
               {/* Content */}
               <div className="flex-1 overflow-hidden">
-                {view === "ai" && <div className="overflow-auto h-full p-6"><AiPlanner onGoSettings={() => setView("settings")} /></div>}
-                {view === "schedule" && <ScheduleView onGoPlan={() => setView("ai")} onGoSettings={() => setView("settings")} />}
+                {view === "ai" && <div className="overflow-auto h-full p-6"><AiPlanner onGoSettings={openSettings} /></div>}
+                {view === "schedule" && <ScheduleView onGoPlan={() => setView("ai")} onGoSettings={openSettings} />}
                 {view === "todos" && <TodosView initialFilter={todosFilter} filterKey={todosFilter} />}
                 {view === "notes" && <NotesView />}
                 {view === "habits" && <HabitsView />}
                 {view === "journal" && <JournalView />}
-                {view === "settings" && <SettingsView />}
               </div>
             </div>
           </AppWindow>
