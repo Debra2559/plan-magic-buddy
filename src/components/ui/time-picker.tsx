@@ -161,7 +161,7 @@ function Column({
   items: string[];
   selected: string;
   onPick: (v: string) => void;
-  innerRef: React.RefObject<HTMLDivElement>;
+  innerRef: React.RefObject<HTMLDivElement | null>;
 }) {
   return (
     <div
