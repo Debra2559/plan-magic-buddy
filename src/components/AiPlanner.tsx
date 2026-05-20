@@ -277,18 +277,7 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
           </button>
         </div>
 
-        <ThinkingTrace
-          active={loading}
-          variant={
-            mode === "goal"
-              ? chatStep?.kind === "research"
-                ? "goal-research"
-                : chatMessages.length >= 2
-                ? "goal-plan"
-                : "goal-clarify"
-              : "plan"
-          }
-        />
+        <ThinkingTrace active={loading} variant="plan" />
 
         {/* Mode tabs（输入框下方） */}
         <div className="flex gap-2 mt-3 flex-wrap items-center">
