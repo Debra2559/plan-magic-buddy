@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlan, chatPlan, type Plan, type PlanItem, type ChatStep } from "@/lib/plan.functions";
 import { useSylva } from "@/lib/sylva-store";
@@ -130,11 +131,27 @@ export function AiPlanner() {
 
   const confirmDraft = () => {
     if (!draft) return;
+    const counts = draft.items.reduce(
+      (acc, it) => {
+        acc[it.type] = (acc[it.type] ?? 0) + 1;
+        return acc;
+      },
+      { event: 0, todo: 0, reminder: 0 } as Record<PlanItem["type"], number>,
+    );
     if (mode === "add") {
       addItems(draft.items);
     } else {
       replaceItems(draft.items);
     }
+    const parts = [
+      counts.event ? `日程 ${counts.event}` : "",
+      counts.todo ? `待办 ${counts.todo}` : "",
+      counts.reminder ? `提醒 ${counts.reminder}` : "",
+    ].filter(Boolean).join(" · ");
+    toast.success(mode === "add" ? "已追加到我的规划" : "规划已同步", {
+      description: `${parts || `共 ${draft.items.length} 项`}　已写入日程 / 待办 / 提醒`,
+      duration: 4000,
+    });
     setDraft(null);
     setIdea("");
   };

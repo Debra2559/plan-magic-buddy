@@ -11,6 +11,7 @@ import {
 import appCss from "../styles.css?url";
 import { SylvaProvider } from "@/lib/sylva-store";
 import { ReminderRunner } from "@/components/ReminderRunner";
+import { Toaster } from "sonner";
 
 function NotFoundComponent() {
   return (
@@ -118,6 +119,7 @@ function RootComponent() {
       <SylvaProvider>
         <Outlet />
         <ReminderRunner />
+        <Toaster position="top-right" theme="dark" richColors closeButton />
       </SylvaProvider>
     </QueryClientProvider>
   );
