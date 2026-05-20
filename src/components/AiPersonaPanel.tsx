@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
-import { Sparkles, Wand2, LogOut, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Sparkles, Wand2, LogOut, Loader2, Camera, Trash2 } from "lucide-react";
 import { usePersona } from "@/lib/persona";
 import { useAuth } from "@/lib/auth-context";
 import { generatePlan } from "@/lib/plan.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export function AiPersonaPanel() {
   const { persona, loading, save } = usePersona();
