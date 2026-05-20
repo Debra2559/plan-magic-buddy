@@ -915,29 +915,39 @@ export const markRecapDone = createServerFn({ method: 'POST' })
 export const getDailyRecapConfig = createServerFn({ method: 'GET' }).handler(async () => {
   const { data } = await supabaseAdmin
     .from('feishu_settings')
-    .select('daily_recap_enabled, daily_recap_hour')
+    .select('daily_recap_enabled, daily_recap_hour, daily_recap_timezone')
     .limit(1)
     .maybeSingle()
   return {
     enabled: ((data as any)?.daily_recap_enabled ?? false) as boolean,
     hour: Number((data as any)?.daily_recap_hour ?? 21),
+    timezone: ((data as any)?.daily_recap_timezone as string) ?? 'Asia/Shanghai',
   }
 })
 
 const dailyRecapSchema = z.object({
   enabled: z.boolean(),
   hour: z.number().int().min(0).max(23),
+  timezone: z.string().min(1).max(64).regex(/^[A-Za-z_]+(?:\/[A-Za-z0-9_+-]+){0,2}$|^UTC$/),
 })
 
 export const setDailyRecapConfig = createServerFn({ method: 'POST' })
   .inputValidator((d) => dailyRecapSchema.parse(d))
   .handler(async ({ data }) => {
+    // 校验时区有效性
+    try { new Intl.DateTimeFormat('en-US', { timeZone: data.timezone }).format(new Date()) }
+    catch { throw new Error(`无效的时区：${data.timezone}`) }
+
     const { data: row } = await supabaseAdmin
       .from('feishu_settings')
       .select('id')
       .limit(1)
       .maybeSingle()
-    const patch = { daily_recap_enabled: data.enabled, daily_recap_hour: data.hour }
+    const patch = {
+      daily_recap_enabled: data.enabled,
+      daily_recap_hour: data.hour,
+      daily_recap_timezone: data.timezone,
+    }
     if (!row) {
       const { error } = await supabaseAdmin.from('feishu_settings').insert(patch as any)
       if (error) throw new Error(error.message)
@@ -949,7 +959,13 @@ export const setDailyRecapConfig = createServerFn({ method: 'POST' })
   })
 
 export const sendDailyRecapNow = createServerFn({ method: 'POST' }).handler(async () => {
-  const today = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10)
+  const { data } = await supabaseAdmin
+    .from('feishu_settings')
+    .select('daily_recap_timezone')
+    .limit(1)
+    .maybeSingle()
+  const tz = ((data as any)?.daily_recap_timezone as string) || 'Asia/Shanghai'
+  const today = dateInTz(new Date(), tz)
   return sendCardToFeishu(dailyRecapCard(today))
 })
 
