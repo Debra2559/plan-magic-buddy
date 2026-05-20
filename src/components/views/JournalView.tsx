@@ -337,8 +337,43 @@ export function JournalView({ embedded = false }: { embedded?: boolean } = {}) {
                 </div>
               )}
 
+              {/* —— 事件（来自「随手记 · 事件」）—— */}
+              {(() => {
+                const logs = dayNotes.filter((n) => (n.kind ?? "log") === "log");
+                return (
+                  <>
+                    <SectionHeader icon={<ListChecksIcon className="w-3.5 h-3.5" />} title={`事件 · ${logs.length}`} />
+                    {logs.length === 0 ? (
+                      <EmptyLine text="今天还没有随手记下任何事件" />
+                    ) : (
+                      <div className="space-y-2 mb-7">
+                        {logs.map((n) => <JournalNoteCard key={n.id} n={n} />)}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+
+              {/* —— 感受 & 思考（来自「随手记 · 感受 & 思考」）—— */}
+              {(() => {
+                const refs = dayNotes.filter((n) => n.kind === "reflection");
+                return (
+                  <>
+                    <SectionHeader icon={<SparklesIcon className="w-3.5 h-3.5" />} title={`感受 & 思考 · ${refs.length}`} />
+                    {refs.length === 0 ? (
+                      <EmptyLine text="今天还没有写下任何感受或想法" />
+                    ) : (
+                      <div className="space-y-2 mb-7">
+                        {refs.map((n) => <JournalNoteCard key={n.id} n={n} />)}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+
               {/* —— 习惯印章 —— */}
               <SectionHeader icon={<Flame className="w-3.5 h-3.5" />} title={`习惯印章 · ${habitsDone.length}/${habits.length}`} />
+
               {habits.length === 0 ? (
                 <EmptyLine text="还没有习惯，先从一件小事开始 🌱" />
               ) : (
