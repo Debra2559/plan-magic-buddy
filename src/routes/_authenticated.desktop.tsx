@@ -14,6 +14,7 @@ import { JournalView } from "@/components/views/JournalView";
 import { SettingsView } from "@/components/views/SettingsView";
 import { SyncSummaryModal } from "@/components/SyncSummaryModal";
 import { OnboardingHint } from "@/components/OnboardingHint";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useSylva } from "@/lib/sylva-store";
 import {
   Apple,
@@ -74,6 +75,8 @@ function DesktopApp() {
   const [todosFilter, setTodosFilter] = useState<"todo" | "reminder" | "event" | "all">("all");
   const { registerNavigate } = useSylva();
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const openSettings = () => { setSettingsOpen(true); setAppOpen(true); setActiveDock("sylva"); };
 
   useEffect(() => {
     try {
@@ -86,6 +89,10 @@ function DesktopApp() {
 
   useEffect(() => {
     registerNavigate((nextView, opts) => {
+      if (nextView === "settings") {
+        openSettings();
+        return;
+      }
       setView(nextView as SylvaView);
       setAppOpen(true);
       setActiveDock("sylva");
@@ -171,19 +178,18 @@ function DesktopApp() {
                 <SidebarItem icon={Sparkles} label="习惯" active={view === "habits"} onClick={() => setView("habits")} />
                 <SidebarItem icon={BookHeart} label="记录" active={view === "journal"} onClick={() => setView("journal")} />
                 <div className="mt-auto pt-4 border-t border-white/8">
-                  <SidebarItem icon={Settings} label="设置" active={view === "settings"} onClick={() => setView("settings")} muted={view !== "settings"} />
+                  <SidebarItem icon={Settings} label="设置" active={false} onClick={openSettings} muted />
                 </div>
               </aside>
 
               {/* Content */}
               <div className="flex-1 overflow-hidden">
-                {view === "ai" && <div className="overflow-auto h-full p-6"><AiPlanner onGoSettings={() => setView("settings")} /></div>}
-                {view === "schedule" && <ScheduleView onGoPlan={() => setView("ai")} onGoSettings={() => setView("settings")} />}
+                {view === "ai" && <div className="overflow-auto h-full p-6"><AiPlanner onGoSettings={openSettings} /></div>}
+                {view === "schedule" && <ScheduleView onGoPlan={() => setView("ai")} onGoSettings={openSettings} />}
                 {view === "todos" && <TodosView initialFilter={todosFilter} filterKey={todosFilter} />}
                 {view === "notes" && <NotesView />}
                 {view === "habits" && <HabitsView />}
                 {view === "journal" && <JournalView />}
-                {view === "settings" && <SettingsView />}
               </div>
             </div>
           </AppWindow>
@@ -235,6 +241,15 @@ function DesktopApp() {
       </Link>
 
       {showOnboarding && <OnboardingHint onClose={() => setShowOnboarding(false)} />}
+
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="max-w-4xl w-[92vw] p-0 bg-[#1a1d24] border-white/10 text-white overflow-hidden">
+          <DialogTitle className="sr-only">设置</DialogTitle>
+          <div className="max-h-[82vh] overflow-auto">
+            <SettingsView />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
