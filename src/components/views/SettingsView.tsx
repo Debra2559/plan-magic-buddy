@@ -1,4 +1,5 @@
 import { Bell, Cloud, Palette, Keyboard, User, Info } from "lucide-react";
+import { FeishuSyncPanel } from "@/components/FeishuSyncPanel";
 
 const sections = [
   {
@@ -11,10 +12,9 @@ const sections = [
     ],
   },
   {
-    title: "同步与集成",
+    title: "其他同步",
     icon: Cloud,
     rows: [
-      { label: "飞书日程", value: "已连接 · 双向同步", action: "断开" },
       { label: "iCloud 同步", value: "已开启", action: "管理" },
       { label: "Apple 日历", value: "未连接", action: "连接" },
     ],
@@ -52,6 +52,7 @@ export function SettingsView() {
       <h2 className="font-display text-3xl text-white mb-7">让 Sylva 长成你的样子。</h2>
 
       <div className="space-y-7">
+        <FeishuSyncPanel />
         {sections.map((s) => {
           const Icon = s.icon;
           return (
