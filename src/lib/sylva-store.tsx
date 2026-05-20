@@ -11,6 +11,8 @@ import {
 export interface DoneItem extends PlanItem {
   id: string;
   done?: boolean;
+  /** AI 新增规划写入但尚未由用户确认，仅本地展示，不入云端 / 飞书 */
+  pending?: boolean;
 }
 
 export type Mood = "great" | "good" | "ok" | "down" | "tired";
