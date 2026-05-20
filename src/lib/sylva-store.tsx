@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { PlanItem } from "./plan.functions";
 
 export interface DoneItem extends PlanItem {
@@ -6,10 +6,22 @@ export interface DoneItem extends PlanItem {
   done?: boolean;
 }
 
+export type Mood = "great" | "good" | "ok" | "down" | "tired";
+
 export interface Note {
   id: string;
   text: string;
   createdAt: string; // ISO
+  mood?: Mood;
+  tags?: string[];
+  pinned?: boolean;
+}
+
+export interface DiaryEntry {
+  date: string; // YYYY-MM-DD
+  content: string;
+  mood?: Mood;
+  updatedAt: string;
 }
 
 export interface Habit {
@@ -24,17 +36,34 @@ interface SylvaContextValue {
   items: DoneItem[];
   notes: Note[];
   habits: Habit[];
+  diary: DiaryEntry[];
   addItems: (items: PlanItem[]) => void;
   replaceItems: (items: PlanItem[]) => void;
   removeItem: (id: string) => void;
   toggleDone: (id: string) => void;
   clearItems: () => void;
-  addNote: (text: string) => void;
+  addNote: (text: string, opts?: { mood?: Mood; tags?: string[] }) => void;
   removeNote: (id: string) => void;
+  updateNote: (id: string, patch: Partial<Pick<Note, "text" | "mood" | "tags" | "pinned">>) => void;
   toggleHabit: (id: string) => void;
+  upsertDiary: (date: string, patch: Partial<Pick<DiaryEntry, "content" | "mood">>) => void;
 }
 
 const SylvaContext = createContext<SylvaContextValue | null>(null);
+
+function loadLS<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+function saveLS<T>(key: string, value: T) {
+  if (typeof window === "undefined") return;
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+}
 
 const initialItems: DoneItem[] = [
   { id: "seed-1", type: "event", title: "准备毕业答辩的 PPT", date: "2026-05-19", time: "10:00", durationMin: 120, tag: "学习" },
