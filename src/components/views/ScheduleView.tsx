@@ -293,13 +293,18 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
 
 
       {/* Right detail */}
-      <aside className="w-72 shrink-0 bg-black/30 border-l border-white/10 p-5 overflow-auto">
-        <p className="text-[10px] tracking-widest text-amber-glow mb-1">所选日期</p>
-        <h3 className="font-display text-2xl text-white mb-1">{formatLong(selected)}</h3>
-        <p className="text-xs text-white/40 mb-5">{selectedItems.length} 项安排</p>
+      <aside className="w-80 shrink-0 bg-gradient-to-b from-black/40 to-black/20 border-l border-white/10 p-5 overflow-auto space-y-5">
+        <div>
+          <p className="text-[10px] tracking-widest text-amber-glow mb-1">所选日期</p>
+          <h3 className="font-display text-2xl text-white mb-1">{formatLong(selected)}</h3>
+          <p className="text-xs text-white/40">{selectedItems.length} 项安排</p>
+        </div>
+
+        {/* Day stats strip */}
+        <DayStats items={selectedItems} habits={habits} selected={selected} />
 
         {isRecapDone(selected) && (
-          <div className="p-3 rounded-xl bg-moss/15 border border-moss/30 mb-2 flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-moss/15 border border-moss/30 flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-moss shrink-0" />
             <div className="min-w-0 flex-1">
               <p className="text-xs text-moss font-medium">今日小结 · 已完成</p>
@@ -318,32 +323,35 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
           </div>
         )}
 
-        {selectedItems.length === 0 ? (
-          <div className="text-center py-10 text-xs text-white/40">这一天还没有安排</div>
-        ) : (
-          <div className="space-y-2">
-            {selectedItems.map((it) => (
-              <ItemCard
-                key={it.id}
-                item={it}
-                onChange={(patch) => updateItem(it.id, patch)}
-                onToggleDone={() => toggleDone(it.id)}
-                onDelete={() => removeItem(it.id)}
-                onConfirm={it.pending ? () => confirmAndFocus([it.id]) : undefined}
-                onRevert={it.pending ? () => revertPending([it.id]) : undefined}
-              />
-            ))}
-          </div>
-        )}
+        <section>
+          <SectionHeader icon={CalIcon} title="日程" count={selectedItems.length} accent="amber" />
+          {selectedItems.length === 0 ? (
+            <div className="text-center py-6 text-xs text-white/40 rounded-xl border border-dashed border-white/10">这一天还没有安排</div>
+          ) : (
+            <div className="space-y-2">
+              {selectedItems.map((it) => (
+                <ItemCard
+                  key={it.id}
+                  item={it}
+                  onChange={(patch) => updateItem(it.id, patch)}
+                  onToggleDone={() => toggleDone(it.id)}
+                  onDelete={() => removeItem(it.id)}
+                  onConfirm={it.pending ? () => confirmAndFocus([it.id]) : undefined}
+                  onRevert={it.pending ? () => revertPending([it.id]) : undefined}
+                />
+              ))}
+            </div>
+          )}
+        </section>
 
         {habits.length > 0 && (
-          <div className="mt-5 pt-4 border-t border-white/10">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] tracking-widest text-moss">习惯打卡</p>
-              <p className="text-[10px] text-white/40 font-mono">
-                {habits.filter((h) => isHabitDoneOn(h, selected)).length}/{habits.length}
-              </p>
-            </div>
+          <section>
+            <SectionHeader
+              icon={Flame}
+              title="习惯打卡"
+              count={`${habits.filter((h) => isHabitDoneOn(h, selected)).length}/${habits.length}`}
+              accent="moss"
+            />
             <div className="space-y-1.5">
               {habits.map((h) => {
                 const done = isHabitDoneOn(h, selected);
@@ -368,8 +376,14 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                 );
               })}
             </div>
-          </div>
+          </section>
         )}
+
+        <DayDiaryCard date={selected} diary={diary} onOpen={() => navigateTo?.("journal")} />
+
+        <DayNotesCard date={selected} notes={notes} onOpen={() => navigateTo?.("notes")} />
+
+        <DayComicCard date={selected} comics={comics} onOpen={() => navigateTo?.("journal")} />
 
         <QuickAdd date={selected} onAdd={(item) => addItems([item])} />
       </aside>
