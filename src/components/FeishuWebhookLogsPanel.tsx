@@ -44,6 +44,41 @@ function stepMeta(step: string) {
   return STEP_LABEL[step] ?? { name: step, desc: "" };
 }
 
+/**
+ * 针对最容易让人困惑的两个步骤（rx / decrypt），给出字段含义与常见原因。
+ * 在每一步展开时渲染，帮助快速定位飞书回调失败原因。
+ */
+const STEP_HELP: Record<string, { tip: string; fields: { key: string; desc: string }[]; causes: string[] }> = {
+  rx: {
+    tip: "rx = receive，记录飞书原始回调（通常是加密负载）。",
+    fields: [
+      { key: "size / bytes", desc: "请求体字节数；过小通常是空 POST 或被代理截断" },
+      { key: "headers", desc: "X-Lark-Signature / X-Lark-Request-Timestamp 等飞书签名头" },
+      { key: "encrypt", desc: "AES 加密后的事件体（base64），由飞书侧用 ENCRYPT_KEY 加密" },
+      { key: "schema", desc: "飞书事件协议版本（1.0 旧版 / 2.0 新版）" },
+    ],
+    causes: [
+      "回调地址被反代或 CDN 改写，导致请求体丢失或被压缩",
+      "飞书后台启用了加密但本端未配置 FEISHU_ENCRYPT_KEY",
+      "Content-Type 不是 application/json，导致后端解析为空",
+    ],
+  },
+  decrypt: {
+    tip: "decrypt = 用 ENCRYPT_KEY 把 encrypt 字段 AES-256-CBC 解密回明文 JSON。",
+    fields: [
+      { key: "encrypt", desc: "待解密的密文（base64）；前 16 字节是 IV，其余是密文" },
+      { key: "key_len", desc: "解密所用 key 的字节数；飞书要求 32 字节（SHA-256 摘要）" },
+      { key: "plaintext_preview", desc: "解密后的明文前若干字节，用于快速验证是否为合法 JSON" },
+    ],
+    causes: [
+      "ENCRYPT_KEY 与飞书开发者后台「Encrypt Key」不一致（最常见）",
+      "飞书后台关闭了加密但回调仍带 encrypt 字段，或反之",
+      "请求体被中途修改（如反代去掉了换行 / BOM），导致 base64 校验失败",
+      "Node / Workers 运行时 crypto 库差异：用了非标准的 padding 或编码",
+    ],
+  },
+};
+
 // 简短摘要，避免直接展示加密 base64
 function summarize(r: LogRow): string {
   if (r.error) return r.error;
