@@ -136,6 +136,9 @@ interface SylvaContextValue {
   updateNote: (id: string, patch: Partial<Pick<Note, "text" | "mood" | "tags" | "pinned">>) => void;
   toggleHabit: (id: string) => void;
   toggleHabitOn: (id: string, date: string) => void;
+  addHabit: (input: { name: string; emoji?: string }) => void;
+  updateHabit: (id: string, patch: Partial<Pick<Habit, "name" | "emoji">>) => void;
+  removeHabit: (id: string) => void;
   upsertDiary: (date: string, patch: Partial<Pick<DiaryEntry, "content" | "mood">>) => void;
   recapDoneDates: Set<string>;
   isRecapDone: (date: string) => boolean;
@@ -272,6 +275,18 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
         return { ...h, history: nextHist };
       })
     );
+
+  const addHabit: SylvaContextValue["addHabit"] = ({ name, emoji }) =>
+    setHabits((prev) => [
+      ...prev,
+      { id: `h-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, name: name.trim() || "新习惯", emoji: emoji?.trim() || "✨", history: [] },
+    ]);
+
+  const updateHabit: SylvaContextValue["updateHabit"] = (id, patch) =>
+    setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, ...patch } : h)));
+
+  const removeHabit: SylvaContextValue["removeHabit"] = (id) =>
+    setHabits((prev) => prev.filter((h) => h.id !== id));
 
 
   const upsertDiary: SylvaContextValue["upsertDiary"] = (date, patch) =>
@@ -427,6 +442,9 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
         updateNote,
         toggleHabit,
         toggleHabitOn,
+        addHabit,
+        updateHabit,
+        removeHabit,
         upsertDiary,
         recapDoneDates,
         isRecapDone,
