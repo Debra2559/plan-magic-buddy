@@ -1,25 +1,24 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { generatePlan, chatPlan, type Plan, type PlanItem, type ChatStep } from "@/lib/plan.functions";
+import { generatePlan, type Plan, type PlanItem } from "@/lib/plan.functions";
 import { useSylva } from "@/lib/sylva-store";
 import { EnterHint } from "@/components/EnterHint";
 import { shouldSubmitOnKey } from "@/lib/keybinds";
-import { Sparkles, ArrowUp, Loader2, Calendar, CheckSquare, Bell, Plus, RefreshCw, Wand2, Check, X, Trash2, Target, Globe, Eye } from "lucide-react";
+import { Sparkles, ArrowUp, Loader2, Calendar, CheckSquare, Bell, Plus, RefreshCw, Wand2, Check, X, Trash2, Eye } from "lucide-react";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
-type Mode = "auto" | "create" | "adjust" | "add" | "goal";
+type Mode = "auto" | "create" | "adjust" | "add";
 
 const modeMeta: Record<Mode, { label: string; icon: typeof Wand2; hint: string }> = {
   auto: { label: "智能识别", icon: Sparkles, hint: "不用选，AI 自动判断该新建/调整/追加" },
   create: { label: "全新规划", icon: Wand2, hint: "从 0 到 1 帮我排" },
   adjust: { label: "调整重排", icon: RefreshCw, hint: "重新平衡现有规划" },
   add: { label: "追加事项", icon: Plus, hint: "往现有规划里加" },
-  goal: { label: "目标拆解", icon: Target, hint: "智能追问 + 联网找方案" },
 };
 
-type ChatMsg = { role: "user" | "assistant"; content: string; quickReplies?: string[] };
+
 
 const typeMeta: Record<PlanItem["type"], { icon: typeof Calendar; color: string; label: string }> = {
   event: { icon: Calendar, color: "text-amber-glow", label: "日程" },
@@ -97,20 +96,10 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
   const [draft, setDraft] = useState<Plan | null>(null);
   const [draftMode, setDraftMode] = useState<"create" | "adjust" | "add">("create");
   const planFn = useServerFn(generatePlan);
-  const chatFn = useServerFn(chatPlan);
   const [previewOpen, setPreviewOpen] = useState(false);
 
 
-  // Goal-chat state
-  const [chatMessages, setChatMessages] = useState<ChatMsg[]>([]);
-  const [chatInput, setChatInput] = useState("");
-  const [chatStep, setChatStep] = useState<ChatStep | null>(null);
-
   const handleSubmit = async () => {
-    if (mode === "goal") {
-      await runChat(chatInput.trim() || idea.trim());
-      return;
-    }
     if (!idea.trim() || loading) return;
     setLoading(true);
     setError(null);
@@ -142,53 +131,6 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
     }
   };
 
-  const runChat = async (text: string) => {
-    if (!text || loading) return;
-    const nextMessages: ChatMsg[] = [...chatMessages, { role: "user", content: text }];
-    setChatMessages(nextMessages);
-    setChatInput("");
-    setLoading(true);
-    setError(null);
-    setChatStep(null);
-    try {
-      const existing: PlanItem[] = confirmed.map(({ id: _id, done: _done, ...rest }) => rest);
-      const result = await chatFn({
-        data: {
-          messages: nextMessages.map((m) => ({ role: m.role, content: m.content })),
-          existing: existing.length ? existing : undefined,
-        },
-      });
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-      setChatStep(result.step);
-      if (result.step.kind === "clarify") {
-        setChatMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: result.step.kind === "clarify" ? result.step.question : "", quickReplies: result.step.kind === "clarify" ? result.step.quickReplies : [] },
-        ]);
-      } else if (result.step.kind === "plan") {
-        setDraft({ summary: result.step.summary, items: result.step.items });
-        setChatMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: `✅ ${result.step.kind === "plan" ? result.step.summary : ""}\n已生成 ${result.step.kind === "plan" ? result.step.items.length : 0} 条安排，请在右边确认。` },
-        ]);
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "未知错误");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetChat = () => {
-    setChatMessages([]);
-    setChatInput("");
-    setChatStep(null);
-    setDraft(null);
-    setError(null);
-  };
 
   const openPreview = () => {
     if (!draft) return;
@@ -250,114 +192,39 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
           <span className="text-xs tracking-wider text-amber-glow">一键生成 · 直接把想法变成完整规划</span>
         </div>
 
-        {mode === "goal" ? (
-          <div className="space-y-3">
-            {chatMessages.length > 0 && (
-              <div className="max-h-[260px] overflow-auto space-y-2 pr-1">
-                {chatMessages.map((m, i) => (
-                  <div
-                    key={i}
-                    className={`p-3 rounded-xl text-sm leading-relaxed whitespace-pre-wrap ${
-                      m.role === "user"
-                        ? "bg-amber-glow/15 border border-amber-glow/30 text-foreground/90 ml-6"
-                        : "bg-foreground/5 border border-foreground/10 text-foreground/85 mr-6"
-                    }`}
-                  >
-                    {m.content}
-                    {m.quickReplies && m.quickReplies.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {m.quickReplies.map((q) => (
-                          <button
-                            key={q}
-                            onClick={() => runChat(q)}
-                            disabled={loading}
-                            className="text-[11px] px-2.5 py-1 rounded-full bg-amber-glow/10 border border-amber-glow/30 text-amber-glow hover:bg-amber-glow/20 transition disabled:opacity-40"
-                          >
-                            {q}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {loading && chatStep?.kind === "research" && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground p-2">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    <span className="flex items-center gap-1"><Globe className="w-3 h-3" /> 正在联网查方案…</span>
-                  </div>
-                )}
-              </div>
-            )}
-            <div className="flex flex-col sm:flex-row gap-2">
-              <textarea
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (shouldSubmitOnKey(e, enterToSubmit)) {
-                    e.preventDefault();
-                    handleSubmit();
-                  }
-                }}
-                placeholder={chatMessages.length === 0 ? "告诉我一个目标，例如：我要考雅思 / 想 3 个月跑下半马" : "继续回答…"}
-                rows={4}
-                className="flex-1 min-h-[110px] bg-foreground/5 border border-foreground/10 rounded-xl px-4 py-3 text-sm leading-relaxed resize-none outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
-              />
-              <button
-                onClick={handleSubmit}
-                disabled={loading || !chatInput.trim()}
-                className="shrink-0 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition disabled:opacity-40 disabled:scale-100"
-              >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                {loading ? "思考中" : chatMessages.length === 0 ? "开始拆解" : "发送"}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col sm:flex-row gap-2">
-            <textarea
-              value={idea}
-              onChange={(e) => setIdea(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                  e.preventDefault();
-                  handleSubmit();
-                }
-              }}
-              placeholder={
-                mode === "create"
-                  ? "例如：下周要准备毕业答辩，同时跑通飞书提效系统，每天还要泛听英语..."
-                  : mode === "adjust"
-                  ? "例如：周三下午突然有个会，把那天的安排往后推..."
-                  : mode === "add"
-                  ? "例如：再加一个每天 30 分钟的力量训练..."
-                  : "一句话描述你想做的事，例如：这周冲毕业答辩 + 每天 30 分钟英语"
+        <div className="flex flex-col sm:flex-row gap-2">
+          <textarea
+            value={idea}
+            onChange={(e) => setIdea(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                handleSubmit();
               }
-              rows={4}
-              className="flex-1 min-h-[110px] bg-foreground/5 border border-foreground/10 rounded-xl px-4 py-3 text-sm leading-relaxed resize-none outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
-            />
-            <button
-              onClick={handleSubmit}
-              disabled={loading || !idea.trim()}
-              className="shrink-0 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition disabled:opacity-40 disabled:scale-100"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {loading ? "生成中" : "生成规划"}
-            </button>
-          </div>
-        )}
+            }}
+            placeholder={
+              mode === "create"
+                ? "例如：下周要准备毕业答辩，同时跑通飞书提效系统，每天还要泛听英语..."
+                : mode === "adjust"
+                ? "例如：周三下午突然有个会，把那天的安排往后推..."
+                : mode === "add"
+                ? "例如：再加一个每天 30 分钟的力量训练..."
+                : "一句话描述你想做的事，例如：这周冲毕业答辩 + 每天 30 分钟英语"
+            }
+            rows={4}
+            className="flex-1 min-h-[110px] bg-foreground/5 border border-foreground/10 rounded-xl px-4 py-3 text-sm leading-relaxed resize-none outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
+          />
+          <button
+            onClick={handleSubmit}
+            disabled={loading || !idea.trim()}
+            className="shrink-0 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition disabled:opacity-40 disabled:scale-100"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {loading ? "生成中" : "生成规划"}
+          </button>
+        </div>
 
-        <ThinkingTrace
-          active={loading}
-          variant={
-            mode === "goal"
-              ? chatStep?.kind === "research"
-                ? "goal-research"
-                : chatMessages.length >= 2
-                ? "goal-plan"
-                : "goal-clarify"
-              : "plan"
-          }
-        />
+        <ThinkingTrace active={loading} variant="plan" />
 
         {/* Mode tabs（输入框下方） */}
         <div className="flex gap-2 mt-3 flex-wrap items-center">
@@ -370,10 +237,7 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
               <button
                 key={m}
                 disabled={disabled}
-                onClick={() => {
-                  setMode(m);
-                  if (m === "goal") resetChat();
-                }}
+                onClick={() => setMode(m)}
                 title={modeMeta[m].hint}
                 className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] border transition
                   ${active ? "bg-amber-glow/20 border-amber-glow/50 text-amber-glow" : "bg-foreground/5 border-foreground/10 text-foreground/70 hover:bg-foreground/10"}
@@ -384,9 +248,6 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
               </button>
             );
           })}
-          {mode === "goal" && chatMessages.length > 0 && (
-            <button onClick={resetChat} className="ml-auto text-[10px] text-muted-foreground hover:text-foreground transition">重新开始</button>
-          )}
         </div>
 
         {error && (
