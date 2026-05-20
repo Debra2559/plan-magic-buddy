@@ -154,10 +154,24 @@ function LoginPage() {
               className="mt-1 w-full px-3 py-2 rounded-lg bg-foreground/5 border border-foreground/10 text-sm outline-none focus:border-amber-glow/50"
               placeholder="至少 6 位"
             />
+            {mode === "signup" && pwdCheck.status !== "idle" && (
+              <p
+                className={`mt-1 text-[11px] ${
+                  pwdCheck.status === "ok"
+                    ? "text-moss"
+                    : pwdCheck.status === "checking"
+                      ? "text-foreground/50"
+                      : "text-destructive"
+                }`}
+              >
+                {pwdCheck.status === "checking" ? "⏳ " : pwdCheck.status === "ok" ? "✓ " : "⚠ "}
+                {pwdCheck.msg}
+              </p>
+            )}
           </div>
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || (mode === "signup" && (pwdCheck.status === "weak" || pwdCheck.status === "pwned" || pwdCheck.status === "checking"))}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-amber-glow text-primary-foreground text-sm font-medium hover:brightness-110 disabled:opacity-50 transition"
           >
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
