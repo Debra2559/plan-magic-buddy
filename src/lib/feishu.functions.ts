@@ -1150,6 +1150,26 @@ export const markRecapDone = createServerFn({ method: 'POST' })
     return { ok: true as const }
   })
 
+/** 撤销「飞书已提交」标记：从 done 列表里移除该日期，并清空当天 daily_recaps 行 */
+export const unmarkRecapDone = createServerFn({ method: 'POST' })
+  .inputValidator((d: { date: string }) => z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(d))
+  .handler(async ({ data }) => {
+    const { data: rows } = await supabaseAdmin
+      .from('feishu_settings')
+      .select('id, daily_recap_done_dates')
+    for (const r of (rows ?? []) as any[]) {
+      const cur: string[] = Array.isArray(r.daily_recap_done_dates) ? r.daily_recap_done_dates : []
+      if (!cur.includes(data.date)) continue
+      const next = cur.filter((d) => d !== data.date)
+      await supabaseAdmin
+        .from('feishu_settings')
+        .update({ daily_recap_done_dates: next } as any)
+        .eq('id', r.id)
+    }
+    await supabaseAdmin.from('daily_recaps').delete().eq('date', data.date)
+    return { ok: true as const }
+  })
+
 /** 返回最近 60 天内被标记为「已完成小结」的日期数组 */
 export const getRecapDoneDates = createServerFn({ method: 'GET' }).handler(async () => {
   const { data } = await supabaseAdmin
