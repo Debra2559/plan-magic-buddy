@@ -479,10 +479,16 @@ export function FeishuSyncPanel() {
         } else {
           setLastError(null);
         }
+        pushTLRef.current?.(
+          "sync",
+          failCount > 0 ? "warn" : "ok",
+          `${reason} · 完成：成功 ${okCount} / 失败 ${failCount}`
+        );
       } catch (e: any) {
         const msg = e?.message ?? String(e);
         setLogs((prev) => [mkLog("update", "sylva", `同步异常: ${msg}`, "conflict"), ...prev].slice(0, 12));
         setLastError({ scope: `${reason} · 推送`, msg, at: new Date().toISOString() });
+        pushTLRef.current?.("sync", "fail", `${reason} · 异常：${msg}`);
       } finally {
         setSyncing(false);
         setSyncProgress(null);
