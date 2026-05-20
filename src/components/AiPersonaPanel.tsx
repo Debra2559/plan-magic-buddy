@@ -332,9 +332,11 @@ export function AiPersonaPanel() {
             <div className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white/85 italic">
               "{demoLine}"
             </div>
-          )}
+        </div>
+
         <ProfileHistoryPanel />
       </div>
+
 
 
       <AvatarCropDialog
