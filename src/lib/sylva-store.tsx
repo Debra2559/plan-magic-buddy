@@ -114,6 +114,7 @@ interface SylvaContextValue {
   recapDoneDates: Set<string>;
   isRecapDone: (date: string) => boolean;
   refreshRecapDoneDates: () => Promise<void>;
+  unmarkRecapDone: (date: string) => Promise<void>;
 }
 
 const SylvaContext = createContext<SylvaContextValue | null>(null);
