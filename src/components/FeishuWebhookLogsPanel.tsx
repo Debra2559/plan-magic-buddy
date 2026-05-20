@@ -308,6 +308,12 @@ export function FeishuWebhookLogsPanel() {
                                 className="w-full flex items-baseline gap-2 text-left hover:bg-muted/40 rounded px-1.5 py-1"
                               >
                                 <span className="font-medium text-foreground shrink-0">{meta.name}</span>
+                                {STEP_HELP[r.step] && (
+                                  <HelpCircle
+                                    className="h-3 w-3 text-muted-foreground/70 shrink-0 self-center"
+                                    aria-label="字段含义与常见原因"
+                                  />
+                                )}
                                 <span className="text-muted-foreground/80 shrink-0 text-[10px]">{meta.desc}</span>
                                 <span className="flex-1 truncate">{summarize(r)}</span>
                                 {delta > 0 && (
@@ -319,6 +325,33 @@ export function FeishuWebhookLogsPanel() {
                               </button>
                               {rowOpen && (
                                 <div className="mt-1 space-y-2 pl-1.5">
+                                  {STEP_HELP[r.step] && (
+                                    <div className="text-[11px] rounded border border-border bg-background/60 p-2 space-y-1.5">
+                                      <div className="flex items-start gap-1.5 text-foreground/85">
+                                        <HelpCircle className="h-3 w-3 mt-0.5 shrink-0 text-muted-foreground" />
+                                        <span>{STEP_HELP[r.step].tip}</span>
+                                      </div>
+                                      <div>
+                                        <div className="text-muted-foreground mb-1">字段含义</div>
+                                        <ul className="space-y-0.5">
+                                          {STEP_HELP[r.step].fields.map((f) => (
+                                            <li key={f.key} className="grid grid-cols-[120px_1fr] gap-2">
+                                              <code className="text-foreground/80">{f.key}</code>
+                                              <span className="text-muted-foreground">{f.desc}</span>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                      <div>
+                                        <div className="text-muted-foreground mb-1">常见原因</div>
+                                        <ul className="list-disc pl-4 space-y-0.5 text-muted-foreground">
+                                          {STEP_HELP[r.step].causes.map((c, i) => (
+                                            <li key={i}>{c}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    </div>
+                                  )}
                                   {r.error && (
                                     <pre className="text-[11px] text-destructive whitespace-pre-wrap break-all bg-destructive/5 p-2 rounded">
                                       {r.error}
@@ -329,7 +362,7 @@ export function FeishuWebhookLogsPanel() {
                                       {JSON.stringify(r.payload, null, 2)}
                                     </pre>
                                   )}
-                                  {!r.error && !r.payload && (
+                                  {!r.error && !r.payload && !STEP_HELP[r.step] && (
                                     <div className="text-[10px] text-muted-foreground">无附加数据</div>
                                   )}
                                 </div>
