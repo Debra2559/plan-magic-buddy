@@ -56,7 +56,7 @@ export function InsightsSettingsPanel() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["my-insights"] }),
   });
 
-  if (!local) return <div className="text-white/50 text-sm">加载中…</div>;
+  if (!local) return <div className="text-muted-foreground text-sm">加载中…</div>;
 
   const toggleSlot = (slot: string) => {
     const next = local.slots.includes(slot) ? local.slots.filter((x: string) => x !== slot) : [...local.slots, slot];
@@ -74,8 +74,8 @@ export function InsightsSettingsPanel() {
       {/* 开关 */}
       <div className="widget p-4 flex items-center justify-between">
         <div>
-          <div className="text-white font-medium text-sm">启用 AI 行为洞察</div>
-          <div className="text-white/50 text-xs mt-0.5">关闭后不再自动生成新的提示</div>
+          <div className="text-foreground font-medium text-sm">启用 AI 行为洞察</div>
+          <div className="text-muted-foreground text-xs mt-0.5">关闭后不再自动生成新的提示</div>
         </div>
         <button
           role="switch"
@@ -85,7 +85,7 @@ export function InsightsSettingsPanel() {
             setLocal({ ...local, enabled: next });
             save.mutate({ enabled: next });
           }}
-          className={`w-11 h-6 rounded-full transition relative ${local.enabled ? "bg-amber-glow" : "bg-white/20"}`}
+          className={`w-11 h-6 rounded-full transition relative ${local.enabled ? "bg-amber-glow" : "bg-foreground/20"}`}
         >
           <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition ${local.enabled ? "left-[22px]" : "left-0.5"}`} />
         </button>
@@ -93,8 +93,8 @@ export function InsightsSettingsPanel() {
 
       {/* 时段 */}
       <div className="widget p-4">
-        <div className="text-white font-medium text-sm mb-2">生成时段</div>
-        <div className="text-white/50 text-xs mb-3">AI 在这些时间段会自动生成提示</div>
+        <div className="text-foreground font-medium text-sm mb-2">生成时段</div>
+        <div className="text-muted-foreground text-xs mb-3">AI 在这些时间段会自动生成提示</div>
         <div className="grid grid-cols-3 gap-2">
           {SLOTS.map((s) => {
             const active = local.slots.includes(s.key);
@@ -103,11 +103,11 @@ export function InsightsSettingsPanel() {
                 key={s.key}
                 onClick={() => toggleSlot(s.key)}
                 className={`px-3 py-2 rounded-lg text-sm transition border ${
-                  active ? "bg-amber-glow/15 border-amber-glow/40 text-white" : "bg-white/[0.03] border-white/10 text-white/60 hover:text-white"
+                  active ? "bg-amber-glow/15 border-amber-glow/40 text-foreground" : "bg-foreground/[0.04] border-border text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <div className="font-medium">{s.label}</div>
-                <div className="text-[10px] text-white/40">{s.hint}</div>
+                <div className="text-[10px] text-muted-foreground/70">{s.hint}</div>
               </button>
             );
           })}
@@ -116,11 +116,11 @@ export function InsightsSettingsPanel() {
 
       {/* 时区 */}
       <div className="widget p-4">
-        <div className="text-white font-medium text-sm mb-2 flex items-center gap-1.5">
+        <div className="text-foreground font-medium text-sm mb-2 flex items-center gap-1.5">
           <Globe className="w-3.5 h-3.5 text-amber-glow" />
           时区
         </div>
-        <div className="text-white/50 text-xs mb-3">
+        <div className="text-muted-foreground text-xs mb-3">
           AI 按你所在时区判断「早/午/晚」时段
         </div>
         <select
@@ -130,10 +130,10 @@ export function InsightsSettingsPanel() {
             setLocal({ ...local, timezone: next });
             save.mutate({ timezone: next });
           }}
-          className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-amber-glow/40 transition"
+          className="w-full px-3 py-2 rounded-lg bg-foreground/[0.05] border border-border text-foreground text-sm focus:outline-none focus:border-amber-glow/40 transition"
         >
           {TIMEZONES.map((t) => (
-            <option key={t.key} value={t.key} className="bg-[#0a0c0a]">
+            <option key={t.key} value={t.key} className="bg-background">
               {t.label} · {t.offset}
             </option>
           ))}
@@ -144,8 +144,8 @@ export function InsightsSettingsPanel() {
 
       {/* 数据范围 */}
       <div className="widget p-4">
-        <div className="text-white font-medium text-sm mb-2">参考数据</div>
-        <div className="text-white/50 text-xs mb-3">勾选 AI 在生成提示时可以参考的内容</div>
+        <div className="text-foreground font-medium text-sm mb-2">参考数据</div>
+        <div className="text-muted-foreground text-xs mb-3">勾选 AI 在生成提示时可以参考的内容</div>
         <div className="grid grid-cols-2 gap-2">
           {SCOPES.map((s) => {
             const active = local.scope.includes(s.key);
@@ -154,7 +154,7 @@ export function InsightsSettingsPanel() {
                 key={s.key}
                 onClick={() => toggleScope(s.key)}
                 className={`px-3 py-2 rounded-lg text-sm transition border ${
-                  active ? "bg-white/10 border-white/25 text-white" : "bg-white/[0.03] border-white/10 text-white/60 hover:text-white"
+                  active ? "bg-foreground/10 border-border text-foreground" : "bg-foreground/[0.04] border-border text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {s.label}
@@ -166,7 +166,7 @@ export function InsightsSettingsPanel() {
 
       {/* 回看天数 */}
       <div className="widget p-4">
-        <div className="text-white font-medium text-sm mb-2">回看 {local.lookback_days} 天</div>
+        <div className="text-foreground font-medium text-sm mb-2">回看 {local.lookback_days} 天</div>
         <input
           type="range"
           min={1}
@@ -180,7 +180,7 @@ export function InsightsSettingsPanel() {
           onTouchEnd={() => save.mutate({ lookback_days: local.lookback_days })}
           className="w-full accent-amber-glow"
         />
-        <div className="flex justify-between text-[10px] text-white/40 mt-1">
+        <div className="flex justify-between text-[10px] text-muted-foreground/70 mt-1">
           <span>1 天</span><span>7 天</span>
         </div>
       </div>
@@ -188,8 +188,8 @@ export function InsightsSettingsPanel() {
       {/* 飞书推送 */}
       <div className="widget p-4 flex items-center justify-between">
         <div>
-          <div className="text-white font-medium text-sm">推送到飞书</div>
-          <div className="text-white/50 text-xs mt-0.5">使用飞书同步中配置的接收人</div>
+          <div className="text-foreground font-medium text-sm">推送到飞书</div>
+          <div className="text-muted-foreground text-xs mt-0.5">使用飞书同步中配置的接收人</div>
         </div>
         <button
           role="switch"
@@ -199,7 +199,7 @@ export function InsightsSettingsPanel() {
             setLocal({ ...local, push_feishu: next });
             save.mutate({ push_feishu: next });
           }}
-          className={`w-11 h-6 rounded-full transition relative ${local.push_feishu ? "bg-amber-glow" : "bg-white/20"}`}
+          className={`w-11 h-6 rounded-full transition relative ${local.push_feishu ? "bg-amber-glow" : "bg-foreground/20"}`}
         >
           <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition ${local.push_feishu ? "left-[22px]" : "left-0.5"}`} />
         </button>
@@ -208,18 +208,18 @@ export function InsightsSettingsPanel() {
       {/* 立即生成 */}
       <div className="widget p-4 flex items-center justify-between">
         <div>
-          <div className="text-white font-medium text-sm flex items-center gap-1.5">
+          <div className="text-foreground font-medium text-sm flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-amber-glow" />
             立即生成一组提示
           </div>
-          <div className="text-white/50 text-xs mt-0.5">
+          <div className="text-muted-foreground text-xs mt-0.5">
             {local.last_generated_at ? `上次：${new Date(local.last_generated_at).toLocaleString("zh-CN")}` : "尚未生成过"}
           </div>
         </div>
         <button
           onClick={() => generateMut.mutate()}
           disabled={generateMut.isPending}
-          className="px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/15 text-white text-xs flex items-center gap-1.5 disabled:opacity-50"
+          className="px-3 py-1.5 rounded-md bg-foreground/10 hover:bg-foreground/15 text-foreground text-xs flex items-center gap-1.5 disabled:opacity-50"
         >
           <RefreshCw className={`w-3 h-3 ${generateMut.isPending ? "animate-spin" : ""}`} />
           {generateMut.isPending ? "生成中…" : "立即生成"}

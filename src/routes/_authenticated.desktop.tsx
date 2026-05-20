@@ -136,15 +136,15 @@ function DesktopApp() {
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
 
       {/* Top menu bar */}
-      <div className="absolute top-0 inset-x-0 h-7 z-50 bg-black/30 backdrop-blur-2xl border-b border-white/10 flex items-center px-4 text-[13px] text-white/95">
+      <div className="absolute top-0 inset-x-0 h-7 z-50 bg-background/50 backdrop-blur-2xl border-b border-border flex items-center px-4 text-[13px] text-foreground">
         <Apple className="w-4 h-4 mr-4" fill="currentColor" strokeWidth={0} />
         <span className="font-semibold mr-5">Sylva</span>
-        <span className="mr-4 hover:bg-white/10 px-2 py-0.5 rounded cursor-default">文件</span>
-        <span className="mr-4 hover:bg-white/10 px-2 py-0.5 rounded cursor-default">编辑</span>
-        <span className="mr-4 hover:bg-white/10 px-2 py-0.5 rounded cursor-default">视图</span>
-        <span className="mr-4 hover:bg-white/10 px-2 py-0.5 rounded cursor-default">规划</span>
-        <span className="mr-4 hover:bg-white/10 px-2 py-0.5 rounded cursor-default">窗口</span>
-        <span className="hover:bg-white/10 px-2 py-0.5 rounded cursor-default">帮助</span>
+        <span className="mr-4 hover:bg-foreground/10 px-2 py-0.5 rounded cursor-default">文件</span>
+        <span className="mr-4 hover:bg-foreground/10 px-2 py-0.5 rounded cursor-default">编辑</span>
+        <span className="mr-4 hover:bg-foreground/10 px-2 py-0.5 rounded cursor-default">视图</span>
+        <span className="mr-4 hover:bg-foreground/10 px-2 py-0.5 rounded cursor-default">规划</span>
+        <span className="mr-4 hover:bg-foreground/10 px-2 py-0.5 rounded cursor-default">窗口</span>
+        <span className="hover:bg-foreground/10 px-2 py-0.5 rounded cursor-default">帮助</span>
 
         <div className="ml-auto flex items-center gap-3.5 text-[12px]">
           <Bluetooth className="w-3.5 h-3.5" />
@@ -183,7 +183,7 @@ function DesktopApp() {
           >
             <div className="flex h-full">
               {/* Sidebar */}
-              <aside className="w-52 shrink-0 bg-black/30 backdrop-blur-xl border-r border-white/8 p-4 flex flex-col gap-1 text-[13px]">
+              <aside className="w-52 shrink-0 bg-background/50 backdrop-blur-xl border-r border-border/70 p-4 flex flex-col gap-1 text-[13px]">
                 <AssistantHeader onClick={() => openSettings("persona")} />
                 <SidebarItem icon={CalIcon} label="日程" active={view === "schedule"} onClick={() => setView("schedule")} />
                 <SidebarItem icon={Sparkles} label="规划" active={view === "ai"} onClick={() => setView("ai")} />
@@ -191,7 +191,7 @@ function DesktopApp() {
                 <SidebarItem icon={BookHeart} label="记录" active={view === "notes" || view === "journal"} onClick={() => setView("notes")} />
                 <SidebarItem icon={Sparkles} label="习惯" active={view === "habits"} onClick={() => setView("habits")} />
                 <SidebarItem icon={Brain} label="能力" active={view === "ability"} onClick={() => setView("ability")} />
-                <div className="mt-auto pt-4 border-t border-white/8">
+                <div className="mt-auto pt-4 border-t border-border/70">
                   <SidebarItem icon={Settings} label="设置" active={false} onClick={openSettings} muted />
                 </div>
               </aside>
@@ -217,7 +217,7 @@ function DesktopApp() {
       {!appOpen && (
         <button
           onClick={() => { setAppOpen(true); setActiveDock("sylva"); }}
-          className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-black/40 backdrop-blur-2xl border border-white/15 text-white/85 text-xs hover:bg-black/55 transition shadow-xl animate-in fade-in slide-in-from-bottom-2"
+          className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-background/60 backdrop-blur-2xl border border-border text-white/85 text-xs hover:bg-black/55 transition shadow-xl animate-in fade-in slide-in-from-bottom-2"
         >
           <Sparkles className="w-3.5 h-3.5 text-amber-glow" />
           客户端已关闭 · 桌面组件可继续使用 · 点击重新打开 Sylva
@@ -230,7 +230,7 @@ function DesktopApp() {
 
       {/* Dock */}
       <div className="absolute bottom-3 inset-x-0 z-50 flex justify-center pointer-events-none">
-        <div className="pointer-events-auto flex items-end gap-2 px-3 py-2 rounded-2xl bg-white/10 backdrop-blur-2xl border border-white/15 shadow-2xl">
+        <div className="pointer-events-auto flex items-end gap-2 px-3 py-2 rounded-2xl bg-foreground/10 backdrop-blur-2xl border border-border shadow-2xl">
           <DockIcon id="sylva" label="Sylva" active={activeDock === "sylva"} onClick={() => { setActiveDock("sylva"); setAppOpen(true); }}>
             <div className="w-full h-full rounded-xl bg-gradient-to-br from-amber-glow to-moss flex items-center justify-center">
               <span className="font-display text-primary-foreground text-xl">S</span>
@@ -238,28 +238,28 @@ function DesktopApp() {
           </DockIcon>
           <DockIcon id="cal" label="日历" onClick={() => setActiveDock("cal")} active={activeDock === "cal"}>
             <div className="w-full h-full rounded-xl bg-white flex flex-col overflow-hidden">
-              <div className="h-1/4 bg-red-500 text-white text-[8px] flex items-center justify-center font-bold">5月</div>
+              <div className="h-1/4 bg-red-500 text-foreground text-[8px] flex items-center justify-center font-bold">5月</div>
               <div className="flex-1 flex items-center justify-center text-black text-xl font-bold">19</div>
             </div>
           </DockIcon>
           <DockIcon id="mail" label="邮件" onClick={() => setActiveDock("mail")} active={activeDock === "mail"}>
             <div className="w-full h-full rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center">
-              <Mail className="w-6 h-6 text-white" />
+              <Mail className="w-6 h-6 text-foreground" />
             </div>
           </DockIcon>
           <DockIcon id="music" label="音乐" onClick={() => setActiveDock("music")} active={activeDock === "music"}>
             <div className="w-full h-full rounded-xl bg-gradient-to-br from-pink-400 to-rose-600 flex items-center justify-center">
-              <Music className="w-6 h-6 text-white" />
+              <Music className="w-6 h-6 text-foreground" />
             </div>
           </DockIcon>
           <DockIcon id="photos" label="照片" onClick={() => setActiveDock("photos")} active={activeDock === "photos"}>
             <div className="w-full h-full rounded-xl bg-gradient-to-br from-purple-400 to-orange-400 flex items-center justify-center">
-              <ImageIcon className="w-6 h-6 text-white" />
+              <ImageIcon className="w-6 h-6 text-foreground" />
             </div>
           </DockIcon>
-          <div className="w-px self-stretch bg-white/20 mx-1" />
+          <div className="w-px self-stretch bg-foreground/20 mx-1" />
           <DockIcon id="feishu" label="飞书" onClick={() => setActiveDock("feishu")} active={activeDock === "feishu"}>
-            <div className="w-full h-full rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg">飞</div>
+            <div className="w-full h-full rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-foreground font-bold text-lg">飞</div>
           </DockIcon>
         </div>
       </div>
@@ -267,7 +267,7 @@ function DesktopApp() {
       {/* Back to landing */}
       <Link
         to="/"
-        className="absolute top-10 left-3 z-50 flex items-center gap-1 px-3 py-1.5 rounded-full bg-black/30 backdrop-blur text-white/80 hover:bg-black/50 text-xs border border-white/10"
+        className="absolute top-10 left-3 z-50 flex items-center gap-1 px-3 py-1.5 rounded-full bg-background/50 backdrop-blur text-foreground/85 hover:bg-background/70 text-xs border border-border"
       >
         <ChevronLeft className="w-3 h-3" /> 返回介绍页
       </Link>
@@ -339,7 +339,7 @@ function DraggableWidget({
       title="双击编辑"
     >
       {children}
-      <div className="pointer-events-none absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition px-2 py-0.5 rounded-full bg-black/70 text-white text-[10px] border border-white/10">
+      <div className="pointer-events-none absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition px-2 py-0.5 rounded-full bg-background/80 text-foreground text-[10px] border border-border">
         双击编辑
       </div>
     </div>
@@ -388,22 +388,22 @@ function AppWindow({
   return (
     <div
       style={style as React.CSSProperties}
-      className="absolute z-40 rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-background/85 backdrop-blur-2xl flex flex-col"
+      className="absolute z-40 rounded-xl overflow-hidden shadow-2xl border border-border bg-background/85 backdrop-blur-2xl flex flex-col"
     >
       {/* Title bar */}
       <div
         onMouseDown={onBarMouseDown}
-        className="h-9 shrink-0 flex items-center px-3 border-b border-white/8 bg-black/20 cursor-grab active:cursor-grabbing"
+        className="h-9 shrink-0 flex items-center px-3 border-b border-border/70 bg-background/30 cursor-grab active:cursor-grabbing"
       >
         <div className="flex items-center gap-1.5">
           <button onClick={onClose} className="w-3 h-3 rounded-full bg-[#ff5f57] hover:brightness-110" />
           <button onClick={onMinimize} className="w-3 h-3 rounded-full bg-[#febc2e] hover:brightness-110" />
           <button onClick={onMaximize} className="w-3 h-3 rounded-full bg-[#28c840] hover:brightness-110" />
         </div>
-        <div className="flex-1 text-center text-xs text-white/70 font-medium pointer-events-none">
+        <div className="flex-1 text-center text-xs text-foreground/75 font-medium pointer-events-none">
           Sylva — AI 规划
         </div>
-        <Maximize2 className="w-3 h-3 text-white/40" />
+        <Maximize2 className="w-3 h-3 text-muted-foreground/70" />
       </div>
       <div className="flex-1 overflow-hidden">{children}</div>
     </div>
@@ -427,7 +427,7 @@ function SidebarItem({
     <button
       onClick={onClick}
       className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition
-        ${active ? "bg-amber-glow/20 text-amber-glow" : muted ? "text-white/40 hover:bg-white/5" : "text-white/80 hover:bg-white/8"}`}
+        ${active ? "bg-amber-glow/20 text-amber-glow" : muted ? "text-muted-foreground/70 hover:bg-foreground/5" : "text-foreground/85 hover:bg-white/8"}`}
     >
       <Icon className="w-4 h-4" strokeWidth={1.8} />
       <span>{label}</span>
@@ -450,7 +450,7 @@ function AssistantHeader({ onClick }: { onClick?: () => void }) {
       title="编辑人设（头像 / 名称）"
     >
       <div className="flex items-center gap-2.5">
-        <div className="relative w-9 h-9 rounded-full overflow-hidden ring-1 ring-white/15 shadow-lg shrink-0 group-hover:ring-amber-glow/60 transition">
+        <div className="relative w-9 h-9 rounded-full overflow-hidden ring-1 ring-border shadow-lg shrink-0 group-hover:ring-amber-glow/60 transition">
           {avatar ? (
             <img src={avatar} alt={aiName} className="w-full h-full object-cover" />
           ) : (
@@ -461,10 +461,10 @@ function AssistantHeader({ onClick }: { onClick?: () => void }) {
           <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-black/70" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-display text-base text-white truncate group-hover:text-amber-glow transition">
+          <div className="font-display text-base text-foreground truncate group-hover:text-amber-glow transition">
             {aiName}
           </div>
-          <div className="text-[10px] text-white/40 group-hover:text-white/70 transition truncate">
+          <div className="text-[10px] text-muted-foreground/70 group-hover:text-foreground/75 transition truncate">
             为 {userName} 服务 · 点击编辑人设
           </div>
         </div>
@@ -495,7 +495,7 @@ function DockIcon({
     >
       {children}
       {active && <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white" />}
-      <span className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition px-2 py-0.5 rounded bg-black/70 text-white text-[10px] whitespace-nowrap pointer-events-none">
+      <span className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition px-2 py-0.5 rounded bg-background/80 text-foreground text-[10px] whitespace-nowrap pointer-events-none">
         {label}
       </span>
     </button>

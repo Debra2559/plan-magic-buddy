@@ -48,14 +48,14 @@ function AdminPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0e1014] text-white/70">
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground/75">
         正在验证管理员身份…
       </div>
     );
   }
   if (!data?.isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0e1014] text-white/80">
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground/85">
         <div className="text-center space-y-4">
           <Shield className="w-10 h-10 mx-auto text-red-400" />
           <p>你没有访问后台的权限。</p>
@@ -68,10 +68,10 @@ function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0e1014] text-white">
-      <header className="border-b border-white/8 bg-black/30 backdrop-blur sticky top-0 z-10">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-border/70 bg-background/50 backdrop-blur sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-3">
-          <Link to="/desktop" className="flex items-center gap-1 text-white/55 hover:text-white text-xs">
+          <Link to="/desktop" className="flex items-center gap-1 text-muted-foreground hover:text-foreground text-xs">
             <ChevronLeft className="w-3.5 h-3.5" /> 返回桌面
           </Link>
           <div className="ml-2 flex items-center gap-2">
@@ -81,13 +81,13 @@ function AdminPage() {
           <Badge variant="outline" className="ml-2 border-amber-glow/40 text-amber-glow text-[10px]">
             超级管理员
           </Badge>
-          <span className="ml-auto text-[11px] text-white/40 font-mono">{data.userId}</span>
+          <span className="ml-auto text-[11px] text-muted-foreground/70 font-mono">{data.userId}</span>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-6">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="bg-white/5 border border-white/10">
+          <TabsList className="bg-foreground/5 border border-border">
             <TabsTrigger value="overview"><Activity className="w-3.5 h-3.5 mr-1.5" />概览</TabsTrigger>
             <TabsTrigger value="users"><Users className="w-3.5 h-3.5 mr-1.5" />用户</TabsTrigger>
             <TabsTrigger value="content"><Database className="w-3.5 h-3.5 mr-1.5" />内容</TabsTrigger>
@@ -129,13 +129,13 @@ function OverviewTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-white/55">全站数据概览</p>
+        <p className="text-sm text-muted-foreground">全站数据概览</p>
         <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isRefetching}>
           <RefreshCw className={`w-3.5 h-3.5 mr-1 ${isRefetching ? "animate-spin" : ""}`} />刷新
         </Button>
       </div>
       {isLoading ? (
-        <p className="text-white/40 text-sm">加载中…</p>
+        <p className="text-muted-foreground/70 text-sm">加载中…</p>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <StatCard label="注册用户" value={data?.totalUsers ?? "—"} accent />
@@ -150,9 +150,9 @@ function OverviewTab() {
 
 function StatCard({ label, value, accent }: { label: string; value: any; accent?: boolean }) {
   return (
-    <div className={`rounded-xl border p-4 ${accent ? "bg-amber-glow/10 border-amber-glow/30" : "bg-white/5 border-white/10"}`}>
-      <div className="text-xs text-white/50">{label}</div>
-      <div className={`mt-1 text-2xl font-display ${accent ? "text-amber-glow" : "text-white"}`}>{value}</div>
+    <div className={`rounded-xl border p-4 ${accent ? "bg-amber-glow/10 border-amber-glow/30" : "bg-foreground/5 border-border"}`}>
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className={`mt-1 text-2xl font-display ${accent ? "text-amber-glow" : "text-foreground"}`}>{value}</div>
     </div>
   );
 }
@@ -178,12 +178,12 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "users"] }),
   });
 
-  if (isLoading) return <p className="text-white/40 text-sm">加载中…</p>;
+  if (isLoading) return <p className="text-muted-foreground/70 text-sm">加载中…</p>;
 
   return (
-    <div className="rounded-xl border border-white/10 overflow-hidden">
+    <div className="rounded-xl border border-border overflow-hidden">
       <table className="w-full text-sm">
-        <thead className="bg-white/5 text-white/60 text-xs">
+        <thead className="bg-foreground/5 text-muted-foreground text-xs">
           <tr>
             <th className="text-left px-3 py-2">用户</th>
             <th className="text-left px-3 py-2">角色</th>
@@ -197,33 +197,33 @@ function UsersTab({ currentUserId }: { currentUserId: string }) {
             const isAdmin = u.roles.includes("admin");
             const isSelf = u.id === currentUserId;
             return (
-              <tr key={u.id} className="border-t border-white/8 hover:bg-white/3">
+              <tr key={u.id} className="border-t border-border/70 hover:bg-white/3">
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-2">
                     {u.avatar_url ? (
                       <img src={u.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover" />
                     ) : (
-                      <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-[11px]">
+                      <div className="w-7 h-7 rounded-full bg-foreground/10 flex items-center justify-center text-[11px]">
                         {(u.display_name ?? u.email ?? "?").slice(0, 1)}
                       </div>
                     )}
                     <div>
                       <div className="font-medium">{u.display_name ?? u.email ?? u.id}</div>
-                      <div className="text-[11px] text-white/45">{u.email}</div>
+                      <div className="text-[11px] text-muted-foreground/80">{u.email}</div>
                     </div>
                   </div>
                 </td>
                 <td className="px-3 py-2">
                   <div className="flex gap-1">
                     {isAdmin && <Badge className="bg-amber-glow/20 text-amber-glow border-amber-glow/40">admin</Badge>}
-                    {u.roles.includes("user") && <Badge variant="outline" className="border-white/20 text-white/60">user</Badge>}
-                    {u.roles.length === 0 && <span className="text-[11px] text-white/30">—</span>}
+                    {u.roles.includes("user") && <Badge variant="outline" className="border-border text-muted-foreground">user</Badge>}
+                    {u.roles.length === 0 && <span className="text-[11px] text-muted-foreground/60">—</span>}
                   </div>
                 </td>
-                <td className="px-3 py-2 text-xs text-white/55">
+                <td className="px-3 py-2 text-xs text-muted-foreground">
                   {new Date(u.created_at).toLocaleString()}
                 </td>
-                <td className="px-3 py-2 text-xs text-white/55">
+                <td className="px-3 py-2 text-xs text-muted-foreground">
                   {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString() : "—"}
                 </td>
                 <td className="px-3 py-2 text-right">
@@ -307,21 +307,21 @@ function ContentTab() {
             className={`px-3 py-1 rounded-full text-xs border ${
               active === t.key
                 ? "bg-amber-glow/20 text-amber-glow border-amber-glow/40"
-                : "bg-white/5 text-white/60 border-white/10 hover:text-white"
+                : "bg-foreground/5 text-muted-foreground border-border hover:text-foreground"
             }`}
           >
             {t.label}
           </button>
         ))}
       </div>
-      <div className="rounded-xl border border-white/10 overflow-hidden">
+      <div className="rounded-xl border border-border overflow-hidden">
         {isLoading ? (
-          <p className="p-4 text-white/40 text-sm">加载中…</p>
+          <p className="p-4 text-muted-foreground/70 text-sm">加载中…</p>
         ) : !data?.rows.length ? (
-          <p className="p-4 text-white/40 text-sm">没有数据</p>
+          <p className="p-4 text-muted-foreground/70 text-sm">没有数据</p>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-white/5 text-white/60 text-xs">
+            <thead className="bg-foreground/5 text-muted-foreground text-xs">
               <tr>
                 {Object.keys(data.rows[0]).map((k) => (
                   <th key={k} className="text-left px-3 py-2 whitespace-nowrap">{k}</th>
@@ -331,9 +331,9 @@ function ContentTab() {
             </thead>
             <tbody>
               {data.rows.map((row: any, i: number) => (
-                <tr key={i} className="border-t border-white/8 hover:bg-white/3">
+                <tr key={i} className="border-t border-border/70 hover:bg-white/3">
                   {Object.entries(row).map(([k, v]) => (
-                    <td key={k} className="px-3 py-2 text-xs max-w-[260px] truncate text-white/75">
+                    <td key={k} className="px-3 py-2 text-xs max-w-[260px] truncate text-foreground/80">
                       {typeof v === "string" && v.startsWith("http") ? (
                         <a href={v} target="_blank" rel="noreferrer" className="text-amber-glow underline">链接</a>
                       ) : (
@@ -394,14 +394,14 @@ function SettingsCard({ table, title }: { table: "ai_news_settings" | "hackathon
   });
   const [interval, setInterval] = useState<string>("");
 
-  if (isLoading) return <div className="rounded-xl border border-white/10 p-4 text-sm text-white/40">加载中…</div>;
+  if (isLoading) return <div className="rounded-xl border border-border p-4 text-sm text-muted-foreground/70">加载中…</div>;
   const row: any = data?.row ?? {};
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/3 p-4 space-y-3">
+    <div className="rounded-xl border border-border bg-white/3 p-4 space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="font-display">{title}</h3>
-        <div className="flex items-center gap-2 text-xs text-white/60">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           启用
           <Switch
             checked={!!row.enabled}
@@ -428,7 +428,7 @@ function SettingsCard({ table, title }: { table: "ai_news_settings" | "hackathon
           placeholder={`新扫描间隔（小时）当前 ${row.scan_interval_hours ?? "-"}`}
           value={interval}
           onChange={(e) => setInterval(e.target.value)}
-          className="bg-black/30 border-white/10 text-sm"
+          className="bg-background/50 border-border text-sm"
         />
         <Button
           size="sm"
@@ -444,7 +444,7 @@ function SettingsCard({ table, title }: { table: "ai_news_settings" | "hackathon
           保存
         </Button>
       </div>
-      <p className="text-[11px] text-white/40">
+      <p className="text-[11px] text-muted-foreground/70">
         数据源等复杂结构请到对应功能页（AI 新闻 / 黑客松）的编辑器里维护。
       </p>
     </div>
@@ -453,8 +453,8 @@ function SettingsCard({ table, title }: { table: "ai_news_settings" | "hackathon
 
 function Stat({ label, value }: { label: string; value: any }) {
   return (
-    <div className="rounded-lg bg-black/30 border border-white/8 px-3 py-2">
-      <div className="text-[10px] text-white/45">{label}</div>
+    <div className="rounded-lg bg-background/50 border border-border/70 px-3 py-2">
+      <div className="text-[10px] text-muted-foreground/80">{label}</div>
       <div className="text-white/85 truncate">{String(value ?? "—")}</div>
     </div>
   );
@@ -480,7 +480,7 @@ function LogsTab() {
             className={`px-3 py-1 rounded-full text-xs border ${
               level === l
                 ? "bg-amber-glow/20 text-amber-glow border-amber-glow/40"
-                : "bg-white/5 text-white/60 border-white/10"
+                : "bg-foreground/5 text-muted-foreground border-border"
             }`}
           >
             {l}
@@ -490,14 +490,14 @@ function LogsTab() {
           <RefreshCw className={`w-3.5 h-3.5 mr-1 ${isRefetching ? "animate-spin" : ""}`} />刷新
         </Button>
       </div>
-      <div className="rounded-xl border border-white/10 overflow-hidden">
+      <div className="rounded-xl border border-border overflow-hidden">
         {isLoading ? (
-          <p className="p-4 text-white/40 text-sm">加载中…</p>
+          <p className="p-4 text-muted-foreground/70 text-sm">加载中…</p>
         ) : !data?.rows.length ? (
-          <p className="p-4 text-white/40 text-sm">暂无日志</p>
+          <p className="p-4 text-muted-foreground/70 text-sm">暂无日志</p>
         ) : (
           <table className="w-full text-xs">
-            <thead className="bg-white/5 text-white/60">
+            <thead className="bg-foreground/5 text-muted-foreground">
               <tr>
                 <th className="text-left px-3 py-2">时间</th>
                 <th className="text-left px-3 py-2">级别</th>
@@ -509,19 +509,19 @@ function LogsTab() {
             </thead>
             <tbody>
               {data.rows.map((r: any) => (
-                <tr key={r.id} className="border-t border-white/8 hover:bg-white/3 align-top">
-                  <td className="px-3 py-1.5 text-white/55 whitespace-nowrap">{new Date(r.created_at).toLocaleTimeString()}</td>
+                <tr key={r.id} className="border-t border-border/70 hover:bg-white/3 align-top">
+                  <td className="px-3 py-1.5 text-muted-foreground whitespace-nowrap">{new Date(r.created_at).toLocaleTimeString()}</td>
                   <td className="px-3 py-1.5">
                     <span className={`px-1.5 py-0.5 rounded text-[10px] ${
                       r.level === "error" ? "bg-red-500/20 text-red-300" :
                       r.level === "warn" ? "bg-amber-500/20 text-amber-300" :
-                      "bg-white/10 text-white/60"
+                      "bg-foreground/10 text-muted-foreground"
                     }`}>{r.level}</span>
                   </td>
-                  <td className="px-3 py-1.5 text-white/70">{r.event_type ?? "—"}</td>
-                  <td className="px-3 py-1.5 text-white/55">{r.step ?? "—"}</td>
-                  <td className="px-3 py-1.5 text-white/55">{r.duration_ms ? `${r.duration_ms}ms` : "—"}</td>
-                  <td className="px-3 py-1.5 text-white/75 max-w-[420px] truncate" title={r.error ?? r.message ?? ""}>
+                  <td className="px-3 py-1.5 text-foreground/75">{r.event_type ?? "—"}</td>
+                  <td className="px-3 py-1.5 text-muted-foreground">{r.step ?? "—"}</td>
+                  <td className="px-3 py-1.5 text-muted-foreground">{r.duration_ms ? `${r.duration_ms}ms` : "—"}</td>
+                  <td className="px-3 py-1.5 text-foreground/80 max-w-[420px] truncate" title={r.error ?? r.message ?? ""}>
                     {r.error ?? r.message ?? "—"}
                   </td>
                 </tr>

@@ -41,22 +41,22 @@ export function AbilityView() {
   });
 
   if (isLoading) {
-    return <div className="p-8 text-white/60">加载中…</div>;
+    return <div className="p-8 text-muted-foreground">加载中…</div>;
   }
 
   const hasProfile = !!data?.profile?.initial_done;
 
   return (
-    <div className="h-full overflow-auto bg-gradient-to-br from-[#1a1d24] via-[#181b22] to-[#15171c] text-white">
+    <div className="h-full overflow-auto bg-background text-foreground">
       <div className="max-w-5xl mx-auto p-6 space-y-6">
         <header>
           <h1 className="font-display text-3xl flex items-center gap-2">
             <Brain className="w-7 h-7 text-amber-glow" /> 个人能力
           </h1>
-          <p className="text-white/50 text-sm mt-1">通过测评建立能力 / 性格画像，AI 据此为你制定专属计划，并随你的行为持续更新。</p>
+          <p className="text-muted-foreground text-sm mt-1">通过测评建立能力 / 性格画像，AI 据此为你制定专属计划，并随你的行为持续更新。</p>
         </header>
 
-        <div className="flex gap-1 border-b border-white/10">
+        <div className="flex gap-1 border-b border-border">
           <TabBtn active={tab === "overview"} onClick={() => setTab("overview")} icon={<Target className="w-4 h-4" />}>概览</TabBtn>
           <TabBtn active={tab === "assessment"} onClick={() => setTab("assessment")} icon={<ClipboardList className="w-4 h-4" />}>{hasProfile ? "重测" : "开始测评"}</TabBtn>
           <TabBtn active={tab === "plan"} onClick={() => setTab("plan")} icon={<Sparkles className="w-4 h-4" />}>成长计划</TabBtn>
@@ -79,7 +79,7 @@ function TabBtn({ active, onClick, icon, children }: { active: boolean; onClick:
     <button
       onClick={onClick}
       className={`flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 transition ${
-        active ? "border-amber-glow text-amber-glow" : "border-transparent text-white/60 hover:text-white"
+        active ? "border-amber-glow text-amber-glow" : "border-transparent text-muted-foreground hover:text-foreground"
       }`}
     >
       {icon} {children}
@@ -89,10 +89,10 @@ function TabBtn({ active, onClick, icon, children }: { active: boolean; onClick:
 
 function EmptyState({ onStart }: { onStart: () => void }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-10 text-center">
+    <div className="rounded-xl border border-border bg-foreground/5 p-10 text-center">
       <Brain className="w-12 h-12 mx-auto text-amber-glow/70 mb-3" />
       <h3 className="text-lg font-display mb-2">还没有你的能力画像</h3>
-      <p className="text-white/60 text-sm mb-5">12 道题，约 2 分钟，AI 会为你生成专属雷达图。</p>
+      <p className="text-muted-foreground text-sm mb-5">12 道题，约 2 分钟，AI 会为你生成专属雷达图。</p>
       <Button onClick={onStart} className="bg-amber-glow text-primary-foreground hover:bg-amber-glow/90">开始测评</Button>
     </div>
   );
@@ -129,17 +129,17 @@ function OverviewPanel({ data, onRefresh }: { data: any; onRefresh: () => void }
         <div className="text-amber-glow text-xs uppercase tracking-wider mb-1">画像</div>
         <div className="font-display text-xl">{profile.tagline || "你的个人画像"}</div>
         {profile.personality?.summary && (
-          <p className="text-white/70 text-sm mt-2 leading-relaxed">{profile.personality.summary}</p>
+          <p className="text-foreground/75 text-sm mt-2 leading-relaxed">{profile.personality.summary}</p>
         )}
         <div className="flex flex-wrap gap-4 mt-4 text-sm">
           <div>
-            <span className="text-white/40">优势：</span>
+            <span className="text-muted-foreground/70">优势：</span>
             {(profile.strengths ?? []).map((s: string) => (
               <span key={s} className="inline-block ml-1 px-2 py-0.5 rounded bg-moss/20 text-moss-foreground border border-moss/30">{s}</span>
             ))}
           </div>
           <div>
-            <span className="text-white/40">成长：</span>
+            <span className="text-muted-foreground/70">成长：</span>
             {(profile.growth_areas ?? []).map((s: string) => (
               <span key={s} className="inline-block ml-1 px-2 py-0.5 rounded bg-amber-glow/15 text-amber-glow border border-amber-glow/30">{s}</span>
             ))}
@@ -152,12 +152,12 @@ function OverviewPanel({ data, onRefresh }: { data: any; onRefresh: () => void }
         <ChartCard title="性格画像（大五）" data={personalityData} stroke="hsl(180 60% 60%)" fill="hsl(180 60% 60% / 0.3)" />
       </div>
 
-      <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-4">
+      <div className="flex items-center justify-between rounded-xl border border-border bg-foreground/5 p-4">
         <div>
           <div className="text-sm font-medium">根据近期行为更新画像</div>
-          <div className="text-white/50 text-xs">AI 会基于最近 14 天日程完成度、习惯、记录等小幅调整</div>
+          <div className="text-muted-foreground text-xs">AI 会基于最近 14 天日程完成度、习惯、记录等小幅调整</div>
         </div>
-        <Button onClick={() => mut.mutate()} disabled={mut.isPending} variant="outline" className="border-white/20 bg-white/5 hover:bg-white/10">
+        <Button onClick={() => mut.mutate()} disabled={mut.isPending} variant="outline" className="border-border bg-foreground/5 hover:bg-foreground/10">
           <RefreshCw className={`w-4 h-4 mr-2 ${mut.isPending ? "animate-spin" : ""}`} /> {mut.isPending ? "分析中…" : "立即更新"}
         </Button>
       </div>
@@ -167,7 +167,7 @@ function OverviewPanel({ data, onRefresh }: { data: any; onRefresh: () => void }
 
 function ChartCard({ title, data, stroke, fill }: { title: string; data: { dim: string; score: number }[]; stroke: string; fill: string }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+    <div className="rounded-xl border border-border bg-foreground/5 p-4">
       <div className="text-sm font-medium mb-2">{title}</div>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
@@ -213,20 +213,20 @@ function AssessmentPanel({ questions, onDone }: { questions: readonly any[]; onD
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+      <div className="rounded-xl border border-border bg-foreground/5 p-4">
         <div className="flex items-center justify-between text-sm mb-2">
-          <span className="text-white/70">完成进度</span>
+          <span className="text-foreground/75">完成进度</span>
           <span className="text-amber-glow">{progress}%</span>
         </div>
-        <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+        <div className="h-1.5 rounded-full bg-foreground/10 overflow-hidden">
           <div className="h-full bg-amber-glow transition-all" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
       {questions.map((q, idx) => (
-        <div key={q.id} className="rounded-xl border border-white/10 bg-white/5 p-4">
+        <div key={q.id} className="rounded-xl border border-border bg-foreground/5 p-4">
           <div className="text-sm mb-3">
-            <span className="text-white/40 mr-2">{idx + 1}.</span>{q.text}
+            <span className="text-muted-foreground/70 mr-2">{idx + 1}.</span>{q.text}
           </div>
           <div className="flex gap-2">
             {[1, 2, 3, 4, 5].map((v) => (
@@ -236,7 +236,7 @@ function AssessmentPanel({ questions, onDone }: { questions: readonly any[]; onD
                 className={`flex-1 py-2 rounded-lg text-sm border transition ${
                   answers[q.id] === v
                     ? "bg-amber-glow text-primary-foreground border-amber-glow"
-                    : "bg-white/5 text-white/70 border-white/10 hover:bg-white/10"
+                    : "bg-foreground/5 text-foreground/75 border-border hover:bg-foreground/10"
                 }`}
               >
                 {["非常不符合", "不符合", "一般", "符合", "非常符合"][v - 1]}
@@ -272,10 +272,10 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-4">
+      <div className="flex items-center justify-between rounded-xl border border-border bg-foreground/5 p-4">
         <div>
           <div className="text-sm font-medium">基于画像 + 近期行为生成成长计划</div>
-          <div className="text-white/50 text-xs">每次生成会归档上一份，保留历史可查阅</div>
+          <div className="text-muted-foreground text-xs">每次生成会归档上一份，保留历史可查阅</div>
         </div>
         <Button onClick={() => mut.mutate()} disabled={mut.isPending} className="bg-amber-glow text-primary-foreground hover:bg-amber-glow/90">
           <Sparkles className={`w-4 h-4 mr-2 ${mut.isPending ? "animate-pulse" : ""}`} /> {mut.isPending ? "生成中…" : "生成新计划"}
@@ -283,36 +283,36 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
       </div>
 
       {plans.length === 0 && (
-        <div className="rounded-xl border border-white/10 bg-white/5 p-8 text-center text-white/60 text-sm">还没有计划，点上面按钮生成第一份吧。</div>
+        <div className="rounded-xl border border-border bg-foreground/5 p-8 text-center text-muted-foreground text-sm">还没有计划，点上面按钮生成第一份吧。</div>
       )}
 
       {plans.map((p) => (
-        <div key={p.id} className={`rounded-xl border p-5 ${p.status === "active" ? "border-amber-glow/30 bg-amber-glow/5" : "border-white/10 bg-white/5"}`}>
+        <div key={p.id} className={`rounded-xl border p-5 ${p.status === "active" ? "border-amber-glow/30 bg-amber-glow/5" : "border-border bg-foreground/5"}`}>
           <div className="flex items-start justify-between mb-1">
             <div>
               <div className="font-display text-lg">{p.title}</div>
-              <div className="text-white/60 text-sm">{p.tagline}</div>
+              <div className="text-muted-foreground text-sm">{p.tagline}</div>
             </div>
-            <span className={`text-xs px-2 py-0.5 rounded ${p.status === "active" ? "bg-amber-glow text-primary-foreground" : "bg-white/10 text-white/50"}`}>
+            <span className={`text-xs px-2 py-0.5 rounded ${p.status === "active" ? "bg-amber-glow text-primary-foreground" : "bg-foreground/10 text-muted-foreground"}`}>
               {p.status === "active" ? "进行中" : "已归档"}
             </span>
           </div>
           <div className="flex flex-wrap gap-1 mt-2 mb-3">
             {(p.focus_areas ?? []).map((a: string) => (
-              <span key={a} className="text-xs px-2 py-0.5 rounded bg-white/10 text-white/70">{a}</span>
+              <span key={a} className="text-xs px-2 py-0.5 rounded bg-foreground/10 text-foreground/75">{a}</span>
             ))}
           </div>
           <div className="space-y-3">
             {(p.content ?? []).map((item: any, idx: number) => (
-              <div key={idx} className="rounded-lg bg-black/30 border border-white/10 p-3">
+              <div key={idx} className="rounded-lg bg-background/50 border border-border p-3">
                 <div className="text-sm font-medium text-amber-glow">{item.area}</div>
-                <div className="text-sm text-white/80 mt-0.5">{item.goal}</div>
+                <div className="text-sm text-foreground/85 mt-0.5">{item.goal}</div>
                 <ul className="mt-2 space-y-1">
                   {(item.actions ?? []).map((a: string, i: number) => (
-                    <li key={i} className="text-xs text-white/70 flex gap-2"><span className="text-amber-glow">·</span>{a}</li>
+                    <li key={i} className="text-xs text-foreground/75 flex gap-2"><span className="text-amber-glow">·</span>{a}</li>
                   ))}
                 </ul>
-                <div className="text-[11px] text-white/40 mt-2">节奏：{item.cadence}</div>
+                <div className="text-[11px] text-muted-foreground/70 mt-2">节奏：{item.cadence}</div>
               </div>
             ))}
           </div>

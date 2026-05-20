@@ -149,7 +149,7 @@ export function NotesCanvas() {
           }}
         >
           {notes.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center text-white/40 text-sm pointer-events-none">
+            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/70 text-sm pointer-events-none">
               暂无随手记 · 在「列表」视图里写一条会自动出现在这里
             </div>
           )}
@@ -164,8 +164,8 @@ export function NotesCanvas() {
                 className={`absolute select-none rounded-2xl border shadow-lg transition-shadow ${
                   isDragging
                     ? "border-amber-glow/60 shadow-amber-glow/20 cursor-grabbing z-20"
-                    : "border-white/10 hover:border-white/20 cursor-grab z-10"
-                } ${n.pinned ? "bg-amber-glow/[0.08]" : "bg-black/40 backdrop-blur-sm"}`}
+                    : "border-border hover:border-border cursor-grab z-10"
+                } ${n.pinned ? "bg-amber-glow/[0.08]" : "bg-background/60 backdrop-blur-sm"}`}
                 style={{
                   left: p.x,
                   top: p.y,
@@ -186,7 +186,7 @@ export function NotesCanvas() {
                         src={src}
                         alt=""
                         draggable={false}
-                        className="w-full h-16 object-cover rounded-md border border-white/10"
+                        className="w-full h-16 object-cover rounded-md border border-border"
                       />
                     ))}
                   </div>
@@ -194,25 +194,25 @@ export function NotesCanvas() {
                 {n.tags && n.tags.length > 0 && (
                   <div className="px-3 pb-2 flex flex-wrap gap-1">
                     {n.tags.map((t) => (
-                      <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/8 text-white/60">
+                      <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/8 text-muted-foreground">
                         #{t}
                       </span>
                     ))}
                   </div>
                 )}
-                <div className="px-3 py-2 border-t border-white/8 flex items-center justify-between text-[10px] text-white/40">
+                <div className="px-3 py-2 border-t border-border/70 flex items-center justify-between text-[10px] text-muted-foreground/70">
                   <span>{new Date(n.createdAt).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" })}</span>
                   <div className="flex items-center gap-1" data-no-drag>
                     <button
                       onClick={() => updateNote(n.id, { pinned: !n.pinned })}
-                      className="p-1 rounded hover:bg-white/10 text-white/50 hover:text-amber-glow"
+                      className="p-1 rounded hover:bg-foreground/10 text-muted-foreground hover:text-amber-glow"
                       title={n.pinned ? "取消置顶" : "置顶"}
                     >
                       {n.pinned ? <PinOff className="w-3 h-3" /> : <Pin className="w-3 h-3" />}
                     </button>
                     <button
                       onClick={() => removeNote(n.id)}
-                      className="p-1 rounded hover:bg-white/10 text-white/50 hover:text-accent"
+                      className="p-1 rounded hover:bg-foreground/10 text-muted-foreground hover:text-accent"
                       title="删除"
                     >
                       <Trash2 className="w-3 h-3" />

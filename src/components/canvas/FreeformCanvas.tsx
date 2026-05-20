@@ -334,16 +334,16 @@ export function FreeformCanvas({ kind, title }: Props) {
     return "default";
   }, [tool]);
 
-  if (!user) return <div className="p-8 text-white/60 text-sm">请先登录使用画布</div>;
+  if (!user) return <div className="p-8 text-muted-foreground text-sm">请先登录使用画布</div>;
 
   return (
     <div className="h-full flex flex-col">
       {/* Toolbar */}
-      <div className="flex items-center gap-1 px-3 py-2 border-b border-white/10 bg-white/[0.02] backdrop-blur-sm flex-wrap">
-        <span className="text-xs text-white/50 mr-2 font-display">{title ?? (kind === "notes" ? "笔记画布" : "日记画布")}</span>
+      <div className="flex items-center gap-1 px-3 py-2 border-b border-border bg-foreground/[0.03] backdrop-blur-sm flex-wrap">
+        <span className="text-xs text-muted-foreground mr-2 font-display">{title ?? (kind === "notes" ? "笔记画布" : "日记画布")}</span>
         <ToolBtn active={tool === "select"} onClick={() => setTool("select")} icon={<MousePointer2 className="w-3.5 h-3.5" />} label="选择" />
         <ToolBtn active={tool === "pan"} onClick={() => setTool("pan")} icon={<Hand className="w-3.5 h-3.5" />} label="平移" />
-        <div className="w-px h-5 bg-white/10 mx-1" />
+        <div className="w-px h-5 bg-foreground/10 mx-1" />
         <ToolBtn active={tool === "note"} onClick={() => setTool("note")} icon={<StickyNote className="w-3.5 h-3.5" />} label="便签" />
         <ToolBtn active={tool === "pen"} onClick={() => setTool("pen")} icon={<Pen className="w-3.5 h-3.5" />} label="画笔" />
         <ToolBtn active={tool === "arrow"} onClick={() => setTool("arrow")} icon={<ArrowRight className="w-3.5 h-3.5" />} label="箭头" />
@@ -351,12 +351,12 @@ export function FreeformCanvas({ kind, title }: Props) {
         <input ref={fileRef} type="file" multiple className="hidden"
           onChange={(e) => { const fs = Array.from(e.target.files ?? []); fs.forEach((f) => void handleAnyFile(f)); e.target.value = ""; }} />
 
-        <div className="w-px h-5 bg-white/10 mx-1" />
+        <div className="w-px h-5 bg-foreground/10 mx-1" />
         {tool === "note" && (
           <div className="flex items-center gap-1">
             {NOTE_COLORS.map((c) => (
               <button key={c} onClick={() => setNoteColor(c)}
-                className={`w-4 h-4 rounded-sm border ${noteColor === c ? "ring-2 ring-amber-glow border-white/40" : "border-white/20"}`}
+                className={`w-4 h-4 rounded-sm border ${noteColor === c ? "ring-2 ring-amber-glow border-white/40" : "border-border"}`}
                 style={{ background: c }} title={c} />
             ))}
           </div>
@@ -370,12 +370,12 @@ export function FreeformCanvas({ kind, title }: Props) {
           </div>
         )}
 
-        <div className="ml-auto flex items-center gap-1 text-xs text-white/50">
+        <div className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
           {saving && <Loader2 className="w-3 h-3 animate-spin" />}
-          <button onClick={() => zoomBy(1 / 1.2)} className="p-1 hover:bg-white/10 rounded" title="缩小"><ZoomOut className="w-3.5 h-3.5" /></button>
+          <button onClick={() => zoomBy(1 / 1.2)} className="p-1 hover:bg-foreground/10 rounded" title="缩小"><ZoomOut className="w-3.5 h-3.5" /></button>
           <span className="tabular-nums w-10 text-center">{Math.round(data.viewport.scale * 100)}%</span>
-          <button onClick={() => zoomBy(1.2)} className="p-1 hover:bg-white/10 rounded" title="放大"><ZoomIn className="w-3.5 h-3.5" /></button>
-          <button onClick={resetView} className="p-1 hover:bg-white/10 rounded" title="回到原点"><Maximize2 className="w-3.5 h-3.5" /></button>
+          <button onClick={() => zoomBy(1.2)} className="p-1 hover:bg-foreground/10 rounded" title="放大"><ZoomIn className="w-3.5 h-3.5" /></button>
+          <button onClick={resetView} className="p-1 hover:bg-foreground/10 rounded" title="回到原点"><Maximize2 className="w-3.5 h-3.5" /></button>
           {selected && (
             <button onClick={deleteSelected} className="p-1 hover:bg-rose-500/20 hover:text-rose-300 rounded" title="删除"><Trash2 className="w-3.5 h-3.5" /></button>
           )}
@@ -565,7 +565,7 @@ export function FreeformCanvas({ kind, title }: Props) {
 function ToolBtn({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
   return (
     <button onClick={onClick} title={label}
-      className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${active ? "bg-amber-glow/20 text-amber-glow border border-amber-glow/40" : "text-white/70 hover:bg-white/10 border border-transparent"}`}>
+      className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${active ? "bg-amber-glow/20 text-amber-glow border border-amber-glow/40" : "text-foreground/75 hover:bg-foreground/10 border border-transparent"}`}>
       {icon}<span className="hidden sm:inline">{label}</span>
     </button>
   );

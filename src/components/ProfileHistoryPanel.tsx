@@ -136,19 +136,19 @@ export function ProfileHistoryPanel() {
     });
 
   return (
-    <div className="pt-4 border-t border-white/10 space-y-3">
-      <div className="flex items-center gap-2 text-sm text-white/80">
+    <div className="pt-4 border-t border-border space-y-3">
+      <div className="flex items-center gap-2 text-sm text-foreground/85">
         <History className="w-4 h-4 text-amber-glow" />
         <span className="font-medium">最近变更</span>
-        <span className="text-[11px] text-white/40">仅保留最近 20 条</span>
+        <span className="text-[11px] text-muted-foreground/70">仅保留最近 20 条</span>
       </div>
 
       {loading ? (
-        <div className="text-xs text-white/50 flex items-center gap-1.5">
+        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
           <Loader2 className="w-3 h-3 animate-spin" /> 加载中…
         </div>
       ) : rows.length === 0 ? (
-        <div className="text-xs text-white/40">还没有任何变更记录</div>
+        <div className="text-xs text-muted-foreground/70">还没有任何变更记录</div>
       ) : (
         <ol className="space-y-2">
           {rows.map((r) => {
@@ -160,13 +160,13 @@ export function ProfileHistoryPanel() {
             return (
               <li
                 key={r.id}
-                className="rounded-lg border border-white/10 bg-white/[0.02] text-xs"
+                className="rounded-lg border border-border bg-foreground/[0.03] text-xs"
               >
                 <div className="flex items-center gap-2 px-3 py-2">
                   <button
                     type="button"
                     onClick={() => toggle(r.id)}
-                    className="text-white/60 hover:text-white shrink-0"
+                    className="text-muted-foreground hover:text-foreground shrink-0"
                     title={isOpen ? "收起" : "展开"}
                   >
                     {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
@@ -175,7 +175,7 @@ export function ProfileHistoryPanel() {
                     <div className="text-white/85 truncate">
                       修改了 <span className="text-amber-glow">{labels || "（无变化）"}</span>
                     </div>
-                    <div className="text-white/40 mt-0.5 tabular-nums">
+                    <div className="text-muted-foreground/70 mt-0.5 tabular-nums">
                       {relTime(r.changed_at)} · v{r.version}
                     </div>
                   </div>
@@ -183,7 +183,7 @@ export function ProfileHistoryPanel() {
                     type="button"
                     disabled={!canRestore || restoringId === r.id}
                     onClick={() => restore(r)}
-                    className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-full border border-white/10 bg-white/5 hover:bg-amber-glow/15 hover:border-amber-glow/40 hover:text-amber-glow disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-full border border-border bg-foreground/5 hover:bg-amber-glow/15 hover:border-amber-glow/40 hover:text-amber-glow disabled:opacity-40 disabled:cursor-not-allowed"
                     title={canRestore ? "把这些字段恢复到此次变更之前" : "无可恢复的旧值"}
                   >
                     {restoringId === r.id ? (
@@ -196,12 +196,12 @@ export function ProfileHistoryPanel() {
                 </div>
 
                 {isOpen && (
-                  <div className="px-3 pb-3 pt-1 space-y-1.5 border-t border-white/5">
+                  <div className="px-3 pb-3 pt-1 space-y-1.5 border-t border-border/50">
                     {r.changed_fields.map((f) => (
                       <div key={f} className="grid grid-cols-[64px_1fr] gap-2">
-                        <div className="text-white/45 truncate">{FIELD_LABEL[f] ?? f}</div>
-                        <div className="text-white/80 break-words">
-                          <span className="text-white/40 line-through mr-1.5">
+                        <div className="text-muted-foreground/80 truncate">{FIELD_LABEL[f] ?? f}</div>
+                        <div className="text-foreground/85 break-words">
+                          <span className="text-muted-foreground/70 line-through mr-1.5">
                             {previewValue(r.before?.[f])}
                           </span>
                           <span className="text-amber-glow/90">→ {previewValue(r.after?.[f])}</span>

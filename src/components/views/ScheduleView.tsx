@@ -84,10 +84,10 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
       <div className="flex-1 p-6 overflow-auto">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
-            <h2 className="font-display text-3xl text-white">
+            <h2 className="font-display text-3xl text-foreground">
               {year} 年 {month + 1} 月
             </h2>
-            <span className="text-xs text-white/40 tracking-widest">日程视图</span>
+            <span className="text-xs text-muted-foreground/70 tracking-widest">日程视图</span>
           </div>
           <div className="flex items-center gap-1.5">
             <button
@@ -99,14 +99,14 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
             </button>
             <button
               onClick={() => setCursor(new Date(year, month - 1, 1))}
-              className="p-2 rounded-lg hover:bg-white/10 text-white/70"
+              className="p-2 rounded-lg hover:bg-foreground/10 text-foreground/75"
               aria-label="上一个月"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={() => setCursor(new Date(year, month + 1, 1))}
-              className="p-2 rounded-lg hover:bg-white/10 text-white/70"
+              className="p-2 rounded-lg hover:bg-foreground/10 text-foreground/75"
               aria-label="下一个月"
             >
               <ChevronRight className="w-4 h-4" />
@@ -118,7 +118,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
               return (
                 <button
                   onClick={() => setCursor(new Date())}
-                  className="ml-1 px-2.5 py-1 rounded-md text-[11px] text-white/60 hover:text-white hover:bg-white/10 transition"
+                  className="ml-1 px-2.5 py-1 rounded-md text-[11px] text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition"
                 >
                   回到今天
                 </button>
@@ -162,7 +162,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                 <button
                   onClick={() => revertPending(filteredIds)}
                   disabled={filteredIds.length === 0}
-                  className="px-2.5 py-1 rounded-md border border-white/15 text-white/70 hover:text-white hover:bg-white/10 text-[11px] disabled:opacity-40"
+                  className="px-2.5 py-1 rounded-md border border-border text-foreground/75 hover:text-foreground hover:bg-foreground/10 text-[11px] disabled:opacity-40"
                 >
                   撤销选中
                 </button>
@@ -205,14 +205,14 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
 
 
 
-        <div className="grid grid-cols-7 gap-px bg-white/10 rounded-xl overflow-hidden border border-white/10">
+        <div className="grid grid-cols-7 gap-px bg-foreground/10 rounded-xl overflow-hidden border border-border">
           {weekdays.map((d) => (
-            <div key={d} className="bg-black/30 py-2 text-center text-[11px] text-white/50 tracking-wider">
+            <div key={d} className="bg-background/50 py-2 text-center text-[11px] text-muted-foreground tracking-wider">
               星期{d}
             </div>
           ))}
           {cells.map((cell, i) => {
-            if (!cell) return <div key={i} className="bg-black/20 min-h-[110px]" />;
+            if (!cell) return <div key={i} className="bg-background/30 min-h-[110px]" />;
             const dayItems = itemsByDate[cell.iso] ?? [];
             const isSelected = cell.iso === selected;
             const isToday = cell.iso === "2026-05-19";
@@ -228,7 +228,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                 }}
                 title="双击编辑这一天"
                 className={`block min-h-[110px] p-2 text-left align-top transition relative overflow-hidden
-                  ${isSelected ? "bg-amber-glow/15 ring-2 ring-amber-glow/60 z-10" : "bg-black/30 hover:bg-black/40"}`}
+                  ${isSelected ? "bg-amber-glow/15 ring-2 ring-amber-glow/60 z-10" : "bg-background/50 hover:bg-background/60"}`}
               >
                 <div className="absolute top-2 left-2 right-2 flex items-center justify-between h-5">
                   <span className={`text-sm leading-5 ${isToday ? "text-amber-glow font-bold" : "text-white/85"}`}>
@@ -246,7 +246,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                     <div
                       key={it.id}
                       className={`text-[10px] px-1.5 py-0.5 rounded truncate border ${
-                        tagColor[it.tag] ?? "bg-white/10 text-white/70 border-white/15"
+                        tagColor[it.tag] ?? "bg-foreground/10 text-foreground/75 border-border"
                       } ${it.done ? "opacity-50 line-through" : ""} ${
                         it.pending ? "border-dashed border-amber-glow/70 text-amber-glow bg-amber-glow/5" : ""
                       } ${
@@ -259,7 +259,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                     </div>
                   ))}
                   {dayItems.length > 3 && (
-                    <div className="text-[9px] text-white/50 px-1.5">+{dayItems.length - 3} 项</div>
+                    <div className="text-[9px] text-muted-foreground px-1.5">+{dayItems.length - 3} 项</div>
                   )}
                 </div>
                 {habits.length > 0 && (() => {
@@ -286,11 +286,11 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
 
 
       {/* Right detail */}
-      <aside className="w-80 shrink-0 bg-gradient-to-b from-black/40 to-black/20 border-l border-white/10 p-5 overflow-auto space-y-5">
+      <aside className="w-80 shrink-0 bg-gradient-to-b from-black/40 to-black/20 border-l border-border p-5 overflow-auto space-y-5">
         <div>
           <p className="text-[10px] tracking-widest text-amber-glow mb-1">所选日期</p>
-          <h3 className="font-display text-2xl text-white mb-1">{formatLong(selected)}</h3>
-          <p className="text-xs text-white/40">{selectedItems.length} 项安排</p>
+          <h3 className="font-display text-2xl text-foreground mb-1">{formatLong(selected)}</h3>
+          <p className="text-xs text-muted-foreground/70">{selectedItems.length} 项安排</p>
         </div>
 
         {/* Day stats strip */}
@@ -301,7 +301,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
             <CheckCircle2 className="w-4 h-4 text-moss shrink-0" />
             <div className="min-w-0 flex-1">
               <p className="text-xs text-moss font-medium">今日小结 · 已完成</p>
-              <p className="text-[10px] text-white/50 mt-0.5">已通过飞书卡片提交并同步到日历</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">已通过飞书卡片提交并同步到日历</p>
             </div>
             <button
               onClick={async () => {
@@ -319,7 +319,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
         <section>
           <SectionHeader icon={CalIcon} title="日程" count={selectedItems.length} accent="amber" />
           {selectedItems.length === 0 ? (
-            <div className="text-center py-6 text-xs text-white/40 rounded-xl border border-dashed border-white/10">这一天还没有安排</div>
+            <div className="text-center py-6 text-xs text-muted-foreground/70 rounded-xl border border-dashed border-border">这一天还没有安排</div>
           ) : (
             <div className="space-y-2">
               {selectedItems.map((it) => (
@@ -354,8 +354,8 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                     onClick={() => toggleHabitOn(h.id, selected)}
                     className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg border text-left transition ${
                       done
-                        ? "bg-moss/15 border-moss/40 text-white"
-                        : "bg-white/[0.03] border-white/10 text-white/70 hover:bg-white/[0.06]"
+                        ? "bg-moss/15 border-moss/40 text-foreground"
+                        : "bg-foreground/[0.04] border-border text-foreground/75 hover:bg-foreground/[0.08]"
                     }`}
                   >
                     <span className="text-base">{h.emoji}</span>
@@ -363,7 +363,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                     {done ? (
                       <Check className="w-3.5 h-3.5 text-moss" />
                     ) : (
-                      <span className="w-3.5 h-3.5 rounded-full border border-white/25" />
+                      <span className="w-3.5 h-3.5 rounded-full border border-border" />
                     )}
                   </button>
                 );
@@ -396,12 +396,12 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
       )}
 
       <Dialog open={aiOpen} onOpenChange={setAiOpen}>
-        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-auto bg-zinc-950/95 backdrop-blur-xl border-white/10">
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-auto bg-zinc-950/95 backdrop-blur-xl border-border">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-amber-glow">
               <Sparkles className="w-4 h-4" /> AI 新增规划
             </DialogTitle>
-            <DialogDescription className="text-white/50 text-xs">
+            <DialogDescription className="text-muted-foreground text-xs">
               用自然语言说出目标，AI 会自动拆成事件 / 待办 / 提醒，确认后写回当前日历。
             </DialogDescription>
           </DialogHeader>
@@ -429,7 +429,7 @@ function QuickAdd({ date, onAdd }: { date: string; onAdd: (item: PlanItem) => vo
     setDraftTime("");
   };
   return (
-    <div className="mt-3 p-2 rounded-xl bg-white/[0.03] border border-white/10 flex items-center gap-1.5">
+    <div className="mt-3 p-2 rounded-xl bg-foreground/[0.04] border border-border flex items-center gap-1.5">
       <TimePicker value={draftTime} onChange={setDraftTime} size="sm" />
       <input
         value={draft}
@@ -441,7 +441,7 @@ function QuickAdd({ date, onAdd }: { date: string; onAdd: (item: PlanItem) => vo
           }
         }}
         placeholder="新增安排…（Enter）"
-        className="flex-1 min-w-0 bg-transparent border-none px-1 py-1 text-xs text-white placeholder:text-white/30 focus:outline-none"
+        className="flex-1 min-w-0 bg-transparent border-none px-1 py-1 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
       />
       <button
         onClick={submit}
@@ -520,10 +520,10 @@ function DayEditor({
     <div
       ref={ref}
       style={{ position: "fixed", left: x, top: yPos, width, maxHeight: height, zIndex: 100 }}
-      className="rounded-xl shadow-2xl border border-white/15 bg-[#1d1d1f]/95 backdrop-blur-2xl flex flex-col overflow-hidden text-white"
+      className="rounded-xl shadow-2xl border border-border bg-card/95 backdrop-blur-2xl flex flex-col overflow-hidden text-foreground"
       onMouseDown={(e) => e.stopPropagation()}
     >
-      <div className="h-9 shrink-0 flex items-center px-3 border-b border-white/10 bg-black/30">
+      <div className="h-9 shrink-0 flex items-center px-3 border-b border-border bg-background/50">
         <button onClick={onClose} title="关闭" className="w-3 h-3 rounded-full bg-[#ff5f57] hover:brightness-110" />
         <div className="flex-1 text-center text-xs font-medium text-white/85">{headerLabel}</div>
         <span className="w-3 h-3" />
@@ -531,7 +531,7 @@ function DayEditor({
 
       <div className="flex-1 overflow-auto p-3 space-y-1.5">
         {items.length === 0 && (
-          <div className="text-[11px] text-white/40 text-center py-6">这一天还没有安排，下方添加</div>
+          <div className="text-[11px] text-muted-foreground/70 text-center py-6">这一天还没有安排，下方添加</div>
         )}
         {items.map((it) => (
           <EditableRow
@@ -544,7 +544,7 @@ function DayEditor({
         ))}
       </div>
 
-      <div className="shrink-0 border-t border-white/10 p-2 flex items-center gap-1.5 bg-black/20">
+      <div className="shrink-0 border-t border-border p-2 flex items-center gap-1.5 bg-background/30">
         <TimePicker value={draftTime} onChange={setDraftTime} size="sm" />
         <input
           autoFocus
@@ -558,7 +558,7 @@ function DayEditor({
           }}
           placeholder="添加一条安排…（Enter 提交）"
           title="Enter 提交 · 单行输入框不支持换行"
-          className="flex-1 bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-amber-glow/50"
+          className="flex-1 bg-foreground/5 border border-border rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-amber-glow/50"
         />
         <button
           onClick={submit}
@@ -600,7 +600,7 @@ function EditableRow({
   };
 
   return (
-    <div className={`group flex items-center gap-1.5 px-2 py-1.5 rounded-md border transition ${done ? "bg-moss/10 border-moss/25" : "bg-white/5 border-white/10 hover:border-white/20"}`}>
+    <div className={`group flex items-center gap-1.5 px-2 py-1.5 rounded-md border transition ${done ? "bg-moss/10 border-moss/25" : "bg-foreground/5 border-border hover:border-border"}`}>
       <DoneCheckbox done={done} onToggle={onToggleDone} size="sm" />
       {editing ? (
         <>
@@ -618,7 +618,7 @@ function EditableRow({
               if (e.key === "Escape") { setTitle(item.title); setTime(item.time ?? ""); setEditing(false); }
             }}
             title="Enter 保存 · Esc 取消"
-            className="flex-1 bg-black/30 border border-white/15 rounded px-1.5 py-0.5 text-xs text-white focus:outline-none"
+            className="flex-1 bg-background/50 border border-border rounded px-1.5 py-0.5 text-xs text-foreground focus:outline-none"
           />
         </>
       ) : (
@@ -633,14 +633,14 @@ function EditableRow({
             className="flex-1 flex items-center gap-1.5 text-left"
             title="点击编辑标题"
           >
-            <span className={`text-xs truncate ${done ? "text-white/40 line-through" : "text-white/90"}`}>{item.title}</span>
+            <span className={`text-xs truncate ${done ? "text-muted-foreground/70 line-through" : "text-foreground"}`}>{item.title}</span>
           </button>
         </>
 
       )}
       <button
         onClick={onDelete}
-        className="opacity-0 group-hover:opacity-100 transition p-1 rounded hover:bg-white/10 text-white/50 hover:text-white/90"
+        className="opacity-0 group-hover:opacity-100 transition p-1 rounded hover:bg-foreground/10 text-muted-foreground hover:text-foreground"
         title="删除"
       >
         <Trash2 className="w-3 h-3" />
@@ -662,7 +662,7 @@ function DoneCheckbox({ done, onToggle, size = "md" }: { done: boolean; onToggle
       className={`shrink-0 ${dim} rounded-md flex items-center justify-center border transition ${
         done
           ? "bg-moss border-moss text-primary-foreground"
-          : "bg-white/5 border-white/25 hover:border-white/60 text-transparent"
+          : "bg-foreground/5 border-border hover:border-white/60 text-transparent"
       }`}
     >
       <Check className={`${iconDim}`} strokeWidth={3} />
@@ -705,7 +705,7 @@ function ItemCard({
         ? "bg-amber-glow/10 border-dashed border-amber-glow/60"
         : done
           ? "bg-moss/10 border-moss/30"
-          : "bg-white/[0.04] border-white/10 hover:border-white/20"
+          : "bg-foreground/[0.05] border-border hover:border-border"
     }`}>
       {pending && (
         <div className="absolute -top-2 left-3 px-1.5 py-0.5 rounded-full text-[9px] tracking-wider bg-amber-glow text-primary-foreground font-bold">
@@ -715,7 +715,7 @@ function ItemCard({
       <div className="flex items-center gap-2 mb-1.5">
         <DoneCheckbox done={done} onToggle={onToggleDone} />
         <Icon className="w-3.5 h-3.5 text-amber-glow/80 shrink-0" />
-        <span className={`relative text-[10px] px-1.5 py-0.5 rounded-md border ${tagColor[item.tag] ?? "bg-white/10 text-white/70 border-white/15"} ${pending ? "cursor-pointer" : ""}`}>
+        <span className={`relative text-[10px] px-1.5 py-0.5 rounded-md border ${tagColor[item.tag] ?? "bg-foreground/10 text-foreground/75 border-border"} ${pending ? "cursor-pointer" : ""}`}>
           {item.tag}
           {pending && (
             <select
@@ -748,7 +748,7 @@ function ItemCard({
           {pending && onRevert && (
             <button
               onClick={onRevert}
-              className="p-1 rounded hover:bg-white/10 text-white/50 hover:text-destructive"
+              className="p-1 rounded hover:bg-foreground/10 text-muted-foreground hover:text-destructive"
               title="撤销此项"
             >
               <X className="w-3.5 h-3.5" />
@@ -757,7 +757,7 @@ function ItemCard({
           {!pending && (
             <button
               onClick={onDelete}
-              className="opacity-0 group-hover:opacity-100 transition p-1 rounded hover:bg-white/10 text-white/40 hover:text-destructive"
+              className="opacity-0 group-hover:opacity-100 transition p-1 rounded hover:bg-foreground/10 text-muted-foreground/70 hover:text-destructive"
               title="删除"
             >
               <Trash2 className="w-3 h-3" />
@@ -775,13 +775,13 @@ function ItemCard({
             if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); commit(); }
             if (e.key === "Escape") { setTitle(item.title); setEditing(false); }
           }}
-          className="w-full bg-black/30 border border-white/15 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-amber-glow/50"
+          className="w-full bg-background/50 border border-border rounded px-2 py-1 text-sm text-foreground focus:outline-none focus:border-amber-glow/50"
         />
       ) : (
         <div
           onClick={() => setEditing(true)}
           title="点击编辑"
-          className={`text-sm leading-snug cursor-text ${done ? "text-white/45 line-through" : "text-white/90"}`}
+          className={`text-sm leading-snug cursor-text ${done ? "text-muted-foreground/80 line-through" : "text-foreground"}`}
         >
           {item.title}
         </div>
@@ -855,7 +855,7 @@ function DayTimeline({
   };
 
   if (items.length === 0) {
-    return <div className="text-center py-10 text-xs text-white/40">这一天还没有安排</div>;
+    return <div className="text-center py-10 text-xs text-muted-foreground/70">这一天还没有安排</div>;
   }
 
   return (
@@ -864,14 +864,14 @@ function DayTimeline({
       <div
         onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
         onDrop={onTrayDrop}
-        className="mb-3 p-2 rounded-xl border border-dashed border-white/15 bg-white/[0.03]"
+        className="mb-3 p-2 rounded-xl border border-dashed border-border bg-foreground/[0.04]"
       >
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] tracking-widest text-white/40">未排时</span>
-          <span className="text-[10px] text-white/30">{unscheduled.length} 项 · 拖到下方时间轴</span>
+          <span className="text-[10px] tracking-widest text-muted-foreground/70">未排时</span>
+          <span className="text-[10px] text-muted-foreground/60">{unscheduled.length} 项 · 拖到下方时间轴</span>
         </div>
         {unscheduled.length === 0 ? (
-          <div className="text-[11px] text-white/30 text-center py-2">把已排时的拖回这里可清除时间</div>
+          <div className="text-[11px] text-muted-foreground/60 text-center py-2">把已排时的拖回这里可清除时间</div>
         ) : (
           <div className="flex flex-wrap gap-1.5">
             {unscheduled.map((it) => (
@@ -883,7 +883,7 @@ function DayTimeline({
       </div>
 
       {/* Timeline */}
-      <div className="relative rounded-xl border border-white/10 bg-black/20 overflow-hidden">
+      <div className="relative rounded-xl border border-border bg-background/30 overflow-hidden">
         {Array.from({ length: HOUR_END - HOUR_START }, (_, i) => {
           const hour = HOUR_START + i;
           const isHover = hoverHour === hour;
@@ -894,11 +894,11 @@ function DayTimeline({
               onDragLeave={() => setHoverHour((h) => (h === hour ? null : h))}
               onDrop={onHourDrop(hour)}
               style={{ height: ROW_H }}
-              className={`relative flex items-start border-t border-white/5 transition ${
-                isHover ? "bg-amber-glow/10" : "hover:bg-white/[0.02]"
+              className={`relative flex items-start border-t border-border/50 transition ${
+                isHover ? "bg-amber-glow/10" : "hover:bg-foreground/[0.03]"
               }`}
             >
-              <span className="text-[10px] font-mono text-white/35 w-10 pl-2 pt-1 select-none">
+              <span className="text-[10px] font-mono text-muted-foreground/70 w-10 pl-2 pt-1 select-none">
                 {String(hour).padStart(2, "0")}:00
               </span>
             </div>
@@ -919,7 +919,7 @@ function DayTimeline({
               onDragEnd={onDragEnd}
               style={{ top, left: 48, right: 8, opacity: dragId === it.id ? 0.4 : 1 }}
               className={`absolute cursor-grab active:cursor-grabbing rounded-md border px-1.5 py-1 text-[11px] leading-tight ${
-                tagColor[it.tag] ?? "bg-white/10 text-white/80 border-white/15"
+                tagColor[it.tag] ?? "bg-foreground/10 text-foreground/85 border-border"
               }`}
               title={`${it.time} · ${it.title}（拖动改时间）`}
             >
@@ -929,7 +929,7 @@ function DayTimeline({
           );
         })}
       </div>
-      <p className="text-[10px] text-white/30 mt-2 text-center">提示：拖到 15 分钟刻度，松手即设置时间</p>
+      <p className="text-[10px] text-muted-foreground/60 mt-2 text-center">提示：拖到 15 分钟刻度，松手即设置时间</p>
     </div>
   );
 }
@@ -952,7 +952,7 @@ function TimelineChip({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       className={`cursor-grab active:cursor-grabbing flex items-center gap-1 px-2 py-1 rounded-full border text-[11px] ${
-        tagColor[item.tag] ?? "bg-white/10 text-white/80 border-white/15"
+        tagColor[item.tag] ?? "bg-foreground/10 text-foreground/85 border-border"
       } ${dragging ? "opacity-40" : ""}`}
       title="拖到右侧时间轴排进某个时段"
     >
@@ -987,7 +987,7 @@ function SectionHeader({ icon: Icon, title, count, accent = "amber" }: { icon: a
         <Icon className="w-3 h-3" />
         {title}
       </div>
-      {count !== undefined && <span className="text-[10px] text-white/40 font-mono">{count}</span>}
+      {count !== undefined && <span className="text-[10px] text-muted-foreground/70 font-mono">{count}</span>}
     </div>
   );
 }
@@ -1005,10 +1005,10 @@ function DayStats({ items, habits, selected }: { items: any[]; habits: any[]; se
   const focusMin = items.filter((i) => i.done).reduce((s, i) => s + (i.duration_min ?? 0), 0);
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3.5 space-y-3">
+    <div className="rounded-xl border border-border bg-foreground/[0.04] p-3.5 space-y-3">
       <div>
         <div className="flex items-center justify-between text-[11px] mb-1.5">
-          <span className="text-white/60 flex items-center gap-1"><TrendingUp className="w-3 h-3" />完成进度</span>
+          <span className="text-muted-foreground flex items-center gap-1"><TrendingUp className="w-3 h-3" />完成进度</span>
           <span className="text-amber-glow font-mono">{done}/{total} · {pct}%</span>
         </div>
         <div className="h-1.5 rounded-full bg-white/8 overflow-hidden">
@@ -1022,7 +1022,7 @@ function DayStats({ items, habits, selected }: { items: any[]; habits: any[]; se
         <Stat label="习惯" value={`${habitDone}/${habits.length}`} />
       </div>
       {focusMin > 0 && (
-        <div className="text-[10px] text-white/45 text-center">已聚焦 <span className="text-moss font-mono">{focusMin}</span> 分钟</div>
+        <div className="text-[10px] text-muted-foreground/80 text-center">已聚焦 <span className="text-moss font-mono">{focusMin}</span> 分钟</div>
       )}
     </div>
   );
@@ -1030,9 +1030,9 @@ function DayStats({ items, habits, selected }: { items: any[]; habits: any[]; se
 
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-md bg-white/[0.04] py-1.5">
-      <div className="text-sm font-mono text-white">{value}</div>
-      <div className="text-[9px] text-white/40 tracking-wider">{label}</div>
+    <div className="rounded-md bg-foreground/[0.05] py-1.5">
+      <div className="text-sm font-mono text-foreground">{value}</div>
+      <div className="text-[9px] text-muted-foreground/70 tracking-wider">{label}</div>
     </div>
   );
 }
@@ -1055,17 +1055,17 @@ function DayDiaryCard({ date, diary, onOpen, onSave }: { date: string; diary: an
       {entry ? (
         <button
           onClick={onOpen}
-          className="w-full text-left rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] p-3 transition group"
+          className="w-full text-left rounded-xl border border-border bg-foreground/[0.04] hover:bg-foreground/[0.08] p-3 transition group"
         >
-          <div className="flex items-center gap-2 text-xs text-white/60 mb-1">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
             {entry.mood && <span className="text-base leading-none">{moodEmoji[entry.mood] ?? "•"}</span>}
             <span>{entry.mood ? `心情：${entry.mood}` : "已记录"}</span>
-            <span className="ml-auto text-[10px] text-white/30 group-hover:text-amber-glow transition">查看 →</span>
+            <span className="ml-auto text-[10px] text-muted-foreground/60 group-hover:text-amber-glow transition">查看 →</span>
           </div>
-          <p className="text-xs text-white/75 line-clamp-3 leading-relaxed">{entry.content || "（空内容）"}</p>
+          <p className="text-xs text-foreground/80 line-clamp-3 leading-relaxed">{entry.content || "（空内容）"}</p>
         </button>
       ) : (
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] focus-within:border-amber-glow/40 focus-within:bg-white/[0.05] transition p-2.5">
+        <div className="rounded-xl border border-border bg-foreground/[0.04] focus-within:border-amber-glow/40 focus-within:bg-foreground/[0.06] transition p-2.5">
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -1079,10 +1079,10 @@ function DayDiaryCard({ date, diary, onOpen, onSave }: { date: string; diary: an
             }}
             placeholder="写下今天的一条记录…（⌘/Ctrl + Enter 保存）"
             rows={2}
-            className="w-full bg-transparent text-xs text-white/85 placeholder:text-white/35 outline-none resize-none leading-relaxed"
+            className="w-full bg-transparent text-xs text-white/85 placeholder:text-muted-foreground/70 outline-none resize-none leading-relaxed"
           />
           <div className="flex items-center justify-between mt-1.5">
-            <button onClick={onOpen} className="text-[10px] text-white/40 hover:text-amber-glow transition">展开编辑器 →</button>
+            <button onClick={onOpen} className="text-[10px] text-muted-foreground/70 hover:text-amber-glow transition">展开编辑器 →</button>
             <button
               onClick={submit}
               disabled={!draft.trim()}
@@ -1106,7 +1106,7 @@ function DayNotesCard({ date, notes, onOpen }: { date: string; notes: any[]; onO
     <section>
       <SectionHeader icon={StickyNote} title="当日随手记" count={dayNotes.length || undefined} />
       {dayNotes.length === 0 ? (
-        <button onClick={onOpen} className="w-full text-xs text-white/45 text-center py-3 rounded-xl border border-dashed border-white/10 hover:bg-white/[0.04] transition">
+        <button onClick={onOpen} className="w-full text-xs text-muted-foreground/80 text-center py-3 rounded-xl border border-dashed border-border hover:bg-foreground/[0.05] transition">
           这一天没有随手记
         </button>
       ) : (
@@ -1115,16 +1115,16 @@ function DayNotesCard({ date, notes, onOpen }: { date: string; notes: any[]; onO
             <button
               key={n.id}
               onClick={onOpen}
-              className="w-full text-left rounded-lg border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] p-2.5 transition"
+              className="w-full text-left rounded-lg border border-border bg-foreground/[0.04] hover:bg-foreground/[0.08] p-2.5 transition"
             >
               <div className="flex items-center gap-1.5 mb-1">
                 {n.mood && <span className="text-[11px]">{moodEmoji[n.mood] ?? "•"}</span>}
                 {(n.tags ?? []).slice(0, 2).map((t: string) => (
-                  <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-white/8 text-white/55">{t}</span>
+                  <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-white/8 text-muted-foreground">{t}</span>
                 ))}
-                <span className="ml-auto text-[9px] text-white/30 font-mono">{n.createdAt.slice(11, 16)}</span>
+                <span className="ml-auto text-[9px] text-muted-foreground/60 font-mono">{n.createdAt.slice(11, 16)}</span>
               </div>
-              <p className="text-[11px] text-white/75 line-clamp-2 leading-relaxed">{n.text}</p>
+              <p className="text-[11px] text-foreground/80 line-clamp-2 leading-relaxed">{n.text}</p>
             </button>
           ))}
         </div>
@@ -1141,13 +1141,13 @@ function DayComicCard({ date, comics, onOpen }: { date: string; comics: any[]; o
       <SectionHeader icon={ImageIcon} title="当日漫画" />
       <button
         onClick={onOpen}
-        className="block w-full rounded-xl overflow-hidden border border-amber-glow/25 bg-black/40 hover:border-amber-glow/50 transition group"
+        className="block w-full rounded-xl overflow-hidden border border-amber-glow/25 bg-background/60 hover:border-amber-glow/50 transition group"
       >
-        <div className="aspect-square w-full overflow-hidden bg-black/40">
+        <div className="aspect-square w-full overflow-hidden bg-background/60">
           <img src={comic.imageUrl} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition" />
         </div>
         {comic.caption && (
-          <div className="px-3 py-2 text-[11px] text-white/70 line-clamp-2 leading-relaxed">{comic.caption}</div>
+          <div className="px-3 py-2 text-[11px] text-foreground/75 line-clamp-2 leading-relaxed">{comic.caption}</div>
         )}
       </button>
     </section>
