@@ -73,6 +73,7 @@ function isDefaultPersona(p: PersonaProfile | null | undefined): boolean {
   if (!p) return false;
   return (
     p.display_name === DEFAULT_PERSONA.display_name &&
+    (p.ai_nickname ?? DEFAULT_PERSONA.ai_nickname) === DEFAULT_PERSONA.ai_nickname &&
     p.persona_prompt === DEFAULT_PERSONA.persona_prompt &&
     p.humor_level === DEFAULT_PERSONA.humor_level &&
     p.sass_level === DEFAULT_PERSONA.sass_level &&
@@ -87,6 +88,7 @@ function isDefaultPersona(p: PersonaProfile | null | undefined): boolean {
 function snapshotPersona(p: PersonaProfile): Partial<PersonaProfile> {
   return {
     display_name: p.display_name,
+    ai_nickname: p.ai_nickname,
     persona_prompt: p.persona_prompt,
     humor_level: p.humor_level,
     sass_level: p.sass_level,
