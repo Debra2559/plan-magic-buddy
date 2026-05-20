@@ -339,31 +339,37 @@ export const generateMyAbilityPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { userId } = context as any;
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("AI 网关未配置");
-
     const { data: profile } = await supabaseAdmin.from("user_ability_profiles").select("*").eq("user_id", userId).maybeSingle();
     if (!profile) throw new Error("请先完成能力测评");
 
     const activity = await gatherActivity(userId, 14);
+    let planDraft = buildFallbackAbilityPlan(profile, activity);
+    const apiKey = process.env.LOVABLE_API_KEY;
 
-    const gateway = createLovableAiGatewayProvider(apiKey);
-    const { object } = await generateObject({
-      model: gateway("google/gemini-2.5-flash"),
-      schema: PlanSchema,
-      system: `你是一位个人成长教练。基于用户的能力画像与最近 14 天的真实行为数据，制定一份「可执行、具体、轻量」的成长计划。聚焦 1-3 个成长领域；每个领域给 2-5 条具体动作；动作要符合用户当前能力水平（不要太激进）；明确节奏（每天/每周几次）。`,
-      prompt: `用户画像：\n${JSON.stringify({ abilities: profile.abilities, personality: profile.personality, strengths: profile.strengths, growth_areas: profile.growth_areas, tagline: profile.tagline }, null, 0)}\n\n最近 14 天行为数据：\n${JSON.stringify(activity, null, 0)}`,
-    });
+    if (apiKey) {
+      try {
+        const gateway = createLovableAiGatewayProvider(apiKey);
+        const { object } = await generateObject({
+          model: gateway("google/gemini-2.5-flash"),
+          schema: PlanSchema,
+          system: `你是一位个人成长教练。基于用户的能力画像与最近 14 天的真实行为数据，制定一份「可执行、具体、轻量」的成长计划。聚焦 1-3 个成长领域；每个领域给 2-5 条具体动作；动作要符合用户当前能力水平（不要太激进）；明确节奏（每天/每周几次）。必须严格按 schema 输出。`,
+          prompt: `用户画像：\n${JSON.stringify({ abilities: profile.abilities, personality: profile.personality, strengths: profile.strengths, growth_areas: profile.growth_areas, tagline: profile.tagline }, null, 0)}\n\n最近 14 天行为数据：\n${JSON.stringify(activity, null, 0)}`,
+        });
+        planDraft = object;
+      } catch (error) {
+        console.error("Ability plan AI generation failed, using fallback", error);
+      }
+    }
 
     // archive previous active plans
     await supabaseAdmin.from("ability_plans").update({ status: "archived" }).eq("user_id", userId).eq("status", "active");
 
     const { data: inserted, error } = await supabaseAdmin.from("ability_plans").insert({
       user_id: userId,
-      title: object.title,
-      tagline: object.tagline,
-      focus_areas: object.focus_areas,
-      content: object.items as any,
+      title: planDraft.title,
+      tagline: planDraft.tagline,
+      focus_areas: planDraft.focus_areas,
+      content: planDraft.items as any,
       status: "active",
     }).select("*").single();
     if (error) throw new Error(error.message);
