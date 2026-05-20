@@ -219,6 +219,60 @@ export function FeishuSyncPanel() {
     setChats((s) => ({ ...s, open: false }));
   };
 
+  // ---------- 批量查询 open_id ----------
+  const runBatchLookup = useServerFn(batchLookupFeishuOpenId);
+  const [batch, setBatch] = useState<{
+    open: boolean;
+    input: string;
+    loading: boolean;
+    error: string | null;
+    hint?: string;
+    results: Array<{ input: string; kind: "email" | "mobile"; openId: string | null }>;
+    copied: boolean;
+  }>({ open: false, input: "", loading: false, error: null, results: [], copied: false });
+
+  const doBatchLookup = async () => {
+    const lines = batch.input
+      .split(/[\n,;\s]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (lines.length === 0) return;
+    const emails: string[] = [];
+    const mobiles: string[] = [];
+    for (const v of lines) {
+      if (v.includes("@")) emails.push(v);
+      else if (/^\+?\d{6,}$/.test(v)) mobiles.push(v);
+    }
+    if (emails.length === 0 && mobiles.length === 0) {
+      setBatch((s) => ({ ...s, error: "没有识别到有效的邮箱或手机号", results: [] }));
+      return;
+    }
+    setBatch((s) => ({ ...s, loading: true, error: null, results: [] }));
+    try {
+      const res = await runBatchLookup({ data: { emails, mobiles } });
+      if (res.ok) {
+        setBatch((s) => ({ ...s, loading: false, results: res.results, error: null }));
+      } else {
+        setBatch((s) => ({ ...s, loading: false, error: res.error, hint: res.hint, results: [] }));
+      }
+    } catch (e: any) {
+      setBatch((s) => ({ ...s, loading: false, error: e?.message ?? "请求失败" }));
+    }
+  };
+
+  const copyAllOpenIds = async () => {
+    const text = batch.results
+      .filter((r) => r.openId)
+      .map((r) => `${r.input}\t${r.openId}`)
+      .join("\n");
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setBatch((s) => ({ ...s, copied: true }));
+      setTimeout(() => setBatch((s) => ({ ...s, copied: false })), 1500);
+    } catch {}
+  };
+
   const [notify, setNotify] = useState<{
     receiveId: string;
     receiveIdType: "open_id" | "chat_id" | "user_id" | "email";
