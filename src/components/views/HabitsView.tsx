@@ -1,5 +1,15 @@
 import { useState } from "react";
 import { useSylva, habitStreak, habitDaysSinceLast, isHabitDoneOn, todayLocal, type Habit } from "@/lib/sylva-store";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Flame, Check, AlertTriangle, Plus, Pencil, Trash2, X, Save } from "lucide-react";
 
 export function HabitsView() {
