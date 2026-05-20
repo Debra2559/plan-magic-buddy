@@ -871,7 +871,7 @@ function ComicPanel({
         </div>
       ) : (
         <p className="text-xs text-white/40 italic px-1 py-3">
-          把这一天画成漫画 —— 用 {provider === "gemini" ? "Lovable 内置 Gemini" : "火山 Seedream"} 生成，格数由模型自行判断。
+          把这一天画成漫画 —— 格数由模型自行判断。可在「设置 → 漫画生成」切换模型与风格。
         </p>
       )}
     </div>
