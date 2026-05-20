@@ -1195,26 +1195,26 @@ export function FeishuSyncPanel() {
           const warn = !perm.webhookReceived || !perm.imMessageSubscribed || perm.sendScopeIssue;
           return (
             <div className={`mb-2 rounded-md border px-2.5 py-2 text-[11px] ${
-              ok ? "border-emerald-400/30 bg-emerald-400/5 text-emerald-200"
-                 : warn ? "border-amber-400/30 bg-amber-400/5 text-amber-100"
+              ok ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+                 : warn ? "border-amber-500/50 bg-amber-500/10 text-amber-900 dark:text-amber-100"
                  : "border-border bg-foreground/[0.04] text-foreground/75"
             }`}>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-medium">权限与订阅自检</span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded ${perm.webhookReceived ? "bg-emerald-400/15 text-emerald-300" : "bg-rose-400/15 text-rose-300"}`}>
+                <span className="font-semibold text-foreground">权限与订阅自检</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${perm.webhookReceived ? "bg-emerald-500/25 text-emerald-800 dark:text-emerald-200" : "bg-rose-500/25 text-rose-800 dark:text-rose-200"}`}>
                   回调 URL {perm.webhookReceived ? "✓" : "未收到任何事件"}
                 </span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded ${perm.imMessageSubscribed ? "bg-emerald-400/15 text-emerald-300" : "bg-rose-400/15 text-rose-300"}`}>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${perm.imMessageSubscribed ? "bg-emerald-500/25 text-emerald-800 dark:text-emerald-200" : "bg-rose-500/25 text-rose-800 dark:text-rose-200"}`}>
                   im.message.receive_v1 {perm.imMessageSubscribed ? "✓ 已订阅" : "✗ 未订阅"}
                 </span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded ${perm.sendScopeIssue ? "bg-rose-400/15 text-rose-300" : "bg-foreground/5 text-muted-foreground"}`}>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${perm.sendScopeIssue ? "bg-rose-500/25 text-rose-800 dark:text-rose-200" : "bg-foreground/10 text-foreground/80"}`}>
                   im:message 发送权限 {perm.sendScopeIssue ? "✗ 可能缺失" : "未发现错误"}
                 </span>
                 <button
                   type="button"
                   onClick={() => refreshPerm()}
                   disabled={permRefreshing}
-                  className="ml-auto text-[10px] px-2 py-0.5 rounded bg-foreground/5 border border-border text-foreground/75 hover:bg-foreground/10 disabled:opacity-50"
+                  className="ml-auto text-[10px] px-2 py-0.5 rounded bg-foreground/10 border border-border text-foreground hover:bg-foreground/15 disabled:opacity-50 font-medium"
                 >
                   {permRefreshing ? "检测中…" : "重新检测"}
                 </button>
