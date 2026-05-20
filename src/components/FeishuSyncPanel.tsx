@@ -1151,7 +1151,7 @@ export function FeishuSyncPanel() {
         {lookup.open && (
           <div className="mb-2 px-3 py-2 rounded-md border border-white/10 bg-white/[0.03] space-y-2">
             <div className="text-[11px] text-white/60">
-              输入企业内邮箱或手机号，反查你的 <code>open_id</code>（需应用开通 <code>contact:user.base:readonly</code>）。
+              输入企业内 <b>邮箱 / 手机号 / 姓名 / 工号</b>，反查你的 <code>open_id</code>（需开通 <code>contact:user.base:readonly</code>；按姓名搜索还需 <code>search:user.id:readonly</code>）。
             </div>
             <div className="flex items-center gap-2">
               <select
