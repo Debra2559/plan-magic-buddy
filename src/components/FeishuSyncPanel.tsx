@@ -1382,20 +1382,20 @@ export function FeishuSyncPanel() {
                   {diagLoading ? "刷新中…" : "刷新明细"}
                 </button>
                 {pingResult && (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${pingResult.ok ? "bg-emerald-400/15 text-emerald-300" : "bg-rose-400/15 text-rose-300"}`}>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${pingResult.ok ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300" : "bg-rose-500/20 text-rose-700 dark:text-rose-300"}`}>
                     {pingResult.ok ? `✓ ${pingResult.status} · ${pingResult.durationMs}ms` : `✗ ${pingResult.error ?? "失败"}`}
                   </span>
                 )}
-                <span className="text-muted-foreground/70 ml-auto">向自身 webhook 发送 url_verification 并重新判断状态</span>
+                <span className="text-muted-foreground ml-auto">向自身 webhook 发送 url_verification 并重新判断状态</span>
               </div>
 
               {diag && diag.reasons.length > 0 && (
-                <div className="rounded border border-rose-400/20 bg-rose-400/[0.04] p-2 space-y-1.5">
-                  <div className="text-rose-200 font-medium">推断原因</div>
+                <div className="rounded border border-rose-500/30 bg-rose-500/[0.06] p-2 space-y-1.5">
+                  <div className="text-rose-700 dark:text-rose-300 font-semibold">推断原因</div>
                   <ul className="space-y-1">
                     {diag.reasons.map((r, i) => (
-                      <li key={i} className="text-rose-100/90">
-                        <span className="font-mono text-[10px] px-1 py-0.5 mr-1 rounded bg-rose-400/15 text-rose-200">{r.code}</span>
+                      <li key={i} className="text-rose-800 dark:text-rose-100/90">
+                        <span className="font-mono text-[10px] px-1 py-0.5 mr-1 rounded bg-rose-500/20 text-rose-700 dark:text-rose-200 font-semibold">{r.code}</span>
                         {r.text}
                         {r.hint && <div className="text-muted-foreground mt-0.5">→ {r.hint}</div>}
                       </li>
