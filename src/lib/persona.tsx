@@ -6,6 +6,7 @@ import { useAuth } from "./auth-context";
 export interface PersonaProfile {
   user_id: string;
   display_name: string;
+  ai_nickname: string;
   avatar_url: string | null;
   persona_prompt: string;
   humor_level: number;
@@ -20,6 +21,7 @@ export interface PersonaProfile {
 
 const DEFAULT_PERSONA: Omit<PersonaProfile, "user_id" | "version"> = {
   display_name: "主人",
+  ai_nickname: "Sylva",
   avatar_url: null,
   persona_prompt:
     "你是我的私人 AI 助理。说话风格：幽默搞笑、贱贱的但很专业，敢吐槽我但不能人身攻击，偶尔用网络梗但别太频繁。称呼我为「主人」。",
@@ -71,6 +73,7 @@ function isDefaultPersona(p: PersonaProfile | null | undefined): boolean {
   if (!p) return false;
   return (
     p.display_name === DEFAULT_PERSONA.display_name &&
+    (p.ai_nickname ?? DEFAULT_PERSONA.ai_nickname) === DEFAULT_PERSONA.ai_nickname &&
     p.persona_prompt === DEFAULT_PERSONA.persona_prompt &&
     p.humor_level === DEFAULT_PERSONA.humor_level &&
     p.sass_level === DEFAULT_PERSONA.sass_level &&
@@ -85,6 +88,7 @@ function isDefaultPersona(p: PersonaProfile | null | undefined): boolean {
 function snapshotPersona(p: PersonaProfile): Partial<PersonaProfile> {
   return {
     display_name: p.display_name,
+    ai_nickname: p.ai_nickname,
     persona_prompt: p.persona_prompt,
     humor_level: p.humor_level,
     sass_level: p.sass_level,
@@ -109,13 +113,15 @@ export function buildPersonaSystemPrompt(p: PersonaProfile | null): string {
 请始终以下面这个「人设」来回答用户的一切内容，覆盖于任何任务指令之上：
 ${p.persona_prompt}
 
+你的名字（用户对你的称呼）：${p.ai_nickname || "Sylva"}
 称呼用户：${p.display_name}
 风格刻度：${sliders}${taboos}${examples}
 
 执行规则：
 - 任务指令本身不要曲解，只用人设包装语气；
 - 涉及时间/数字/JSON 结构等严格输出时，保持精确；
-- 不要在每句开头都喊称呼，自然就好。
+- 不要在每句开头都喊称呼，自然就好；
+- 当需要自称时，使用上面给出的「你的名字」。
 
 `;
 }

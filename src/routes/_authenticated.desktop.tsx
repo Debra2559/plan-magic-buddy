@@ -424,9 +424,10 @@ function SidebarItem({
 
 function AssistantHeader({ onClick }: { onClick?: () => void }) {
   const { persona } = usePersona();
-  const name = (persona?.display_name || "").trim() || "主人";
+  const aiName = (persona?.ai_nickname || "").trim() || "Sylva";
+  const userName = (persona?.display_name || "").trim() || "主人";
   const avatar = persona?.avatar_url || null;
-  const initial = name.charAt(0).toUpperCase();
+  const initial = aiName.charAt(0).toUpperCase();
 
   return (
     <button
@@ -438,7 +439,7 @@ function AssistantHeader({ onClick }: { onClick?: () => void }) {
       <div className="flex items-center gap-2.5">
         <div className="relative w-9 h-9 rounded-full overflow-hidden ring-1 ring-white/15 shadow-lg shrink-0 group-hover:ring-amber-glow/60 transition">
           {avatar ? (
-            <img src={avatar} alt={name} className="w-full h-full object-cover" />
+            <img src={avatar} alt={aiName} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-amber-glow to-moss flex items-center justify-center">
               <span className="font-display text-primary-foreground text-sm">{initial}</span>
@@ -448,9 +449,11 @@ function AssistantHeader({ onClick }: { onClick?: () => void }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-display text-base text-white truncate group-hover:text-amber-glow transition">
-            {name}
+            {aiName}
           </div>
-          <div className="text-[10px] text-white/40 group-hover:text-white/70 transition">点击编辑人设</div>
+          <div className="text-[10px] text-white/40 group-hover:text-white/70 transition truncate">
+            为 {userName} 服务 · 点击编辑人设
+          </div>
         </div>
       </div>
     </button>
