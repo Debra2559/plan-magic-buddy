@@ -495,19 +495,48 @@ export const pullFromFeishu = createServerFn({ method: 'POST' }).handler(
     }
 
     const newItems: NewItem[] = []
+    let skippedNoTime = 0
     for (const ev of all) {
       if (!ev.event_id || knownFeishuIds.has(ev.event_id)) continue
       if (ev.status === 'cancelled') continue
+
       const startTs = ev.start_time?.timestamp
       const endTs = ev.end_time?.timestamp
-      if (!startTs) continue // 全天事件先跳过
-      const startSec = Number(startTs)
-      const endSec = Number(endTs ?? startTs)
-      const { date, time } = unixToCST(startSec)
-      const durationMin = Math.max(5, Math.round((endSec - startSec) / 60)) || 60
+      const startDate = ev.start_time?.date // 全天事件
+      const endDate = ev.end_time?.date
+
+      let date: string
+      let time: string
+      let durationMin: number
+      let allDay = false
+
+      if (startTs) {
+        const startSec = Number(startTs)
+        const endSec = Number(endTs ?? startTs)
+        const s = unixToCST(startSec)
+        date = s.date
+        time = s.time
+        durationMin = Math.max(5, Math.round((endSec - startSec) / 60)) || 60
+      } else if (startDate) {
+        // 全天事件：飞书 end.date 是「次日」，按日数算时长
+        allDay = true
+        date = startDate
+        time = '00:00'
+        if (endDate) {
+          const ms = Date.parse(endDate + 'T00:00:00Z') - Date.parse(startDate + 'T00:00:00Z')
+          const days = Math.max(1, Math.round(ms / 86400000))
+          durationMin = days * 1440
+        } else {
+          durationMin = 1440
+        }
+      } else {
+        skippedNoTime++
+        continue
+      }
+
       newItems.push({
         type: 'event',
-        title: ev.summary || '(无标题)',
+        title: (ev.summary || '(无标题)') + (allDay ? ' · 全天' : ''),
         date,
         time,
         durationMin,
@@ -517,7 +546,7 @@ export const pullFromFeishu = createServerFn({ method: 'POST' }).handler(
       })
     }
 
-    return { ok: true as const, total: all.length, newItems, calendarId }
+    return { ok: true as const, total: all.length, newItems, calendarId, skippedNoTime, alreadyImported: all.length - newItems.length - skippedNoTime }
   }
 )
 
