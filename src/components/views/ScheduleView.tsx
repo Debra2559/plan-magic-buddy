@@ -92,7 +92,7 @@ export function ScheduleView({ onGoPlan }: { onGoPlan?: () => void } = {}) {
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
-              onClick={() => setCursor(new Date(2026, 4, 1))}
+              onClick={() => setCursor(new Date())}
               className="px-3 py-1.5 rounded-lg hover:bg-white/10 text-xs text-white/70"
             >
               今天
