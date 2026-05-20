@@ -8,10 +8,14 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 
+import { useEffect } from "react";
 import appCss from "../styles.css?url";
 import { SylvaProvider } from "@/lib/sylva-store";
 import { ReminderRunner } from "@/components/ReminderRunner";
 import { Toaster } from "sonner";
+import { AuthProvider } from "@/lib/auth-context";
+import { PersonaProvider } from "@/lib/persona";
+import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
   return (
@@ -113,14 +117,27 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      router.invalidate();
+      queryClient.invalidateQueries();
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [router, queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SylvaProvider>
-        <Outlet />
-        <ReminderRunner />
-        <Toaster position="top-right" theme="dark" richColors closeButton />
-      </SylvaProvider>
+      <AuthProvider>
+        <PersonaProvider>
+          <SylvaProvider>
+            <Outlet />
+            <ReminderRunner />
+            <Toaster position="top-right" theme="dark" richColors closeButton />
+          </SylvaProvider>
+        </PersonaProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

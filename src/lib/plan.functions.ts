@@ -25,6 +25,7 @@ const PlanInput = z.object({
   idea: z.string().min(1).max(2000),
   mode: z.enum(["create", "adjust", "add", "auto"]),
   existing: z.array(PlanItemSchema).optional(),
+  personaPrompt: z.string().max(4000).optional(),
 });
 
 type EffectiveMode = "create" | "adjust" | "add";
@@ -69,7 +70,8 @@ export const generatePlan = createServerFn({ method: "POST" })
       add: "用户已有一份规划(在 EXISTING 里), 现在想往里追加一些新事项。只输出新增的事项, 不要重复 EXISTING 里的内容。",
     };
 
-    const system = `你是 Sylva, 一个安静、克制、像森林一样陪伴用户的智能规划助手。
+    const personaPrefix = data.personaPrompt ? `${data.personaPrompt}\n\n` : "";
+    const system = `${personaPrefix}你是 Sylva, 一个智能规划助手。
 今天是 ${today}。
 请把用户的想法拆解成结构化的 items 数组。规则:
 - type=event 的必须有 time 和 durationMin
@@ -77,7 +79,8 @@ export const generatePlan = createServerFn({ method: "POST" })
 - 标题简洁, 不要带 emoji
 - 安排合理: 工作日多放工作/学习, 周末多放生活/健康
 - 同一天内不要安排过满 (一天 event 总时长不超过 6 小时)
-- 单次输出 3-12 条最自然`;
+- 单次输出 3-12 条最自然
+- summary 字段用你的人设口吻说话; items 内容保持精确不要曲解`;
 
     const userPrompt = `${modeInstructions[effectiveMode]}
 

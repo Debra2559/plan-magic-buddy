@@ -84,15 +84,28 @@ const swallow = (label: string) => (err: any) => {
   if (err) console.warn(`[cloud-sync] ${label}`, err.message ?? err);
 };
 
+async function uid(): Promise<string | null> {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.user?.id ?? null;
+}
+const withUid = async <T extends object>(row: T): Promise<T & { user_id?: string }> => {
+  const u = await uid();
+  return u ? { ...row, user_id: u } : row;
+};
+
 export const remote = {
   // schedule_items
   async upsertItem(i: DoneItem) {
-    const { error } = await supabase.from("schedule_items").upsert(itemToRow(i));
+    const row = await withUid(itemToRow(i));
+    if (!row.user_id) return;
+    const { error } = await supabase.from("schedule_items").upsert(row);
     swallow("upsertItem")(error);
   },
   async upsertItems(xs: DoneItem[]) {
     if (!xs.length) return;
-    const { error } = await supabase.from("schedule_items").upsert(xs.map(itemToRow));
+    const u = await uid(); if (!u) return;
+    const rows = xs.map((x) => ({ ...itemToRow(x), user_id: u }));
+    const { error } = await supabase.from("schedule_items").upsert(rows);
     swallow("upsertItems")(error);
   },
   async softDeleteItem(id: string) {
@@ -108,7 +121,8 @@ export const remote = {
 
   // notes
   async upsertNote(n: Note) {
-    const { error } = await supabase.from("notes").upsert(noteToRow(n));
+    const row = await withUid(noteToRow(n)); if (!row.user_id) return;
+    const { error } = await supabase.from("notes").upsert(row);
     swallow("upsertNote")(error);
   },
   async softDeleteNote(id: string) {
@@ -119,12 +133,15 @@ export const remote = {
 
   // habits
   async upsertHabit(h: Habit) {
-    const { error } = await supabase.from("habits").upsert(habitToRow(h));
+    const row = await withUid(habitToRow(h)); if (!row.user_id) return;
+    const { error } = await supabase.from("habits").upsert(row);
     swallow("upsertHabit")(error);
   },
   async upsertHabits(xs: Habit[]) {
     if (!xs.length) return;
-    const { error } = await supabase.from("habits").upsert(xs.map(habitToRow));
+    const u = await uid(); if (!u) return;
+    const rows = xs.map((x) => ({ ...habitToRow(x), user_id: u }));
+    const { error } = await supabase.from("habits").upsert(rows);
     swallow("upsertHabits")(error);
   },
   async softDeleteHabit(id: string) {
@@ -135,13 +152,15 @@ export const remote = {
 
   // diary
   async upsertDiary(d: DiaryEntry) {
-    const { error } = await supabase.from("diary_entries").upsert(diaryToRow(d));
+    const row = await withUid(diaryToRow(d)); if (!row.user_id) return;
+    const { error } = await supabase.from("diary_entries").upsert(row);
     swallow("upsertDiary")(error);
   },
 
   // comics
   async upsertComic(c: DailyComic) {
-    const { error } = await supabase.from("comics").upsert(comicToRow(c));
+    const row = await withUid(comicToRow(c)); if (!row.user_id) return;
+    const { error } = await supabase.from("comics").upsert(row);
     swallow("upsertComic")(error);
   },
   async removeComic(date: string) {
