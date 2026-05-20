@@ -324,7 +324,7 @@ function useMemoSync(key: string, fn: () => void) {
 
 /* ---------------- Daily Summary ---------------- */
 function SummaryTab({ initialDate }: { initialDate?: string | null }) {
-  const { items, habits, diary, upsertDiary, isRecapDone, refreshRecapDoneDates } = useSylva();
+  const { items, habits, diary, upsertDiary, isRecapDone, refreshRecapDoneDates, unmarkRecapDone } = useSylva();
   const [date, setDate] = useState(initialDate ?? todayStr());
   useEffect(() => { refreshRecapDoneDates(); }, [refreshRecapDoneDates]);
   const recapDone = isRecapDone(date);
