@@ -206,20 +206,23 @@ function DraggableWidget({
   id,
   pos,
   setPos,
+  onDoubleClick,
   children,
 }: {
   id: string;
   pos: WinPos;
   setPos: (p: WinPos) => void;
+  onDoubleClick?: () => void;
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ ox: number; oy: number } | null>(null);
+  const drag = useRef<{ ox: number; oy: number; moved: boolean } | null>(null);
 
   const onMouseDown = (e: React.MouseEvent) => {
-    drag.current = { ox: e.clientX - pos.x, oy: e.clientY - pos.y };
+    drag.current = { ox: e.clientX - pos.x, oy: e.clientY - pos.y, moved: false };
     const move = (ev: MouseEvent) => {
       if (!drag.current) return;
+      drag.current.moved = true;
       setPos({ x: ev.clientX - drag.current.ox, y: ev.clientY - drag.current.oy });
     };
     const up = () => {
@@ -236,10 +239,15 @@ function DraggableWidget({
       ref={ref}
       data-widget={id}
       onMouseDown={onMouseDown}
+      onDoubleClick={onDoubleClick}
       style={{ left: pos.x, top: pos.y }}
-      className="absolute cursor-grab active:cursor-grabbing"
+      className="absolute cursor-grab active:cursor-grabbing group"
+      title="双击编辑"
     >
       {children}
+      <div className="pointer-events-none absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition px-2 py-0.5 rounded-full bg-black/70 text-white text-[10px] border border-white/10">
+        双击编辑
+      </div>
     </div>
   );
 }
