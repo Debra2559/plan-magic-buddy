@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSylva, type Mood, type Note } from "@/lib/sylva-store";
-import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, ListChecks, NotebookPen, Sparkles, CheckCircle2, Circle } from "lucide-react";
+import { useSylva, type Mood, type Note, habitStreak, habitDaysSinceLast, isHabitDoneOn } from "@/lib/sylva-store";
+import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, ListChecks, NotebookPen, Sparkles, CheckCircle2, Circle, Flame, AlertTriangle } from "lucide-react";
 
 type Tab = "notes" | "diary" | "summary";
 
@@ -284,7 +284,25 @@ function SummaryTab() {
   const done = dayItems.filter((i) => i.done);
   const pending = dayItems.filter((i) => !i.done);
   const ratio = dayItems.length ? Math.round((done.length / dayItems.length) * 100) : 0;
-  const habitDone = habits.filter((h) => h.doneToday);
+
+  // 习惯统计：仅当查看今天才有「漏打」概念，其他日期只展示当天打卡情况
+  const isToday = date === todayStr();
+  const habitDoneList = habits.filter((h) => isHabitDoneOn(h, date));
+  const habitPendingList = habits.filter((h) => !isHabitDoneOn(h, date));
+  const missedToday = isToday
+    ? habits.filter((h) => !isHabitDoneOn(h, date) && habitStreak(h, date) > 0)
+    : [];
+  const brokenHabits = isToday
+    ? habits.filter((h) => {
+        const gap = habitDaysSinceLast(h, date);
+        return gap !== Infinity && gap >= 2;
+      })
+    : [];
+  const topStreaks = [...habits]
+    .map((h) => ({ h, s: habitStreak(h, date) }))
+    .filter((x) => x.s > 0)
+    .sort((a, b) => b.s - a.s)
+    .slice(0, 3);
 
   const generateRecap = () => {
     const lines: string[] = [];
@@ -292,7 +310,16 @@ function SummaryTab() {
     lines.push(`完成 ${done.length}/${dayItems.length} 项任务（${ratio}%）`);
     if (done.length) lines.push("✅ 已完成：\n  · " + done.map((i) => i.title).join("\n  · "));
     if (pending.length) lines.push("◻️ 未完成：\n  · " + pending.map((i) => i.title).join("\n  · "));
-    if (habitDone.length) lines.push("习惯：" + habitDone.map((h) => `${h.emoji}${h.name}`).join(" "));
+    lines.push(`🔥 习惯打卡 ${habitDoneList.length}/${habits.length}`);
+    if (habitDoneList.length) {
+      lines.push("  · 已打卡：" + habitDoneList.map((h) => `${h.emoji}${h.name}(${habitStreak(h, date)}d)`).join(" "));
+    }
+    if (missedToday.length) {
+      lines.push("⚠️ 今日漏打：" + missedToday.map((h) => `${h.emoji}${h.name}(连续 ${habitStreak(h, date)}d 待保持)`).join(" "));
+    }
+    if (brokenHabits.length) {
+      lines.push("💤 已中断：" + brokenHabits.map((h) => `${h.emoji}${h.name}(${habitDaysSinceLast(h, date)}d 未打)`).join(" "));
+    }
     const existing = diary.find((d) => d.date === date)?.content ?? "";
     const merged = existing ? existing + "\n\n" + lines.join("\n") : lines.join("\n");
     upsertDiary(date, { content: merged });
@@ -309,7 +336,7 @@ function SummaryTab() {
         />
         <button
           onClick={generateRecap}
-          disabled={!dayItems.length}
+          disabled={!dayItems.length && !habits.length}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-glow text-primary-foreground text-xs font-medium disabled:opacity-30"
         >
           <Sparkles className="w-3 h-3" /> 写入当日日记
@@ -335,18 +362,60 @@ function SummaryTab() {
       <Section title="已完成" icon={<CheckCircle2 className="w-3.5 h-3.5 text-amber-glow" />} list={done} empty="今天还没有完成的任务" />
       <Section title="未完成" icon={<Circle className="w-3.5 h-3.5 text-white/40" />} list={pending} empty="全部完成，太棒了 🎉" />
 
-      <p className="text-[10px] tracking-widest text-white/40 mt-6 mb-2">习惯打卡</p>
+      {/* 习惯小结 */}
+      <div className="mt-6 mb-3 flex items-center justify-between">
+        <p className="flex items-center gap-1.5 text-[10px] tracking-widest text-white/50">
+          <Flame className="w-3.5 h-3.5 text-amber-glow" /> 习惯 · {habitDoneList.length}/{habits.length}
+        </p>
+        {topStreaks.length > 0 && (
+          <p className="text-[10px] text-white/40">
+            最长连击 {topStreaks.map(({ h, s }) => `${h.emoji}${s}d`).join(" · ")}
+          </p>
+        )}
+      </div>
+
+      {isToday && (missedToday.length > 0 || brokenHabits.length > 0) && (
+        <div className="widget p-3 mb-3 border border-amber-glow/30 bg-amber-glow/5">
+          <div className="flex items-center gap-1.5 mb-1.5 text-amber-glow text-[11px]">
+            <AlertTriangle className="w-3 h-3" />
+            <span className="tracking-widest">漏打提醒</span>
+          </div>
+          {missedToday.length > 0 && (
+            <p className="text-xs text-white/85 leading-relaxed">
+              今天还没打：{missedToday.map((h) => (
+                <span key={h.id} className="ml-1.5 px-1.5 py-0.5 rounded bg-white/10 text-white/90 text-[11px]">
+                  {h.emoji} {h.name} · {habitStreak(h, date)}d
+                </span>
+              ))}
+            </p>
+          )}
+          {brokenHabits.length > 0 && (
+            <p className="text-xs text-white/60 mt-1.5">
+              已中断：{brokenHabits.map((h) => (
+                <span key={h.id} className="ml-1.5 text-[11px]">
+                  {h.emoji} {h.name}（{habitDaysSinceLast(h, date)}d 未打）
+                </span>
+              ))}
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-2">
-        {habits.map((h) => (
-          <span
-            key={h.id}
-            className={`text-xs px-2.5 py-1 rounded-full border ${
-              h.doneToday ? "bg-amber-glow/15 border-amber-glow/40 text-white" : "bg-white/[0.03] border-white/8 text-white/50"
-            }`}
-          >
-            {h.emoji} {h.name} · {h.streak}d
-          </span>
-        ))}
+        {habits.map((h) => {
+          const dToday = isHabitDoneOn(h, date);
+          const s = habitStreak(h, date);
+          return (
+            <span
+              key={h.id}
+              className={`text-xs px-2.5 py-1 rounded-full border ${
+                dToday ? "bg-amber-glow/15 border-amber-glow/40 text-white" : "bg-white/[0.03] border-white/8 text-white/50"
+              }`}
+            >
+              {h.emoji} {h.name} · {s}d
+            </span>
+          );
+        })}
       </div>
     </>
   );

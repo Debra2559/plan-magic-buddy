@@ -28,8 +28,70 @@ export interface Habit {
   id: string;
   name: string;
   emoji: string;
-  streak: number;
-  doneToday: boolean;
+  /** 历史打卡日期，YYYY-MM-DD，倒序去重 */
+  history: string[];
+  /** @deprecated 仍保留以兼容旧数据；新逻辑用 history 计算 */
+  streak?: number;
+  /** @deprecated 用 isHabitDoneOn(h, today) 代替 */
+  doneToday?: boolean;
+}
+
+/** 本地日期 YYYY-MM-DD */
+export function todayLocal(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function addDays(date: string, delta: number): string {
+  const [y, m, d] = date.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + delta);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+}
+
+export function isHabitDoneOn(h: Habit, date: string): boolean {
+  return (h.history ?? []).includes(date);
+}
+
+/** 截至 `today` 仍在保持的连续天数。
+ *  规则：如果今天打了 → 从今天往前数；如果今天没打但昨天打了 → 算上昨天（仍“未中断”）；否则 0。 */
+export function habitStreak(h: Habit, today: string = todayLocal()): number {
+  const set = new Set(h.history ?? []);
+  let cursor = today;
+  if (!set.has(cursor)) {
+    const y = addDays(today, -1);
+    if (!set.has(y)) return 0;
+    cursor = y;
+  }
+  let n = 0;
+  while (set.has(cursor)) {
+    n++;
+    cursor = addDays(cursor, -1);
+  }
+  return n;
+}
+
+/** 距离上次打卡过了几天（0 = 今天已打；1 = 昨天；…；Infinity = 从未打过） */
+export function habitDaysSinceLast(h: Habit, today: string = todayLocal()): number {
+  const set = new Set(h.history ?? []);
+  if (!set.size) return Infinity;
+  let cursor = today;
+  for (let i = 0; i < 365; i++) {
+    if (set.has(cursor)) return i;
+    cursor = addDays(cursor, -1);
+  }
+  return Infinity;
+}
+
+/** 迁移老数据：把 streak+doneToday 反推成 history */
+function migrateHabit(h: any): Habit {
+  if (Array.isArray(h.history)) return h as Habit;
+  const today = todayLocal();
+  const lastDay = h.doneToday ? today : addDays(today, -1);
+  const n = Math.max(0, Number(h.streak ?? 0));
+  const history: string[] = [];
+  for (let i = 0; i < n; i++) history.push(addDays(lastDay, -i));
+  return { id: h.id, name: h.name, emoji: h.emoji, history };
 }
 
 interface SylvaContextValue {
@@ -80,13 +142,21 @@ const initialNotes: Note[] = [
   { id: "n2", text: "Coding Agent 演示要先抛痛点 30s，再看 demo。", createdAt: "2026-05-19T11:40:00" },
 ];
 
+function seedHabit(id: string, name: string, emoji: string, streak: number, doneToday: boolean): Habit {
+  const today = todayLocal();
+  const lastDay = doneToday ? today : addDays(today, -1);
+  const history: string[] = [];
+  for (let i = 0; i < streak; i++) history.push(addDays(lastDay, -i));
+  return { id, name, emoji, history };
+}
+
 const initialHabits: Habit[] = [
-  { id: "h1", name: "早起", emoji: "🌅", streak: 12, doneToday: true },
-  { id: "h2", name: "冥想", emoji: "🧘", streak: 5, doneToday: true },
-  { id: "h3", name: "阅读", emoji: "📖", streak: 23, doneToday: false },
-  { id: "h4", name: "运动", emoji: "🏃", streak: 7, doneToday: false },
-  { id: "h5", name: "英语", emoji: "🇬🇧", streak: 18, doneToday: true },
-  { id: "h6", name: "早睡", emoji: "🌙", streak: 3, doneToday: false },
+  seedHabit("h1", "早起", "🌅", 12, true),
+  seedHabit("h2", "冥想", "🧘", 5, true),
+  seedHabit("h3", "阅读", "📖", 23, false),
+  seedHabit("h4", "运动", "🏃", 7, false),
+  seedHabit("h5", "英语", "🇬🇧", 18, true),
+  seedHabit("h6", "早睡", "🌙", 3, false),
 ];
 
 let idCounter = 1000;
@@ -95,7 +165,9 @@ const nextId = () => `i-${++idCounter}`;
 export function SylvaProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<DoneItem[]>(() => loadLS("sylva.items", initialItems));
   const [notes, setNotes] = useState<Note[]>(() => loadLS("sylva.notes", initialNotes));
-  const [habits, setHabits] = useState<Habit[]>(() => loadLS("sylva.habits", initialHabits));
+  const [habits, setHabits] = useState<Habit[]>(() =>
+    loadLS<any[]>("sylva.habits", initialHabits as any).map(migrateHabit)
+  );
   const [diary, setDiary] = useState<DiaryEntry[]>(() => loadLS<DiaryEntry[]>("sylva.diary", []));
 
   useEffect(() => saveLS("sylva.items", items), [items]);
@@ -131,11 +203,14 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
 
   const toggleHabit = (id: string) =>
     setHabits((prev) =>
-      prev.map((h) =>
-        h.id === id
-          ? { ...h, doneToday: !h.doneToday, streak: !h.doneToday ? h.streak + 1 : Math.max(0, h.streak - 1) }
-          : h
-      )
+      prev.map((h) => {
+        if (h.id !== id) return h;
+        const today = todayLocal();
+        const hist = h.history ?? [];
+        const has = hist.includes(today);
+        const nextHist = has ? hist.filter((d) => d !== today) : [today, ...hist];
+        return { ...h, history: nextHist };
+      })
     );
 
   const upsertDiary: SylvaContextValue["upsertDiary"] = (date, patch) =>
