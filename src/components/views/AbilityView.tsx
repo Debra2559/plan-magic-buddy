@@ -172,9 +172,9 @@ function ChartCard({ title, data, stroke, fill }: { title: string; data: { dim: 
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart data={data} outerRadius="75%">
-            <PolarGrid stroke="hsl(var(--border))" />
-            <PolarAngleAxis dataKey="dim" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-            <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: "hsl(var(--muted-foreground) / 0.5)", fontSize: 10 }} />
+            <PolarGrid stroke="var(--border)" />
+            <PolarAngleAxis dataKey="dim" tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} />
+            <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: "var(--muted-foreground)", fillOpacity: 0.5, fontSize: 10 }} />
             <Radar dataKey="score" stroke={stroke} fill={fill} strokeWidth={2} />
           </RadarChart>
         </ResponsiveContainer>
