@@ -114,6 +114,34 @@ export function InsightsSettingsPanel() {
         </div>
       </div>
 
+      {/* 时区 */}
+      <div className="widget p-4">
+        <div className="text-white font-medium text-sm mb-2 flex items-center gap-1.5">
+          <Globe className="w-3.5 h-3.5 text-amber-glow" />
+          时区
+        </div>
+        <div className="text-white/50 text-xs mb-3">
+          AI 按你所在时区判断「早/午/晚」时段
+        </div>
+        <select
+          value={local.timezone || "Asia/Shanghai"}
+          onChange={(e) => {
+            const next = e.target.value;
+            setLocal({ ...local, timezone: next });
+            save.mutate({ timezone: next });
+          }}
+          className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-amber-glow/40 transition"
+        >
+          {TIMEZONES.map((t) => (
+            <option key={t.key} value={t.key} className="bg-[#0a0c0a]">
+              {t.label} · {t.offset}
+            </option>
+          ))}
+        </select>
+      </div>
+
+
+
       {/* 数据范围 */}
       <div className="widget p-4">
         <div className="text-white font-medium text-sm mb-2">参考数据</div>
