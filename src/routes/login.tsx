@@ -49,12 +49,46 @@ function LoginPage() {
         const hex = Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("").toUpperCase();
         const prefix = hex.slice(0, 5);
         const suffix = hex.slice(5);
-        const res = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`);
-        const text = await res.text();
+
+        // 1) 完整哈希缓存（命中则零请求）
+        const fullHit = fullHashCache.get(hex);
+        if (fullHit && fullHit.exp > Date.now()) {
+          if (cancelled) return;
+          if (fullHit.count > 0) {
+            setPwdCheck({ status: "pwned", msg: `这个密码在已知泄漏库中出现 ${fullHit.count.toLocaleString()} 次，请换一个`, count: fullHit.count });
+          } else {
+            setPwdCheck({ status: "ok", msg: "强度 OK，未在已知泄漏库中（缓存）" });
+          }
+          return;
+        }
+
+        // 2) 前缀缓存（命中则零请求，直接在本地匹配 suffix）
+        let suffixMap = prefixCache.get(prefix);
+        if (!suffixMap || suffixMap.exp <= Date.now()) {
+          // 3) 同前缀的并发请求合并
+          let pending = prefixInflight.get(prefix);
+          if (!pending) {
+            pending = fetch(`https://api.pwnedpasswords.com/range/${prefix}`)
+              .then((r) => r.text())
+              .then((text) => {
+                const map = new Map<string, number>();
+                for (const l of text.split("\n")) {
+                  const [s, c] = l.trim().split(":");
+                  if (s) map.set(s, Number(c) || 0);
+                }
+                const entry = { map, exp: Date.now() + PREFIX_TTL };
+                prefixCache.set(prefix, entry);
+                return entry;
+              })
+              .finally(() => { prefixInflight.delete(prefix); });
+            prefixInflight.set(prefix, pending);
+          }
+          suffixMap = await pending;
+        }
         if (cancelled) return;
-        const line = text.split("\n").map((l) => l.trim()).find((l) => l.startsWith(suffix + ":"));
-        if (line) {
-          const count = Number(line.split(":")[1]);
+        const count = suffixMap.map.get(suffix) ?? 0;
+        fullHashCache.set(hex, { count, exp: Date.now() + FULL_TTL });
+        if (count > 0) {
           setPwdCheck({ status: "pwned", msg: `这个密码在已知泄漏库中出现 ${count.toLocaleString()} 次，请换一个`, count });
         } else {
           setPwdCheck({ status: "ok", msg: "强度 OK，未在已知泄漏库中" });
