@@ -27,17 +27,20 @@ export function FloatingBall() {
   const { addItems, navigateTo } = useSylva();
   const [mounted, setMounted] = useState(false);
   const [pos, setPos] = useState<Pos>({ x: 24, y: 200, enabled: true });
+  const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const [open, setOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const movedRef = useRef(false);
   const offsetRef = useRef({ dx: 0, dy: 0 });
 
   useEffect(() => {
+    setViewport({ width: window.innerWidth, height: window.innerHeight });
     setPos(loadPos());
     setMounted(true);
   }, []);
 
   useEffect(() => {
+    if (!mounted) return;
     try {
       localStorage.setItem(
         STORAGE_KEY,
@@ -53,6 +56,7 @@ export function FloatingBall() {
         x: Math.min(Math.max(8, p.x), window.innerWidth - 64),
         y: Math.min(Math.max(8, p.y), window.innerHeight - 64),
       }));
+      setViewport({ width: window.innerWidth, height: window.innerHeight });
     };
     window.addEventListener("resize", snap);
     return () => window.removeEventListener("resize", snap);
@@ -128,7 +132,7 @@ export function FloatingBall() {
 
   if (!mounted || !pos.enabled) return null;
 
-  const snapLeft = pos.x < window.innerWidth / 2;
+  const snapLeft = pos.x < viewport.width / 2;
 
   return (
     <>
@@ -152,8 +156,8 @@ export function FloatingBall() {
         <div
           style={{
             left: snapLeft ? pos.x + 56 : undefined,
-            right: snapLeft ? undefined : window.innerWidth - pos.x + 8,
-            top: Math.min(Math.max(12, pos.y - 8), window.innerHeight - 280),
+            right: snapLeft ? undefined : viewport.width - pos.x + 8,
+            top: Math.min(Math.max(12, pos.y - 8), viewport.height - 280),
           }}
           className="fixed z-[60] w-52 rounded-2xl p-2 bg-background/95 backdrop-blur-xl
             border border-foreground/10 shadow-2xl animate-in fade-in zoom-in-95"
