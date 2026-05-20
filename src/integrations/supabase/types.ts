@@ -847,6 +847,7 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          ai_nickname: string
           avatar_url: string | null
           created_at: string
           display_name: string
@@ -862,6 +863,7 @@ export type Database = {
           version: number
         }
         Insert: {
+          ai_nickname?: string
           avatar_url?: string | null
           created_at?: string
           display_name?: string
@@ -877,6 +879,7 @@ export type Database = {
           version?: number
         }
         Update: {
+          ai_nickname?: string
           avatar_url?: string | null
           created_at?: string
           display_name?: string
