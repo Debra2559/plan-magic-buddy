@@ -86,26 +86,39 @@ const ChatMessage = z.object({
   content: z.string(),
 });
 
-const ChatStepSchema = z.discriminatedUnion("kind", [
-  z.object({
-    kind: z.literal("clarify"),
-    question: z.string().describe("一个针对性的中文追问 (一次只问 1-2 个问题, 合并写在一句话里)"),
-    quickReplies: z.array(z.string()).max(4).describe("0-4 个建议的快捷回答按钮"),
-  }),
-  z.object({
-    kind: z.literal("research"),
-    queries: z.array(z.string()).min(1).max(3).describe("需要联网检索的搜索关键词 (中英文皆可)"),
-    reason: z.string().describe("一句话说明为什么需要联网"),
-  }),
-  z.object({
-    kind: z.literal("plan"),
-    summary: z.string().describe("一句中文总结, 不超过 50 字"),
-    items: z.array(PlanItemSchema).min(1).max(30),
-    sources: z.array(z.string()).optional().describe("如果有参考链接, 列在这里"),
-  }),
-]);
+// 注意: Gemini 对 discriminatedUnion 兼容性较差, 这里用扁平 schema + 后置校验。
+const ChatStepRawSchema = z.object({
+  kind: z.enum(["clarify", "research", "plan"]).describe("下一步动作"),
+  question: z.string().optional().describe("kind=clarify 时的中文追问"),
+  quickReplies: z.array(z.string()).max(6).optional().describe("kind=clarify 时的快捷回答按钮 (0-4)"),
+  queries: z.array(z.string()).max(3).optional().describe("kind=research 时的 1-3 条搜索关键词"),
+  reason: z.string().optional().describe("kind=research 时, 一句话说明为什么需要联网"),
+  summary: z.string().optional().describe("kind=plan 时的一句话总结, 不超过 50 字"),
+  items: z.array(PlanItemSchema).max(30).optional().describe("kind=plan 时的拆解事项 1-30 条"),
+  sources: z.array(z.string()).optional().describe("kind=plan 时的参考链接"),
+});
 
-export type ChatStep = z.infer<typeof ChatStepSchema>;
+export type ChatStep =
+  | { kind: "clarify"; question: string; quickReplies: string[] }
+  | { kind: "research"; queries: string[]; reason: string }
+  | { kind: "plan"; summary: string; items: PlanItem[]; sources?: string[] };
+
+function normalizeChatStep(raw: z.infer<typeof ChatStepRawSchema>): ChatStep | null {
+  if (raw.kind === "clarify") {
+    if (!raw.question) return null;
+    return { kind: "clarify", question: raw.question, quickReplies: (raw.quickReplies ?? []).slice(0, 4) };
+  }
+  if (raw.kind === "research") {
+    const qs = (raw.queries ?? []).filter(Boolean);
+    if (!qs.length) return null;
+    return { kind: "research", queries: qs.slice(0, 3), reason: raw.reason ?? "" };
+  }
+  if (raw.kind === "plan") {
+    if (!raw.items?.length) return null;
+    return { kind: "plan", summary: raw.summary ?? "", items: raw.items, sources: raw.sources };
+  }
+  return null;
+}
 
 const ChatPlanInput = z.object({
   messages: z.array(ChatMessage).min(1),
@@ -162,40 +175,47 @@ export const chatPlan = createServerFn({ method: "POST" })
 
     // Step 1: ask AI what to do
     const gateway = createLovableAiGatewayProvider(apiKey);
-    let step: ChatStep;
-    try {
-      const { object } = await generateObject({
-        model: gateway("google/gemini-3-flash-preview"),
-        schema: ChatStepSchema,
-        system: baseSystem,
-        prompt: `对话记录:\n${conversation}${existingBlock}\n\n请输出下一步动作。`,
-      });
-      step = object;
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes("429")) return { ok: false, error: "请求过于频繁, 稍后再试" };
-      if (msg.includes("402")) return { ok: false, error: "AI 额度已用完, 请到工作区充值" };
-      return { ok: false, error: `AI 失败: ${msg}` };
+
+    async function callStep(extraSystem: string, extraPrompt: string): Promise<ChatStep | { error: string }> {
+      const models = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash"] as const;
+      let lastMsg = "";
+      for (const m of models) {
+        try {
+          const { object } = await generateObject({
+            model: gateway(m),
+            schema: ChatStepRawSchema,
+            system: baseSystem + extraSystem,
+            prompt: extraPrompt,
+          });
+          const norm = normalizeChatStep(object);
+          if (norm) return norm;
+          lastMsg = `字段缺失 (kind=${object.kind})`;
+        } catch (err: unknown) {
+          lastMsg = err instanceof Error ? err.message : String(err);
+          if (lastMsg.includes("429")) return { error: "请求过于频繁, 稍后再试" };
+          if (lastMsg.includes("402")) return { error: "AI 额度已用完, 请到工作区充值" };
+        }
+      }
+      return { error: `AI 失败: ${lastMsg}` };
     }
+
+    const first = await callStep(
+      "",
+      `对话记录:\n${conversation}${existingBlock}\n\n请输出下一步动作 (kind 必填: clarify/research/plan, 并填齐对应字段)。`,
+    );
+    if ("error" in first) return { ok: false, error: first.error };
 
     // Step 2: if research, do it server-side and re-ask for plan
-    if (step.kind === "research") {
-      const snippets = (await Promise.all(step.queries.map((q) => firecrawlSearchSnippets(q)))).join("\n\n---\n\n");
-      try {
-        const { object } = await generateObject({
-          model: gateway("google/gemini-3-flash-preview"),
-          schema: ChatStepSchema,
-          system: baseSystem + `\n\n现在你已经获得了联网搜索结果, 必须输出 kind="plan", 不能再 research 或 clarify。`,
-          prompt: `对话记录:\n${conversation}${existingBlock}\n\n联网搜索结果 (queries=${JSON.stringify(step.queries)}):\n${snippets || "(没有可用结果, 凭常识规划)"}\n\n请直接输出完整 plan。`,
-        });
-        if (object.kind !== "plan") {
-          return { ok: false, error: "AI 未能给出最终规划, 请再试一次" };
-        }
-        return { ok: true, step: object };
-      } catch (err: unknown) {
-        return { ok: false, error: err instanceof Error ? err.message : "联网规划失败" };
-      }
+    if (first.kind === "research") {
+      const snippets = (await Promise.all(first.queries.map((q) => firecrawlSearchSnippets(q)))).join("\n\n---\n\n");
+      const second = await callStep(
+        `\n\n现在你已经获得了联网搜索结果, 必须输出 kind="plan", 不能再 research 或 clarify。`,
+        `对话记录:\n${conversation}${existingBlock}\n\n联网搜索结果 (queries=${JSON.stringify(first.queries)}):\n${snippets || "(没有可用结果, 凭常识规划)"}\n\n请直接输出完整 plan (kind="plan", items 必填)。`,
+      );
+      if ("error" in second) return { ok: false, error: second.error };
+      if (second.kind !== "plan") return { ok: false, error: "AI 未能给出最终规划, 请再试一次" };
+      return { ok: true, step: second };
     }
 
-    return { ok: true, step };
+    return { ok: true, step: first };
   });
