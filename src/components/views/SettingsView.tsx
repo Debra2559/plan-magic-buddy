@@ -8,6 +8,7 @@ import { AiPersonaPanel } from "@/components/AiPersonaPanel";
 import { useSylva } from "@/lib/sylva-store";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/lib/auth-context";
+import { usePersona } from "@/lib/persona";
 import { useNavigate } from "@tanstack/react-router";
 
 
@@ -231,6 +232,8 @@ function readHashKey(): NavKey | null {
 
 export function SettingsView() {
   const [active, setActive] = useState<NavKey>(() => readHashKey() ?? "general");
+  const { persona } = usePersona();
+  const aiName = (persona?.ai_nickname || "").trim() || "Sylva";
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
     NAV.forEach((g) => { initial[g.label] = true; });
@@ -335,7 +338,7 @@ export function SettingsView() {
         <aside className="w-56 shrink-0 hidden md:flex flex-col gap-5 overflow-y-auto pr-1">
           <div>
             <p className="text-[10px] tracking-widest text-amber-glow mb-1">偏好设置</p>
-            <h2 className="font-display text-2xl text-white leading-tight">让 Sylva<br/>长成你的样子。</h2>
+            <h2 className="font-display text-2xl text-white leading-tight">让 {aiName}<br/>长成你的样子。</h2>
           </div>
           <nav className="flex flex-col gap-3">
             {NAV.map((group) => {

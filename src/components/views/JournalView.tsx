@@ -10,6 +10,7 @@ import {
   type Mood,
 } from "@/lib/sylva-store";
 import { generateDailyComic } from "@/lib/comic.functions";
+import { usePersona } from "@/lib/persona";
 import {
   BookHeart,
   Calendar as CalIcon,
@@ -105,6 +106,8 @@ async function shareComicImage(url: string, filename: string, title: string) {
 
 export function JournalView() {
   const { items, habits, notes, diary, comics, isRecapDone, toggleHabitOn, addNote, upsertDiary, setComic, removeComic, comicHistory, addComicHistory, removeComicHistory, dateFlashEnabled, dateFlashDurationMs } = useSylva();
+  const { persona } = usePersona();
+  const aiName = (persona?.ai_nickname || "").trim() || "Sylva";
   const [date, setDate] = useState<string>(() => {
     if (typeof window === "undefined") return todayLocal();
     try {
@@ -465,7 +468,7 @@ export function JournalView() {
 
             {/* 底部签名 */}
             <div className="px-9 pb-7 pt-2 text-right">
-              <p className="font-display text-sm text-white/35 italic">— Sylva ·  慢慢长出节奏 ·</p>
+              <p className="font-display text-sm text-white/35 italic">— {aiName} ·  慢慢长出节奏 ·</p>
             </div>
           </div>
         </div>
