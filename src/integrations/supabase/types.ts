@@ -112,6 +112,7 @@ export type Database = {
           image_url: string
           provider: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           caption?: string | null
@@ -120,6 +121,7 @@ export type Database = {
           image_url: string
           provider: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           caption?: string | null
@@ -128,6 +130,7 @@ export type Database = {
           image_url?: string
           provider?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -171,6 +174,7 @@ export type Database = {
           date: string
           mood: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           content?: string
@@ -178,6 +182,7 @@ export type Database = {
           date: string
           mood?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           content?: string
@@ -185,6 +190,7 @@ export type Database = {
           date?: string
           mood?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -311,6 +317,7 @@ export type Database = {
           id: string
           name: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -320,6 +327,7 @@ export type Database = {
           id: string
           name?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -329,6 +337,7 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -416,6 +425,24 @@ export type Database = {
         }
         Relationships: []
       }
+      legacy_claim_state: {
+        Row: {
+          claimed_at: string | null
+          claimed_by: string | null
+          id: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          claimed_by?: string | null
+          id?: string
+        }
+        Update: {
+          claimed_at?: string | null
+          claimed_by?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
       notes: {
         Row: {
           created_at: string
@@ -427,6 +454,7 @@ export type Database = {
           tags: string[]
           text: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -438,6 +466,7 @@ export type Database = {
           tags?: string[]
           text?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -449,6 +478,7 @@ export type Database = {
           tags?: string[]
           text?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -466,6 +496,7 @@ export type Database = {
           title: string
           type: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -480,6 +511,7 @@ export type Database = {
           title: string
           type: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -494,6 +526,49 @@ export type Database = {
           title?: string
           type?: string
           updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          created_at: string
+          display_name: string
+          humor_level: number
+          persona_prompt: string
+          professional_level: number
+          sass_level: number
+          taboos: string[]
+          tone_examples: string
+          updated_at: string
+          user_id: string
+          verbosity_level: number
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string
+          humor_level?: number
+          persona_prompt?: string
+          professional_level?: number
+          sass_level?: number
+          taboos?: string[]
+          tone_examples?: string
+          updated_at?: string
+          user_id: string
+          verbosity_level?: number
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          humor_level?: number
+          persona_prompt?: string
+          professional_level?: number
+          sass_level?: number
+          taboos?: string[]
+          tone_examples?: string
+          updated_at?: string
+          user_id?: string
+          verbosity_level?: number
         }
         Relationships: []
       }
