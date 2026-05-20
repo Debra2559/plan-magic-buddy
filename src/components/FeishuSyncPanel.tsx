@@ -196,6 +196,7 @@ export function FeishuSyncPanel() {
     } catch {}
   }, [state]);
 
+  // 本地有变化时，debounce 1.5s 后自动推到飞书
   useEffect(() => {
     const sig = items.map((i) => `${i.id}:${i.title}:${i.date}:${i.time ?? ""}:${i.done ? 1 : 0}`).join("|");
     if (lastItemSignature.current === "") {
@@ -203,31 +204,14 @@ export function FeishuSyncPanel() {
       return;
     }
     if (sig === lastItemSignature.current) return;
-
-    if (state.status === "connected" && state.calendarId) {
-      const prev = new Set(lastItemSignature.current.split("|").map((s) => s.split(":")[0]));
-      const curr = new Set(items.map((i) => i.id));
-      const added = [...curr].filter((id) => !prev.has(id));
-      const removed = [...prev].filter((id) => !curr.has(id));
-      const changed = items.filter((i) => prev.has(i.id) && !added.includes(i.id));
-
-      const entries: SyncLog[] = [];
-      added.forEach((id) => {
-        const it = items.find((x) => x.id === id);
-        if (it && it.type !== "todo") entries.push(mkLog("create", "sylva", it.title));
-      });
-      removed.forEach((id) => entries.push(mkLog("delete", "sylva", `已删除条目 ${id.slice(-4)}`)));
-      changed.slice(0, 2).forEach((it) => {
-        if (it.type !== "todo") entries.push(mkLog("update", "sylva", it.title));
-      });
-
-      if (entries.length) {
-        setLogs((prev) => [...entries, ...prev].slice(0, 12));
-        setState((s) => ({ ...s, lastSyncAt: new Date().toISOString() }));
-      }
-    }
     lastItemSignature.current = sig;
-  }, [items, state.status, state.calendarId]);
+
+    if (!state.calendarId) return;
+    const t = setTimeout(() => {
+      doSync("自动同步");
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [items, state.calendarId, doSync]);
 
   const selected = useMemo(
     () => calendars.find((c) => c.id === state.calendarId) ?? null,
