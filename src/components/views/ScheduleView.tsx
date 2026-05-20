@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSylva } from "@/lib/sylva-store";
 import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X, CheckCircle2, RotateCcw } from "lucide-react";
 import type { PlanItem } from "@/lib/plan.functions";
+import { TimePicker } from "@/components/ui/time-picker";
 
 
 const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
@@ -288,12 +289,7 @@ function DayEditor({
       </div>
 
       <div className="shrink-0 border-t border-white/10 p-2 flex items-center gap-1.5 bg-black/20">
-        <input
-          type="time"
-          value={draftTime}
-          onChange={(e) => setDraftTime(e.target.value)}
-          className="bg-white/5 border border-white/10 rounded px-1.5 py-1 text-[11px] text-white/80 font-mono w-[78px] focus:outline-none focus:border-amber-glow/50"
-        />
+        <TimePicker value={draftTime} onChange={setDraftTime} size="sm" />
         <input
           autoFocus
           value={draft}
@@ -348,12 +344,7 @@ function EditableRow({
     <div className="group flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-white/5 border border-white/10 hover:border-white/20">
       {editing ? (
         <>
-          <input
-            type="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            className="bg-black/30 border border-white/15 rounded px-1 py-0.5 text-[10px] font-mono text-white/80 w-[68px] focus:outline-none"
-          />
+          <TimePicker value={time} onChange={setTime} size="sm" />
           <input
             autoFocus
             value={title}
@@ -372,13 +363,10 @@ function EditableRow({
         </>
       ) : (
         <>
-          <input
-            type="time"
+          <TimePicker
             value={item.time ?? ""}
-            onChange={(e) => onChange({ time: e.target.value || undefined })}
-            onClick={(e) => e.stopPropagation()}
-            title="点击编辑时间"
-            className="bg-black/30 border border-white/10 hover:border-white/25 rounded px-1 py-0.5 text-[10px] font-mono text-amber-glow/90 w-[68px] shrink-0 focus:outline-none cursor-pointer"
+            onChange={(v) => onChange({ time: v || undefined })}
+            size="sm"
           />
           <button
             onClick={() => setEditing(true)}
@@ -430,12 +418,10 @@ function ItemCard({
           {item.tag}
         </span>
         <div className="ml-auto flex items-center gap-1">
-          <input
-            type="time"
+          <TimePicker
             value={item.time ?? ""}
-            onChange={(e) => onChange({ time: e.target.value || undefined })}
-            title="点击编辑时间"
-            className="bg-black/30 border border-white/10 hover:border-white/25 rounded px-1 py-0.5 text-[11px] font-mono text-white/85 w-[72px] focus:outline-none cursor-pointer"
+            onChange={(v) => onChange({ time: v || undefined })}
+            size="sm"
           />
           <button
             onClick={onDelete}
