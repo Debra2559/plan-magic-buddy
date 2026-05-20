@@ -711,20 +711,27 @@ export const testHackathonNotify = createServerFn({ method: 'POST' }).handler(as
 
 // ============= 每日小结提醒 =============
 
-function dailyRecapCard(dateLabel: string) {
+function dailyRecapCard(dateLabel: string, opts?: { missed?: boolean }) {
+  const missed = !!opts?.missed
   return {
     config: { wide_screen_mode: true },
     header: {
-      template: 'indigo',
-      title: { tag: 'plain_text', content: `📝 今日小结提醒 · ${dateLabel}` },
+      template: missed ? 'orange' : 'indigo',
+      title: {
+        tag: 'plain_text',
+        content: missed
+          ? `⏰ 昨日小结还没填 · ${dateLabel}`
+          : `📝 今日小结提醒 · ${dateLabel}`,
+      },
     },
     elements: [
       {
         tag: 'div',
         text: {
           tag: 'lark_md',
-          content:
-            '今天过得怎么样？花 1 分钟回顾一下吧：\n- ✅ 今天完成了哪些任务\n- 💭 写两句话日记 / 心情\n- 🌱 明天想优先做什么',
+          content: missed
+            ? `**${dateLabel}** 的小结和日记还是空的，要不要现在补一下？\n- ✅ 昨天完成了哪些任务\n- 💭 写两句话日记 / 心情\n- 🌱 今天想优先做什么`
+            : '今天过得怎么样？花 1 分钟回顾一下吧：\n- ✅ 今天完成了哪些任务\n- 💭 写两句话日记 / 心情\n- 🌱 明天想优先做什么',
         },
       },
       { tag: 'hr' },
@@ -736,6 +743,12 @@ function dailyRecapCard(dateLabel: string) {
             text: { tag: 'plain_text', content: '去 Sylva 填写 ✍️' },
             type: 'primary',
             url: 'https://id-preview--01545937-4efd-4487-a500-8dd999f2e87d.lovable.app/?view=notes',
+          },
+          {
+            tag: 'button',
+            text: { tag: 'plain_text', content: '✅ 已完成' },
+            type: 'default',
+            value: { kind: 'recap', action: 'done', date: dateLabel },
           },
         ],
       },
