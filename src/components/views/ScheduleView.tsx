@@ -21,7 +21,7 @@ const tagColor: Record<string, string> = {
 const typeIcon = { event: CalIcon, todo: Clock, reminder: Bell } as const;
 
 export function ScheduleView({ onGoPlan }: { onGoPlan?: () => void } = {}) {
-  const { items, addItems, updateItem, removeItem, toggleDone, isRecapDone, unmarkRecapDone } = useSylva();
+  const { items, addItems, updateItem, removeItem, toggleDone, isRecapDone, unmarkRecapDone, isRecentlySynced } = useSylva();
   const [cursor, setCursor] = useState(new Date(2026, 4, 1)); // May 2026
   const [selected, setSelected] = useState("2026-05-19");
   const [editorDate, setEditorDate] = useState<string | null>(null);
@@ -148,7 +148,9 @@ export function ScheduleView({ onGoPlan }: { onGoPlan?: () => void } = {}) {
                       key={it.id}
                       className={`text-[10px] px-1.5 py-0.5 rounded truncate border ${
                         tagColor[it.tag] ?? "bg-white/10 text-white/70 border-white/15"
-                      } ${it.done ? "opacity-50 line-through" : ""}`}
+                      } ${it.done ? "opacity-50 line-through" : ""} ${
+                        isRecentlySynced(it.id) ? "ring-1 ring-amber-glow/70 shadow-[0_0_8px_rgba(245,184,67,0.4)]" : ""
+                      }`}
                       title={it.title}
                     >
                       {it.time && <span className="font-mono mr-1 opacity-70">{it.time}</span>}

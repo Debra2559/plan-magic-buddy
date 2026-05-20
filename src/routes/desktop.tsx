@@ -12,6 +12,8 @@ import { NotesView } from "@/components/views/NotesView";
 import { HabitsView } from "@/components/views/HabitsView";
 import { JournalView } from "@/components/views/JournalView";
 import { SettingsView } from "@/components/views/SettingsView";
+import { SyncSummaryModal } from "@/components/SyncSummaryModal";
+import { useSylva } from "@/lib/sylva-store";
 import {
   Apple,
   Wifi,
@@ -68,6 +70,17 @@ function DesktopApp() {
     const allowed: SylvaView[] = ["schedule", "ai", "todos", "notes", "habits", "settings"];
     return (allowed as string[]).includes(v ?? "") ? (v as SylvaView) : "schedule";
   });
+  const [todosFilter, setTodosFilter] = useState<"todo" | "reminder" | "event" | "all">("all");
+  const { registerNavigate } = useSylva();
+
+  useEffect(() => {
+    registerNavigate((nextView, opts) => {
+      setView(nextView as SylvaView);
+      setAppOpen(true);
+      setActiveDock("sylva");
+      if (opts?.todosFilter) setTodosFilter(opts.todosFilter);
+    });
+  }, [registerNavigate]);
 
   useEffect(() => {
     setNow(new Date());
@@ -155,7 +168,7 @@ function DesktopApp() {
               <div className="flex-1 overflow-hidden">
                 {view === "ai" && <div className="overflow-auto h-full p-6"><AiPlanner onGoSettings={() => setView("settings")} /></div>}
                 {view === "schedule" && <ScheduleView onGoPlan={() => setView("ai")} />}
-                {view === "todos" && <TodosView />}
+                {view === "todos" && <TodosView initialFilter={todosFilter} filterKey={todosFilter} />}
                 {view === "notes" && <NotesView />}
                 {view === "habits" && <HabitsView />}
                 {view === "journal" && <JournalView />}

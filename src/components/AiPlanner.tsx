@@ -37,8 +37,8 @@ const tagColors: Record<string, string> = {
   习惯: "bg-moss/15 text-moss border-moss/30",
 };
 
-export function AiPlanner({ onGoSettings }: { onGoSettings?: () => void } = {}) {
-  const { items: confirmedFull, addItems, replaceItems, removeItem, clearItems, enterToSubmit } = useSylva();
+export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => void; onConfirmed?: () => void } = {}) {
+  const { items: confirmedFull, addItems, replaceItems, removeItem, clearItems, enterToSubmit, markRecentlySynced, setSyncSummary } = useSylva();
   const confirmed = confirmedFull;
   const [mode, setMode] = useState<Mode>("auto");
   const [idea, setIdea] = useState("");
@@ -150,22 +150,30 @@ export function AiPlanner({ onGoSettings }: { onGoSettings?: () => void } = {}) 
       },
       { event: 0, todo: 0, reminder: 0 } as Record<PlanItem["type"], number>,
     );
-    if (draftMode === "add") {
-      addItems(draft.items);
-    } else {
-      replaceItems(draft.items);
-    }
+    const ids = draftMode === "add" ? addItems(draft.items) : replaceItems(draft.items);
+    markRecentlySynced(ids);
+    // 构造带 id 的快照，供汇总弹窗展示
+    const withIds = draft.items.map((it, i) => ({ ...it, id: ids[i] }));
+    setSyncSummary({
+      ts: Date.now(),
+      ids,
+      events: withIds.filter((i) => i.type === "event"),
+      todos: withIds.filter((i) => i.type === "todo"),
+      reminders: withIds.filter((i) => i.type === "reminder"),
+      appliedMode: draftMode,
+    });
     const parts = [
       counts.event ? `日程 ${counts.event}` : "",
       counts.todo ? `待办 ${counts.todo}` : "",
       counts.reminder ? `提醒 ${counts.reminder}` : "",
     ].filter(Boolean).join(" · ");
     toast.success(draftMode === "add" ? "已追加到我的规划" : "规划已同步", {
-      description: `${parts || `共 ${draft.items.length} 项`}　已写入日程 / 待办 / 提醒`,
+      description: `${parts || `共 ${draft.items.length} 项`}　可在汇总入口快速跳转`,
       duration: 4000,
     });
     setDraft(null);
     setIdea("");
+    onConfirmed?.();
   };
 
   const discardDraft = () => setDraft(null);
