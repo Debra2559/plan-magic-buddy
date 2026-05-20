@@ -288,12 +288,7 @@ function DayEditor({
       </div>
 
       <div className="shrink-0 border-t border-white/10 p-2 flex items-center gap-1.5 bg-black/20">
-        <input
-          type="time"
-          value={draftTime}
-          onChange={(e) => setDraftTime(e.target.value)}
-          className="bg-white/5 border border-white/10 rounded px-1.5 py-1 text-[11px] text-white/80 font-mono w-[78px] focus:outline-none focus:border-amber-glow/50"
-        />
+        <TimePicker value={draftTime} onChange={setDraftTime} size="sm" />
         <input
           autoFocus
           value={draft}
