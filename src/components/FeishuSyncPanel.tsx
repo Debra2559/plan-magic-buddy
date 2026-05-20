@@ -428,6 +428,7 @@ export function FeishuSyncPanel() {
       if (!state.calendarId) return;
       setSyncing(true);
       setSyncProgress(`${reason} · 正在推送 ${items.length} 条本地日程…`);
+      pushTLRef.current?.("sync", "pending", `${reason} · 推送 ${items.length} 条本地日程`);
       try {
         const r = await runSync({
           data: {
