@@ -93,10 +93,20 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [persona, setPersona] = useState<PersonaProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  // 当前已知最新版本号；用于忽略陈旧的 realtime 事件
+  const versionRef = useRef<number>(0);
+  // 记录"我们自己刚提交"的版本号，避免 toast 误报冲突
+  const inflightVersionsRef = useRef<Set<number>>(new Set());
+
+  const applyPersona = useCallback((next: PersonaProfile | null) => {
+    if (next) versionRef.current = Math.max(versionRef.current, next.version ?? 0);
+    setPersona(next);
+  }, []);
 
   useEffect(() => {
     if (!user) {
       setPersona(null);
+      versionRef.current = 0;
       setLoading(false);
       return;
     }
@@ -106,11 +116,15 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
       const { data } = await supabase.from("user_profiles").select("*").eq("user_id", user.id).maybeSingle();
       if (cancelled) return;
       if (data) {
-        setPersona(data as PersonaProfile);
+        applyPersona(data as PersonaProfile);
       } else {
-        const row = { user_id: user.id, ...DEFAULT_PERSONA };
-        await supabase.from("user_profiles").insert(row);
-        setPersona(row);
+        const seed = { user_id: user.id, ...DEFAULT_PERSONA };
+        const { data: inserted } = await supabase
+          .from("user_profiles")
+          .insert(seed)
+          .select()
+          .maybeSingle();
+        applyPersona((inserted ?? { ...seed, version: 1 }) as PersonaProfile);
       }
       setLoading(false);
     })();
@@ -124,11 +138,23 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
         (payload) => {
           if (cancelled) return;
           if (payload.eventType === "DELETE") {
-            setPersona({ user_id: user.id, ...DEFAULT_PERSONA });
+            versionRef.current = 0;
+            setPersona({ user_id: user.id, version: 0, ...DEFAULT_PERSONA });
             return;
           }
           const next = payload.new as PersonaProfile | undefined;
           if (!next) return;
+          const incoming = next.version ?? 0;
+          // 丢弃陈旧事件（含我们自己的回声）
+          if (incoming <= versionRef.current) return;
+
+          const isSelfEcho = inflightVersionsRef.current.delete(incoming);
+          // 别人在我们提交之间又改了（远端版本跳过了我们预期值）→ 提示冲突
+          if (!isSelfEcho && versionRef.current > 0 && incoming > versionRef.current + 1) {
+            toast.info("资料在其他设备被更新", { description: "已同步到最新版本" });
+          }
+
+          versionRef.current = incoming;
           if (payload.eventType === "INSERT") {
             setPersona(next);
           } else {
@@ -142,19 +168,54 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, applyPersona]);
 
   const save = useCallback<PersonaCtxValue["save"]>(
     async (patch) => {
       if (!user || !persona) return;
-      const next = { ...persona, ...patch };
-      setPersona(next);
-      await supabase
+      const baseVersion = persona.version;
+      // 乐观更新
+      setPersona({ ...persona, ...patch });
+
+      // 用版本号做乐观锁：只在 version 仍等于 baseVersion 时才更新
+      const { data, error } = await supabase
         .from("user_profiles")
         .update(patch)
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .eq("version", baseVersion)
+        .select()
+        .maybeSingle();
+
+      if (error) {
+        toast.error("保存失败", { description: error.message });
+        const { data: fresh } = await supabase
+          .from("user_profiles")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (fresh) applyPersona(fresh as PersonaProfile);
+        return;
+      }
+
+      if (!data) {
+        // 冲突：别处已经把 version 推进了
+        const { data: fresh } = await supabase
+          .from("user_profiles")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (fresh) applyPersona(fresh as PersonaProfile);
+        toast.warning("检测到并发修改", {
+          description: "其他设备已先一步保存，已同步最新版本，请确认后重新提交",
+        });
+        return;
+      }
+
+      // 成功：登记本次自增后的版本号，realtime 回声到达时跳过冲突判断
+      inflightVersionsRef.current.add((data as PersonaProfile).version);
+      applyPersona(data as PersonaProfile);
     },
-    [user, persona],
+    [user, persona, applyPersona],
   );
 
   const systemPrefix = useCallback(() => buildPersonaSystemPrompt(persona), [persona]);
