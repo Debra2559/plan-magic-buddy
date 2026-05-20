@@ -31,8 +31,8 @@ export function TodosView({ initialFilter = "all", filterKey }: { initialFilter?
 
   const allTags = Array.from(new Set(items.map((i) => i.tag)));
 
-  const total = items.filter((i) => i.type === "todo").length;
-  const done = items.filter((i) => i.type === "todo" && i.done).length;
+  const total = todos.length;
+  const done = todos.filter((i) => i.done).length;
 
   return (
     <div className="p-7 overflow-auto h-full">
