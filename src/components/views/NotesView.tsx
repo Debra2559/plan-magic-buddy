@@ -15,8 +15,20 @@ const MOODS: { value: Mood; emoji: string; label: string }[] = [
 
 const moodOf = (m?: Mood) => MOODS.find((x) => x.value === m);
 
+function readUrlParams() {
+  if (typeof window === "undefined") return { tab: null as Tab | null, date: null as string | null };
+  const p = new URLSearchParams(window.location.search);
+  const t = p.get("tab");
+  const d = p.get("date");
+  const tab = (t === "notes" || t === "diary" || t === "summary") ? (t as Tab) : null;
+  const date = d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null;
+  return { tab, date };
+}
+
 export function NotesView() {
-  const [tab, setTab] = useState<Tab>("notes");
+  const urlInit = readUrlParams();
+  const [tab, setTab] = useState<Tab>(urlInit.tab ?? "notes");
+  const initialDate = urlInit.date;
 
   return (
     <div className="p-7 overflow-auto h-full max-w-3xl mx-auto">
@@ -30,8 +42,8 @@ export function NotesView() {
       </div>
 
       {tab === "notes" && <NotesTab />}
-      {tab === "diary" && <DiaryTab />}
-      {tab === "summary" && <SummaryTab />}
+      {tab === "diary" && <DiaryTab initialDate={initialDate} />}
+      {tab === "summary" && <SummaryTab initialDate={initialDate} />}
     </div>
   );
 }
