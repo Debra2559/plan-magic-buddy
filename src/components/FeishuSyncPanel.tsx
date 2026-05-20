@@ -68,19 +68,78 @@ export function FeishuSyncPanel() {
   const lastItemSignature = useRef<string>("");
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [calendars, setCalendars] = useState<RealCalendar[]>([]);
+  const [loadingCalendars, setLoadingCalendars] = useState(false);
+  const [calendarsError, setCalendarsError] = useState<string | null>(null);
+
   const runTest = useServerFn(testFeishuConnection);
+  const runList = useServerFn(listFeishuCalendars);
+  const runGetSettings = useServerFn(getFeishuSettings);
+  const runSelect = useServerFn(selectFeishuCalendar);
+  const runSetDir = useServerFn(setFeishuDirection);
+
+  const loadCalendars = useCallback(async () => {
+    setLoadingCalendars(true);
+    setCalendarsError(null);
+    try {
+      const r = await runList();
+      if (r.ok) setCalendars(r.calendars);
+      else setCalendarsError(r.error);
+    } catch (e: any) {
+      setCalendarsError(e?.message ?? "请求失败");
+    } finally {
+      setLoadingCalendars(false);
+    }
+  }, [runList]);
+
+  // 首次加载：从数据库读设置 + 拉日历列表
+  useEffect(() => {
+    (async () => {
+      try {
+        const s = await runGetSettings();
+        setState((prev) => ({
+          ...prev,
+          calendarId: s.selectedCalendarId ?? prev.calendarId,
+          direction: s.direction,
+          lastSyncAt: s.lastSyncAt ?? prev.lastSyncAt,
+        }));
+      } catch {}
+      loadCalendars();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onTest = async () => {
     setTesting(true);
     setTestResult(null);
     try {
       const r = await runTest();
-      if (r.ok) setTestResult({ ok: true, msg: `凭证有效 · token 有效期 ${r.expire}s` });
-      else setTestResult({ ok: false, msg: r.error });
+      if (r.ok) {
+        setTestResult({ ok: true, msg: `凭证有效 · token 有效期 ${r.expire}s` });
+        loadCalendars();
+      } else setTestResult({ ok: false, msg: r.error });
     } catch (e: any) {
       setTestResult({ ok: false, msg: e?.message ?? "请求失败" });
     } finally {
       setTesting(false);
+    }
+  };
+
+  const onSelectCalendar = async (c: RealCalendar) => {
+    setState((s) => ({ ...s, calendarId: c.id }));
+    try {
+      await runSelect({ data: { calendarId: c.id, calendarName: c.name } });
+    } catch (e) {
+      console.error("select calendar failed", e);
+    }
+  };
+
+  const onSetDirection = async (direction: Direction) => {
+    setState((s) => ({ ...s, direction }));
+    try {
+      await runSetDir({ data: { direction } });
+    } catch (e) {
+      console.error("set direction failed", e);
     }
   };
 
