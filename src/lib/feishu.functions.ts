@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { supabaseAdmin } from '@/integrations/supabase/client.server'
 import { z } from 'zod'
 import { getUserAccessToken } from './feishu-user-auth.functions'
-import { randomUUID } from 'crypto'
+const randomUUID = () => globalThis.crypto.randomUUID()
 
 const FEISHU_BASE = 'https://open.feishu.cn/open-apis'
 
