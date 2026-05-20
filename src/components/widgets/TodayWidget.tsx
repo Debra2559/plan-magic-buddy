@@ -1,43 +1,54 @@
 import { Circle, CheckCircle2 } from "lucide-react";
-
-const tasks = [
-  { done: true, label: "晨起温水 · 拉伸 10 分钟", tag: "习惯" },
-  { done: true, label: "回顾上周遗留事项", tag: "工作" },
-  { done: false, label: "AI 工具处理重复性工作", tag: "工作" },
-  { done: false, label: "泛听 15 分钟 TED", tag: "英语" },
-  { done: false, label: "23:30 前放下手机", tag: "健康" },
-];
+import { useSylva } from "@/lib/sylva-store";
 
 const tagColor: Record<string, string> = {
   工作: "text-moss",
+  学习: "text-amber-glow",
   英语: "text-amber-glow",
   健康: "text-accent",
   习惯: "text-foreground/50",
+  生活: "text-foreground/50",
 };
 
 export function TodayWidget() {
+  const { items, toggleDone } = useSylva();
+  const today = items
+    .filter((i) => i.date === "2026-05-19" && (i.type === "todo" || i.type === "reminder"))
+    .slice(0, 6);
+  const doneCount = today.filter((i) => i.done).length;
+
   return (
     <div className="widget p-6 w-[340px]">
       <div className="flex items-baseline justify-between mb-1">
         <span className="font-display text-3xl">保持节奏</span>
-        <span className="text-xs text-muted-foreground">3 / 5</span>
+        <span className="text-xs text-muted-foreground">{doneCount} / {today.length}</span>
       </div>
       <p className="text-xs text-muted-foreground mb-5">2026 · 5 · 19 · 周二</p>
 
-      <div className="space-y-2.5">
-        {tasks.map((t, i) => (
-          <div key={i} className="flex items-start gap-3 group">
-            {t.done ? (
-              <CheckCircle2 className="w-4 h-4 mt-0.5 text-moss shrink-0" />
-            ) : (
-              <Circle className="w-4 h-4 mt-0.5 text-foreground/30 shrink-0 group-hover:text-foreground/60 transition" />
-            )}
-            <span className={`text-sm flex-1 ${t.done ? "text-foreground/40 line-through" : "text-foreground/90"}`}>
-              {t.label}
-            </span>
-            <span className={`text-[10px] tracking-wider ${tagColor[t.tag]} shrink-0 mt-1`}>{t.tag}</span>
-          </div>
-        ))}
+      <div className="space-y-2.5 min-h-[120px]">
+        {today.length === 0 ? (
+          <p className="text-xs text-muted-foreground/60">今天没有待办</p>
+        ) : (
+          today.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => toggleDone(t.id)}
+              className="flex items-start gap-3 group w-full text-left"
+            >
+              {t.done ? (
+                <CheckCircle2 className="w-4 h-4 mt-0.5 text-moss shrink-0" />
+              ) : (
+                <Circle className="w-4 h-4 mt-0.5 text-foreground/30 shrink-0 group-hover:text-foreground/60 transition" />
+              )}
+              <span className={`text-sm flex-1 ${t.done ? "text-foreground/40 line-through" : "text-foreground/90"}`}>
+                {t.title}
+              </span>
+              <span className={`text-[10px] tracking-wider ${tagColor[t.tag] ?? "text-foreground/50"} shrink-0 mt-1`}>
+                {t.tag}
+              </span>
+            </button>
+          ))
+        )}
       </div>
 
       <div className="mt-5 pt-4 border-t border-foreground/10">

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlan, type Plan, type PlanItem } from "@/lib/plan.functions";
+import { useSylva } from "@/lib/sylva-store";
 import { Sparkles, ArrowUp, Loader2, Calendar, CheckSquare, Bell, Plus, RefreshCw, Wand2, Check, X, Trash2 } from "lucide-react";
 
 type Mode = "create" | "adjust" | "add";
@@ -27,12 +28,13 @@ const tagColors: Record<string, string> = {
 };
 
 export function AiPlanner() {
+  const { items: confirmedFull, addItems, replaceItems, removeItem, clearItems } = useSylva();
+  const confirmed = confirmedFull;
   const [mode, setMode] = useState<Mode>("create");
   const [idea, setIdea] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<Plan | null>(null);
-  const [confirmed, setConfirmed] = useState<PlanItem[]>([]);
   const planFn = useServerFn(generatePlan);
 
   const handleSubmit = async () => {
@@ -41,11 +43,12 @@ export function AiPlanner() {
     setError(null);
     setDraft(null);
     try {
+      const existing: PlanItem[] = confirmed.map(({ id: _id, done: _done, ...rest }) => rest);
       const result = await planFn({
         data: {
           idea: idea.trim(),
           mode,
-          existing: mode !== "create" ? confirmed : undefined,
+          existing: mode !== "create" ? existing : undefined,
         },
       });
       if (!result.ok) {
@@ -63,9 +66,9 @@ export function AiPlanner() {
   const confirmDraft = () => {
     if (!draft) return;
     if (mode === "add") {
-      setConfirmed([...confirmed, ...draft.items]);
+      addItems(draft.items);
     } else {
-      setConfirmed(draft.items);
+      replaceItems(draft.items);
     }
     setDraft(null);
     setIdea("");
@@ -73,12 +76,12 @@ export function AiPlanner() {
 
   const discardDraft = () => setDraft(null);
 
-  const removeConfirmed = (idx: number) => {
-    setConfirmed(confirmed.filter((_, i) => i !== idx));
+  const removeConfirmed = (id: string) => {
+    removeItem(id);
   };
 
-  const grouped = groupByDate(confirmed);
-  const draftGrouped = draft ? groupByDate(draft.items) : null;
+  const grouped = groupByDate(confirmed.map((c) => ({ ...c, _key: c.id })));
+  const draftGrouped = draft ? groupByDate(draft.items.map((it, i) => ({ ...it, _key: `d-${i}` }))) : null;
 
   return (
     <div className="grid lg:grid-cols-[1fr_1.2fr] gap-8 items-start">
@@ -224,7 +227,7 @@ export function AiPlanner() {
             </div>
             {confirmed.length > 0 && (
               <button
-                onClick={() => setConfirmed([])}
+                onClick={() => clearItems()}
                 className="text-xs text-foreground/40 hover:text-destructive transition"
               >
                 全部清空
@@ -250,18 +253,20 @@ export function AiPlanner() {
   );
 }
 
-function groupByDate(items: PlanItem[]) {
-  const map = new Map<string, { item: PlanItem; originalIdx: number }[]>();
-  items.forEach((item, originalIdx) => {
+type KeyedItem = PlanItem & { _key: string };
+
+function groupByDate(items: KeyedItem[]) {
+  const map = new Map<string, KeyedItem[]>();
+  items.forEach((item) => {
     const arr = map.get(item.date) ?? [];
-    arr.push({ item, originalIdx });
+    arr.push(item);
     map.set(item.date, arr);
   });
   return Array.from(map.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, entries]) => ({
       date,
-      entries: entries.sort((a, b) => (a.item.time ?? "99:99").localeCompare(b.item.time ?? "99:99")),
+      entries: entries.sort((a, b) => (a.time ?? "99:99").localeCompare(b.time ?? "99:99")),
     }));
 }
 
@@ -270,9 +275,9 @@ function ItemGroups({
   variant,
   onRemove,
 }: {
-  grouped: { date: string; entries: { item: PlanItem; originalIdx: number }[] }[];
+  grouped: { date: string; entries: KeyedItem[] }[];
   variant: "draft" | "confirmed";
-  onRemove?: (idx: number) => void;
+  onRemove?: (id: string) => void;
 }) {
   return (
     <div className="space-y-5">
@@ -286,12 +291,12 @@ function ItemGroups({
             <div className="flex-1 border-b border-foreground/10" />
           </div>
           <div className="space-y-1.5">
-            {entries.map(({ item, originalIdx }, i) => {
+            {entries.map((item) => {
               const Type = typeMeta[item.type];
               const TypeIcon = Type.icon;
               return (
                 <div
-                  key={i}
+                  key={item._key}
                   className={`group flex items-start gap-3 p-3 rounded-xl border transition
                     ${variant === "draft"
                       ? "bg-amber-glow/[0.06] border-amber-glow/15"
@@ -325,7 +330,7 @@ function ItemGroups({
                     </div>
                     {variant === "confirmed" && onRemove && (
                       <button
-                        onClick={() => onRemove(originalIdx)}
+                        onClick={() => onRemove(item._key)}
                         className="opacity-0 group-hover:opacity-100 transition text-foreground/30 hover:text-destructive p-1"
                         title="移除"
                       >
