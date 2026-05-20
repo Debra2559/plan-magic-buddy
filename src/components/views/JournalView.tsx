@@ -33,6 +33,7 @@ import {
   Download,
   Share2,
   X as XIcon,
+  ListChecks,
 } from "lucide-react";
 
 const MOODS: Record<Mood, { emoji: string; label: string }> = {
@@ -337,8 +338,43 @@ export function JournalView({ embedded = false }: { embedded?: boolean } = {}) {
                 </div>
               )}
 
+              {/* —— 事件（来自「随手记 · 事件」）—— */}
+              {(() => {
+                const logs = dayNotes.filter((n) => (n.kind ?? "log") === "log");
+                return (
+                  <>
+                    <SectionHeader icon={<ListChecks className="w-3.5 h-3.5" />} title={`事件 · ${logs.length}`} />
+                    {logs.length === 0 ? (
+                      <EmptyLine text="今天还没有随手记下任何事件" />
+                    ) : (
+                      <div className="space-y-2 mb-7">
+                        {logs.map((n) => <JournalNoteCard key={n.id} n={n} />)}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+
+              {/* —— 感受 & 思考（来自「随手记 · 感受 & 思考」）—— */}
+              {(() => {
+                const refs = dayNotes.filter((n) => n.kind === "reflection");
+                return (
+                  <>
+                    <SectionHeader icon={<Sparkles className="w-3.5 h-3.5" />} title={`感受 & 思考 · ${refs.length}`} />
+                    {refs.length === 0 ? (
+                      <EmptyLine text="今天还没有写下任何感受或想法" />
+                    ) : (
+                      <div className="space-y-2 mb-7">
+                        {refs.map((n) => <JournalNoteCard key={n.id} n={n} />)}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+
               {/* —— 习惯印章 —— */}
               <SectionHeader icon={<Flame className="w-3.5 h-3.5" />} title={`习惯印章 · ${habitsDone.length}/${habits.length}`} />
+
               {habits.length === 0 ? (
                 <EmptyLine text="还没有习惯，先从一件小事开始 🌱" />
               ) : (
@@ -493,6 +529,38 @@ function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }
 
 function EmptyLine({ text }: { text: string }) {
   return <p className="text-xs text-muted-foreground/70 italic mb-7 pl-1">— {text} —</p>;
+}
+
+function JournalNoteCard({ n }: { n: ReturnType<typeof useSylva>["notes"][number] }) {
+  const m = n.mood ? MOODS[n.mood] : undefined;
+  const t = new Date(n.createdAt);
+  const hhmm = `${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`;
+  return (
+    <div className="group flex items-start gap-3 p-3 rounded-xl bg-foreground/[0.04] border border-border/70 hover:border-amber-glow/30 transition">
+      <span className="font-mono text-[11px] text-amber-glow/90 w-12 shrink-0 mt-0.5">{hhmm}</span>
+      <div className="flex-1 min-w-0">
+        {n.text && (
+          <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap break-words">{n.text}</p>
+        )}
+        {n.images && n.images.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {n.images.slice(0, 4).map((src, i) => (
+              <img key={i} src={src} alt="" className="h-16 rounded-md border border-border" />
+            ))}
+          </div>
+        )}
+        {(n.mood || (n.tags && n.tags.length > 0) || n.pinned) && (
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            {m && <span className="text-[10px]" title={m.label}>{m.emoji}</span>}
+            {(n.tags ?? []).map((tg) => (
+              <span key={tg} className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-glow/10 text-amber-glow/90">#{tg}</span>
+            ))}
+            {n.pinned && <span className="text-[10px] text-amber-glow">📌</span>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function SuggestionCard({
