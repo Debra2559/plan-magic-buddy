@@ -1,5 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getMyAdminStatus } from "@/lib/admin.functions";
 import forestBg from "@/assets/forest-bg.jpg";
 import { CalendarWidget } from "@/components/widgets/CalendarWidget";
 import { TodayWidget } from "@/components/widgets/TodayWidget";
@@ -33,6 +36,7 @@ import {
   Mail,
   Image as ImageIcon,
   BookHeart,
+  Shield,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/desktop")({

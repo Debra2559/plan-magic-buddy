@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDesktopRouteImport } from './routes/_authenticated.desktop'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiPublicHooksScanHackathonsRouteImport } from './routes/api/public/hooks/scan-hackathons'
 import { Route as ApiPublicHooksScanAiNewsRouteImport } from './routes/api/public/hooks/scan-ai-news'
 import { Route as ApiPublicHooksDailyRecapRouteImport } from './routes/api/public/hooks/daily-recap'
@@ -36,6 +37,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthenticatedDesktopRoute = AuthenticatedDesktopRouteImport.update({
   id: '/desktop',
   path: '/desktop',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const ApiPublicHooksScanHackathonsRoute =
@@ -71,6 +77,7 @@ const ApiPublicFeishuOauthCallbackRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/desktop': typeof AuthenticatedDesktopRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/desktop': typeof AuthenticatedDesktopRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/desktop': typeof AuthenticatedDesktopRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
@@ -105,6 +114,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/admin'
     | '/desktop'
     | '/api/public/feishu/webhook'
     | '/api/public/hooks/daily-recap'
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/admin'
     | '/desktop'
     | '/api/public/feishu/webhook'
     | '/api/public/hooks/daily-recap'
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/login'
+    | '/_authenticated/admin'
     | '/_authenticated/desktop'
     | '/api/public/feishu/webhook'
     | '/api/public/hooks/daily-recap'
@@ -175,6 +187,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDesktopRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/api/public/hooks/scan-hackathons': {
       id: '/api/public/hooks/scan-hackathons'
       path: '/api/public/hooks/scan-hackathons'
@@ -214,10 +233,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedDesktopRoute: typeof AuthenticatedDesktopRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedDesktopRoute: AuthenticatedDesktopRoute,
 }
 
