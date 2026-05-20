@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSylva } from "@/lib/sylva-store";
+import { useServerFn } from "@tanstack/react-start";
+import { testFeishuConnection } from "@/lib/feishu.functions";
 import {
   Check,
   RefreshCw,
@@ -10,6 +12,7 @@ import {
   ArrowUp,
   AlertTriangle,
   Loader2,
+  Zap,
 } from "lucide-react";
 
 type Status = "disconnected" | "connecting" | "connected";
@@ -62,6 +65,23 @@ export function FeishuSyncPanel() {
   const [state, setState] = useState<Persisted>(loadPersisted);
   const [logs, setLogs] = useState<SyncLog[]>([]);
   const lastItemSignature = useRef<string>("");
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const runTest = useServerFn(testFeishuConnection);
+
+  const onTest = async () => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const r = await runTest();
+      if (r.ok) setTestResult({ ok: true, msg: `凭证有效 · token 有效期 ${r.expire}s` });
+      else setTestResult({ ok: false, msg: r.error });
+    } catch (e: any) {
+      setTestResult({ ok: false, msg: e?.message ?? "请求失败" });
+    } finally {
+      setTesting(false);
+    }
+  };
 
   useEffect(() => {
     try {
@@ -150,7 +170,29 @@ export function FeishuSyncPanel() {
         >
           {state.status === "connected" ? "已连接" : state.status === "connecting" ? "连接中…" : "未连接"}
         </span>
+        <button
+          onClick={onTest}
+          disabled={testing}
+          className="ml-auto text-[11px] px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-50 flex items-center gap-1.5"
+          title="用 App ID/Secret 换 tenant_access_token，验证凭证"
+        >
+          {testing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+          测试连接
+        </button>
       </div>
+
+      {testResult && (
+        <div
+          className={`mb-3 px-3 py-2 rounded-lg text-[11px] border ${
+            testResult.ok
+              ? "bg-emerald-500/10 border-emerald-400/30 text-emerald-200"
+              : "bg-rose-500/10 border-rose-400/30 text-rose-200"
+          }`}
+        >
+          {testResult.ok ? "✓ " : "✗ "}
+          {testResult.msg}
+        </div>
+      )}
 
       <div className="widget overflow-hidden">
         <div className="px-4 py-3 flex items-center gap-3 border-b border-white/8">
