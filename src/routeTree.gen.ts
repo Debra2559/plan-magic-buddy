@@ -16,6 +16,7 @@ import { Route as AuthenticatedDesktopRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiPublicHooksScanHackathonsRouteImport } from './routes/api/public/hooks/scan-hackathons'
 import { Route as ApiPublicHooksScanAiNewsRouteImport } from './routes/api/public/hooks/scan-ai-news'
+import { Route as ApiPublicHooksGenerateInsightsRouteImport } from './routes/api/public/hooks/generate-insights'
 import { Route as ApiPublicHooksDailyRecapRouteImport } from './routes/api/public/hooks/daily-recap'
 import { Route as ApiPublicFeishuWebhookRouteImport } from './routes/api/public/feishu/webhook'
 import { Route as ApiPublicFeishuOauthCallbackRouteImport } from './routes/api/public/feishu/oauth/callback'
@@ -56,6 +57,12 @@ const ApiPublicHooksScanAiNewsRoute =
     path: '/api/public/hooks/scan-ai-news',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksGenerateInsightsRoute =
+  ApiPublicHooksGenerateInsightsRouteImport.update({
+    id: '/api/public/hooks/generate-insights',
+    path: '/api/public/hooks/generate-insights',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksDailyRecapRoute =
   ApiPublicHooksDailyRecapRouteImport.update({
     id: '/api/public/hooks/daily-recap',
@@ -81,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/desktop': typeof AuthenticatedDesktopRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
+  '/api/public/hooks/generate-insights': typeof ApiPublicHooksGenerateInsightsRoute
   '/api/public/hooks/scan-ai-news': typeof ApiPublicHooksScanAiNewsRoute
   '/api/public/hooks/scan-hackathons': typeof ApiPublicHooksScanHackathonsRoute
   '/api/public/feishu/oauth/callback': typeof ApiPublicFeishuOauthCallbackRoute
@@ -92,6 +100,7 @@ export interface FileRoutesByTo {
   '/desktop': typeof AuthenticatedDesktopRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
+  '/api/public/hooks/generate-insights': typeof ApiPublicHooksGenerateInsightsRoute
   '/api/public/hooks/scan-ai-news': typeof ApiPublicHooksScanAiNewsRoute
   '/api/public/hooks/scan-hackathons': typeof ApiPublicHooksScanHackathonsRoute
   '/api/public/feishu/oauth/callback': typeof ApiPublicFeishuOauthCallbackRoute
@@ -105,6 +114,7 @@ export interface FileRoutesById {
   '/_authenticated/desktop': typeof AuthenticatedDesktopRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
+  '/api/public/hooks/generate-insights': typeof ApiPublicHooksGenerateInsightsRoute
   '/api/public/hooks/scan-ai-news': typeof ApiPublicHooksScanAiNewsRoute
   '/api/public/hooks/scan-hackathons': typeof ApiPublicHooksScanHackathonsRoute
   '/api/public/feishu/oauth/callback': typeof ApiPublicFeishuOauthCallbackRoute
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/desktop'
     | '/api/public/feishu/webhook'
     | '/api/public/hooks/daily-recap'
+    | '/api/public/hooks/generate-insights'
     | '/api/public/hooks/scan-ai-news'
     | '/api/public/hooks/scan-hackathons'
     | '/api/public/feishu/oauth/callback'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/desktop'
     | '/api/public/feishu/webhook'
     | '/api/public/hooks/daily-recap'
+    | '/api/public/hooks/generate-insights'
     | '/api/public/hooks/scan-ai-news'
     | '/api/public/hooks/scan-hackathons'
     | '/api/public/feishu/oauth/callback'
@@ -141,6 +153,7 @@ export interface FileRouteTypes {
     | '/_authenticated/desktop'
     | '/api/public/feishu/webhook'
     | '/api/public/hooks/daily-recap'
+    | '/api/public/hooks/generate-insights'
     | '/api/public/hooks/scan-ai-news'
     | '/api/public/hooks/scan-hackathons'
     | '/api/public/feishu/oauth/callback'
@@ -152,6 +165,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ApiPublicFeishuWebhookRoute: typeof ApiPublicFeishuWebhookRoute
   ApiPublicHooksDailyRecapRoute: typeof ApiPublicHooksDailyRecapRoute
+  ApiPublicHooksGenerateInsightsRoute: typeof ApiPublicHooksGenerateInsightsRoute
   ApiPublicHooksScanAiNewsRoute: typeof ApiPublicHooksScanAiNewsRoute
   ApiPublicHooksScanHackathonsRoute: typeof ApiPublicHooksScanHackathonsRoute
   ApiPublicFeishuOauthCallbackRoute: typeof ApiPublicFeishuOauthCallbackRoute
@@ -208,6 +222,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksScanAiNewsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/generate-insights': {
+      id: '/api/public/hooks/generate-insights'
+      path: '/api/public/hooks/generate-insights'
+      fullPath: '/api/public/hooks/generate-insights'
+      preLoaderRoute: typeof ApiPublicHooksGenerateInsightsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/daily-recap': {
       id: '/api/public/hooks/daily-recap'
       path: '/api/public/hooks/daily-recap'
@@ -252,6 +273,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ApiPublicFeishuWebhookRoute: ApiPublicFeishuWebhookRoute,
   ApiPublicHooksDailyRecapRoute: ApiPublicHooksDailyRecapRoute,
+  ApiPublicHooksGenerateInsightsRoute: ApiPublicHooksGenerateInsightsRoute,
   ApiPublicHooksScanAiNewsRoute: ApiPublicHooksScanAiNewsRoute,
   ApiPublicHooksScanHackathonsRoute: ApiPublicHooksScanHackathonsRoute,
   ApiPublicFeishuOauthCallbackRoute: ApiPublicFeishuOauthCallbackRoute,
