@@ -26,6 +26,15 @@ export interface DailyComic {
   createdAt: string;
 }
 
+export interface ComicHistoryItem {
+  id: string;
+  date: string;
+  imageUrl: string;
+  provider: "gemini" | "seedream";
+  caption?: string;
+  createdAt: string;
+}
+
 export interface DiaryEntry {
   date: string; // YYYY-MM-DD
   content: string;
