@@ -231,7 +231,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                   ${isSelected ? "bg-amber-glow/15 ring-2 ring-amber-glow/60 z-10" : "bg-background/50 hover:bg-background/60"}`}
               >
                 <div className="absolute top-2 left-2 right-2 flex items-center justify-between h-5">
-                  <span className={`text-sm leading-5 ${isToday ? "text-amber-glow font-bold" : "text-white/85"}`}>
+                  <span className={`text-sm leading-5 font-semibold ${isToday ? "text-amber-glow" : "text-foreground/85"}`}>
                     {cell.day}
                   </span>
                   <div className="flex items-center gap-1">
