@@ -84,7 +84,18 @@ function DesktopApp() {
   const { registerNavigate } = useSylva();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const openSettings = () => { setSettingsOpen(true); setAppOpen(true); setActiveDock("sylva"); };
+  const openSettings = (tab?: string) => {
+    if (tab && typeof window !== "undefined") {
+      const target = `#settings/${tab}`;
+      if (window.location.hash !== target) {
+        window.history.replaceState(null, "", target);
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
+      }
+    }
+    setSettingsOpen(true);
+    setAppOpen(true);
+    setActiveDock("sylva");
+  };
 
   useEffect(() => {
     try {
