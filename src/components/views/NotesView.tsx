@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSylva, type Mood, type Note, habitStreak, habitDaysSinceLast, isHabitDoneOn } from "@/lib/sylva-store";
 import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, ListChecks, NotebookPen, Sparkles, CheckCircle2, Circle, Flame, AlertTriangle, RotateCcw, Filter, X as XIcon } from "lucide-react";
 import { markRecapDone, getDailyRecap } from "@/lib/feishu.functions";
@@ -443,11 +443,20 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
   const entry = diary.find((d) => d.date === date);
   const [content, setContent] = useState(entry?.content ?? "");
   const [mood, setMood] = useState<Mood | undefined>(entry?.mood);
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  const setEditorHtml = (html: string) => {
+    if (editorRef.current && editorRef.current.innerHTML !== html) {
+      editorRef.current.innerHTML = html;
+    }
+  };
 
   // sync on date change
   useMemoSync(date, () => {
     const e = diary.find((d) => d.date === date);
-    setContent(e?.content ?? "");
+    const c = e?.content ?? "";
+    setContent(c);
+    setEditorHtml(c);
     setMood(e?.mood);
     // 拉一下飞书卡片提交过的内容；如果本地为空就回填
     getDailyRecap({ data: { date } })
@@ -460,6 +469,7 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
         const patch: { content?: string; mood?: Mood } = {};
         if (remote && !local) {
           setContent(remote);
+          setEditorHtml(remote);
           patch.content = remote;
         }
         if (remoteMood && !localMood) {
@@ -477,7 +487,43 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
       markRecapDone({ data: { date } }).catch(() => {});
     }
   };
+
+  const handlePaste = async (e: React.ClipboardEvent<HTMLDivElement>) => {
+    const items = Array.from(e.clipboardData?.items ?? []);
+    const imageItem = items.find((it) => it.type.startsWith("image/"));
+    if (!imageItem) return; // 让默认粘贴文字
+    e.preventDefault();
+    const file = imageItem.getAsFile();
+    if (!file) return;
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result as string);
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+    const img = `<img src="${dataUrl}" alt="" style="max-width:100%;border-radius:10px;margin:8px 0;display:block" />`;
+    // 在光标位置插入
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && editorRef.current?.contains(sel.anchorNode)) {
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      const tpl = document.createElement("template");
+      tpl.innerHTML = img;
+      const node = tpl.content.firstChild!;
+      range.insertNode(node);
+      range.setStartAfter(node);
+      range.setEndAfter(node);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } else if (editorRef.current) {
+      editorRef.current.insertAdjacentHTML("beforeend", img);
+    }
+    if (editorRef.current) setContent(editorRef.current.innerHTML);
+  };
+
+  const textLength = useMemo(() => content.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").length, [content]);
   const sorted = [...diary].sort((a, b) => b.date.localeCompare(a.date));
+
 
   return (
     <>
@@ -504,27 +550,31 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
             ))}
           </div>
         </div>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
+        <div
+          ref={editorRef}
+          contentEditable
+          suppressContentEditableWarning
+          onInput={(e) => setContent((e.target as HTMLDivElement).innerHTML)}
           onBlur={save}
+          onPaste={handlePaste}
           onKeyDown={(e) => {
-            if (shouldSubmitOnKey(e, enterToSubmit)) {
+            if (shouldSubmitOnKey(e as unknown as React.KeyboardEvent<HTMLTextAreaElement>, enterToSubmit)) {
               e.preventDefault();
               save();
             }
           }}
-          rows={10}
-          placeholder="今天发生了什么？"
-          className="w-full bg-transparent outline-none text-sm leading-7 text-white/90 placeholder:text-white/30 resize-none"
+
+          data-placeholder="今天发生了什么？粘贴图片即可插入"
+          className="diary-editor min-h-[240px] w-full bg-transparent outline-none text-sm leading-7 text-white/90 whitespace-pre-wrap break-words"
         />
         <div className="flex items-center justify-between mt-2 gap-2">
-          <span className="text-[10px] text-white/40">失焦自动保存 · {content.length} 字</span>
+          <span className="text-[10px] text-white/40">失焦自动保存 · 支持粘贴图片 · {textLength} 字</span>
           <div className="flex items-center gap-3">
             <EnterHint example={"今天搞定了答辩 PPT ↵（Shift+Enter）\n明天要去和导师对齐节奏"} />
             <button onClick={save} className="px-4 py-1.5 rounded-full bg-amber-glow text-primary-foreground text-xs font-medium">保存</button>
           </div>
         </div>
+
       </div>
 
       <p className="text-[10px] tracking-widest text-white/40 mb-2">过往</p>
@@ -546,7 +596,7 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
                   <span className="text-xs text-white/70 tracking-wider">{d.date}</span>
                   {m && <span className="text-xs">{m.emoji}</span>}
                 </div>
-                <p className="text-xs text-white/60 line-clamp-2 whitespace-pre-wrap">{d.content || "（空白）"}</p>
+                <div className="text-xs text-white/60 line-clamp-2 whitespace-pre-wrap [&_img]:hidden" dangerouslySetInnerHTML={{ __html: d.content || "（空白）" }} />
               </button>
             );
           })

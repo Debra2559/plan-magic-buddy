@@ -142,3 +142,15 @@
   );
 }
 
+
+.diary-editor:empty::before {
+  content: attr(data-placeholder);
+  color: oklch(1 0 0 / 0.3);
+  pointer-events: none;
+}
+.diary-editor img {
+  max-width: 100%;
+  border-radius: 10px;
+  margin: 8px 0;
+  display: block;
+}
