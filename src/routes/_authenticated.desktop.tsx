@@ -9,6 +9,7 @@ import { TodayWidget } from "@/components/widgets/TodayWidget";
 import { QuickNoteWidget } from "@/components/widgets/QuickNoteWidget";
 import { HabitsWidget } from "@/components/widgets/HabitsWidget";
 import { AiPlanner } from "@/components/AiPlanner";
+import { InsightsBell } from "@/components/InsightsBell";
 import { ScheduleView } from "@/components/views/ScheduleView";
 import { TodosView } from "@/components/views/TodosView";
 import { NotesView } from "@/components/views/NotesView";
