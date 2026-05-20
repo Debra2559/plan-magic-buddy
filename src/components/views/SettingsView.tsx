@@ -284,7 +284,7 @@ export function SettingsView() {
 
   const renderContent = useMemo(() => {
     switch (active) {
-      case "general": return <RowList rows={simpleSections.general.rows} />;
+      case "general": return <AccountPanel />;
       case "persona": return <AiPersonaPanel />;
       case "feishu": return <FeishuSyncPanel />;
       case "webhook": return <FeishuWebhookLogsPanel />;
