@@ -1,148 +1,243 @@
-import { Bell, Cloud, Palette, Keyboard, User, Info, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { Bell, Cloud, Palette, Keyboard, User, Info, Sparkles, Bot, Webhook, ChevronRight } from "lucide-react";
 import { FeishuSyncPanel } from "@/components/FeishuSyncPanel";
 import { FeishuWebhookLogsPanel } from "@/components/FeishuWebhookLogsPanel";
 import { AiPersonaPanel } from "@/components/AiPersonaPanel";
 import { useSylva } from "@/lib/sylva-store";
 
-const sections = [
-  {
-    title: "通用",
-    icon: User,
+type SimpleRow = { label: string; value: string; action: string };
+
+const simpleSections: Record<string, { rows: SimpleRow[] }> = {
+  general: {
     rows: [
       { label: "登录账户", value: "lov@sylva.app", action: "管理" },
       { label: "界面语言", value: "简体中文", action: "切换" },
       { label: "外观主题", value: "森林沉浸 · 自动", action: "更改" },
     ],
   },
-  {
-    title: "其他同步",
-    icon: Cloud,
-    rows: [
-      { label: "iCloud 同步", value: "已开启", action: "管理" },
-      { label: "Apple 日历", value: "未连接", action: "连接" },
-    ],
-  },
-  {
-    title: "提醒",
-    icon: Bell,
+  reminders: {
     rows: [
       { label: "桌面通知", value: "开启 · 不打扰：22:00 - 08:00", action: "调整" },
       { label: "AI 早安总结", value: "每天 7:30", action: "更改" },
     ],
   },
-  {
-    title: "外观",
-    icon: Palette,
+  appearance: {
     rows: [
       { label: "桌面壁纸", value: "Redwood Forest", action: "更换" },
       { label: "字体", value: "DM Serif · Plus Jakarta", action: "调整" },
     ],
   },
-  {
-    title: "快捷键",
-    icon: Keyboard,
+  shortcuts: {
     rows: [
       { label: "唤起 AI 输入", value: "⌘ + ⇧ + Space", action: "改键" },
       { label: "添加随手记", value: "⌘ + N", action: "改键" },
     ],
   },
-];
+};
+
+function RowList({ rows }: { rows: SimpleRow[] }) {
+  return (
+    <div className="widget overflow-hidden divide-y divide-white/8">
+      {rows.map((row) => (
+        <div key={row.label} className="flex items-center px-4 py-3 hover:bg-white/[0.03]">
+          <div className="flex-1">
+            <div className="text-sm text-white/90">{row.label}</div>
+            <div className="text-xs text-white/50 mt-0.5">{row.value}</div>
+          </div>
+          <button className="text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/70 hover:bg-white/10">
+            {row.action}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function DateFlashPanel() {
   const { dateFlashEnabled, setDateFlashEnabled, dateFlashDurationMs, setDateFlashDurationMs } = useSylva();
   return (
-    <div>
-      <div className="flex items-center gap-2 mb-3">
-        <Sparkles className="w-4 h-4 text-amber-glow" />
-        <h3 className="font-display text-lg text-white">手帐 · 日期高亮</h3>
-      </div>
-      <div className="widget overflow-hidden divide-y divide-white/8">
-        <div className="flex items-center px-4 py-3">
-          <div className="flex-1">
-            <div className="text-sm text-white/90">切换日期时闪烁高亮</div>
-            <div className="text-xs text-white/50 mt-0.5">选中日期卡片会短暂发光以确认定位</div>
-          </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={dateFlashEnabled}
-            onClick={() => setDateFlashEnabled(!dateFlashEnabled)}
-            className={`relative h-6 w-11 rounded-full transition border ${
-              dateFlashEnabled
-                ? "bg-amber-glow/40 border-amber-glow/60"
-                : "bg-white/10 border-white/15"
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
-                dateFlashEnabled ? "left-[22px]" : "left-0.5"
-              }`}
-            />
-          </button>
+    <div className="widget overflow-hidden divide-y divide-white/8">
+      <div className="flex items-center px-4 py-3">
+        <div className="flex-1">
+          <div className="text-sm text-white/90">切换日期时闪烁高亮</div>
+          <div className="text-xs text-white/50 mt-0.5">选中日期卡片会短暂发光以确认定位</div>
         </div>
-        <div className={`px-4 py-3 ${!dateFlashEnabled ? "opacity-50 pointer-events-none" : ""}`}>
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-sm text-white/90">闪烁持续时间</div>
-            <div className="text-xs text-white/60 tabular-nums">{(dateFlashDurationMs / 1000).toFixed(1)}s</div>
-          </div>
-          <input
-            type="range"
-            min={200}
-            max={3000}
-            step={100}
-            value={dateFlashDurationMs}
-            onChange={(e) => setDateFlashDurationMs(Number(e.target.value))}
-            className="w-full accent-amber-glow"
+        <button
+          type="button"
+          role="switch"
+          aria-checked={dateFlashEnabled}
+          onClick={() => setDateFlashEnabled(!dateFlashEnabled)}
+          className={`relative h-6 w-11 rounded-full transition border ${
+            dateFlashEnabled
+              ? "bg-amber-glow/40 border-amber-glow/60"
+              : "bg-white/10 border-white/15"
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
+              dateFlashEnabled ? "left-[22px]" : "left-0.5"
+            }`}
           />
-          <div className="flex justify-between text-[10px] text-white/40 mt-1">
-            <span>0.2s</span>
-            <span>3.0s</span>
-          </div>
+        </button>
+      </div>
+      <div className={`px-4 py-3 ${!dateFlashEnabled ? "opacity-50 pointer-events-none" : ""}`}>
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-sm text-white/90">闪烁持续时间</div>
+          <div className="text-xs text-white/60 tabular-nums">{(dateFlashDurationMs / 1000).toFixed(1)}s</div>
+        </div>
+        <input
+          type="range"
+          min={200}
+          max={3000}
+          step={100}
+          value={dateFlashDurationMs}
+          onChange={(e) => setDateFlashDurationMs(Number(e.target.value))}
+          className="w-full accent-amber-glow"
+        />
+        <div className="flex justify-between text-[10px] text-white/40 mt-1">
+          <span>0.2s</span>
+          <span>3.0s</span>
         </div>
       </div>
     </div>
   );
 }
 
+type NavKey = "general" | "persona" | "feishu" | "webhook" | "dateflash" | "reminders" | "appearance" | "shortcuts" | "about";
+type NavGroup = { label: string; items: { key: NavKey; title: string; icon: typeof User; subtitle?: string }[] };
+
+const NAV: NavGroup[] = [
+  {
+    label: "账户",
+    items: [
+      { key: "general", title: "通用", icon: User },
+      { key: "persona", title: "AI 人格", icon: Bot },
+    ],
+  },
+  {
+    label: "同步",
+    items: [
+      { key: "feishu", title: "飞书同步", icon: Cloud },
+      { key: "webhook", title: "Webhook 日志", icon: Webhook },
+    ],
+  },
+  {
+    label: "外观与体验",
+    items: [
+      { key: "dateflash", title: "手帐 · 日期高亮", icon: Sparkles },
+      { key: "reminders", title: "提醒", icon: Bell },
+      { key: "appearance", title: "外观", icon: Palette },
+      { key: "shortcuts", title: "快捷键", icon: Keyboard },
+    ],
+  },
+  {
+    label: "其它",
+    items: [
+      { key: "about", title: "关于", icon: Info },
+    ],
+  },
+];
+
+const TITLES: Record<NavKey, { title: string; desc: string }> = {
+  general: { title: "通用", desc: "账户、语言、主题等基础偏好" },
+  persona: { title: "AI 人格", desc: "调整 AI 的说话风格与语气" },
+  feishu: { title: "飞书同步", desc: "日历推送、接收人捕获与诊断" },
+  webhook: { title: "Webhook 日志", desc: "查看最近的飞书事件回调" },
+  dateflash: { title: "手帐 · 日期高亮", desc: "切换日期时的视觉反馈" },
+  reminders: { title: "提醒", desc: "桌面通知与每日总结" },
+  appearance: { title: "外观", desc: "壁纸、字体与主题细节" },
+  shortcuts: { title: "快捷键", desc: "常用操作的键盘绑定" },
+  about: { title: "关于", desc: "版本与项目信息" },
+};
+
 export function SettingsView() {
+  const [active, setActive] = useState<NavKey>("general");
+  const meta = TITLES[active];
+
+  const renderContent = () => {
+    switch (active) {
+      case "general": return <RowList rows={simpleSections.general.rows} />;
+      case "persona": return <AiPersonaPanel />;
+      case "feishu": return <FeishuSyncPanel />;
+      case "webhook": return <FeishuWebhookLogsPanel />;
+      case "dateflash": return <DateFlashPanel />;
+      case "reminders": return <RowList rows={simpleSections.reminders.rows} />;
+      case "appearance": return <RowList rows={simpleSections.appearance.rows} />;
+      case "shortcuts": return <RowList rows={simpleSections.shortcuts.rows} />;
+      case "about":
+        return (
+          <div className="widget p-5 text-sm text-white/70 space-y-2">
+            <div className="text-white/90 font-medium">Sylva v0.9.0</div>
+            <div>像森林一样陪你长出节奏。</div>
+            <div className="text-xs text-white/40 pt-2">© Sylva — 私人 AI 工作台</div>
+          </div>
+        );
+    }
+  };
+
   return (
-    <div className="p-7 overflow-auto h-full max-w-3xl mx-auto">
-      <p className="text-[10px] tracking-widest text-amber-glow mb-1">偏好设置</p>
-      <h2 className="font-display text-3xl text-white mb-7">让 Sylva 长成你的样子。</h2>
-
-      <div className="space-y-7">
-        <FeishuSyncPanel />
-        <FeishuWebhookLogsPanel />
-        <DateFlashPanel />
-        {sections.map((s) => {
-          const Icon = s.icon;
-          return (
-            <div key={s.title}>
-              <div className="flex items-center gap-2 mb-3">
-                <Icon className="w-4 h-4 text-amber-glow" />
-                <h3 className="font-display text-lg text-white">{s.title}</h3>
+    <div className="h-full overflow-hidden">
+      <div className="h-full max-w-6xl mx-auto px-4 sm:px-6 py-6 flex gap-5">
+        {/* 左侧导航 */}
+        <aside className="w-56 shrink-0 hidden md:flex flex-col gap-5 overflow-y-auto pr-1">
+          <div>
+            <p className="text-[10px] tracking-widest text-amber-glow mb-1">偏好设置</p>
+            <h2 className="font-display text-2xl text-white leading-tight">让 Sylva<br/>长成你的样子。</h2>
+          </div>
+          <nav className="flex flex-col gap-4">
+            {NAV.map((group) => (
+              <div key={group.label}>
+                <div className="text-[10px] uppercase tracking-widest text-white/35 px-2 mb-1.5">{group.label}</div>
+                <div className="flex flex-col gap-0.5">
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = active === item.key;
+                    return (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => setActive(item.key)}
+                        className={`group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition border ${
+                          isActive
+                            ? "bg-white/[0.06] border-white/15 text-white"
+                            : "border-transparent text-white/65 hover:bg-white/[0.04] hover:text-white"
+                        }`}
+                      >
+                        <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-amber-glow" : "text-white/50"}`} />
+                        <span className="flex-1 text-left truncate">{item.title}</span>
+                        {isActive && <ChevronRight className="w-3.5 h-3.5 text-white/40" />}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="widget overflow-hidden divide-y divide-white/8">
-                {s.rows.map((row) => (
-                  <div key={row.label} className="flex items-center px-4 py-3 hover:bg-white/[0.03]">
-                    <div className="flex-1">
-                      <div className="text-sm text-white/90">{row.label}</div>
-                      <div className="text-xs text-white/50 mt-0.5">{row.value}</div>
-                    </div>
-                    <button className="text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/70 hover:bg-white/10">
-                      {row.action}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
+            ))}
+          </nav>
+        </aside>
 
-        <div className="flex items-center gap-2 text-xs text-white/40 pt-4">
-          <Info className="w-3 h-3" />
-          <span>Sylva v0.9.0 · 像森林一样陪你长出节奏</span>
+        {/* 移动端：横向 Tab */}
+        <div className="md:hidden absolute left-0 right-0 px-4">
+          <select
+            value={active}
+            onChange={(e) => setActive(e.target.value as NavKey)}
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+          >
+            {NAV.flatMap((g) => g.items).map((i) => (
+              <option key={i.key} value={i.key}>{i.title}</option>
+            ))}
+          </select>
         </div>
+
+        {/* 右侧内容 */}
+        <main className="flex-1 min-w-0 overflow-y-auto">
+          <header className="mb-5 pb-4 border-b border-white/8">
+            <h3 className="font-display text-2xl text-white">{meta.title}</h3>
+            <p className="text-xs text-white/50 mt-1">{meta.desc}</p>
+          </header>
+          <div className="pb-10">
+            {renderContent()}
+          </div>
+        </main>
       </div>
     </div>
   );
