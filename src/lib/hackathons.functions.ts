@@ -406,6 +406,7 @@ export const acceptHackathon = createServerFn({ method: "POST" })
       return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
     };
     const startDate = parseDate(row.starts_at) ?? parseDate(row.deadline);
+    const endDate = parseDate((row as any).ends_at);
     const deadlineDate = parseDate(row.deadline);
     const today = new Date().toISOString().slice(0, 10);
 
@@ -422,12 +423,23 @@ export const acceptHackathon = createServerFn({ method: "POST" })
     if (startDate) {
       items.push({
         type: "event",
-        title: `🏆 ${row.title}`,
+        title: `🏆 ${row.title}${endDate && endDate !== startDate ? " (开赛)" : ""}`,
         date: startDate,
         time: "10:00",
         durationMin: 240,
         tag: "工作",
         note: row.summary ?? row.url ?? undefined,
+      });
+    }
+    if (endDate && endDate !== startDate) {
+      items.push({
+        type: "event",
+        title: `🏁 ${row.title} (结束/提交)`,
+        date: endDate,
+        time: "18:00",
+        durationMin: 120,
+        tag: "工作",
+        note: row.url ?? undefined,
       });
     }
     items.push({
