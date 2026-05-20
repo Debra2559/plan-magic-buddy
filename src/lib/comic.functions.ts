@@ -74,8 +74,6 @@ export const generateDailyComic = createServerFn({ method: "POST" })
         "Seedream 需要 ARK_API_KEY：在设置里添加火山引擎方舟的 API Key 后再试",
       );
     }
-    // 多模型回退：优先使用环境变量指定的模型，然后依次回退
-    const envModel = process.env.ARK_SEEDREAM_MODEL?.trim();
     // 模型优先级：调用方传入的 model > 环境变量 ARK_SEEDREAM_MODEL > 内置回退
     const envModel = process.env.ARK_SEEDREAM_MODEL?.trim();
     const userModel = data.model?.trim();
