@@ -195,6 +195,8 @@ function NotesTab({ kind }: { kind: NoteKind }) {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     let list = notes.filter((n) => {
+      const nKind: NoteKind = n.kind === "reflection" ? "reflection" : "log";
+      if (nKind !== kind) return false;
       if (q) {
         const inText = n.text.toLowerCase().includes(q);
         const inTags = (n.tags ?? []).some((t) => t.toLowerCase().includes(q));
@@ -213,7 +215,7 @@ function NotesTab({ kind }: { kind: NoteKind }) {
       return true;
     });
     return [...list].sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned));
-  }, [notes, query, dateFilter, moodFilter, habitFilter, typeFilter]);
+  }, [notes, query, dateFilter, moodFilter, habitFilter, typeFilter, kind]);
 
   return (
     <>
