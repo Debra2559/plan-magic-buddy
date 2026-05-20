@@ -96,14 +96,8 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
   const [draft, setDraft] = useState<Plan | null>(null);
   const [draftMode, setDraftMode] = useState<"create" | "adjust" | "add">("create");
   const planFn = useServerFn(generatePlan);
-  const chatFn = useServerFn(chatPlan);
   const [previewOpen, setPreviewOpen] = useState(false);
 
-
-  // Goal-chat state
-  const [chatMessages, setChatMessages] = useState<ChatMsg[]>([]);
-  const [chatInput, setChatInput] = useState("");
-  const [chatStep, setChatStep] = useState<ChatStep | null>(null);
 
   const handleSubmit = async () => {
     if (!idea.trim() || loading) return;
