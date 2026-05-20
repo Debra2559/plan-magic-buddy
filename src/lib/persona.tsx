@@ -82,15 +82,29 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
       if (data) {
         setPersona(data as PersonaProfile);
       } else {
-        // 兜底：trigger 万一没建出来，本地兜一份默认
         const row = { user_id: user.id, ...DEFAULT_PERSONA };
         await supabase.from("user_profiles").insert(row);
         setPersona(row);
       }
       setLoading(false);
     })();
+
+    // 跨设备实时同步：监听本用户 profile 行变更
+    const channel = supabase
+      .channel(`user_profiles:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "user_profiles", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          if (cancelled) return;
+          setPersona((prev) => ({ ...(prev as PersonaProfile), ...(payload.new as PersonaProfile) }));
+        },
+      )
+      .subscribe();
+
     return () => {
       cancelled = true;
+      supabase.removeChannel(channel);
     };
   }, [user]);
 
