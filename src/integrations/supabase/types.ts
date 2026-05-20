@@ -104,6 +104,33 @@ export type Database = {
         }
         Relationships: []
       }
+      comics: {
+        Row: {
+          caption: string | null
+          created_at: string
+          date: string
+          image_url: string
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          date: string
+          image_url: string
+          provider: string
+          updated_at?: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          date?: string
+          image_url?: string
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_recaps: {
         Row: {
           created_at: string
@@ -133,6 +160,30 @@ export type Database = {
           mood?: string | null
           source?: string
           summary?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      diary_entries: {
+        Row: {
+          content: string
+          created_at: string
+          date: string
+          mood: string | null
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          date: string
+          mood?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          date?: string
+          mood?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -239,6 +290,36 @@ export type Database = {
         }
         Relationships: []
       }
+      habits: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          emoji: string
+          history: string[]
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          emoji?: string
+          history?: string[]
+          id: string
+          name?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          emoji?: string
+          history?: string[]
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hackathon_settings: {
         Row: {
           created_at: string
@@ -320,6 +401,87 @@ export type Database = {
           tags?: string[] | null
           title?: string
           url?: string
+        }
+        Relationships: []
+      }
+      notes: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          id: string
+          images: string[]
+          mood: string | null
+          pinned: boolean
+          tags: string[]
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          id: string
+          images?: string[]
+          mood?: string | null
+          pinned?: boolean
+          tags?: string[]
+          text?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          images?: string[]
+          mood?: string | null
+          pinned?: boolean
+          tags?: string[]
+          text?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      schedule_items: {
+        Row: {
+          created_at: string
+          date: string | null
+          deleted_at: string | null
+          done: boolean
+          duration_min: number | null
+          id: string
+          note: string | null
+          tag: string | null
+          time: string | null
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string | null
+          deleted_at?: string | null
+          done?: boolean
+          duration_min?: number | null
+          id: string
+          note?: string | null
+          tag?: string | null
+          time?: string | null
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string | null
+          deleted_at?: string | null
+          done?: boolean
+          duration_min?: number | null
+          id?: string
+          note?: string | null
+          tag?: string | null
+          time?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
         }
         Relationships: []
       }
