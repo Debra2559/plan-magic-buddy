@@ -34,27 +34,52 @@ export type AiInsight = {
 
 // ---------- Helpers ----------
 
-function currentSlot(d = new Date()): "morning" | "noon" | "evening" {
-  const h = d.getUTCHours() + 8; // CN time, rough
-  const hour = ((h % 24) + 24) % 24;
+const DEFAULT_TZ = "Asia/Shanghai";
+
+function tzParts(d: Date, tz: string): { year: string; month: string; day: string; hour: number } {
+  try {
+    const fmt = new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      hour12: false,
+    });
+    const parts = Object.fromEntries(fmt.formatToParts(d).map((p) => [p.type, p.value]));
+    return {
+      year: parts.year,
+      month: parts.month,
+      day: parts.day,
+      hour: Number(parts.hour) % 24,
+    };
+  } catch {
+    // Fallback to Asia/Shanghai if invalid tz
+    return tzParts(d, DEFAULT_TZ);
+  }
+}
+
+function currentSlot(d = new Date(), tz: string = DEFAULT_TZ): "morning" | "noon" | "evening" {
+  const { hour } = tzParts(d, tz);
   if (hour < 11) return "morning";
   if (hour < 17) return "noon";
   return "evening";
 }
 
-function todayStr(d = new Date()): string {
-  const cn = new Date(d.getTime() + 8 * 3600_000);
-  return cn.toISOString().slice(0, 10);
+function todayStr(d = new Date(), tz: string = DEFAULT_TZ): string {
+  const { year, month, day } = tzParts(d, tz);
+  return `${year}-${month}-${day}`;
 }
 
-function daysAgo(n: number): string {
-  const d = new Date(Date.now() - n * 86400_000);
-  return todayStr(d);
+function daysAgo(n: number, tz: string = DEFAULT_TZ): string {
+  return todayStr(new Date(Date.now() - n * 86400_000), tz);
 }
 
-async function gatherUserContext(userId: string, lookbackDays: number) {
-  const since = daysAgo(lookbackDays);
-  const today = todayStr();
+
+async function gatherUserContext(userId: string, lookbackDays: number, tz: string = DEFAULT_TZ) {
+  const since = daysAgo(lookbackDays, tz);
+  const today = todayStr(new Date(), tz);
+
 
   const [schedule, notes, diaries, habits, profile] = await Promise.all([
     supabaseAdmin
@@ -95,18 +120,19 @@ async function gatherUserContext(userId: string, lookbackDays: number) {
 
   const habitSummary = (habits.data ?? []).map((h: any) => {
     const hist: string[] = h.history ?? [];
-    const last7 = hist.filter((d) => d >= daysAgo(7)).length;
+    const last7 = hist.filter((d) => d >= daysAgo(7, tz)).length;
     const lastDate = hist[hist.length - 1] ?? null;
     const streak = (() => {
       let s = 0;
       for (let i = 0; ; i++) {
-        if (hist.includes(daysAgo(i))) s++;
+        if (hist.includes(daysAgo(i, tz))) s++;
         else break;
       }
       return s;
     })();
     return { name: h.name, emoji: h.emoji, last7days: last7, streak, lastDate };
   });
+
 
   return { today, since, schedule: schedule.data ?? [], notes: notes.data ?? [], diaries: diaries.data ?? [], habits: habitSummary, profile: profile.data ?? null };
 }
@@ -119,13 +145,15 @@ async function generateForUser(userId: string, slot: string) {
     .select("*")
     .eq("user_id", userId)
     .maybeSingle();
-  const settings = settingsRes.data ?? { enabled: true, scope: ["schedule", "notes", "habits", "insights"], lookback_days: 2, push_feishu: false, slots: ["morning", "noon", "evening"] };
+  const settings = settingsRes.data ?? { enabled: true, scope: ["schedule", "notes", "habits", "insights"], lookback_days: 2, push_feishu: false, slots: ["morning", "noon", "evening"], timezone: DEFAULT_TZ };
   if (!settings.enabled) return { ok: false as const, reason: "disabled" };
 
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) return { ok: false as const, reason: "no_api_key" };
 
-  const ctx = await gatherUserContext(userId, settings.lookback_days ?? 2);
+  const tz = (settings as any).timezone || DEFAULT_TZ;
+  const ctx = await gatherUserContext(userId, settings.lookback_days ?? 2, tz);
+
 
   const slotName = slot === "morning" ? "早晨" : slot === "noon" ? "午间" : "傍晚";
   const persona = ctx.profile?.persona_prompt ?? "你是用户的私人 AI 助理，亲切自然。";
@@ -241,10 +269,13 @@ export const generateMyInsightsNow = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ slot: z.enum(["morning", "noon", "evening", "auto"]).default("auto") }).parse(input))
   .handler(async ({ context, data }) => {
     const { userId } = context as any;
-    const slot = data.slot === "auto" ? currentSlot() : data.slot;
+    const tzRes = await supabaseAdmin.from("ai_insights_settings").select("timezone").eq("user_id", userId).maybeSingle();
+    const tz = (tzRes.data as any)?.timezone || DEFAULT_TZ;
+    const slot = data.slot === "auto" ? currentSlot(new Date(), tz) : data.slot;
     const r = await generateForUser(userId, slot);
     return r;
   });
+
 
 export const dismissInsight = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -287,9 +318,11 @@ export const getMyInsightsSettings = createServerFn({ method: "GET" })
         push_feishu: false,
         scope: ["schedule", "notes", "habits", "insights"],
         lookback_days: 2,
+        timezone: DEFAULT_TZ,
         last_generated_at: null,
         last_slot: null,
       },
+
     };
   });
 
@@ -302,8 +335,10 @@ export const updateMyInsightsSettings = createServerFn({ method: "POST" })
       push_feishu: z.boolean().optional(),
       scope: z.array(z.enum(["schedule", "notes", "habits", "insights"])).optional(),
       lookback_days: z.number().int().min(1).max(14).optional(),
+      timezone: z.string().min(1).max(64).optional(),
     }).parse(input),
   )
+
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context as any;
     const { error } = await supabase
@@ -316,31 +351,34 @@ export const updateMyInsightsSettings = createServerFn({ method: "POST" })
 // ---------- Cron (called from public hook) ----------
 
 export async function runScheduledInsights(): Promise<{ processed: number; generated: number; errors: number }> {
-  const nowSlot = currentSlot();
-  const today = todayStr();
-  // Find all users with enabled settings, whose slots include current, and who haven't generated this slot today
+  // Find all users with enabled settings, then compute slot/today in each user's own timezone
   const { data: users, error } = await supabaseAdmin
     .from("ai_insights_settings")
-    .select("user_id, slots, enabled, last_generated_at, last_slot");
+    .select("user_id, slots, enabled, last_generated_at, last_slot, timezone");
   if (error) return { processed: 0, generated: 0, errors: 1 };
 
+  const now = new Date();
   let processed = 0;
   let generated = 0;
   let errors = 0;
   for (const u of users ?? []) {
     if (!u.enabled) continue;
+    const tz = (u as any).timezone || DEFAULT_TZ;
+    const userSlot = currentSlot(now, tz);
+    const userToday = todayStr(now, tz);
     const slots: string[] = u.slots ?? [];
-    if (!slots.includes(nowSlot)) continue;
-    // Skip if already generated this slot today
-    if (u.last_slot === nowSlot && u.last_generated_at && (u.last_generated_at as string).slice(0, 10) === today) continue;
+    if (!slots.includes(userSlot)) continue;
+    // Skip if already generated this slot today (in user's tz)
+    if (u.last_slot === userSlot && u.last_generated_at && (u.last_generated_at as string).slice(0, 10) === userToday) continue;
     processed++;
     try {
-      const r = await generateForUser(u.user_id, nowSlot);
+      const r = await generateForUser(u.user_id, userSlot);
       if (r.ok && (r as any).count > 0) generated++;
       else if (!r.ok) errors++;
     } catch {
       errors++;
     }
+
   }
   return { processed, generated, errors };
 }

@@ -132,6 +132,7 @@ export type Database = {
           push_feishu: boolean
           scope: string[]
           slots: string[]
+          timezone: string
           updated_at: string
           user_id: string
         }
@@ -144,6 +145,7 @@ export type Database = {
           push_feishu?: boolean
           scope?: string[]
           slots?: string[]
+          timezone?: string
           updated_at?: string
           user_id: string
         }
@@ -156,6 +158,7 @@ export type Database = {
           push_feishu?: boolean
           scope?: string[]
           slots?: string[]
+          timezone?: string
           updated_at?: string
           user_id?: string
         }

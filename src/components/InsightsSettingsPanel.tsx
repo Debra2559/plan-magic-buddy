@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useEffect } from "react";
 import { getMyInsightsSettings, updateMyInsightsSettings, generateMyInsightsNow } from "@/lib/insights.functions";
-import { Sparkles, RefreshCw } from "lucide-react";
+import { Sparkles, RefreshCw, Globe } from "lucide-react";
 
 const SLOTS = [
   { key: "morning", label: "早晨", hint: "≤ 11:00" },
@@ -16,6 +16,24 @@ const SCOPES = [
   { key: "habits", label: "习惯打卡" },
   { key: "insights", label: "综合洞察" },
 ] as const;
+
+// Common IANA timezones; users in CN default to Asia/Shanghai
+const TIMEZONES = [
+  { key: "Asia/Shanghai", label: "北京 / 上海", offset: "UTC+8" },
+  { key: "Asia/Hong_Kong", label: "香港", offset: "UTC+8" },
+  { key: "Asia/Taipei", label: "台北", offset: "UTC+8" },
+  { key: "Asia/Tokyo", label: "东京", offset: "UTC+9" },
+  { key: "Asia/Singapore", label: "新加坡", offset: "UTC+8" },
+  { key: "Asia/Seoul", label: "首尔", offset: "UTC+9" },
+  { key: "Asia/Bangkok", label: "曼谷", offset: "UTC+7" },
+  { key: "Asia/Dubai", label: "迪拜", offset: "UTC+4" },
+  { key: "Europe/London", label: "伦敦", offset: "UTC+0/+1" },
+  { key: "Europe/Paris", label: "巴黎 / 柏林", offset: "UTC+1/+2" },
+  { key: "America/New_York", label: "纽约", offset: "UTC-5/-4" },
+  { key: "America/Los_Angeles", label: "洛杉矶", offset: "UTC-8/-7" },
+  { key: "Australia/Sydney", label: "悉尼", offset: "UTC+10/+11" },
+] as const;
+
 
 export function InsightsSettingsPanel() {
   const qc = useQueryClient();
@@ -95,6 +113,34 @@ export function InsightsSettingsPanel() {
           })}
         </div>
       </div>
+
+      {/* 时区 */}
+      <div className="widget p-4">
+        <div className="text-white font-medium text-sm mb-2 flex items-center gap-1.5">
+          <Globe className="w-3.5 h-3.5 text-amber-glow" />
+          时区
+        </div>
+        <div className="text-white/50 text-xs mb-3">
+          AI 按你所在时区判断「早/午/晚」时段
+        </div>
+        <select
+          value={local.timezone || "Asia/Shanghai"}
+          onChange={(e) => {
+            const next = e.target.value;
+            setLocal({ ...local, timezone: next });
+            save.mutate({ timezone: next });
+          }}
+          className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white text-sm focus:outline-none focus:border-amber-glow/40 transition"
+        >
+          {TIMEZONES.map((t) => (
+            <option key={t.key} value={t.key} className="bg-[#0a0c0a]">
+              {t.label} · {t.offset}
+            </option>
+          ))}
+        </select>
+      </div>
+
+
 
       {/* 数据范围 */}
       <div className="widget p-4">
