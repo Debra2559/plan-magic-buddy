@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSylva, type Mood, type Note, habitStreak, habitDaysSinceLast, isHabitDoneOn } from "@/lib/sylva-store";
 import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, ListChecks, NotebookPen, Sparkles, CheckCircle2, Circle, Flame, AlertTriangle } from "lucide-react";
-import { markRecapDone } from "@/lib/feishu.functions";
+import { markRecapDone, getDailyRecap } from "@/lib/feishu.functions";
 
 type Tab = "notes" | "diary" | "summary";
 
@@ -209,6 +209,18 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
     const e = diary.find((d) => d.date === date);
     setContent(e?.content ?? "");
     setMood(e?.mood);
+    // 拉一下飞书卡片提交过的内容；如果本地为空就回填
+    getDailyRecap({ data: { date } })
+      .then((row) => {
+        if (!row) return;
+        const remote = [row.summary, row.diary].filter(Boolean).join("\n\n");
+        const local = (diary.find((d) => d.date === date)?.content ?? "").trim();
+        if (remote && !local) {
+          setContent(remote);
+          upsertDiary(date, { content: remote });
+        }
+      })
+      .catch(() => {});
   });
 
   const save = () => {

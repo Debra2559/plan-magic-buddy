@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_recaps: {
+        Row: {
+          created_at: string
+          date: string
+          diary: string | null
+          id: string
+          mood: string | null
+          source: string
+          summary: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          diary?: string | null
+          id?: string
+          mood?: string | null
+          source?: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          diary?: string | null
+          id?: string
+          mood?: string | null
+          source?: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       feishu_event_map: {
         Row: {
           calendar_id: string

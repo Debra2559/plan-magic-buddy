@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { handleHackathonCardAction, handleRecapCardAction } from '@/lib/feishu.functions'
+import { handleHackathonCardAction, handleRecapCardAction, handleRecapSubmit } from '@/lib/feishu.functions'
 
 /**
  * 飞书事件回调入口
@@ -41,18 +41,33 @@ export const Route = createFileRoute('/api/public/feishu/webhook')({
           return json({ ok: true, note: 'encrypt key not configured' })
         }
 
-        // 2) 卡片按钮回调 —— v2 事件结构
-        // header.event_type === 'card.action.trigger'
+        // 2) 卡片按钮/表单回调 —— v2 事件结构
         const eventType: string | undefined = body?.header?.event_type
         const v2Action = body?.event?.action?.value
-        const v1Action = body?.action?.value // 旧版直接挂在顶层
-
+        const v1Action = body?.action?.value
         const value = v2Action ?? v1Action
+        // 表单提交时的字段值（飞书会把表单各 input 的值放进 form_value）
+        const formValue: Record<string, any> | undefined =
+          body?.event?.action?.form_value ?? body?.action?.form_value
+
         if (eventType === 'card.action.trigger' || value) {
           try {
             if (value?.kind === 'hackathon' && value?.id && (value?.action === 'accept' || value?.action === 'dismiss')) {
               const result = await handleHackathonCardAction({ id: String(value.id), action: value.action })
               return json({ toast: result.toast })
+            }
+            if (value?.kind === 'recap' && value?.action === 'submit' && value?.date) {
+              const result = await handleRecapSubmit({
+                date: String(value.date),
+                summary: String(formValue?.summary ?? ''),
+                diary: String(formValue?.diary ?? ''),
+              })
+              return json({
+                toast: result.toast,
+                ...(result.card
+                  ? { card: { type: 'raw', data: result.card } }
+                  : {}),
+              })
             }
             if (value?.kind === 'recap' && value?.action === 'done' && value?.date) {
               const result = await handleRecapCardAction({ action: 'done', date: String(value.date) })
