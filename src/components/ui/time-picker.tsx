@@ -170,16 +170,18 @@ function Column({
   selected,
   onPick,
   innerRef,
+  flashKey,
 }: {
   items: string[];
   selected: string;
   onPick: (v: string) => void;
   innerRef: React.RefObject<HTMLDivElement | null>;
+  flashKey: number;
 }) {
   return (
     <div
       ref={innerRef}
-      className="flex-1 overflow-y-auto py-[72px] scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="flex-1 overflow-y-auto py-[72px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       {items.map((it) => {
         const active = it === selected;
@@ -188,13 +190,18 @@ function Column({
             key={it}
             type="button"
             onClick={() => onPick(it)}
-            className={`block w-full h-8 text-center font-mono tabular-nums text-sm transition ${
+            className={`block w-full h-8 text-center font-mono tabular-nums text-sm transition-colors ${
               active
                 ? "text-amber-glow font-semibold"
                 : "text-white/55 hover:text-white"
             }`}
           >
-            {it}
+            <span
+              key={active ? `flash-${flashKey}` : "idle"}
+              className={`inline-block px-2 rounded ${active ? "animate-date-flash" : ""}`}
+            >
+              {it}
+            </span>
           </button>
         );
       })}
