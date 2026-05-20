@@ -722,14 +722,19 @@ export const getLastCapturedOpenId = createServerFn({ method: 'GET' }).handler(a
     .maybeSingle()
   const { data: lastLog } = await supabaseAdmin
     .from('feishu_webhook_logs')
-    .select('created_at, event_type, level, message')
+    .select('created_at, event_type, level, message, payload')
     .eq('step', 'capture_open_id')
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
+  const capturedOpenId = (lastLog?.payload as any)?.senderOpenId
+  const fallbackOpenId =
+    lastLog && (settings as any)?.notify_receive_id_type === 'open_id'
+      ? (settings as any)?.notify_receive_id
+      : null
   return {
-    openId: (settings as any)?.notify_receive_id ?? null,
-    receiveIdType: (settings as any)?.notify_receive_id_type ?? null,
+    openId: capturedOpenId ?? fallbackOpenId ?? null,
+    receiveIdType: capturedOpenId || fallbackOpenId ? 'open_id' : null,
     capturedAt: lastLog?.created_at ?? null,
     eventType: lastLog?.event_type ?? null,
     level: lastLog?.level ?? null,
