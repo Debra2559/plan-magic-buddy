@@ -294,9 +294,9 @@ function useMemoSync(key: string, fn: () => void) {
 }
 
 /* ---------------- Daily Summary ---------------- */
-function SummaryTab() {
+function SummaryTab({ initialDate }: { initialDate?: string | null }) {
   const { items, habits, diary, upsertDiary } = useSylva();
-  const [date, setDate] = useState(todayStr());
+  const [date, setDate] = useState(initialDate ?? todayStr());
 
   const dayItems = items.filter((i) => i.date === date);
   const done = dayItems.filter((i) => i.done);
