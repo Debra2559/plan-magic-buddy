@@ -945,16 +945,28 @@ export async function handleRecapSubmit(payload: {
   }
 
   try {
-    // 1) upsert 到 daily_recaps
+    // 1) 检查是否已存在 → 用于区分「首次提交」与「再次提交」
+    const { data: prevRow } = await supabaseAdmin
+      .from('daily_recaps')
+      .select('date')
+      .eq('date', date)
+      .maybeSingle()
+    const isUpdate = !!prevRow
+
+    // 2) upsert 到 daily_recaps（覆盖最新内容，并刷新 updated_at）
+    const nowIso = new Date().toISOString()
     const { error: upErr } = await supabaseAdmin
       .from('daily_recaps')
-      .upsert({ date, summary, diary, source: 'feishu_card' } as any, { onConflict: 'date' })
+      .upsert(
+        { date, summary, diary, source: 'feishu_card', updated_at: nowIso } as any,
+        { onConflict: 'date' },
+      )
     if (upErr) throw new Error(upErr.message)
 
-    // 2) 标记完成
+    // 3) 标记完成
     await markRecapDoneInternal(date)
 
-    // 3) 往日历推一条「✅ 今日小结」事件（20:30, 15 分钟）
+    // 4) 同步到飞书日历：通过 feishu_event_map 复用同一事件（local_id = recap:{date}），存在则 PATCH，否则 POST
     let calendarPushed = false
     try {
       const { data: settings } = await supabaseAdmin
@@ -969,19 +981,62 @@ export async function handleRecapSubmit(payload: {
           summary ? `【今日小结】\n${summary}` : '',
           diary ? `\n\n【日记】\n${diary}` : '',
         ].join('').trim()
-        const r = await feishu<{ code: number; msg: string }>(
-          `/calendar/v4/calendars/${encodeURIComponent(calendarId)}/events`,
-          {
-            method: 'POST',
-            body: JSON.stringify({
-              summary: `✅ 今日小结 · ${date}`,
-              description: desc,
-              start_time: { timestamp: String(start), timezone: TZ },
-              end_time: { timestamp: String(start + 15 * 60), timezone: TZ },
-            }),
-          },
-        )
-        if (r.code === 0) calendarPushed = true
+        const eventBody = {
+          summary: `✅ 今日小结 · ${date}`,
+          description: desc,
+          start_time: { timestamp: String(start), timezone: TZ },
+          end_time: { timestamp: String(start + 15 * 60), timezone: TZ },
+        }
+        const localId = `recap:${date}`
+
+        const { data: existing } = await supabaseAdmin
+          .from('feishu_event_map')
+          .select('local_id, feishu_event_id, calendar_id')
+          .eq('local_id', localId)
+          .maybeSingle()
+
+        let pushed = false
+        if (existing && (existing as any).calendar_id === calendarId) {
+          const r = await feishu<{ code: number; msg: string }>(
+            `/calendar/v4/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent((existing as any).feishu_event_id)}`,
+            { method: 'PATCH', body: JSON.stringify(eventBody) },
+          )
+          if (r.code === 0) {
+            pushed = true
+            await supabaseAdmin
+              .from('feishu_event_map')
+              .update({ last_pushed_at: nowIso })
+              .eq('local_id', localId)
+          } else if (r.code === 195100) {
+            // 事件已被删除 → 清理映射并新建
+            await supabaseAdmin.from('feishu_event_map').delete().eq('local_id', localId)
+          }
+        }
+
+        if (!pushed) {
+          const r = await feishu<{
+            code: number
+            msg: string
+            data?: { event?: { event_id?: string } }
+          }>(
+            `/calendar/v4/calendars/${encodeURIComponent(calendarId)}/events`,
+            { method: 'POST', body: JSON.stringify(eventBody) },
+          )
+          const evId = r.data?.event?.event_id
+          if (r.code === 0 && evId) {
+            await supabaseAdmin.from('feishu_event_map').upsert(
+              {
+                local_id: localId,
+                feishu_event_id: evId,
+                calendar_id: calendarId,
+                last_pushed_at: nowIso,
+              },
+              { onConflict: 'local_id' },
+            )
+            pushed = true
+          }
+        }
+        calendarPushed = pushed
       }
     } catch (e) {
       console.warn('[recap] calendar push failed', (e as any)?.message)
@@ -990,25 +1045,36 @@ export async function handleRecapSubmit(payload: {
     return {
       toast: {
         type: 'success',
-        content: calendarPushed ? `已记录并在日历上打勾 ✅` : `已记录 ${date} 的小结 ✅`,
+        content: isUpdate
+          ? (calendarPushed ? `已更新并同步到日历 ✅` : `已更新 ${date} 的小结 ✅`)
+          : (calendarPushed ? `已记录并在日历上打勾 ✅` : `已记录 ${date} 的小结 ✅`),
       },
-      // 返回一张「已完成」的回执卡片替换原卡
-      card: recapDoneCard(date, { summary, diary, calendarPushed }),
+      // 返回一张「已完成」的回执卡片替换原卡，展示最新内容
+      card: recapDoneCard(date, { summary, diary, calendarPushed, isUpdate, updatedAt: nowIso }),
     }
   } catch (e: any) {
     return { toast: { type: 'error', content: e?.message ?? '保存失败' } }
   }
 }
 
-function recapDoneCard(date: string, opts: { summary: string; diary: string; calendarPushed: boolean }) {
+function recapDoneCard(
+  date: string,
+  opts: { summary: string; diary: string; calendarPushed: boolean; isUpdate?: boolean; updatedAt?: string },
+) {
   const parts: string[] = []
   if (opts.summary) parts.push(`**今日小结**\n${opts.summary}`)
   if (opts.diary) parts.push(`**日记 / 心情**\n${opts.diary}`)
+  const tsLabel = opts.updatedAt ? formatTsInTz(opts.updatedAt, TZ) : ''
+  const noteParts: string[] = []
+  noteParts.push(opts.isUpdate ? '内容已更新' : '内容已记录')
+  if (opts.calendarPushed) noteParts.push(opts.isUpdate ? '已同步覆盖日历事件' : '已同步到飞书日历')
+  else noteParts.push('已记录到 Sylva')
+  if (tsLabel) noteParts.push(`更新于 ${tsLabel}`)
   return {
     config: { wide_screen_mode: true, update_multi: true },
     header: {
       template: 'green',
-      title: { tag: 'plain_text', content: `✅ 已完成 · ${date}` },
+      title: { tag: 'plain_text', content: `${opts.isUpdate ? '🔄 已更新' : '✅ 已完成'} · ${date}` },
     },
     elements: [
       {
@@ -1023,13 +1089,28 @@ function recapDoneCard(date: string, opts: { summary: string; diary: string; cal
         elements: [
           {
             tag: 'plain_text',
-            content: opts.calendarPushed ? '已同步到飞书日历' : '已记录到 Sylva',
+            content: noteParts.join(' · '),
           },
         ],
       },
     ],
   }
 }
+
+function formatTsInTz(iso: string, tz: string) {
+  try {
+    const d = new Date(iso)
+    const f = new Intl.DateTimeFormat('zh-CN', {
+      timeZone: tz,
+      month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: false,
+    })
+    return f.format(d)
+  } catch {
+    return ''
+  }
+}
+
 
 export const markRecapDone = createServerFn({ method: 'POST' })
   .inputValidator((d: { date: string }) => z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(d))
