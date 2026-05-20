@@ -174,16 +174,22 @@ export function AiPersonaPanel() {
           className={`flex items-center gap-4 p-3 rounded-xl border border-dashed transition ${dragOver ? "border-amber-glow/60 bg-amber-glow/5" : "border-white/10 bg-white/[0.02]"}`}
         >
           <div className="relative">
-            <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/15 bg-white/5 flex items-center justify-center text-2xl text-white/60">
+            <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/15 bg-white/5 flex items-center justify-center text-2xl text-white/60 relative">
               <img
                 src={resolveAvatarUrl(local.avatar_url)}
                 alt="头像"
-                className="w-full h-full object-cover"
+                className={`w-full h-full object-cover transition ${uploadingAvatar ? "opacity-60 blur-[1px]" : ""}`}
                 onError={(e) => {
                   const img = e.currentTarget;
                   if (img.src !== DEFAULT_AVATAR_URL) img.src = DEFAULT_AVATAR_URL;
                 }}
               />
+              {uploadingAvatar && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
+                  <Loader2 className="w-4 h-4 animate-spin text-white mb-0.5" />
+                  <span className="text-[10px] text-white font-medium tabular-nums">{uploadProgress}%</span>
+                </div>
+              )}
             </div>
             <button
               type="button"
