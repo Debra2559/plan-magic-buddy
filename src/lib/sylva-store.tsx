@@ -234,6 +234,56 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
       ];
     });
 
+  // 远端：飞书卡片已提交完成的日期集合（轮询同步）
+  const [recapDoneDates, setRecapDoneDates] = useState<Set<string>>(() => new Set());
+
+  const refreshRecapDoneDates = useCallback(async () => {
+    try {
+      const res = await getRecapDoneDates();
+      setRecapDoneDates(new Set(res.dates));
+      // 顺手把今天的远端 recap 内容同步进本地 diary（若本地为空）
+      const today = todayLocal();
+      if (res.dates.includes(today)) {
+        const row = await getDailyRecap({ data: { date: today } });
+        if (row) {
+          const remote = [row.summary, row.diary].filter(Boolean).join("\n\n").trim();
+          setDiary((prev) => {
+            const existing = prev.find((d) => d.date === today);
+            const localContent = (existing?.content ?? "").trim();
+            const localMood = existing?.mood;
+            const remoteMood = (row.mood as Mood | undefined) || undefined;
+            if ((remote && !localContent) || (remoteMood && !localMood)) {
+              const updatedAt = new Date().toISOString();
+              if (existing) {
+                return prev.map((d) => d.date === today ? {
+                  ...d,
+                  content: localContent ? d.content : remote,
+                  mood: localMood ?? remoteMood,
+                  updatedAt,
+                } : d);
+              }
+              return [{ date: today, content: remote, mood: remoteMood, updatedAt }, ...prev];
+            }
+            return prev;
+          });
+        }
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    refreshRecapDoneDates();
+    const onFocus = () => refreshRecapDoneDates();
+    const t = setInterval(refreshRecapDoneDates, 60_000);
+    if (typeof window !== "undefined") window.addEventListener("focus", onFocus);
+    return () => {
+      clearInterval(t);
+      if (typeof window !== "undefined") window.removeEventListener("focus", onFocus);
+    };
+  }, [refreshRecapDoneDates]);
+
+  const isRecapDone = useCallback((date: string) => recapDoneDates.has(date), [recapDoneDates]);
+
   return (
     <SylvaContext.Provider
       value={{
@@ -252,6 +302,9 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
         updateNote,
         toggleHabit,
         upsertDiary,
+        recapDoneDates,
+        isRecapDone,
+        refreshRecapDoneDates,
       }}
     >
       {children}
