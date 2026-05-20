@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { supabaseAdmin } from '@/integrations/supabase/client.server'
 import { z } from 'zod'
+import { getUserAccessToken } from './feishu-user-auth.functions'
 
 const FEISHU_BASE = 'https://open.feishu.cn/open-apis'
 
