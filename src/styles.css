@@ -84,49 +84,61 @@
 
 .dark { color-scheme: dark; }
 
-/* Light mode — paper / 米白 palette */
+/* Light mode — Claude/Coze inspired: warm ivory + refined neutrals + terracotta */
 html.light {
   color-scheme: light;
-  --background: oklch(0.97 0.01 90);
-  --foreground: oklch(0.22 0.02 145);
+  /* 暖米底 (#faf9f5 ≈ Claude 文档底色) */
+  --background: oklch(0.985 0.006 85);
+  --foreground: oklch(0.26 0.018 55);
 
-  --card: oklch(0.99 0.008 90);
-  --card-foreground: oklch(0.22 0.02 145);
+  /* 卡片再亮一点点，与底色拉开层级（接近纯白但带微暖） */
+  --card: oklch(1 0.003 85);
+  --card-foreground: oklch(0.26 0.018 55);
 
-  --popover: oklch(0.99 0.008 90);
-  --popover-foreground: oklch(0.22 0.02 145);
+  --popover: oklch(1 0.003 85);
+  --popover-foreground: oklch(0.26 0.018 55);
 
-  --primary: oklch(0.42 0.06 145);
-  --primary-foreground: oklch(0.98 0.005 85);
+  /* 主色：Claude 的赤陶橙 ~ #c96442 */
+  --primary: oklch(0.6 0.13 38);
+  --primary-foreground: oklch(0.99 0.005 85);
 
-  --secondary: oklch(0.92 0.015 90);
-  --secondary-foreground: oklch(0.25 0.02 145);
+  /* 次级：暖灰，做 hover / chip 背景 */
+  --secondary: oklch(0.95 0.008 80);
+  --secondary-foreground: oklch(0.3 0.018 55);
 
-  --muted: oklch(0.93 0.012 90);
-  --muted-foreground: oklch(0.42 0.02 145);
+  --muted: oklch(0.945 0.008 80);
+  --muted-foreground: oklch(0.5 0.015 60);
 
-  --accent: oklch(0.62 0.12 65);
-  --accent-foreground: oklch(0.98 0.005 85);
+  /* 强调色：与主色错开的琥珀金，做高亮 */
+  --accent: oklch(0.74 0.14 70);
+  --accent-foreground: oklch(0.24 0.02 55);
 
-  --destructive: oklch(0.55 0.18 28);
-  --destructive-foreground: oklch(0.98 0.005 85);
+  --destructive: oklch(0.58 0.18 28);
+  --destructive-foreground: oklch(0.99 0.005 85);
 
-  --border: oklch(0.22 0.02 145 / 0.14);
-  --input: oklch(0.22 0.02 145 / 0.18);
-  --ring: oklch(0.42 0.06 145);
+  /* 极淡的暖灰描边，接近 Claude 的 hairline */
+  --border: oklch(0.26 0.018 55 / 0.1);
+  --input: oklch(0.26 0.018 55 / 0.16);
+  --ring: oklch(0.6 0.13 38 / 0.5);
 
-  --moss: oklch(0.48 0.09 145);
+  --moss: oklch(0.5 0.07 150);
   --bark: oklch(0.38 0.04 50);
-  --bone: oklch(0.32 0.02 145);
-  --amber-glow: oklch(0.62 0.14 70);
+  --bone: oklch(0.34 0.018 55);
+  --amber-glow: oklch(0.66 0.14 55);
 
-  --gradient-glow: radial-gradient(120% 80% at 50% 0%, oklch(0.62 0.14 70 / 0.18), transparent 60%);
-  --gradient-widget: linear-gradient(155deg, oklch(0.22 0.02 145 / 0.06), oklch(0.22 0.02 145 / 0.02));
-  --shadow-widget: 0 20px 50px -20px oklch(0.22 0.02 145 / 0.22), 0 0 0 1px oklch(0.22 0.02 145 / 0.06) inset;
-  --shadow-glow: 0 0 40px oklch(0.62 0.14 70 / 0.25);
+  --gradient-glow: radial-gradient(120% 80% at 50% 0%, oklch(0.66 0.14 55 / 0.14), transparent 60%);
+  --gradient-widget: linear-gradient(155deg, oklch(0.26 0.018 55 / 0.04), oklch(0.26 0.018 55 / 0.015));
+  --shadow-widget:
+    0 1px 2px oklch(0.26 0.018 55 / 0.04),
+    0 12px 32px -16px oklch(0.26 0.018 55 / 0.14),
+    0 0 0 1px oklch(0.26 0.018 55 / 0.05) inset;
+  --shadow-glow: 0 0 40px oklch(0.66 0.14 55 / 0.2);
 }
 
-html.light .widget { border-color: oklch(0.22 0.02 145 / 0.1); }
+html.light .widget {
+  background: var(--card);
+  border-color: oklch(0.26 0.018 55 / 0.08);
+}
 
 @layer base {
   * { border-color: var(--color-border); }
