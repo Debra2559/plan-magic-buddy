@@ -8,6 +8,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AvatarCropDialog } from "@/components/AvatarCropDialog";
+import { ProfileHistoryPanel } from "@/components/ProfileHistoryPanel";
 
 const PRESET_AVATARS: string[] = [
   "fox", "panda", "cat", "dog", "koala", "tiger", "bear", "rabbit",
@@ -333,7 +334,11 @@ export function AiPersonaPanel() {
             </div>
           )}
         </div>
+
+        <ProfileHistoryPanel />
       </div>
+
+
 
       <AvatarCropDialog
         open={!!pickedFile}
