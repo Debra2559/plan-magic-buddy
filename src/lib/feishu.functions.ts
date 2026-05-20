@@ -1422,41 +1422,99 @@ export const lookupFeishuOpenId = createServerFn({ method: 'POST' })
   .inputValidator((input) =>
     z
       .object({
-        type: z.enum(['email', 'mobile']),
-        value: z.string().min(3).max(120),
+        type: z.enum(['email', 'mobile', 'name', 'employee_id']),
+        value: z.string().min(1).max(120),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
     try {
-      const body =
-        data.type === 'email' ? { emails: [data.value] } : { mobiles: [data.value] }
-      const res = await feishu<{
-        code: number
-        msg: string
-        data?: { user_list?: Array<{ email?: string; mobile?: string; user_id?: string; open_id?: string }> }
-      }>('/contact/v3/users/batch_get_id?user_id_type=open_id', {
-        method: 'POST',
-        body: JSON.stringify(body),
-      })
-      if (res.code !== 0) {
+      // 邮箱 / 手机号：走 batch_get_id
+      if (data.type === 'email' || data.type === 'mobile') {
+        const body =
+          data.type === 'email' ? { emails: [data.value] } : { mobiles: [data.value] }
+        const res = await feishu<{
+          code: number
+          msg: string
+          data?: { user_list?: Array<{ email?: string; mobile?: string; user_id?: string; open_id?: string }> }
+        }>('/contact/v3/users/batch_get_id?user_id_type=open_id', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        })
+        if (res.code !== 0) {
+          return {
+            ok: false as const,
+            error: `飞书接口错误 code=${res.code} msg=${res.msg}`,
+            hint:
+              res.code === 99991672 || /scope/i.test(res.msg ?? '')
+                ? '应用缺少 contact:user.base:readonly 权限，请到飞书后台「权限管理」开通后重发布版本'
+                : undefined,
+          }
+        }
+        const user = res.data?.user_list?.[0]
+        if (!user?.open_id) {
+          return { ok: false as const, error: '未匹配到用户，请确认邮箱/手机号属于本企业成员' }
+        }
+        return { ok: true as const, openId: user.open_id }
+      }
+
+      // 工号：直接按 user_id_type=user_id 取用户（飞书将企业工号映射到 user_id）
+      if (data.type === 'employee_id') {
+        const res = await feishu<{
+          code: number
+          msg: string
+          data?: { user?: { open_id?: string; name?: string } }
+        }>(`/contact/v3/users/${encodeURIComponent(data.value)}?user_id_type=user_id`, {
+          method: 'GET',
+        })
+        if (res.code !== 0 || !res.data?.user?.open_id) {
+          return {
+            ok: false as const,
+            error: `未按工号匹配到用户（code=${res.code} ${res.msg ?? ''}）`,
+            hint:
+              res.code === 99991672 || /scope/i.test(res.msg ?? '')
+                ? '应用缺少 contact:user.base:readonly 权限'
+                : '请确认输入的是企业「工号 / user_id」而非 open_id',
+          }
+        }
+        return { ok: true as const, openId: res.data.user.open_id, name: res.data.user.name }
+      }
+
+      // 姓名：走通讯录搜索
+      if (data.type === 'name') {
+        const res = await feishu<{
+          code: number
+          msg: string
+          data?: { users?: Array<{ open_id?: string; name?: string; en_name?: string; department_ids?: string[] }> }
+        }>(`/search/v1/user?query=${encodeURIComponent(data.value)}&page_size=10`, {
+          method: 'GET',
+        })
+        if (res.code !== 0) {
+          return {
+            ok: false as const,
+            error: `搜索接口错误 code=${res.code} msg=${res.msg}`,
+            hint:
+              res.code === 99991672 || /scope/i.test(res.msg ?? '')
+                ? '应用缺少 search:user.id:readonly 权限。注意：通讯录搜索通常要求 user_access_token；如机器人无此能力，请改用「邮箱 / 手机号 / 工号」查询'
+                : undefined,
+          }
+        }
+        const list = (res.data?.users ?? []).filter((u) => u.open_id)
+        if (list.length === 0) {
+          return { ok: false as const, error: '未匹配到姓名相符的用户' }
+        }
+        // 精确匹配优先
+        const exact = list.find((u) => u.name === data.value || u.en_name === data.value)
+        const pick = exact ?? list[0]
         return {
-          ok: false as const,
-          error: `飞书接口错误 code=${res.code} msg=${res.msg}`,
-          hint:
-            res.code === 99991672 || /scope/i.test(res.msg ?? '')
-              ? '应用缺少 contact:user.base:readonly 权限，请到飞书后台「权限管理」开通后重发布版本'
-              : undefined,
+          ok: true as const,
+          openId: pick.open_id!,
+          name: pick.name,
+          candidates: list.slice(0, 5).map((u) => ({ openId: u.open_id!, name: u.name, enName: u.en_name })),
         }
       }
-      const user = res.data?.user_list?.[0]
-      if (!user?.open_id) {
-        return {
-          ok: false as const,
-          error: '未匹配到用户，请确认邮箱/手机号属于本企业成员',
-        }
-      }
-      return { ok: true as const, openId: user.open_id }
+
+      return { ok: false as const, error: '不支持的查询类型' }
     } catch (e: any) {
       return { ok: false as const, error: e?.message ?? '请求失败' }
     }
