@@ -1459,59 +1459,71 @@ export const lookupFeishuOpenId = createServerFn({ method: 'POST' })
         return { ok: true as const, openId: user.open_id }
       }
 
-      // 工号：直接按 user_id_type=user_id 取用户（飞书将企业工号映射到 user_id）
+      // 工号 / 姓名：优先使用 user_access_token（用户授权）
+      const userToken = await getUserAccessToken()
+
+      // 工号：直接按 user_id_type=user_id 取用户
       if (data.type === 'employee_id') {
-        const res = await feishu<{
-          code: number
-          msg: string
-          data?: { user?: { open_id?: string; name?: string } }
-        }>(`/contact/v3/users/${encodeURIComponent(data.value)}?user_id_type=user_id`, {
-          method: 'GET',
-        })
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+        if (userToken) headers.Authorization = `Bearer ${userToken}`
+        else headers.Authorization = `Bearer ${await getTenantAccessToken()}`
+        const r = await fetch(
+          `${FEISHU_BASE}/contact/v3/users/${encodeURIComponent(data.value)}?user_id_type=user_id`,
+          { method: 'GET', headers },
+        )
+        const res: any = await r.json()
         if (res.code !== 0 || !res.data?.user?.open_id) {
           return {
             ok: false as const,
             error: `未按工号匹配到用户（code=${res.code} ${res.msg ?? ''}）`,
             hint:
-              res.code === 99991672 || /scope/i.test(res.msg ?? '')
-                ? '应用缺少 contact:user.base:readonly 权限'
-                : '请确认输入的是企业「工号 / user_id」而非 open_id',
+              res.code === 99991663 || res.code === 99991661
+                ? '需要用户授权，请先点「授权飞书」'
+                : res.code === 99991672 || /scope/i.test(res.msg ?? '')
+                  ? '应用缺少 contact:user.base:readonly 权限'
+                  : '请确认输入的是企业「工号 / user_id」而非 open_id',
           }
         }
         return { ok: true as const, openId: res.data.user.open_id, name: res.data.user.name }
       }
 
-      // 姓名：走通讯录搜索
+      // 姓名：通讯录搜索（必须 user_access_token）
       if (data.type === 'name') {
-        const res = await feishu<{
-          code: number
-          msg: string
-          data?: { users?: Array<{ open_id?: string; name?: string; en_name?: string; department_ids?: string[] }> }
-        }>(`/search/v1/user?query=${encodeURIComponent(data.value)}&page_size=10`, {
-          method: 'GET',
-        })
+        if (!userToken) {
+          return {
+            ok: false as const,
+            error: '按姓名搜索需要用户授权',
+            hint: '请先点击「授权飞书」完成 OAuth，获取 user_access_token 后再试',
+          }
+        }
+        const r = await fetch(
+          `${FEISHU_BASE}/search/v1/user?query=${encodeURIComponent(data.value)}&page_size=10`,
+          { method: 'GET', headers: { Authorization: `Bearer ${userToken}` } },
+        )
+        const res: any = await r.json()
         if (res.code !== 0) {
           return {
             ok: false as const,
             error: `搜索接口错误 code=${res.code} msg=${res.msg}`,
             hint:
-              res.code === 99991672 || /scope/i.test(res.msg ?? '')
-                ? '应用缺少 search:user.id:readonly 权限。注意：通讯录搜索通常要求 user_access_token；如机器人无此能力，请改用「邮箱 / 手机号 / 工号」查询'
-                : undefined,
+              res.code === 99991663 || res.code === 99991661
+                ? '用户令牌无效或已过期，请重新授权'
+                : res.code === 99991672 || /scope/i.test(res.msg ?? '')
+                  ? '应用缺少 search:user.id:readonly 权限'
+                  : undefined,
           }
         }
-        const list = (res.data?.users ?? []).filter((u) => u.open_id)
+        const list = (res.data?.users ?? []).filter((u: any) => u.open_id)
         if (list.length === 0) {
           return { ok: false as const, error: '未匹配到姓名相符的用户' }
         }
-        // 精确匹配优先
-        const exact = list.find((u) => u.name === data.value || u.en_name === data.value)
+        const exact = list.find((u: any) => u.name === data.value || u.en_name === data.value)
         const pick = exact ?? list[0]
         return {
           ok: true as const,
           openId: pick.open_id!,
           name: pick.name,
-          candidates: list.slice(0, 5).map((u) => ({ openId: u.open_id!, name: u.name, enName: u.en_name })),
+          candidates: list.slice(0, 5).map((u: any) => ({ openId: u.open_id!, name: u.name, enName: u.en_name })),
         }
       }
 
