@@ -138,7 +138,7 @@ export function FeishuSyncPanel() {
 
   const [lookup, setLookup] = useState<{
     open: boolean;
-    type: "email" | "mobile";
+    type: "email" | "mobile" | "name" | "employee_id";
     value: string;
     loading: boolean;
     result: { ok: boolean; msg: string; openId?: string } | null;
@@ -1151,7 +1151,7 @@ export function FeishuSyncPanel() {
         {lookup.open && (
           <div className="mb-2 px-3 py-2 rounded-md border border-white/10 bg-white/[0.03] space-y-2">
             <div className="text-[11px] text-white/60">
-              输入企业内邮箱或手机号，反查你的 <code>open_id</code>（需应用开通 <code>contact:user.base:readonly</code>）。
+              输入企业内 <b>邮箱 / 手机号 / 姓名 / 工号</b>，反查你的 <code>open_id</code>（需开通 <code>contact:user.base:readonly</code>；按姓名搜索还需 <code>search:user.id:readonly</code>）。
             </div>
             <div className="flex items-center gap-2">
               <select
@@ -1161,20 +1161,30 @@ export function FeishuSyncPanel() {
               >
                 <option value="email">邮箱</option>
                 <option value="mobile">手机号</option>
+                <option value="name">姓名</option>
+                <option value="employee_id">工号</option>
               </select>
               <input
                 value={lookup.value}
                 onChange={(e) => {
                   const v = e.target.value;
                   const trimmed = v.trim();
-                  // 自动识别：含 @ → 邮箱；以 + 或纯数字（≥6 位）→ 手机号
+                  // 自动识别：
+                  //  含 @           → 邮箱
+                  //  以 + 或长数字   → 手机号 (≥9 位)
+                  //  纯数字/字母短串 → 工号 (含字母或 3-8 位数字)
+                  //  含中文或空格    → 姓名
                   let detected = lookup.type;
                   if (trimmed.includes("@")) detected = "email";
-                  else if (/^\+?\d{6,}$/.test(trimmed)) detected = "mobile";
+                  else if (/^\+?\d{9,}$/.test(trimmed)) detected = "mobile";
+                  else if (/[\u4e00-\u9fa5]/.test(trimmed) || /\s/.test(trimmed)) detected = "name";
+                  else if (/^[A-Za-z0-9_-]{2,20}$/.test(trimmed) && /[A-Za-z_-]/.test(trimmed)) detected = "employee_id";
+                  else if (/^\d{3,8}$/.test(trimmed)) detected = "employee_id";
+                  else if (/^[\u4e00-\u9fa5A-Za-z·\s]{2,30}$/.test(trimmed)) detected = "name";
                   setLookup({ ...lookup, value: v, type: detected, result: null });
                 }}
                 onKeyDown={(e) => e.key === "Enter" && doLookupOpenId()}
-                placeholder="输入邮箱或手机号，自动识别"
+                placeholder="输入邮箱 / 手机号 / 姓名 / 工号，自动识别"
                 className="flex-1 bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white/90 placeholder:text-white/30 outline-none"
               />
               <button
