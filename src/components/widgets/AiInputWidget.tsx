@@ -15,14 +15,14 @@ export function AiInputWidget() {
 
       <div className="space-y-2 mb-5">
         {[
-          { d: "周一", t: "梳理答辩大纲 + 导师同步", c: "moss" },
-          { d: "周二", t: "答辩 PPT 主体 · 飞书 mock", c: "amber-glow" },
-          { d: "周三", t: "PPT 精修 · 模拟一次答辩", c: "accent" },
-          { d: "周四 - 五", t: "飞书系统跑通 · 收口", c: "moss" },
+          { d: "周一", t: "梳理答辩大纲 + 导师同步", c: "bg-moss" },
+          { d: "周二", t: "答辩 PPT 主体 · 飞书 mock", c: "bg-amber-glow" },
+          { d: "周三", t: "PPT 精修 · 模拟一次答辩", c: "bg-accent" },
+          { d: "周四 - 五", t: "飞书系统跑通 · 收口", c: "bg-moss" },
         ].map((s, i) => (
           <div key={i} className="flex items-center gap-3 text-sm">
             <span className="text-xs text-muted-foreground w-16 shrink-0">{s.d}</span>
-            <span className={`w-1.5 h-1.5 rounded-full bg-${s.c}`} />
+            <span className={`w-1.5 h-1.5 rounded-full ${s.c}`} />
             <span className="text-foreground/80">{s.t}</span>
           </div>
         ))}
