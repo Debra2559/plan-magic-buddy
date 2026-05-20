@@ -27,11 +27,11 @@ function readUrlParams() {
   const p = new URLSearchParams(window.location.search);
   const t = p.get("tab");
   const d = p.get("date");
-  // 兼容历史链接：summary 已合并入「手帐」
+  // 兼容历史链接：notes→log，diary→reflection，summary/journal→handbook
   const tab: Tab | null =
-    t === "notes" ? "notes"
-    : (t === "diary" || t === "summary") ? "diary"
-    : (t === "handbook" || t === "journal") ? "handbook"
+    t === "log" || t === "notes" ? "log"
+    : t === "reflection" || t === "diary" || t === "summary" ? "reflection"
+    : t === "handbook" || t === "journal" ? "handbook"
     : null;
   const date = d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null;
   return { tab, date };
@@ -39,7 +39,7 @@ function readUrlParams() {
 
 export function NotesView() {
   const urlInit = readUrlParams();
-  const [tab, setTab] = useState<Tab>(urlInit.tab ?? "notes");
+  const [tab, setTab] = useState<Tab>(urlInit.tab ?? "log");
   const [mode, setMode] = useState<"list" | "canvas">(() => {
     if (typeof window === "undefined") return "list";
     return (window.localStorage.getItem("notes:mode") as "list" | "canvas") ?? "list";
@@ -53,7 +53,7 @@ export function NotesView() {
         <div className="flex items-center justify-between px-7 pt-5 pb-3">
           <div>
             <p className="text-[10px] tracking-widest text-amber-glow mb-1">每日笔记</p>
-            <h2 className="font-display text-2xl text-white">画布视图 · 拖动随手记</h2>
+            <h2 className="font-display text-2xl text-white">画布视图 · 拖动卡片</h2>
           </div>
           <ModeToggle mode={mode} onChange={setMode} />
         </div>
@@ -74,8 +74,8 @@ export function NotesView() {
             <h2 className="font-display text-2xl text-white">手帐 · 按天回顾</h2>
           </div>
           <div className="flex items-center gap-1 p-1 rounded-full bg-white/[0.04] border border-white/8">
-            <TabBtn active={false} onClick={() => setTab("notes")} icon={<NotebookPen className="w-3.5 h-3.5" />}>随手记</TabBtn>
-            <TabBtn active={false} onClick={() => setTab("diary")} icon={<BookHeart className="w-3.5 h-3.5" />}>日记</TabBtn>
+            <TabBtn active={false} onClick={() => setTab("log")} icon={<ListChecks className="w-3.5 h-3.5" />}>事件</TabBtn>
+            <TabBtn active={false} onClick={() => setTab("reflection")} icon={<Sparkles className="w-3.5 h-3.5" />}>感受 &amp; 思考</TabBtn>
             <TabBtn active={true} onClick={() => setTab("handbook")} icon={<BookHeart className="w-3.5 h-3.5" />}>手帐</TabBtn>
           </div>
         </div>
@@ -91,19 +91,20 @@ export function NotesView() {
       <div className="flex items-start justify-between mb-1 gap-3">
         <div>
           <p className="text-[10px] tracking-widest text-amber-glow mb-1">每日记录</p>
-          <h2 className="font-display text-3xl text-white mb-5">把脑子里飘过的，先存下来。</h2>
+          <h2 className="font-display text-3xl text-white mb-5">
+            {tab === "log" ? "把发生的事，先存下来。" : "把感受和想法，写出来。"}
+          </h2>
         </div>
         <ModeToggle mode={mode} onChange={setMode} />
       </div>
 
       <div className="flex items-center gap-1 mb-6 p-1 rounded-full bg-white/[0.04] border border-white/8 w-fit">
-        <TabBtn active={tab === "notes"} onClick={() => setTab("notes")} icon={<NotebookPen className="w-3.5 h-3.5" />}>随手记</TabBtn>
-        <TabBtn active={tab === "diary"} onClick={() => setTab("diary")} icon={<BookHeart className="w-3.5 h-3.5" />}>日记</TabBtn>
-        <TabBtn active={(tab as Tab) === "handbook"} onClick={() => setTab("handbook")} icon={<BookHeart className="w-3.5 h-3.5" />}>手帐</TabBtn>
+        <TabBtn active={tab === "log"} onClick={() => setTab("log")} icon={<ListChecks className="w-3.5 h-3.5" />}>事件</TabBtn>
+        <TabBtn active={tab === "reflection"} onClick={() => setTab("reflection")} icon={<Sparkles className="w-3.5 h-3.5" />}>感受 &amp; 思考</TabBtn>
+        <TabBtn active={false} onClick={() => setTab("handbook")} icon={<BookHeart className="w-3.5 h-3.5" />}>手帐</TabBtn>
       </div>
 
-      {tab === "notes" && <NotesTab />}
-      {tab === "diary" && <DiaryTab initialDate={initialDate} />}
+      <NotesTab kind={tab} />
     </div>
   );
 }
