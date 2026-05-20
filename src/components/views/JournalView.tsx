@@ -793,15 +793,20 @@ function ComicPanel({
               {comic.provider === "gemini" ? "Gemini" : "Seedream"}
             </span>
             <span>{new Date(comic.createdAt).toLocaleString()}</span>
-            <a
-              href={comic.imageUrl}
-              download={`sylva-${date}.png`}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              onClick={() => downloadComicImage(comic.imageUrl, `sylva-${date}.png`)}
               className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/70"
+              title="导出为图片"
             >
-              <Download className="w-3 h-3" /> 下载
-            </a>
+              <Download className="w-3 h-3" /> 导出
+            </button>
+            <button
+              onClick={() => shareComicImage(comic.imageUrl, `sylva-${date}.png`, `Sylva · ${date} 漫画`)}
+              className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-glow/15 hover:bg-amber-glow/30 border border-amber-glow/40 text-amber-glow"
+              title="移动端可保存到相册"
+            >
+              <Share2 className="w-3 h-3" /> 保存到相册
+            </button>
             <button
               onClick={() =>
                 flash("diary", () =>
