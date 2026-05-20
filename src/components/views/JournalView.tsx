@@ -28,6 +28,7 @@ import {
   Loader2,
   RefreshCw,
   Download,
+  Share2,
   X as XIcon,
 } from "lucide-react";
 
@@ -52,6 +53,52 @@ function fmtLong(iso: string) {
   const [y, m, d] = iso.split("-").map(Number);
   const wd = WEEKDAY[new Date(y, m - 1, d).getDay()];
   return { big: `${m}.${String(d).padStart(2, "0")}`, sub: `${y} · ${wd}` };
+}
+
+async function fetchImageBlob(url: string): Promise<Blob> {
+  const res = await fetch(url, { mode: "cors" });
+  if (!res.ok) throw new Error(`下载失败 [${res.status}]`);
+  return res.blob();
+}
+
+async function downloadComicImage(url: string, filename: string) {
+  try {
+    const blob = await fetchImageBlob(url);
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+  } catch {
+    // 兜底：跨域无法 fetch 时直接打开图片，让用户长按保存
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+}
+
+async function shareComicImage(url: string, filename: string, title: string) {
+  const nav = navigator as Navigator & {
+    canShare?: (data: { files: File[] }) => boolean;
+    share?: (data: { files?: File[]; title?: string; text?: string; url?: string }) => Promise<void>;
+  };
+  try {
+    const blob = await fetchImageBlob(url);
+    const file = new File([blob], filename, { type: blob.type || "image/png" });
+    if (nav.canShare?.({ files: [file] }) && nav.share) {
+      await nav.share({ files: [file], title, text: title });
+      return;
+    }
+    if (nav.share) {
+      await nav.share({ title, text: title, url });
+      return;
+    }
+  } catch (e: any) {
+    if (e?.name === "AbortError") return;
+  }
+  // 不支持系统分享 —— 退化为下载
+  await downloadComicImage(url, filename);
 }
 
 export function JournalView() {
@@ -746,15 +793,20 @@ function ComicPanel({
               {comic.provider === "gemini" ? "Gemini" : "Seedream"}
             </span>
             <span>{new Date(comic.createdAt).toLocaleString()}</span>
-            <a
-              href={comic.imageUrl}
-              download={`sylva-${date}.png`}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              onClick={() => downloadComicImage(comic.imageUrl, `sylva-${date}.png`)}
               className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/70"
+              title="导出为图片"
             >
-              <Download className="w-3 h-3" /> 下载
-            </a>
+              <Download className="w-3 h-3" /> 导出
+            </button>
+            <button
+              onClick={() => shareComicImage(comic.imageUrl, `sylva-${date}.png`, `Sylva · ${date} 漫画`)}
+              className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-glow/15 hover:bg-amber-glow/30 border border-amber-glow/40 text-amber-glow"
+              title="移动端可保存到相册"
+            >
+              <Share2 className="w-3 h-3" /> 保存到相册
+            </button>
             <button
               onClick={() =>
                 flash("diary", () =>
@@ -920,6 +972,20 @@ function ComicHistoryPanel({
               </span>
               <span>原日期 · {preview.date}</span>
               <span className="text-white/40">{new Date(preview.createdAt).toLocaleString()}</span>
+              <button
+                onClick={() => downloadComicImage(preview.imageUrl, `sylva-${preview.date}.png`)}
+                className="ml-auto flex items-center gap-1 px-3 py-1 rounded-full bg-white/10 hover:bg-white/15 border border-white/15"
+                title="导出为图片"
+              >
+                <Download className="w-3 h-3" /> 导出
+              </button>
+              <button
+                onClick={() => shareComicImage(preview.imageUrl, `sylva-${preview.date}.png`, `Sylva · ${preview.date} 漫画`)}
+                className="flex items-center gap-1 px-3 py-1 rounded-full bg-amber-glow/15 hover:bg-amber-glow/30 border border-amber-glow/40 text-amber-glow"
+                title="移动端可保存到相册"
+              >
+                <Share2 className="w-3 h-3" /> 保存到相册
+              </button>
               <button
                 onClick={() => { onRecall(preview); setPreview(null); }}
                 className="ml-auto px-3 py-1 rounded-full bg-amber-glow/25 hover:bg-amber-glow/40 border border-amber-glow/40 text-amber-glow"
