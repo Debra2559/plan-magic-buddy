@@ -229,7 +229,10 @@ export function AiPlanner() {
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit();
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  handleSubmit();
+                }
               }}
               placeholder={chatMessages.length === 0 ? "例如：我要考雅思 / 想 3 个月跑下半马 / 准备申请研究生…" : "继续回答…"}
               rows={chatMessages.length === 0 ? 4 : 2}
