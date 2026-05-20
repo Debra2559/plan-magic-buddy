@@ -51,7 +51,7 @@ interface WinPos {
 type SylvaView = "ai" | "schedule" | "todos" | "notes" | "habits" | "journal" | "settings";
 
 function DesktopApp() {
-  const [now, setNow] = useState(new Date());
+  const [now, setNow] = useState<Date | null>(null);
   const [positions, setPositions] = useState<Record<WidgetId, WinPos>>({
     calendar: { x: 32, y: 56 },
     today: { x: 470, y: 56 },
@@ -70,12 +70,14 @@ function DesktopApp() {
   });
 
   useEffect(() => {
+    setNow(new Date());
     const t = setInterval(() => setNow(new Date()), 1000 * 30);
     return () => clearInterval(t);
   }, []);
 
-  const time = now.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false });
-  const day = now.toLocaleDateString("zh-CN", { weekday: "short", month: "short", day: "numeric" });
+  const time = now ? now.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false }) : "";
+  const day = now ? now.toLocaleDateString("zh-CN", { weekday: "short", month: "short", day: "numeric" }) : "";
+
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-black select-none">
