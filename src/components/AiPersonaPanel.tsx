@@ -58,22 +58,54 @@ export function AiPersonaPanel() {
 
   const handleCroppedUpload = async (blob: Blob) => {
     if (!user) return;
+    // 记住失败时要保留的当前头像（resolveAvatarUrl 会兜底默认头像）
+    const previousAvatar = local.avatar_url;
     setUploadingAvatar(true);
+    setUploadProgress(0);
+    const toastId = toast.loading("正在上传头像…", { description: "0%" });
     try {
       const path = `${user.id}/avatar-${Date.now()}.png`;
-      const { error: upErr } = await supabase.storage.from("avatars").upload(path, blob, {
-        upsert: true,
-        contentType: "image/png",
-        cacheControl: "31536000", // 1 年，URL 自带时间戳，更新自动绕过缓存
+
+      // 1) 拿一个签名上传 URL，便于用 XHR 跟踪真实进度
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("avatars")
+        .createSignedUploadUrl(path);
+      if (signErr || !signed) throw signErr ?? new Error("无法创建上传链接");
+
+      // 2) XHR PUT 上传，监听 progress
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", signed.signedUrl, true);
+        xhr.setRequestHeader("Content-Type", "image/png");
+        xhr.setRequestHeader("x-upsert", "true");
+        xhr.setRequestHeader("cache-control", "max-age=31536000");
+        xhr.upload.onprogress = (e) => {
+          if (!e.lengthComputable) return;
+          const pct = Math.round((e.loaded / e.total) * 100);
+          setUploadProgress(pct);
+          toast.loading("正在上传头像…", { id: toastId, description: `${pct}%` });
+        };
+        xhr.onload = () =>
+          xhr.status >= 200 && xhr.status < 300
+            ? resolve()
+            : reject(new Error(`上传失败 HTTP ${xhr.status}`));
+        xhr.onerror = () => reject(new Error("网络错误，请重试"));
+        xhr.onabort = () => reject(new Error("上传已取消"));
+        xhr.send(blob);
       });
-      if (upErr) throw upErr;
+
+      // 3) 拿公开链接并写入资料
       const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      toast.loading("保存中…", { id: toastId, description: "100%" });
       await commit({ avatar_url: pub.publicUrl });
-      toast.success("头像已更新");
+      toast.success("头像已更新", { id: toastId, description: undefined });
     } catch (e: any) {
-      toast.error(e?.message ?? "上传失败");
+      // 失败：保留当前头像，UI 不动；resolveAvatarUrl 兜底默认头像
+      setLocal((cur) => (cur ? { ...cur, avatar_url: previousAvatar } : cur));
+      toast.error("上传失败", { id: toastId, description: e?.message ?? "请重试" });
     } finally {
       setUploadingAvatar(false);
+      setUploadProgress(0);
     }
   };
 
