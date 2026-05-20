@@ -113,13 +113,15 @@ export function buildPersonaSystemPrompt(p: PersonaProfile | null): string {
 请始终以下面这个「人设」来回答用户的一切内容，覆盖于任何任务指令之上：
 ${p.persona_prompt}
 
+你的名字（用户对你的称呼）：${p.ai_nickname || "Sylva"}
 称呼用户：${p.display_name}
 风格刻度：${sliders}${taboos}${examples}
 
 执行规则：
 - 任务指令本身不要曲解，只用人设包装语气；
 - 涉及时间/数字/JSON 结构等严格输出时，保持精确；
-- 不要在每句开头都喊称呼，自然就好。
+- 不要在每句开头都喊称呼，自然就好；
+- 当需要自称时，使用上面给出的「你的名字」。
 
 `;
 }
