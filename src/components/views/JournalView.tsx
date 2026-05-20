@@ -286,20 +286,22 @@ export function JournalView() {
               <SectionHeader icon={<Sparkles className="w-3.5 h-3.5" />} title="给未来的自己" />
               <div className="space-y-2">
                 {suggestions.map((s, i) => (
-                  <div
+                  <SuggestionCard
                     key={i}
-                    className="flex items-start gap-3 p-3.5 rounded-xl bg-gradient-to-r from-amber-glow/10 to-transparent border border-amber-glow/20"
-                  >
-                    <div className="w-7 h-7 rounded-full bg-amber-glow/20 flex items-center justify-center shrink-0">
-                      <s.Icon className="w-3.5 h-3.5 text-amber-glow" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs tracking-widest text-amber-glow/90 mb-0.5">{s.tag}</p>
-                      <p className="text-sm text-white/85 leading-snug">{s.text}</p>
-                    </div>
-                  </div>
+                    s={s}
+                    onCopyToDiary={() => {
+                      const prev = diary.find((d) => d.date === date)?.content ?? "";
+                      const line = `💡 ${s.tag}：${s.text}`;
+                      const merged = prev ? `${prev}\n\n${line}` : line;
+                      upsertDiary(date, { content: merged });
+                    }}
+                    onCopyToNote={() => {
+                      addNote(s.text, { tags: ["未来的我", s.tag] });
+                    }}
+                  />
                 ))}
               </div>
+
             </div>
 
             {/* 底部签名 */}
