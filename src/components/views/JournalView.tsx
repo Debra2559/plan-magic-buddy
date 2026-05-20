@@ -55,7 +55,7 @@ function fmtLong(iso: string) {
 }
 
 export function JournalView() {
-  const { items, habits, notes, diary, comics, isRecapDone, toggleHabitOn, addNote, upsertDiary, setComic, removeComic } = useSylva();
+  const { items, habits, notes, diary, comics, isRecapDone, toggleHabitOn, addNote, upsertDiary, setComic, removeComic, comicHistory, addComicHistory, removeComicHistory } = useSylva();
   const [date, setDate] = useState<string>(todayLocal());
   const dateBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
