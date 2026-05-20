@@ -475,6 +475,10 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
         setRecapBackfillStrategy,
         enterToSubmit,
         setEnterToSubmit,
+        dateFlashEnabled,
+        setDateFlashEnabled,
+        dateFlashDurationMs,
+        setDateFlashDurationMs,
       }}
     >
       {children}
