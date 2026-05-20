@@ -217,17 +217,21 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
   const updateNote: SylvaContextValue["updateNote"] = (id, patch) =>
     setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, ...patch } : n)));
 
-  const toggleHabit = (id: string) =>
+  const toggleHabit = (id: string) => toggleHabitOn(id, todayLocal());
+
+  const toggleHabitOn = (id: string, date: string) =>
     setHabits((prev) =>
       prev.map((h) => {
         if (h.id !== id) return h;
-        const today = todayLocal();
         const hist = h.history ?? [];
-        const has = hist.includes(today);
-        const nextHist = has ? hist.filter((d) => d !== today) : [today, ...hist];
+        const has = hist.includes(date);
+        const nextHist = has
+          ? hist.filter((d) => d !== date)
+          : [date, ...hist].sort((a, b) => b.localeCompare(a));
         return { ...h, history: nextHist };
       })
     );
+
 
   const upsertDiary: SylvaContextValue["upsertDiary"] = (date, patch) =>
     setDiary((prev) => {
