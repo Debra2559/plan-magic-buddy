@@ -138,7 +138,7 @@ export function FeishuSyncPanel() {
 
   const [lookup, setLookup] = useState<{
     open: boolean;
-    type: "email" | "mobile";
+    type: "email" | "mobile" | "name" | "employee_id";
     value: string;
     loading: boolean;
     result: { ok: boolean; msg: string; openId?: string } | null;
