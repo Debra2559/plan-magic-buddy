@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useSylva, isHabitDoneOn } from "@/lib/sylva-store";
-import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X, CheckCircle2, RotateCcw, Check, Sparkles, Flame } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X, CheckCircle2, RotateCcw, Check, Sparkles, Flame, BookHeart, StickyNote, ImageIcon, TrendingUp } from "lucide-react";
 import type { PlanItem } from "@/lib/plan.functions";
 import { TimePicker } from "@/components/ui/time-picker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -25,7 +25,7 @@ const tagColor: Record<string, string> = {
 const typeIcon = { event: CalIcon, todo: Clock, reminder: Bell } as const;
 
 export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void; onGoSettings?: () => void } = {}) {
-  const { items, habits, toggleHabitOn, addItems, updateItem, removeItem, toggleDone, isRecapDone, unmarkRecapDone, isRecentlySynced, markRecentlySynced, pendingIds, confirmPending, revertPending } = useSylva();
+  const { items, habits, notes, diary, comics, navigateTo, toggleHabitOn, addItems, updateItem, removeItem, toggleDone, isRecapDone, unmarkRecapDone, isRecentlySynced, markRecentlySynced, pendingIds, confirmPending, revertPending } = useSylva();
   const [cursor, setCursor] = useState(new Date(2026, 4, 1)); // May 2026
   const [selected, setSelected] = useState("2026-05-19");
   const [editorDate, setEditorDate] = useState<string | null>(null);
