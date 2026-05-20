@@ -344,7 +344,18 @@ function NoteCard({ n, onRemove, onPin }: { n: Note; onRemove: () => void; onPin
       <div className="flex items-start gap-3">
         <StickyNote className="w-4 h-4 text-amber-glow mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-white/90 leading-relaxed whitespace-pre-wrap break-words">{n.text}</p>
+          {n.text && (
+            <p className="text-sm text-white/90 leading-relaxed whitespace-pre-wrap break-words">{n.text}</p>
+          )}
+          {n.images && n.images.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {n.images.map((src, i) => (
+                <a key={i} href={src} target="_blank" rel="noreferrer" className="block">
+                  <img src={src} alt="" className="max-h-40 rounded-lg border border-white/10 hover:border-amber-glow/40 transition" />
+                </a>
+              ))}
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-2 mt-2">
             <span className="text-[10px] text-white/40 tracking-wider">{fmt(n.createdAt)}</span>
             {m && <span className="text-[10px]" title={m.label}>{m.emoji}</span>}
