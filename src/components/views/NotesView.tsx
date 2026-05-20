@@ -125,7 +125,7 @@ function TabBtn({ active, onClick, icon, children }: { active: boolean; onClick:
 }
 
 /* ---------------- Notes ---------------- */
-function NotesTab() {
+function NotesTab({ kind }: { kind: NoteKind }) {
   const { notes, addNote, removeNote, updateNote, enterToSubmit, habits } = useSylva();
   const [text, setText] = useState("");
   const [mood, setMood] = useState<Mood | undefined>();
