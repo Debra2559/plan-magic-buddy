@@ -494,3 +494,322 @@ export const recordPulledMappings = createServerFn({ method: 'POST' })
     if (error) throw new Error(error.message)
     return { ok: true as const, count: rows.length }
   })
+
+// ============= 黑客松 → 飞书消息推送 =============
+
+type NotifySettings = {
+  receive_id: string | null
+  receive_id_type: 'open_id' | 'chat_id' | 'user_id' | 'email'
+  notify_on_discover: boolean
+  notify_on_accept: boolean
+}
+
+async function loadNotifySettings(): Promise<NotifySettings | null> {
+  const { data } = await supabaseAdmin
+    .from('feishu_settings')
+    .select('notify_receive_id, notify_receive_id_type, notify_on_discover, notify_on_accept')
+    .limit(1)
+    .maybeSingle()
+  if (!data) return null
+  return {
+    receive_id: (data as any).notify_receive_id ?? null,
+    receive_id_type: ((data as any).notify_receive_id_type ?? 'open_id') as NotifySettings['receive_id_type'],
+    notify_on_discover: (data as any).notify_on_discover ?? true,
+    notify_on_accept: (data as any).notify_on_accept ?? true,
+  }
+}
+
+function hackathonCard(opts: {
+  kind: 'new' | 'accepted' | 'dismissed'
+  hackathonId: string
+  title: string
+  source: string
+  summary?: string | null
+  deadline?: string | null
+  starts_at?: string | null
+  location?: string | null
+  prize?: string | null
+  url: string
+}) {
+  const isNew = opts.kind === 'new'
+  const isAccepted = opts.kind === 'accepted'
+  const headerTitle = isNew ? '🛰️ 新黑客松发现' : isAccepted ? '✅ 已加入日程' : '已忽略'
+  const headerTpl = isNew ? 'orange' : isAccepted ? 'green' : 'grey'
+
+  const fields: { is_short: boolean; text: { tag: 'lark_md'; content: string } }[] = []
+  if (opts.deadline) fields.push({ is_short: true, text: { tag: 'lark_md', content: `**截止**\n${opts.deadline}` } })
+  if (opts.starts_at) fields.push({ is_short: true, text: { tag: 'lark_md', content: `**开始**\n${opts.starts_at}` } })
+  if (opts.location) fields.push({ is_short: true, text: { tag: 'lark_md', content: `**地点**\n${opts.location}` } })
+  if (opts.prize) fields.push({ is_short: true, text: { tag: 'lark_md', content: `**奖金**\n${opts.prize}` } })
+
+  const elements: any[] = []
+  if (opts.summary) {
+    elements.push({ tag: 'div', text: { tag: 'lark_md', content: opts.summary } })
+  }
+  if (fields.length) elements.push({ tag: 'div', fields })
+  elements.push({ tag: 'hr' })
+  elements.push({
+    tag: 'note',
+    elements: [{ tag: 'plain_text', content: `来源：${opts.source}` }],
+  })
+
+  if (isNew) {
+    elements.push({
+      tag: 'action',
+      actions: [
+        {
+          tag: 'button',
+          text: { tag: 'plain_text', content: '参加 ✅' },
+          type: 'primary',
+          value: { kind: 'hackathon', action: 'accept', id: opts.hackathonId },
+        },
+        {
+          tag: 'button',
+          text: { tag: 'plain_text', content: '忽略' },
+          type: 'default',
+          value: { kind: 'hackathon', action: 'dismiss', id: opts.hackathonId },
+        },
+        {
+          tag: 'button',
+          text: { tag: 'plain_text', content: '查看详情' },
+          type: 'default',
+          url: opts.url,
+        },
+      ],
+    })
+  } else {
+    elements.push({
+      tag: 'action',
+      actions: [
+        { tag: 'button', text: { tag: 'plain_text', content: '查看详情' }, type: 'default', url: opts.url },
+      ],
+    })
+  }
+
+  return {
+    config: { wide_screen_mode: true },
+    header: {
+      template: headerTpl,
+      title: { tag: 'plain_text', content: `${headerTitle} · ${opts.title}`.slice(0, 100) },
+    },
+    elements,
+  }
+}
+
+async function sendCardToFeishu(card: unknown): Promise<{ ok: boolean; error?: string }> {
+  const s = await loadNotifySettings()
+  if (!s || !s.receive_id) return { ok: false, error: '未配置飞书接收人' }
+  try {
+    const r = await feishu<{ code: number; msg: string }>(
+      `/im/v1/messages?receive_id_type=${encodeURIComponent(s.receive_id_type)}`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          receive_id: s.receive_id,
+          msg_type: 'interactive',
+          content: JSON.stringify(card),
+        }),
+      }
+    )
+    if (r.code !== 0) return { ok: false, error: `code=${r.code} msg=${r.msg}` }
+    return { ok: true }
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? '发送失败' }
+  }
+}
+
+export async function notifyHackathonDiscovered(row: {
+  id: string
+  title: string
+  source: string
+  summary: string | null
+  deadline: string | null
+  starts_at: string | null
+  location: string | null
+  prize: string | null
+  url: string
+}): Promise<{ ok: boolean; error?: string; skipped?: boolean }> {
+  const s = await loadNotifySettings()
+  if (!s || !s.receive_id || !s.notify_on_discover) return { ok: true, skipped: true }
+  return sendCardToFeishu(hackathonCard({ kind: 'new', hackathonId: row.id, ...row }))
+}
+
+export async function notifyHackathonAccepted(row: {
+  id: string
+  title: string
+  source: string
+  summary: string | null
+  deadline: string | null
+  starts_at: string | null
+  location: string | null
+  prize: string | null
+  url: string
+}): Promise<{ ok: boolean; error?: string; skipped?: boolean }> {
+  const s = await loadNotifySettings()
+  if (!s || !s.receive_id || !s.notify_on_accept) return { ok: true, skipped: true }
+  return sendCardToFeishu(hackathonCard({ kind: 'accepted', hackathonId: row.id, ...row }))
+}
+
+// ============= 通知设置：读写 =============
+export const getFeishuNotifyConfig = createServerFn({ method: 'GET' }).handler(async () => {
+  const s = await loadNotifySettings()
+  return {
+    receiveId: s?.receive_id ?? '',
+    receiveIdType: s?.receive_id_type ?? 'open_id',
+    notifyOnDiscover: s?.notify_on_discover ?? true,
+    notifyOnAccept: s?.notify_on_accept ?? true,
+  }
+})
+
+const notifyConfigSchema = z.object({
+  receiveId: z.string().max(200),
+  receiveIdType: z.enum(['open_id', 'chat_id', 'user_id', 'email']),
+  notifyOnDiscover: z.boolean(),
+  notifyOnAccept: z.boolean(),
+})
+
+export const setFeishuNotifyConfig = createServerFn({ method: 'POST' })
+  .inputValidator((d) => notifyConfigSchema.parse(d))
+  .handler(async ({ data }) => {
+    const { data: row } = await supabaseAdmin
+      .from('feishu_settings')
+      .select('id')
+      .limit(1)
+      .maybeSingle()
+    const patch = {
+      notify_receive_id: data.receiveId || null,
+      notify_receive_id_type: data.receiveIdType,
+      notify_on_discover: data.notifyOnDiscover,
+      notify_on_accept: data.notifyOnAccept,
+    }
+    if (!row) {
+      const { error } = await supabaseAdmin.from('feishu_settings').insert(patch as any)
+      if (error) throw new Error(error.message)
+    } else {
+      const { error } = await supabaseAdmin.from('feishu_settings').update(patch as any).eq('id', row.id)
+      if (error) throw new Error(error.message)
+    }
+    return { ok: true as const }
+  })
+
+export const testHackathonNotify = createServerFn({ method: 'POST' }).handler(async () => {
+  return sendCardToFeishu(
+    hackathonCard({
+      kind: 'new',
+      hackathonId: '00000000-0000-0000-0000-000000000000',
+      title: '测试卡片 · Sylva 黑客松雷达',
+      source: '测试',
+      summary: '这是一条测试卡片。点击「参加」会在真实场景下把比赛加入日程。',
+      deadline: '2026-06-30',
+      starts_at: '2026-07-05',
+      location: '线上',
+      prize: '$10k',
+      url: 'https://devpost.com/',
+    }),
+  )
+})
+
+// ============= 卡片回调：参加 / 忽略 =============
+
+/**
+ * 处理来自飞书「卡片按钮」的回调。
+ * 返回一个 v2 toast 响应给飞书；同时把比赛加入日程并推到选中的日历。
+ */
+export async function handleHackathonCardAction(payload: {
+  id: string
+  action: 'accept' | 'dismiss'
+}): Promise<{ toast: { type: 'success' | 'info' | 'error'; content: string } }> {
+  const { data: row, error } = await supabaseAdmin
+    .from('hackathons')
+    .select('*')
+    .eq('id', payload.id)
+    .maybeSingle()
+  if (error || !row) {
+    return { toast: { type: 'error', content: '未找到该比赛' } }
+  }
+
+  if (payload.action === 'dismiss') {
+    await supabaseAdmin
+      .from('hackathons')
+      .update({ status: 'dismissed', decided_at: new Date().toISOString() })
+      .eq('id', payload.id)
+    return { toast: { type: 'info', content: '已忽略' } }
+  }
+
+  // accept：标记 + 写入飞书日历
+  await supabaseAdmin
+    .from('hackathons')
+    .update({ status: 'accepted', decided_at: new Date().toISOString() })
+    .eq('id', payload.id)
+
+  const { data: settings } = await supabaseAdmin
+    .from('feishu_settings')
+    .select('selected_calendar_id')
+    .limit(1)
+    .maybeSingle()
+  const calendarId = (settings as any)?.selected_calendar_id
+  if (!calendarId) {
+    return { toast: { type: 'success', content: '已标记参加，但未选择日历' } }
+  }
+
+  // 解析日期
+  const parseDate = (s: string | null): string | null => {
+    if (!s) return null
+    const m = s.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/)
+    if (!m) return null
+    return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`
+  }
+  const startDate = parseDate((row as any).starts_at) ?? parseDate((row as any).deadline)
+  const deadlineDate = parseDate((row as any).deadline)
+
+  const evs: { summary: string; date: string; time: string; durationMin: number; description?: string }[] = []
+  if (startDate) {
+    evs.push({
+      summary: `🏆 ${(row as any).title}`,
+      date: startDate,
+      time: '10:00',
+      durationMin: 240,
+      description: (row as any).summary ?? (row as any).url,
+    })
+  }
+  if (deadlineDate) {
+    evs.push({
+      summary: `⏰ 报名截止：${(row as any).title}`,
+      date: deadlineDate,
+      time: '20:00',
+      durationMin: 30,
+      description: (row as any).url,
+    })
+  }
+
+  let pushed = 0
+  for (const e of evs) {
+    const start = toUnixSeconds(e.date, e.time)
+    const body = {
+      summary: e.summary,
+      description: e.description,
+      start_time: { timestamp: String(start), timezone: TZ },
+      end_time: { timestamp: String(start + e.durationMin * 60), timezone: TZ },
+    }
+    try {
+      const r = await feishu<{ code: number; msg: string }>(
+        `/calendar/v4/calendars/${encodeURIComponent(calendarId)}/events`,
+        { method: 'POST', body: JSON.stringify(body) },
+      )
+      if (r.code === 0) pushed += 1
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // 推一张「已加入日程」的回执卡片
+  void notifyHackathonAccepted(row as any).catch(() => {})
+
+  return {
+    toast: {
+      type: 'success',
+      content: pushed > 0 ? `已加入日程（${pushed} 条事件）` : '已确认参加',
+    },
+  }
+}
+
