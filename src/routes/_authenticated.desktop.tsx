@@ -75,6 +75,8 @@ function DesktopApp() {
   const [todosFilter, setTodosFilter] = useState<"todo" | "reminder" | "event" | "all">("all");
   const { registerNavigate } = useSylva();
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const openSettings = () => { setSettingsOpen(true); setAppOpen(true); setActiveDock("sylva"); };
 
   useEffect(() => {
     try {
