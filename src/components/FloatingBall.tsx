@@ -153,7 +153,7 @@ export function FloatingBall() {
         style={{ left: pos.x, top: pos.y }}
         className={`group fixed z-[60] w-12 h-12 rounded-full select-none touch-none
           flex items-center justify-center cursor-grab active:cursor-grabbing
-          bg-[radial-gradient(circle_at_30%_25%,hsl(var(--amber-glow)/0.95),hsl(var(--moss)/0.9)_55%,#2a1a0f_100%)]
+          bg-gradient-to-br from-amber-glow via-orange-400 to-moss
           text-primary-foreground overflow-hidden
           shadow-[0_10px_30px_-8px_rgba(180,90,30,0.55),inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-6px_12px_rgba(0,0,0,0.25)]
           ring-1 ring-white/20
