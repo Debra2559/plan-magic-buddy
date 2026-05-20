@@ -732,7 +732,11 @@ export function FeishuSyncPanel() {
     lastItemSignature.current = sig;
 
     if (!state.calendarId) return;
+    const nextAt = new Date(Date.now() + 1500);
+    setNextAutoSyncAt(nextAt.toISOString());
+    pushTLRef.current?.("schedule", "info", `检测到本地变更，计划在 ${nextAt.toLocaleTimeString()} 自动同步`);
     const t = setTimeout(() => {
+      setNextAutoSyncAt(null);
       doSync("自动同步");
     }, 1500);
     return () => clearTimeout(t);
