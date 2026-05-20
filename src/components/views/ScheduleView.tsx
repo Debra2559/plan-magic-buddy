@@ -14,12 +14,12 @@ import { AiNewsRadar } from "@/components/AiNewsRadar";
 const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
 
 const tagColor: Record<string, string> = {
-  工作: "bg-moss/30 text-moss border-moss/40",
-  学习: "bg-amber-glow/25 text-amber-glow border-amber-glow/40",
-  健康: "bg-accent/25 text-accent border-accent/40",
-  生活: "bg-foreground/10 text-foreground/70 border-foreground/20",
-  英语: "bg-amber-glow/25 text-amber-glow border-amber-glow/40",
-  习惯: "bg-moss/30 text-moss border-moss/40",
+  工作: "bg-moss/60 text-white border-moss",
+  学习: "bg-amber-glow/70 text-background border-amber-glow font-medium",
+  健康: "bg-accent/70 text-background border-accent font-medium",
+  生活: "bg-foreground/25 text-foreground border-foreground/40",
+  英语: "bg-amber-glow/70 text-background border-amber-glow font-medium",
+  习惯: "bg-moss/60 text-white border-moss",
 };
 
 const typeIcon = { event: CalIcon, todo: Clock, reminder: Bell } as const;
@@ -241,25 +241,25 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                     {isToday && <span className="text-[9px] text-amber-glow">今</span>}
                   </div>
                 </div>
-                <div className="space-y-0.5 pt-7">
+                <div className="space-y-1 pt-7">
                   {dayItems.slice(0, 3).map((it) => (
                     <div
                       key={it.id}
-                      className={`text-[10px] px-1.5 py-0.5 rounded truncate border ${
-                        tagColor[it.tag] ?? "bg-foreground/10 text-foreground/75 border-border"
+                      className={`text-[11px] leading-tight px-1.5 py-1 rounded-md truncate border shadow-sm ${
+                        tagColor[it.tag] ?? "bg-foreground/20 text-foreground border-foreground/30"
                       } ${it.done ? "opacity-50 line-through" : ""} ${
-                        it.pending ? "border-dashed border-amber-glow/70 text-amber-glow bg-amber-glow/5" : ""
+                        it.pending ? "border-dashed border-amber-glow/70 text-amber-glow bg-amber-glow/10" : ""
                       } ${
                         isRecentlySynced(it.id) ? "ring-1 ring-amber-glow/70 shadow-[0_0_8px_rgba(245,184,67,0.4)]" : ""
                       }`}
                       title={it.pending ? `${it.title}（待确认）` : it.title}
                     >
-                      {it.time && <span className="font-mono mr-1 opacity-70">{it.time}</span>}
+                      {it.time && <span className="font-mono mr-1 opacity-80">{it.time}</span>}
                       {it.title}
                     </div>
                   ))}
                   {dayItems.length > 3 && (
-                    <div className="text-[9px] text-muted-foreground px-1.5">+{dayItems.length - 3} 项</div>
+                    <div className="text-[10px] text-foreground/70 px-1.5 font-medium">+{dayItems.length - 3} 项</div>
                   )}
                 </div>
                 {habits.length > 0 && (() => {
