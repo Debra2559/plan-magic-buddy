@@ -1040,6 +1040,25 @@ export const markRecapDone = createServerFn({ method: 'POST' })
     return { ok: true as const }
   })
 
+export const getDailyRecap = createServerFn({ method: 'GET' })
+  .inputValidator((d: { date: string }) => z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(d))
+  .handler(async ({ data }) => {
+    const { data: row } = await supabaseAdmin
+      .from('daily_recaps')
+      .select('date, summary, diary, mood, updated_at')
+      .eq('date', data.date)
+      .maybeSingle()
+    return row
+      ? {
+          date: (row as any).date as string,
+          summary: ((row as any).summary as string) ?? '',
+          diary: ((row as any).diary as string) ?? '',
+          mood: ((row as any).mood as string) ?? '',
+          updatedAt: (row as any).updated_at as string,
+        }
+      : null
+  })
+
 export const getDailyRecapConfig = createServerFn({ method: 'GET' }).handler(async () => {
   const { data } = await supabaseAdmin
     .from('feishu_settings')
