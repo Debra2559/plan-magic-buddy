@@ -5,8 +5,9 @@ const Input = z.object({
   date: z.string().min(8).max(10),
   summary: z.string().min(1).max(4000),
   provider: z.enum(["gemini", "seedream"]),
-  style: z.string().max(200).optional(),
+  style: z.string().max(500).optional(),
   model: z.string().max(100).optional(),
+  protagonistImageUrl: z.string().url().max(2000).optional(),
 });
 
 function buildPrompt(summary: string, style?: string) {
