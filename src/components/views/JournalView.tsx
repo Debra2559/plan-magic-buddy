@@ -47,7 +47,7 @@ function fmtLong(iso: string) {
 }
 
 export function JournalView() {
-  const { items, habits, notes, diary, isRecapDone } = useSylva();
+  const { items, habits, notes, diary, isRecapDone, toggleHabitOn } = useSylva();
   const [date, setDate] = useState<string>(todayLocal());
 
   const dayItems = useMemo(
@@ -215,21 +215,27 @@ export function JournalView() {
                     const done = isHabitDoneOn(h, date);
                     const s = habitStreak(h, date);
                     return (
-                      <div
+                      <button
                         key={h.id}
-                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border ${
+                        onClick={() => toggleHabitOn(h.id, date)}
+                        className={`group relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border transition active:scale-95 ${
                           done
-                            ? "bg-moss/15 border-moss/40 text-moss"
-                            : "bg-white/5 border-dashed border-white/15 text-white/45"
+                            ? "bg-moss/15 border-moss/40 text-moss hover:bg-moss/25"
+                            : "bg-white/5 border-dashed border-white/15 text-white/45 hover:border-amber-glow/40 hover:text-white/80"
                         }`}
-                        title={done ? `连续 ${s} 天` : "未打卡"}
+                        title={done ? `已打卡 · 连续 ${s} 天（点击撤销）` : "点击一键打卡"}
                       >
                         <span className="text-base">{h.emoji}</span>
                         <span className="text-xs">{h.name}</span>
                         {done && s > 1 && (
                           <span className="text-[10px] font-mono opacity-80">×{s}</span>
                         )}
-                      </div>
+                        {done && (
+                          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-moss text-[8px] text-primary-foreground flex items-center justify-center font-bold shadow">
+                            ✓
+                          </span>
+                        )}
+                      </button>
                     );
                   })}
                 </div>
