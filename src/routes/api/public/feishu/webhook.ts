@@ -205,6 +205,43 @@ export const Route = createFileRoute('/api/public/feishu/webhook')({
           return json({ toast: { type: 'info', content: '未识别的操作' } })
         }
 
+        // 2.5) 收到用户消息：自动捕获 sender.open_id 保存为通知接收人
+        if (eventType === 'im.message.receive_v1') {
+          const senderOpenId: string | undefined =
+            body?.event?.sender?.sender_id?.open_id ?? body?.event?.sender?.open_id
+          if (senderOpenId) {
+            try {
+              const { data: row } = await supabaseAdmin
+                .from('feishu_settings')
+                .select('id, notify_receive_id, notify_receive_id_type')
+                .limit(1)
+                .maybeSingle()
+              const patch = {
+                notify_receive_id: senderOpenId,
+                notify_receive_id_type: 'open_id',
+              }
+              if (!row) {
+                await supabaseAdmin.from('feishu_settings').insert(patch as any)
+              } else {
+                await supabaseAdmin.from('feishu_settings').update(patch as any).eq('id', row.id)
+              }
+              log({
+                step: 'capture_open_id',
+                level: 'info',
+                event_type: eventType,
+                status: 200,
+                duration_ms: Date.now() - startedAt,
+                message: `saved sender open_id ${senderOpenId.slice(0, 8)}…`,
+              })
+            } catch (e: any) {
+              log({ step: 'capture_open_id', level: 'error', event_type: eventType, error: e?.message, message: 'save open_id failed' })
+            }
+          } else {
+            log({ step: 'capture_open_id', level: 'warn', event_type: eventType, message: 'no sender.open_id in payload', payload: clip(body?.event?.sender) })
+          }
+          return json({ ok: true })
+        }
+
         // 3) 其它事件先 ACK
         log({
           step: 'ack',
