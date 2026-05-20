@@ -102,7 +102,7 @@ async function shareComicImage(url: string, filename: string, title: string) {
 }
 
 export function JournalView() {
-  const { items, habits, notes, diary, comics, isRecapDone, toggleHabitOn, addNote, upsertDiary, setComic, removeComic, comicHistory, addComicHistory, removeComicHistory } = useSylva();
+  const { items, habits, notes, diary, comics, isRecapDone, toggleHabitOn, addNote, upsertDiary, setComic, removeComic, comicHistory, addComicHistory, removeComicHistory, dateFlashEnabled, dateFlashDurationMs } = useSylva();
   const [date, setDate] = useState<string>(() => {
     if (typeof window === "undefined") return todayLocal();
     try {
