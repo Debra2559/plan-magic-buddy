@@ -289,6 +289,13 @@ export function AiPersonaPanel() {
           )}
         </div>
       </div>
+
+      <AvatarCropDialog
+        open={!!pickedFile}
+        file={pickedFile}
+        onClose={() => setPickedFile(null)}
+        onConfirm={async (blob) => { await handleCroppedUpload(blob); }}
+      />
     </div>
   );
 }
