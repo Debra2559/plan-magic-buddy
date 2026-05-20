@@ -326,7 +326,7 @@ export const syncToFeishu = createServerFn({ method: 'POST' })
 
     // 4) create / update
     for (const it of pushable) {
-      const body = buildEventBody(it)
+      const body = buildEventBody(it, defaultTime)
       const existing = mapByLocal.get(it.id)
       try {
         if (existing && existing.calendar_id === calendarId) {
