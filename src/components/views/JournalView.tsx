@@ -55,6 +55,52 @@ function fmtLong(iso: string) {
   return { big: `${m}.${String(d).padStart(2, "0")}`, sub: `${y} · ${wd}` };
 }
 
+async function fetchImageBlob(url: string): Promise<Blob> {
+  const res = await fetch(url, { mode: "cors" });
+  if (!res.ok) throw new Error(`下载失败 [${res.status}]`);
+  return res.blob();
+}
+
+async function downloadComicImage(url: string, filename: string) {
+  try {
+    const blob = await fetchImageBlob(url);
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+  } catch {
+    // 兜底：跨域无法 fetch 时直接打开图片，让用户长按保存
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+}
+
+async function shareComicImage(url: string, filename: string, title: string) {
+  const nav = navigator as Navigator & {
+    canShare?: (data: { files: File[] }) => boolean;
+    share?: (data: { files?: File[]; title?: string; text?: string; url?: string }) => Promise<void>;
+  };
+  try {
+    const blob = await fetchImageBlob(url);
+    const file = new File([blob], filename, { type: blob.type || "image/png" });
+    if (nav.canShare?.({ files: [file] }) && nav.share) {
+      await nav.share({ files: [file], title, text: title });
+      return;
+    }
+    if (nav.share) {
+      await nav.share({ title, text: title, url });
+      return;
+    }
+  } catch (e: any) {
+    if (e?.name === "AbortError") return;
+  }
+  // 不支持系统分享 —— 退化为下载
+  await downloadComicImage(url, filename);
+}
+
 export function JournalView() {
   const { items, habits, notes, diary, comics, isRecapDone, toggleHabitOn, addNote, upsertDiary, setComic, removeComic, comicHistory, addComicHistory, removeComicHistory } = useSylva();
   const [date, setDate] = useState<string>(todayLocal());
