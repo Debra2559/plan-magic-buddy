@@ -193,6 +193,10 @@ interface SylvaContextValue {
   setComicSeedreamModel: (v: string) => void;
   comicStyle: string;
   setComicStyle: (v: string) => void;
+  comicStylePreset: string;
+  setComicStylePreset: (v: string) => void;
+  comicProtagonistUrl: string | null;
+  setComicProtagonistUrl: (v: string | null) => void;
   // ---- AI 同步高亮 & 汇总 ----
   recentlySyncedIds: Set<string>;
   isRecentlySynced: (id: string) => boolean;
