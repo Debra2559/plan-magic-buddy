@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_news: {
+        Row: {
+          decided_at: string | null
+          discovered_at: string
+          id: string
+          published_at: string | null
+          raw: Json | null
+          source: string
+          status: string
+          summary: string | null
+          tags: string[] | null
+          title: string
+          url: string
+        }
+        Insert: {
+          decided_at?: string | null
+          discovered_at?: string
+          id?: string
+          published_at?: string | null
+          raw?: Json | null
+          source: string
+          status?: string
+          summary?: string | null
+          tags?: string[] | null
+          title: string
+          url: string
+        }
+        Update: {
+          decided_at?: string | null
+          discovered_at?: string
+          id?: string
+          published_at?: string | null
+          raw?: Json | null
+          source?: string
+          status?: string
+          summary?: string | null
+          tags?: string[] | null
+          title?: string
+          url?: string
+        }
+        Relationships: []
+      }
       daily_recaps: {
         Row: {
           created_at: string

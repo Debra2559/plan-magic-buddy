@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as DesktopRouteImport } from './routes/desktop'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicHooksScanHackathonsRouteImport } from './routes/api/public/hooks/scan-hackathons'
+import { Route as ApiPublicHooksScanAiNewsRouteImport } from './routes/api/public/hooks/scan-ai-news'
 import { Route as ApiPublicHooksDailyRecapRouteImport } from './routes/api/public/hooks/daily-recap'
 import { Route as ApiPublicFeishuWebhookRouteImport } from './routes/api/public/feishu/webhook'
 
@@ -31,6 +32,12 @@ const ApiPublicHooksScanHackathonsRoute =
     path: '/api/public/hooks/scan-hackathons',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksScanAiNewsRoute =
+  ApiPublicHooksScanAiNewsRouteImport.update({
+    id: '/api/public/hooks/scan-ai-news',
+    path: '/api/public/hooks/scan-ai-news',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksDailyRecapRoute =
   ApiPublicHooksDailyRecapRouteImport.update({
     id: '/api/public/hooks/daily-recap',
@@ -48,6 +55,7 @@ export interface FileRoutesByFullPath {
   '/desktop': typeof DesktopRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
+  '/api/public/hooks/scan-ai-news': typeof ApiPublicHooksScanAiNewsRoute
   '/api/public/hooks/scan-hackathons': typeof ApiPublicHooksScanHackathonsRoute
 }
 export interface FileRoutesByTo {
@@ -55,6 +63,7 @@ export interface FileRoutesByTo {
   '/desktop': typeof DesktopRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
+  '/api/public/hooks/scan-ai-news': typeof ApiPublicHooksScanAiNewsRoute
   '/api/public/hooks/scan-hackathons': typeof ApiPublicHooksScanHackathonsRoute
 }
 export interface FileRoutesById {
@@ -63,6 +72,7 @@ export interface FileRoutesById {
   '/desktop': typeof DesktopRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
+  '/api/public/hooks/scan-ai-news': typeof ApiPublicHooksScanAiNewsRoute
   '/api/public/hooks/scan-hackathons': typeof ApiPublicHooksScanHackathonsRoute
 }
 export interface FileRouteTypes {
@@ -72,6 +82,7 @@ export interface FileRouteTypes {
     | '/desktop'
     | '/api/public/feishu/webhook'
     | '/api/public/hooks/daily-recap'
+    | '/api/public/hooks/scan-ai-news'
     | '/api/public/hooks/scan-hackathons'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -79,6 +90,7 @@ export interface FileRouteTypes {
     | '/desktop'
     | '/api/public/feishu/webhook'
     | '/api/public/hooks/daily-recap'
+    | '/api/public/hooks/scan-ai-news'
     | '/api/public/hooks/scan-hackathons'
   id:
     | '__root__'
@@ -86,6 +98,7 @@ export interface FileRouteTypes {
     | '/desktop'
     | '/api/public/feishu/webhook'
     | '/api/public/hooks/daily-recap'
+    | '/api/public/hooks/scan-ai-news'
     | '/api/public/hooks/scan-hackathons'
   fileRoutesById: FileRoutesById
 }
@@ -94,6 +107,7 @@ export interface RootRouteChildren {
   DesktopRoute: typeof DesktopRoute
   ApiPublicFeishuWebhookRoute: typeof ApiPublicFeishuWebhookRoute
   ApiPublicHooksDailyRecapRoute: typeof ApiPublicHooksDailyRecapRoute
+  ApiPublicHooksScanAiNewsRoute: typeof ApiPublicHooksScanAiNewsRoute
   ApiPublicHooksScanHackathonsRoute: typeof ApiPublicHooksScanHackathonsRoute
 }
 
@@ -120,6 +134,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksScanHackathonsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/scan-ai-news': {
+      id: '/api/public/hooks/scan-ai-news'
+      path: '/api/public/hooks/scan-ai-news'
+      fullPath: '/api/public/hooks/scan-ai-news'
+      preLoaderRoute: typeof ApiPublicHooksScanAiNewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/daily-recap': {
       id: '/api/public/hooks/daily-recap'
       path: '/api/public/hooks/daily-recap'
@@ -142,18 +163,9 @@ const rootRouteChildren: RootRouteChildren = {
   DesktopRoute: DesktopRoute,
   ApiPublicFeishuWebhookRoute: ApiPublicFeishuWebhookRoute,
   ApiPublicHooksDailyRecapRoute: ApiPublicHooksDailyRecapRoute,
+  ApiPublicHooksScanAiNewsRoute: ApiPublicHooksScanAiNewsRoute,
   ApiPublicHooksScanHackathonsRoute: ApiPublicHooksScanHackathonsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
