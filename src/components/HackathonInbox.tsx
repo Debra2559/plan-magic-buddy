@@ -290,8 +290,18 @@ export function HackathonInbox() {
                   )}
                   <div className="flex flex-wrap gap-2 text-[10px] text-foreground/50 mb-2">
                     {h.deadline && (
+                      <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-glow/10 text-amber-glow">
+                        <CalIcon className="w-3 h-3" /> 报名截止 {h.deadline}
+                      </span>
+                    )}
+                    {h.starts_at && (
                       <span className="flex items-center gap-1">
-                        <CalIcon className="w-3 h-3" /> 截止 {h.deadline}
+                        <CalIcon className="w-3 h-3" /> 开赛 {h.starts_at}
+                      </span>
+                    )}
+                    {h.ends_at && h.ends_at !== h.starts_at && (
+                      <span className="flex items-center gap-1">
+                        <CalIcon className="w-3 h-3" /> 结束 {h.ends_at}
                       </span>
                     )}
                     {h.location && (

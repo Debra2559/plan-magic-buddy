@@ -13,6 +13,7 @@ export interface HackathonRow {
   title: string;
   deadline: string | null;
   starts_at: string | null;
+  ends_at: string | null;
   location: string | null;
   prize: string | null;
   summary: string | null;
@@ -38,6 +39,7 @@ function fallbackHackathons(source: string, snippets: FirecrawlSearchItem[]): z.
       url: s.url!,
       deadline: null,
       starts_at: null,
+      ends_at: null,
       location: /online|线上/i.test(`${s.description ?? ""}${s.markdown ?? ""}`) ? "线上" : null,
       prize: null,
       summary: (s.description ?? s.markdown ?? "黑客松/创新比赛报名信息").replace(/\s+/g, " ").trim().slice(0, 60),
@@ -88,8 +90,9 @@ const ExtractedSchema = z.object({
       z.object({
         title: z.string().describe("黑客松名称, 中文优先"),
         url: z.string().describe("详情/报名链接 (完整 https://)"),
-        deadline: z.string().nullable().describe("报名截止或比赛结束日期 (YYYY-MM-DD 或简述)"),
-        starts_at: z.string().nullable().describe("开始日期 (YYYY-MM-DD 或简述)"),
+        deadline: z.string().nullable().describe("⚠️ 报名截止日期 (YYYY-MM-DD)。注意区分: 这是「报名结束」, 不是比赛结束"),
+        starts_at: z.string().nullable().describe("比赛开始日期 (YYYY-MM-DD)"),
+        ends_at: z.string().nullable().describe("比赛结束日期 (YYYY-MM-DD), 如果只是单日活动可以和 starts_at 相同"),
         location: z.string().nullable().describe("线上 / 城市 / 混合"),
         prize: z.string().nullable().describe("奖金/奖品概述, 一句话"),
         summary: z.string().describe("一句中文简介, 不超过 60 字"),
@@ -108,7 +111,7 @@ async function extractWithAI(
   if (snippets.length === 0) return { data: { hackathons: [] } };
 
   const corpus = snippets
-    .map((s, i) => `[${i + 1}] ${s.title ?? ""}\nURL: ${s.url ?? ""}\n${(s.markdown ?? s.description ?? "").slice(0, 800)}`)
+    .map((s, i) => `[${i + 1}] ${s.title ?? ""}\nURL: ${s.url ?? ""}\n${(s.markdown ?? s.description ?? "").slice(0, 1600)}`)
     .join("\n\n---\n\n");
 
   const now = new Date();
@@ -116,7 +119,7 @@ async function extractWithAI(
   const todayStr = now.toISOString().slice(0, 10);
 
   const gateway = createLovableAiGatewayProvider(apiKey);
-  const models = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash"] as const;
+  const models = ["google/gemini-2.5-flash", "google/gemini-3-flash-preview"] as const;
   let lastErr = "";
   for (const m of models) {
     try {
@@ -124,14 +127,28 @@ async function extractWithAI(
         model: gateway(m),
         schema: ExtractedSchema,
         system: `你是黑客松信息提取器。从搜索结果里挑出所有看起来像黑客松/编程比赛/创新比赛的条目。
-当前是 ${ym} (today=${todayStr})。要求:
-- 只要 url 是完整 https:// 链接, 都尽量保留, 不要因为信息不全而丢弃
-- 如果不确定截止日期, 字段填 null 就行, 不要因此丢掉条目
+当前是 ${ym} (today=${todayStr})。
+
+【关键时间提取要求 - 非常重要】
+仔细阅读每条 markdown 内容, 提取三个关键日期, 统一输出 YYYY-MM-DD:
+- deadline: 「报名截止」时间。识别关键词: 报名截止 / 报名结束 / 截止日期 / register by / registration deadline / submission deadline / apply by
+- starts_at: 「比赛开始」时间。识别关键词: 比赛开始 / 开赛 / 开始日期 / starts / event starts / hackathon begins / kickoff
+- ends_at: 「比赛结束」时间。识别关键词: 比赛结束 / 结束日期 / 闭幕 / ends / event ends / final day / demo day
+
+中文日期解析示例:
+- "2025年9月30日24时" → deadline=2025-09-30
+- "报名开始日期为2025年5月22日, 报名截止日期为2025年6月13日" → deadline=2025-06-13
+- "5月22日 至 6月13日" 在「报名」语境 → deadline=06-13; 在「比赛」语境 → starts_at=05-22, ends_at=06-13
+- 只写「2025-09-30」无上下文, 默认当作 deadline
+
+其他规则:
+- url 必须是完整 https:// 链接
+- 找不到的日期填 null, 不要瞎编, 但要尽力从正文里找
 - 不要只挑「中文」的, 英文比赛也保留
 - 跳过纯会议/课程/招聘/广告
 - 一次最多 12 条, 信息差不多的去重
 来源: ${source}`,
-        prompt: `下面是 ${snippets.length} 条搜索结果, 把里面的黑客松全提出来:\n\n${corpus}`,
+        prompt: `下面是 ${snippets.length} 条搜索结果, 把里面的黑客松全提出来, 务必尽力提取报名截止/比赛开始/比赛结束三个日期:\n\n${corpus}`,
       });
       return { data: object };
     } catch (err) {
@@ -245,10 +262,22 @@ export const scanHackathonsNow = createServerFn({ method: "GET" }).handler(async
       debug.push({ source: src.name, query: src.query, snippets: 0, extracted: 0, error: "firecrawl 0 结果" });
       continue;
     }
-    const fallbackItems = fallbackHackathons(src.name, snippets);
-    const { data: ex, error } = fallbackItems.length > 0
-      ? { data: { hackathons: fallbackItems }, error: undefined }
-      : await withTimeout(extractWithAI(src.name, snippets), 3_000, { data: { hackathons: [] }, error: "AI 提取超时" });
+    // 总是优先用 AI 提取(能从 markdown 里抠出真实的报名截止/比赛开始/比赛结束时间)
+    // AI 失败/超时, 才退回只有标题/链接的关键词兜底
+    const aiResult = await withTimeout(
+      extractWithAI(src.name, snippets),
+      20_000,
+      { data: { hackathons: [] }, error: "AI 提取超时" },
+    );
+    let ex = aiResult.data;
+    let error = aiResult.error;
+    if (ex.hackathons.length === 0) {
+      const fb = fallbackHackathons(src.name, snippets);
+      if (fb.length > 0) {
+        ex = { hackathons: fb };
+        error = error ?? "AI 0 条, 用关键词兜底";
+      }
+    }
     debug.push({ source: src.name, query: src.query, snippets: snippets.length, extracted: ex.hackathons.length, error });
     for (const h of ex.hackathons) {
       if (!h.url?.startsWith("http")) continue;
@@ -274,6 +303,7 @@ export const scanHackathonsNow = createServerFn({ method: "GET" }).handler(async
           title: item.title,
           deadline: item.deadline,
           starts_at: item.starts_at,
+          ends_at: item.ends_at,
           location: item.location,
           prize: item.prize,
           summary: item.summary,
@@ -376,6 +406,7 @@ export const acceptHackathon = createServerFn({ method: "POST" })
       return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
     };
     const startDate = parseDate(row.starts_at) ?? parseDate(row.deadline);
+    const endDate = parseDate((row as any).ends_at);
     const deadlineDate = parseDate(row.deadline);
     const today = new Date().toISOString().slice(0, 10);
 
@@ -392,12 +423,23 @@ export const acceptHackathon = createServerFn({ method: "POST" })
     if (startDate) {
       items.push({
         type: "event",
-        title: `🏆 ${row.title}`,
+        title: `🏆 ${row.title}${endDate && endDate !== startDate ? " (开赛)" : ""}`,
         date: startDate,
         time: "10:00",
         durationMin: 240,
         tag: "工作",
         note: row.summary ?? row.url ?? undefined,
+      });
+    }
+    if (endDate && endDate !== startDate) {
+      items.push({
+        type: "event",
+        title: `🏁 ${row.title} (结束/提交)`,
+        date: endDate,
+        time: "18:00",
+        durationMin: 120,
+        tag: "工作",
+        note: row.url ?? undefined,
       });
     }
     items.push({
