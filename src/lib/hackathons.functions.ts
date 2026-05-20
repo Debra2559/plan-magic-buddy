@@ -356,9 +356,25 @@ export const listPendingHackathons = createServerFn({ method: "GET" }).handler(a
     .select("*")
     .eq("status", "pending")
     .order("discovered_at", { ascending: false })
-    .limit(20);
+    .limit(60);
   if (error) return { ok: false as const, error: error.message, items: [] as HackathonRow[] };
-  return { ok: true as const, items: (data ?? []) as HackathonRow[] };
+
+  // 只保留「报名还没结束」的：解析 deadline (兜底用 ends_at / starts_at) 与今天比较
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const parseDate = (s: string | null | undefined): Date | null => {
+    if (!s) return null;
+    const m = s.match(/(\d{4})[-/.年](\d{1,2})[-/.月](\d{1,2})/);
+    if (!m) return null;
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return isNaN(d.getTime()) ? null : d;
+  };
+  const items = ((data ?? []) as HackathonRow[]).filter((h) => {
+    const ref = parseDate(h.deadline) ?? parseDate(h.ends_at) ?? parseDate(h.starts_at);
+    // 无法解析日期的也保留（避免误删），有日期的必须 >= 今天
+    return ref ? ref.getTime() >= today.getTime() : true;
+  }).slice(0, 30);
+  return { ok: true as const, items };
 });
 
 export const dismissHackathon = createServerFn({ method: "POST" })
