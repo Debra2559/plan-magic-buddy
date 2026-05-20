@@ -164,6 +164,57 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_memories: {
+        Row: {
+          content: string
+          context: string
+          created_at: string
+          id: string
+          importance: number
+          kind: string
+          last_used_at: string | null
+          pinned: boolean
+          source: string
+          source_ref: string | null
+          status: string
+          tags: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          context?: string
+          created_at?: string
+          id?: string
+          importance?: number
+          kind?: string
+          last_used_at?: string | null
+          pinned?: boolean
+          source?: string
+          source_ref?: string | null
+          status?: string
+          tags?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          context?: string
+          created_at?: string
+          id?: string
+          importance?: number
+          kind?: string
+          last_used_at?: string | null
+          pinned?: boolean
+          source?: string
+          source_ref?: string | null
+          status?: string
+          tags?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_news: {
         Row: {
           decided_at: string | null
