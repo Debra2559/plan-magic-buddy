@@ -366,9 +366,13 @@ function EditableRow({
             onChange={(e) => setTitle(e.target.value)}
             onBlur={commit}
             onKeyDown={(e) => {
-              if (e.key === "Enter") commit();
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                commit();
+              }
               if (e.key === "Escape") { setTitle(item.title); setTime(item.time ?? ""); setEditing(false); }
             }}
+            title="Enter 保存 · Esc 取消"
             className="flex-1 bg-black/30 border border-white/15 rounded px-1.5 py-0.5 text-xs text-white focus:outline-none"
           />
         </>
