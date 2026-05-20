@@ -40,8 +40,18 @@ export function AiPlanner() {
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<Plan | null>(null);
   const planFn = useServerFn(generatePlan);
+  const chatFn = useServerFn(chatPlan);
+
+  // Goal-chat state
+  const [chatMessages, setChatMessages] = useState<ChatMsg[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatStep, setChatStep] = useState<ChatStep | null>(null);
 
   const handleSubmit = async () => {
+    if (mode === "goal") {
+      await runChat(chatInput.trim() || idea.trim());
+      return;
+    }
     if (!idea.trim() || loading) return;
     setLoading(true);
     setError(null);
@@ -51,7 +61,7 @@ export function AiPlanner() {
       const result = await planFn({
         data: {
           idea: idea.trim(),
-          mode,
+          mode: mode as "create" | "adjust" | "add",
           existing: mode !== "create" ? existing : undefined,
         },
       });
@@ -65,6 +75,54 @@ export function AiPlanner() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const runChat = async (text: string) => {
+    if (!text || loading) return;
+    const nextMessages: ChatMsg[] = [...chatMessages, { role: "user", content: text }];
+    setChatMessages(nextMessages);
+    setChatInput("");
+    setLoading(true);
+    setError(null);
+    setChatStep(null);
+    try {
+      const existing: PlanItem[] = confirmed.map(({ id: _id, done: _done, ...rest }) => rest);
+      const result = await chatFn({
+        data: {
+          messages: nextMessages.map((m) => ({ role: m.role, content: m.content })),
+          existing: existing.length ? existing : undefined,
+        },
+      });
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setChatStep(result.step);
+      if (result.step.kind === "clarify") {
+        setChatMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: result.step.kind === "clarify" ? result.step.question : "", quickReplies: result.step.kind === "clarify" ? result.step.quickReplies : [] },
+        ]);
+      } else if (result.step.kind === "plan") {
+        setDraft({ summary: result.step.summary, items: result.step.items });
+        setChatMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: `✅ ${result.step.kind === "plan" ? result.step.summary : ""}\n已生成 ${result.step.kind === "plan" ? result.step.items.length : 0} 条安排，请在右边确认。` },
+        ]);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "未知错误");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetChat = () => {
+    setChatMessages([]);
+    setChatInput("");
+    setChatStep(null);
+    setDraft(null);
+    setError(null);
   };
 
   const confirmDraft = () => {
