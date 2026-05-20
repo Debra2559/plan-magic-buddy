@@ -23,6 +23,48 @@ function LoginPage() {
   const [pwd, setPwd] = useState("");
   const [busy, setBusy] = useState(false);
 
+  type PwdCheck = { status: "idle" | "checking" | "ok" | "weak" | "pwned"; msg: string; count?: number };
+  const [pwdCheck, setPwdCheck] = useState<PwdCheck>({ status: "idle", msg: "" });
+
+  // 实时密码强度 + HIBP 泄漏校验（仅注册模式）
+  useEffect(() => {
+    if (mode !== "signup") { setPwdCheck({ status: "idle", msg: "" }); return; }
+    if (!pwd) { setPwdCheck({ status: "idle", msg: "" }); return; }
+    // 本地基础强度
+    const weakReasons: string[] = [];
+    if (pwd.length < 8) weakReasons.push("至少 8 位");
+    if (!/[A-Za-z]/.test(pwd)) weakReasons.push("需含字母");
+    if (!/[0-9]/.test(pwd)) weakReasons.push("需含数字");
+    if (weakReasons.length) {
+      setPwdCheck({ status: "weak", msg: weakReasons.join("，") });
+      return;
+    }
+    let cancelled = false;
+    setPwdCheck({ status: "checking", msg: "正在校验是否为常见弱密码…" });
+    const t = setTimeout(async () => {
+      try {
+        const buf = new TextEncoder().encode(pwd);
+        const hash = await crypto.subtle.digest("SHA-1", buf);
+        const hex = Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+        const prefix = hex.slice(0, 5);
+        const suffix = hex.slice(5);
+        const res = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`);
+        const text = await res.text();
+        if (cancelled) return;
+        const line = text.split("\n").map((l) => l.trim()).find((l) => l.startsWith(suffix + ":"));
+        if (line) {
+          const count = Number(line.split(":")[1]);
+          setPwdCheck({ status: "pwned", msg: `这个密码在已知泄漏库中出现 ${count.toLocaleString()} 次，请换一个`, count });
+        } else {
+          setPwdCheck({ status: "ok", msg: "强度 OK，未在已知泄漏库中" });
+        }
+      } catch {
+        if (!cancelled) setPwdCheck({ status: "ok", msg: "强度 OK（在线校验失败，仅本地校验通过）" });
+      }
+    }, 400);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [pwd, mode]);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) nav({ to: "/desktop" });
