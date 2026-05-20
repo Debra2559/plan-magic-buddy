@@ -147,6 +147,11 @@ interface SylvaContextValue {
   addComicHistory: (item: Omit<ComicHistoryItem, "id">) => void;
   removeComicHistory: (id: string) => void;
   addItems: (items: PlanItem[]) => string[];
+  /** 写入待确认项（仅本地，不上云、不同步飞书），返回 id 列表 */
+  addItemsPending: (items: PlanItem[]) => string[];
+  confirmPending: (ids: string[]) => void;
+  revertPending: (ids: string[]) => void;
+  pendingIds: string[];
   replaceItems: (items: PlanItem[]) => string[];
   removeItem: (id: string) => void;
   updateItem: (id: string, patch: Partial<PlanItem>) => void;
