@@ -268,7 +268,7 @@ function Column({
             className={`block w-full h-8 text-center font-mono tabular-nums text-sm transition-colors snap-center ${
               active
                 ? "text-amber-glow font-semibold"
-                : "text-white/55 hover:text-white"
+                : "text-white/75 hover:text-white"
             }`}
           >
             <span
