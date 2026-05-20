@@ -117,6 +117,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <SylvaProvider>
         <Outlet />
+        <ReminderRunner />
       </SylvaProvider>
     </QueryClientProvider>
   );
