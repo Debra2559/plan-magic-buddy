@@ -262,9 +262,27 @@ function LoginPage() {
               );
             })()}
           </div>
+          {mode === "signup" && (
+            <div>
+              <label className="text-xs text-foreground/60">确认密码</label>
+              <input
+                type={showPwd ? "text" : "password"}
+                required
+                value={pwd2}
+                onChange={(e) => setPwd2(e.target.value)}
+                className="mt-1 w-full px-3 py-2 rounded-lg bg-foreground/5 border border-foreground/10 text-sm outline-none focus:border-amber-glow/50"
+                placeholder="再次输入密码"
+              />
+              {pwd2 && (
+                <p className={`mt-1 text-[11px] ${pwd === pwd2 ? "text-moss" : "text-destructive"}`}>
+                  {pwd === pwd2 ? "✓ 两次输入一致" : "⚠ 两次输入不一致"}
+                </p>
+              )}
+            </div>
+          )}
           <button
             type="submit"
-            disabled={busy || (mode === "signup" && (pwdCheck.status === "weak" || pwdCheck.status === "pwned" || pwdCheck.status === "checking"))}
+            disabled={busy || (mode === "signup" && (pwdCheck.status === "weak" || pwdCheck.status === "pwned" || pwdCheck.status === "checking" || pwd !== pwd2 || !pwd2))}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-amber-glow text-primary-foreground text-sm font-medium hover:brightness-110 disabled:opacity-50 transition"
           >
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
