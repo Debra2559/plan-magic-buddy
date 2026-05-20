@@ -9,22 +9,33 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as DesktopRouteImport } from './routes/desktop'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedDesktopRouteImport } from './routes/_authenticated.desktop'
 import { Route as ApiPublicHooksScanHackathonsRouteImport } from './routes/api/public/hooks/scan-hackathons'
 import { Route as ApiPublicHooksScanAiNewsRouteImport } from './routes/api/public/hooks/scan-ai-news'
 import { Route as ApiPublicHooksDailyRecapRouteImport } from './routes/api/public/hooks/daily-recap'
 import { Route as ApiPublicFeishuWebhookRouteImport } from './routes/api/public/feishu/webhook'
 
-const DesktopRoute = DesktopRouteImport.update({
-  id: '/desktop',
-  path: '/desktop',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedDesktopRoute = AuthenticatedDesktopRouteImport.update({
+  id: '/desktop',
+  path: '/desktop',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const ApiPublicHooksScanHackathonsRoute =
   ApiPublicHooksScanHackathonsRouteImport.update({
@@ -52,7 +63,8 @@ const ApiPublicFeishuWebhookRoute = ApiPublicFeishuWebhookRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/desktop': typeof DesktopRoute
+  '/login': typeof LoginRoute
+  '/desktop': typeof AuthenticatedDesktopRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
   '/api/public/hooks/scan-ai-news': typeof ApiPublicHooksScanAiNewsRoute
@@ -60,7 +72,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/desktop': typeof DesktopRoute
+  '/login': typeof LoginRoute
+  '/desktop': typeof AuthenticatedDesktopRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
   '/api/public/hooks/scan-ai-news': typeof ApiPublicHooksScanAiNewsRoute
@@ -69,7 +82,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/desktop': typeof DesktopRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_authenticated/desktop': typeof AuthenticatedDesktopRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
   '/api/public/hooks/scan-ai-news': typeof ApiPublicHooksScanAiNewsRoute
@@ -79,6 +94,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
     | '/desktop'
     | '/api/public/feishu/webhook'
     | '/api/public/hooks/daily-recap'
@@ -87,6 +103,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
     | '/desktop'
     | '/api/public/feishu/webhook'
     | '/api/public/hooks/daily-recap'
@@ -95,7 +112,9 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/desktop'
+    | '/_authenticated'
+    | '/login'
+    | '/_authenticated/desktop'
     | '/api/public/feishu/webhook'
     | '/api/public/hooks/daily-recap'
     | '/api/public/hooks/scan-ai-news'
@@ -104,7 +123,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DesktopRoute: typeof DesktopRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  LoginRoute: typeof LoginRoute
   ApiPublicFeishuWebhookRoute: typeof ApiPublicFeishuWebhookRoute
   ApiPublicHooksDailyRecapRoute: typeof ApiPublicHooksDailyRecapRoute
   ApiPublicHooksScanAiNewsRoute: typeof ApiPublicHooksScanAiNewsRoute
@@ -113,11 +133,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/desktop': {
-      id: '/desktop'
-      path: '/desktop'
-      fullPath: '/desktop'
-      preLoaderRoute: typeof DesktopRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -126,6 +153,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/desktop': {
+      id: '/_authenticated/desktop'
+      path: '/desktop'
+      fullPath: '/desktop'
+      preLoaderRoute: typeof AuthenticatedDesktopRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/api/public/hooks/scan-hackathons': {
       id: '/api/public/hooks/scan-hackathons'
@@ -158,9 +192,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedDesktopRoute: typeof AuthenticatedDesktopRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedDesktopRoute: AuthenticatedDesktopRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DesktopRoute: DesktopRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  LoginRoute: LoginRoute,
   ApiPublicFeishuWebhookRoute: ApiPublicFeishuWebhookRoute,
   ApiPublicHooksDailyRecapRoute: ApiPublicHooksDailyRecapRoute,
   ApiPublicHooksScanAiNewsRoute: ApiPublicHooksScanAiNewsRoute,
@@ -169,13 +216,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -33,7 +33,7 @@ import {
   BookHeart,
 } from "lucide-react";
 
-export const Route = createFileRoute("/desktop")({
+export const Route = createFileRoute("/_authenticated/desktop")({
   component: DesktopApp,
   head: () => ({
     meta: [
