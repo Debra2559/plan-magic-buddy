@@ -141,6 +141,26 @@ export function FeishuSyncPanel() {
   const runSetRecap = useServerFn(setDailyRecapConfig);
   const runSendRecapNow = useServerFn(sendDailyRecapNow);
   const runLookupOpenId = useServerFn(lookupFeishuOpenId);
+  const runGetCapture = useServerFn(getLastCapturedOpenId);
+
+  const [capture, setCapture] = useState<{
+    openId: string | null;
+    receiveIdType: string | null;
+    capturedAt: string | null;
+    eventType: string | null;
+    level: string | null;
+    message: string | null;
+  } | null>(null);
+  const [captureRefreshing, setCaptureRefreshing] = useState(false);
+  const refreshCapture = useCallback(async () => {
+    setCaptureRefreshing(true);
+    try {
+      const c = await runGetCapture();
+      setCapture(c);
+    } catch {} finally {
+      setCaptureRefreshing(false);
+    }
+  }, [runGetCapture]);
 
   const [lookup, setLookup] = useState<{
     open: boolean;
