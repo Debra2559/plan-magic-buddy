@@ -13,6 +13,9 @@ import {
   getFeishuNotifyConfig,
   setFeishuNotifyConfig,
   testHackathonNotify,
+  getDailyRecapConfig,
+  setDailyRecapConfig,
+  sendDailyRecapNow,
 } from "@/lib/feishu.functions";
 import {
   Check,
