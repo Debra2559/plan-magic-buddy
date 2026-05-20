@@ -307,16 +307,29 @@ export function AiPersonaPanel() {
           </div>
         </div>
 
-        <div className="space-y-1">
-          <label className="text-xs text-white/60">AI 怎么称呼你</label>
-          <input
-            value={local.display_name}
-            onChange={(e) => patch({ display_name: e.target.value })}
-            onBlur={() => commit({ display_name: local.display_name })}
-            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white outline-none focus:border-amber-glow/50"
-            placeholder="例：主人 / 老板 / Tobi"
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="text-xs text-white/60">你怎么称呼 AI（显示在左上角）</label>
+            <input
+              value={local.ai_nickname ?? ""}
+              onChange={(e) => patch({ ai_nickname: e.target.value })}
+              onBlur={() => commit({ ai_nickname: (local.ai_nickname ?? "").trim() || "Sylva" })}
+              className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white outline-none focus:border-amber-glow/50"
+              placeholder="例：Sylva / 小西 / 助理"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-white/60">AI 怎么称呼你</label>
+            <input
+              value={local.display_name}
+              onChange={(e) => patch({ display_name: e.target.value })}
+              onBlur={() => commit({ display_name: local.display_name })}
+              className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white outline-none focus:border-amber-glow/50"
+              placeholder="例：主人 / 老板 / Tobi"
+            />
+          </div>
         </div>
+
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
