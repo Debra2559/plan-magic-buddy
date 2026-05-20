@@ -183,8 +183,8 @@ export function FeishuSyncPanel() {
   }, [items, state.status, state.calendarId]);
 
   const selected = useMemo(
-    () => MOCK_CALENDARS.find((c) => c.id === state.calendarId) ?? null,
-    [state.calendarId]
+    () => calendars.find((c) => c.id === state.calendarId) ?? null,
+    [calendars, state.calendarId]
   );
 
   const connect = async () => {
