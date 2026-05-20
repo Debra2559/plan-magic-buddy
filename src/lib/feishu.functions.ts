@@ -945,15 +945,19 @@ export async function handleRecapSubmit(payload: {
   date: string
   summary?: string
   diary?: string
+  mood?: string
 }): Promise<{ toast: { type: 'success' | 'info' | 'error'; content: string }; card?: any }> {
   const date = payload.date
   const summary = (payload.summary ?? '').trim()
   const diary = (payload.diary ?? '').trim()
+  const moodRaw = (payload.mood ?? '').trim()
+  const ALLOWED_MOODS = ['great', 'good', 'ok', 'down', 'tired'] as const
+  const mood = (ALLOWED_MOODS as readonly string[]).includes(moodRaw) ? moodRaw : ''
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return { toast: { type: 'error', content: '日期参数错误' } }
   }
-  if (!summary && !diary) {
-    return { toast: { type: 'info', content: '小结和日记都是空的哦~' } }
+  if (!summary && !diary && !mood) {
+    return { toast: { type: 'info', content: '小结、日记和心情都是空的哦~' } }
   }
 
   try {
@@ -970,7 +974,7 @@ export async function handleRecapSubmit(payload: {
     const { error: upErr } = await supabaseAdmin
       .from('daily_recaps')
       .upsert(
-        { date, summary, diary, source: 'feishu_card', updated_at: nowIso } as any,
+        { date, summary, diary, mood: mood || null, source: 'feishu_card', updated_at: nowIso } as any,
         { onConflict: 'date' },
       )
     if (upErr) throw new Error(upErr.message)
