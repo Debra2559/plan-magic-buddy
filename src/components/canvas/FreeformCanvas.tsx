@@ -585,3 +585,23 @@ function strokeToPath(pts: number[]): string {
   for (let i = 2; i < pts.length; i += 2) d += ` L ${pts[i]} ${pts[i + 1]}`;
   return d;
 }
+
+function formatBytes(n: number): string {
+  if (!n && n !== 0) return "";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  if (n < 1024 * 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
+
+function pickFileIcon(mime: string, name: string) {
+  const m = (mime || "").toLowerCase();
+  const ext = (name.split(".").pop() || "").toLowerCase();
+  if (m.startsWith("audio/")) return FileAudio;
+  if (m.startsWith("video/")) return FileVideo;
+  if (m === "application/pdf" || ext === "pdf") return FileText;
+  if (/zip|rar|7z|tar|gz/.test(m) || /^(zip|rar|7z|tar|gz)$/.test(ext)) return FileArchive;
+  if (m.startsWith("text/") || /^(md|txt|json|csv|log|xml|yml|yaml)$/.test(ext)) return FileText;
+  if (/(word|excel|powerpoint|spreadsheet|presentation|document)/.test(m)) return FileText;
+  return FileIcon;
+}
