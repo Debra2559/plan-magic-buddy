@@ -154,7 +154,7 @@ function DesktopApp() {
               {/* Content */}
               <div className="flex-1 overflow-hidden">
                 {view === "ai" && <div className="overflow-auto h-full p-6"><AiPlanner /></div>}
-                {view === "schedule" && <ScheduleView />}
+                {view === "schedule" && <ScheduleView onGoPlan={() => setView("ai")} />}
                 {view === "todos" && <TodosView />}
                 {view === "notes" && <NotesView />}
                 {view === "habits" && <HabitsView />}
