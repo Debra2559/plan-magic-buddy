@@ -324,7 +324,8 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
     setItems((prev) => {
       const next = prev.map((i) => (i.id === id ? { ...i, ...patch } : i));
       const updated = next.find((i) => i.id === id);
-      if (updated) void remote.upsertItem(updated);
+      // 待确认项的编辑保持在本地，不同步到云端/飞书，直到用户点确认
+      if (updated && !updated.pending) void remote.upsertItem(updated);
       return next;
     });
   };
