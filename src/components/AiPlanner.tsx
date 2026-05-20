@@ -36,7 +36,7 @@ const tagColors: Record<string, string> = {
   习惯: "bg-moss/15 text-moss border-moss/30",
 };
 
-export function AiPlanner() {
+export function AiPlanner({ onGoSettings }: { onGoSettings?: () => void } = {}) {
   const { items: confirmedFull, addItems, replaceItems, removeItem, clearItems, enterToSubmit } = useSylva();
   const confirmed = confirmedFull;
   const [mode, setMode] = useState<Mode>("create");
@@ -46,6 +46,9 @@ export function AiPlanner() {
   const [draft, setDraft] = useState<Plan | null>(null);
   const planFn = useServerFn(generatePlan);
   const chatFn = useServerFn(chatPlan);
+  const syncFn = useServerFn(syncToFeishu);
+  const [syncScope, setSyncScope] = useState<"all" | "draft" | "today" | "week" | "timed">("all");
+  const [syncing, setSyncing] = useState(false);
 
   // Goal-chat state
   const [chatMessages, setChatMessages] = useState<ChatMsg[]>([]);
