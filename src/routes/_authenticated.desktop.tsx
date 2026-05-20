@@ -31,7 +31,7 @@ import {
   Maximize2,
   Calendar as CalIcon,
   CheckSquare,
-  StickyNote,
+  
   Sparkles,
   Settings,
   Music,
@@ -181,9 +181,8 @@ function DesktopApp() {
                 <SidebarItem icon={CalIcon} label="日程" active={view === "schedule"} onClick={() => setView("schedule")} />
                 <SidebarItem icon={Sparkles} label="规划" active={view === "ai"} onClick={() => setView("ai")} />
                 <SidebarItem icon={CheckSquare} label="待办" active={view === "todos"} onClick={() => setView("todos")} />
-                <SidebarItem icon={StickyNote} label="随手记" active={view === "notes"} onClick={() => setView("notes")} />
+                <SidebarItem icon={BookHeart} label="记录" active={view === "notes" || view === "journal"} onClick={() => setView("notes")} />
                 <SidebarItem icon={Sparkles} label="习惯" active={view === "habits"} onClick={() => setView("habits")} />
-                <SidebarItem icon={BookHeart} label="记录" active={view === "journal"} onClick={() => setView("journal")} />
                 <SidebarItem icon={Brain} label="能力" active={view === "ability"} onClick={() => setView("ability")} />
                 <div className="mt-auto pt-4 border-t border-white/8">
                   <SidebarItem icon={Settings} label="设置" active={false} onClick={openSettings} muted />
