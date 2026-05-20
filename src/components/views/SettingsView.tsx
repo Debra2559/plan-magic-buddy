@@ -1,5 +1,6 @@
-import { Bell, Cloud, Palette, Keyboard, User, Info } from "lucide-react";
+import { Bell, Cloud, Palette, Keyboard, User, Info, Sparkles } from "lucide-react";
 import { FeishuSyncPanel } from "@/components/FeishuSyncPanel";
+import { useSylva } from "@/lib/sylva-store";
 
 const sections = [
   {
@@ -45,6 +46,62 @@ const sections = [
   },
 ];
 
+function DateFlashPanel() {
+  const { dateFlashEnabled, setDateFlashEnabled, dateFlashDurationMs, setDateFlashDurationMs } = useSylva();
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <Sparkles className="w-4 h-4 text-amber-glow" />
+        <h3 className="font-display text-lg text-white">手帐 · 日期高亮</h3>
+      </div>
+      <div className="widget overflow-hidden divide-y divide-white/8">
+        <div className="flex items-center px-4 py-3">
+          <div className="flex-1">
+            <div className="text-sm text-white/90">切换日期时闪烁高亮</div>
+            <div className="text-xs text-white/50 mt-0.5">选中日期卡片会短暂发光以确认定位</div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={dateFlashEnabled}
+            onClick={() => setDateFlashEnabled(!dateFlashEnabled)}
+            className={`relative h-6 w-11 rounded-full transition border ${
+              dateFlashEnabled
+                ? "bg-amber-glow/40 border-amber-glow/60"
+                : "bg-white/10 border-white/15"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
+                dateFlashEnabled ? "left-[22px]" : "left-0.5"
+              }`}
+            />
+          </button>
+        </div>
+        <div className={`px-4 py-3 ${!dateFlashEnabled ? "opacity-50 pointer-events-none" : ""}`}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm text-white/90">闪烁持续时间</div>
+            <div className="text-xs text-white/60 tabular-nums">{(dateFlashDurationMs / 1000).toFixed(1)}s</div>
+          </div>
+          <input
+            type="range"
+            min={200}
+            max={3000}
+            step={100}
+            value={dateFlashDurationMs}
+            onChange={(e) => setDateFlashDurationMs(Number(e.target.value))}
+            className="w-full accent-amber-glow"
+          />
+          <div className="flex justify-between text-[10px] text-white/40 mt-1">
+            <span>0.2s</span>
+            <span>3.0s</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function SettingsView() {
   return (
     <div className="p-7 overflow-auto h-full max-w-3xl mx-auto">
@@ -53,6 +110,7 @@ export function SettingsView() {
 
       <div className="space-y-7">
         <FeishuSyncPanel />
+        <DateFlashPanel />
         {sections.map((s) => {
           const Icon = s.icon;
           return (

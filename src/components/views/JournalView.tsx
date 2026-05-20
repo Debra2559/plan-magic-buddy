@@ -102,7 +102,7 @@ async function shareComicImage(url: string, filename: string, title: string) {
 }
 
 export function JournalView() {
-  const { items, habits, notes, diary, comics, isRecapDone, toggleHabitOn, addNote, upsertDiary, setComic, removeComic, comicHistory, addComicHistory, removeComicHistory } = useSylva();
+  const { items, habits, notes, diary, comics, isRecapDone, toggleHabitOn, addNote, upsertDiary, setComic, removeComic, comicHistory, addComicHistory, removeComicHistory, dateFlashEnabled, dateFlashDurationMs } = useSylva();
   const [date, setDate] = useState<string>(() => {
     if (typeof window === "undefined") return todayLocal();
     try {
@@ -468,8 +468,9 @@ export function JournalView() {
                     }`}
                   >
                     <span
-                      key={active ? `flash-${flashTick}` : "idle"}
-                      className={`block rounded-md ${active ? "animate-date-flash" : ""}`}
+                      key={active && dateFlashEnabled ? `flash-${flashTick}` : "idle"}
+                      style={active && dateFlashEnabled ? { animationDuration: `${dateFlashDurationMs}ms` } : undefined}
+                      className={`block rounded-md ${active && dateFlashEnabled ? "animate-date-flash" : ""}`}
                     >
                       <p className="font-display text-base leading-none">{f.big}</p>
                       <p className="text-[10px] text-white/40 mt-1">{f.sub}</p>
