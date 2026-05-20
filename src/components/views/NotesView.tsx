@@ -720,7 +720,7 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
       <p className="text-[10px] tracking-widest text-white/40 mb-2">过往</p>
       <div className="space-y-2">
         {sorted.length === 0 ? (
-          <div className="text-center py-12 text-white/40 text-sm">还没有日记，从今天开始 ✨</div>
+          <div className="text-center py-12 text-white/40 text-sm">还没有记录，从今天开始 ✨</div>
         ) : (
           sorted.map((d) => {
             const m = moodOf(d.mood);
