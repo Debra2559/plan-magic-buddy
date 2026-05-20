@@ -7,8 +7,9 @@ import { markRecapDone, getDailyRecap } from "@/lib/feishu.functions";
 import { EnterHint } from "@/components/EnterHint";
 import { shouldSubmitOnKey } from "@/lib/keybinds";
 import { ImageAttacher, extractImagesFromEvent, fileToCompressedDataURL } from "@/components/ImageAttacher";
+import { JournalView } from "@/components/views/JournalView";
 
-type Tab = "notes" | "diary";
+type Tab = "notes" | "diary" | "handbook";
 
 const MOODS: { value: Mood; emoji: string; label: string }[] = [
   { value: "great", emoji: "😄", label: "很棒" },
@@ -25,8 +26,12 @@ function readUrlParams() {
   const p = new URLSearchParams(window.location.search);
   const t = p.get("tab");
   const d = p.get("date");
-  // 兼容历史链接：summary 已合并入「手帐」，这里回退到 diary
-  const tab: Tab | null = t === "notes" ? "notes" : (t === "diary" || t === "summary") ? "diary" : null;
+  // 兼容历史链接：summary 已合并入「手帐」
+  const tab: Tab | null =
+    t === "notes" ? "notes"
+    : (t === "diary" || t === "summary") ? "diary"
+    : (t === "handbook" || t === "journal") ? "handbook"
+    : null;
   const date = d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null;
   return { tab, date };
 }
@@ -58,11 +63,33 @@ export function NotesView() {
     );
   }
 
+  // 手帐 Tab 复用 JournalView，使用全屏布局，不套用列表容器
+  if (tab === "handbook") {
+    return (
+      <div className="h-full flex flex-col">
+        <div className="px-7 pt-5 pb-2 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] tracking-widest text-amber-glow mb-1">每日记录</p>
+            <h2 className="font-display text-2xl text-white">手帐 · 按天回顾</h2>
+          </div>
+          <div className="flex items-center gap-1 p-1 rounded-full bg-white/[0.04] border border-white/8">
+            <TabBtn active={false} onClick={() => setTab("notes")} icon={<NotebookPen className="w-3.5 h-3.5" />}>随手记</TabBtn>
+            <TabBtn active={false} onClick={() => setTab("diary")} icon={<BookHeart className="w-3.5 h-3.5" />}>日记</TabBtn>
+            <TabBtn active={true} onClick={() => setTab("handbook")} icon={<BookHeart className="w-3.5 h-3.5" />}>手帐</TabBtn>
+          </div>
+        </div>
+        <div className="flex-1 overflow-hidden">
+          <JournalView />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-7 overflow-auto h-full max-w-3xl mx-auto">
       <div className="flex items-start justify-between mb-1 gap-3">
         <div>
-          <p className="text-[10px] tracking-widest text-amber-glow mb-1">每日笔记</p>
+          <p className="text-[10px] tracking-widest text-amber-glow mb-1">每日记录</p>
           <h2 className="font-display text-3xl text-white mb-5">把脑子里飘过的，先存下来。</h2>
         </div>
         <ModeToggle mode={mode} onChange={setMode} />
@@ -71,6 +98,7 @@ export function NotesView() {
       <div className="flex items-center gap-1 mb-6 p-1 rounded-full bg-white/[0.04] border border-white/8 w-fit">
         <TabBtn active={tab === "notes"} onClick={() => setTab("notes")} icon={<NotebookPen className="w-3.5 h-3.5" />}>随手记</TabBtn>
         <TabBtn active={tab === "diary"} onClick={() => setTab("diary")} icon={<BookHeart className="w-3.5 h-3.5" />}>日记</TabBtn>
+        <TabBtn active={tab === "handbook"} onClick={() => setTab("handbook")} icon={<BookHeart className="w-3.5 h-3.5" />}>手帐</TabBtn>
       </div>
 
       {tab === "notes" && <NotesTab />}
