@@ -184,6 +184,45 @@ export const updateAiNewsSettings = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+const PromptParseSchema = z.object({
+  enabled: z.boolean(),
+  sources: z.array(SourceSchema).min(1).max(20),
+  include_keywords: z.array(z.string().trim().min(1).max(40)).max(30),
+  exclude_keywords: z.array(z.string().trim().min(1).max(40)).max(30),
+  tag_filters: z.array(z.string().trim().min(1).max(30)).max(30),
+  scan_interval_hours: z.number().int().min(1).max(168),
+  time_window: z.enum(["qdr:h", "qdr:d", "qdr:w", "qdr:m", "qdr:y"]),
+  per_source_limit: z.number().int().min(1).max(20),
+});
+
+export const parseRadarPrompt = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ prompt: z.string().min(2).max(4000) }).parse(d))
+  .handler(async ({ data }) => {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) return { ok: false as const, error: "AI 未配置" };
+    const current = await loadSettings();
+    const gateway = createLovableAiGatewayProvider(apiKey);
+    try {
+      const { object } = await generateObject({
+        model: gateway("google/gemini-3-flash-preview"),
+        schema: PromptParseSchema,
+        system: `你是 AI 雷达的配置助手。把用户用自然语言写的「想关注什么」翻译成结构化的扫描配置。
+规则：
+- sources: 每条给一个简短中文/英文名称 + 一个 Google 搜索 query（可用 site: OR 等语法）。除非用户明确要重置，否则尽量在现有列表基础上增删改。
+- include_keywords / exclude_keywords / tag_filters: 用户没提就保持原值。
+- scan_interval_hours: 可选 1/3/6/12/24/48/168。
+- time_window: "qdr:h" 1小时, "qdr:d" 1天, "qdr:w" 1周, "qdr:m" 1月, "qdr:y" 1年。
+- per_source_limit: 1-20，默认 6。
+- enabled: 用户没说就保持原值。
+当前配置：${JSON.stringify(current, null, 2)}`,
+        prompt: `用户描述：\n${data.prompt}\n\n请输出新的完整配置。`,
+      });
+      return { ok: true as const, settings: object };
+    } catch (e) {
+      return { ok: false as const, error: e instanceof Error ? e.message : String(e) };
+    }
+  });
+
 export const scanAiNewsNow = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z.object({ force: z.boolean().optional() }).optional().parse(d) ?? {},

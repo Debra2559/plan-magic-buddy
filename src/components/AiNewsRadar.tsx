@@ -7,42 +7,46 @@ import {
   scanAiNewsNow,
   getAiNewsSettings,
   updateAiNewsSettings,
+  parseRadarPrompt,
   type AiNewsRow,
   type AiNewsSettings,
 } from "@/lib/ai-news.functions";
 import {
   Sparkles, X, Bookmark, RefreshCw, Loader2, ExternalLink, Calendar as CalIcon,
-  ListPlus, Check, Settings as SettingsIcon, Plus, Trash2, Save,
+  ListPlus, Check, Settings as SettingsIcon, Wand2, Save,
 } from "lucide-react";
 import { useSylva, todayLocal } from "@/lib/sylva-store";
-type PanelProps = {
-  settings: AiNewsSettings | null;
-  includeText: string;
-  excludeText: string;
-  tagsText: string;
-  saving: boolean;
-  onClose: () => void;
-  onSave: () => void;
-  onChange: (s: AiNewsSettings) => void;
-  onIncludeChange: (s: string) => void;
-  onExcludeChange: (s: string) => void;
-  onTagsChange: (s: string) => void;
-  onAddSource: () => void;
-  onUpdateSource: (idx: number, patch: Partial<AiNewsSettings["sources"][number]>) => void;
-  onRemoveSource: (idx: number) => void;
+
+const TIME_WINDOW_LABEL: Record<AiNewsSettings["time_window"], string> = {
+  "qdr:h": "过去 1 小时",
+  "qdr:d": "过去 1 天",
+  "qdr:w": "过去 1 周",
+  "qdr:m": "过去 1 月",
+  "qdr:y": "过去 1 年",
 };
 
-const TIME_WINDOWS: Array<{ value: AiNewsSettings["time_window"]; label: string }> = [
-  { value: "qdr:h", label: "过去 1 小时" },
-  { value: "qdr:d", label: "过去 1 天" },
-  { value: "qdr:w", label: "过去 1 周" },
-  { value: "qdr:m", label: "过去 1 月" },
-  { value: "qdr:y", label: "过去 1 年" },
+const PROMPT_PRESETS: Array<{ label: string; text: string }> = [
+  { label: "聚焦开源模型", text: "重点关注开源大模型发布与权重更新，过滤招聘、教程、营销软文，每天扫一次，时间窗口 1 天。" },
+  { label: "Agent & 工具", text: "我只想看 AI Agent、工具调用、MCP、Computer Use 相关进展。加上 LangChain、AutoGen、Claude Code 之类来源。" },
+  { label: "中文 AI 圈", text: "聚焦中文 AI 媒体：机器之心、量子位、新智元、AI 科技评论。排除融资软文，每 6 小时扫一次。" },
+  { label: "重置为默认", text: "恢复默认配置：Hacker News / TechCrunch / The Verge / arXiv / 机器之心 / 量子位，关键词全部清空，每天扫一次，过去 1 周。" },
 ];
 
-function SettingsPanel(props: PanelProps) {
-  const { settings, saving } = props;
+type PromptPanelProps = {
+  settings: AiNewsSettings | null;
+  prompt: string;
+  onPromptChange: (s: string) => void;
+  parsing: boolean;
+  saving: boolean;
+  onParse: () => void;
+  onSaveDirect: () => void;
+  onClose: () => void;
+  onToggleEnabled: () => void;
+};
 
+function SettingsPanel({
+  settings, prompt, onPromptChange, parsing, saving, onParse, onSaveDirect, onClose, onToggleEnabled,
+}: PromptPanelProps) {
   if (!settings) {
     return (
       <div className="mb-3 p-4 rounded-xl bg-foreground/5 border border-foreground/10 text-xs text-muted-foreground">
@@ -51,182 +55,97 @@ function SettingsPanel(props: PanelProps) {
     );
   }
 
-  const inputCls =
-    "w-full bg-background/40 border border-foreground/15 rounded-md px-2 py-1.5 text-[12px] text-foreground placeholder:text-foreground/30 focus:border-amber-glow/60 focus:outline-none";
+  const activeSources = settings.sources.filter((s) => s.enabled);
 
   return (
-    <div className="mb-4 p-4 rounded-xl bg-foreground/5 border border-amber-glow/30 space-y-4">
+    <div className="mb-4 p-4 rounded-xl bg-foreground/5 border border-amber-glow/30 space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-xs tracking-wider text-amber-glow flex items-center gap-1.5">
           <SettingsIcon className="w-3.5 h-3.5" /> 雷达设置
         </span>
-        <button
-          onClick={props.onClose}
-          className="text-foreground/50 hover:text-foreground transition"
-          title="关闭"
-        >
+        <button onClick={onClose} className="text-foreground/50 hover:text-foreground transition" title="关闭">
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      <label className="flex items-center justify-between text-[12px] text-foreground/80">
-        <span>启用自动扫描</span>
-        <input
-          type="checkbox"
-          checked={settings.enabled}
-          onChange={(e) => props.onChange({ ...settings, enabled: e.target.checked })}
-          className="accent-amber-glow"
-        />
-      </label>
-
-      <div>
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[11px] text-foreground/60">数据源</span>
+      <div className="text-[11px] text-foreground/70 leading-relaxed p-2.5 rounded-lg bg-background/30 border border-foreground/10">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-foreground/50">当前配置</span>
           <button
-            onClick={props.onAddSource}
-            className="flex items-center gap-1 text-[11px] text-amber-glow hover:text-amber-glow/80 transition"
+            onClick={onToggleEnabled}
+            className={`text-[10px] px-2 py-0.5 rounded-full border transition ${
+              settings.enabled
+                ? "bg-amber-glow/15 border-amber-glow/40 text-amber-glow"
+                : "bg-foreground/5 border-foreground/15 text-foreground/40"
+            }`}
           >
-            <Plus className="w-3 h-3" /> 新增
+            {settings.enabled ? "● 自动扫描中" : "○ 已暂停"}
           </button>
         </div>
-        <div className="space-y-1.5 max-h-44 overflow-auto pr-1">
-          {settings.sources.map((s, i) => (
-            <div key={i} className="flex items-center gap-1.5">
-              <input
-                type="checkbox"
-                checked={s.enabled}
-                onChange={(e) => props.onUpdateSource(i, { enabled: e.target.checked })}
-                className="accent-amber-glow shrink-0"
-              />
-              <input
-                value={s.name}
-                onChange={(e) => props.onUpdateSource(i, { name: e.target.value })}
-                placeholder="名称"
-                className={inputCls + " w-24 shrink-0"}
-              />
-              <input
-                value={s.query}
-                onChange={(e) => props.onUpdateSource(i, { query: e.target.value })}
-                placeholder="site:example.com AI"
-                className={inputCls + " flex-1"}
-              />
-              <button
-                onClick={() => props.onRemoveSource(i)}
-                className="text-foreground/40 hover:text-destructive transition shrink-0"
-                title="删除"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
+        <div>
+          <span className="text-foreground/40">来源</span>：{activeSources.map((s) => s.name).join("、") || "无"}
+        </div>
+        <div>
+          <span className="text-foreground/40">节奏</span>：每 {settings.scan_interval_hours} 小时 · {TIME_WINDOW_LABEL[settings.time_window]} · 每源 {settings.per_source_limit} 条
+        </div>
+        {settings.include_keywords.length > 0 && (
+          <div><span className="text-foreground/40">必含</span>：{settings.include_keywords.join("、")}</div>
+        )}
+        {settings.exclude_keywords.length > 0 && (
+          <div><span className="text-foreground/40">排除</span>：{settings.exclude_keywords.join("、")}</div>
+        )}
+        {settings.tag_filters.length > 0 && (
+          <div><span className="text-foreground/40">标签</span>：{settings.tag_filters.join("、")}</div>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-[11px] text-foreground/60 mb-1.5">
+          用一段话告诉雷达你想关注什么
+        </label>
+        <textarea
+          value={prompt}
+          onChange={(e) => onPromptChange(e.target.value)}
+          placeholder="例：我想看最近一周开源大模型发布、Agent 框架进展和重要融资。加上 Hugging Face 博客作为来源，过滤掉招聘和教程，每 6 小时扫一次。"
+          rows={4}
+          className="w-full bg-background/40 border border-foreground/15 rounded-md px-3 py-2 text-[12px] text-foreground placeholder:text-foreground/30 focus:border-amber-glow/60 focus:outline-none resize-y leading-relaxed"
+        />
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {PROMPT_PRESETS.map((p) => (
+            <button
+              key={p.label}
+              onClick={() => onPromptChange(p.text)}
+              className="text-[10px] px-2 py-0.5 rounded-full bg-foreground/5 border border-foreground/10 text-foreground/60 hover:text-amber-glow hover:border-amber-glow/40 transition"
+            >
+              {p.label}
+            </button>
           ))}
         </div>
-        <p className="text-[10px] text-foreground/40 mt-1">支持 Google 搜索语法，如 <code>site:openai.com</code>、<code>AI OR LLM</code>。</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3">
-        <div>
-          <label className="block text-[11px] text-foreground/60 mb-1">必含关键词（命中其一即保留）</label>
-          <input
-            value={props.includeText}
-            onChange={(e) => props.onIncludeChange(e.target.value)}
-            placeholder="GPT, Agent, 多模态"
-            className={inputCls}
-          />
-        </div>
-        <div>
-          <label className="block text-[11px] text-foreground/60 mb-1">排除关键词（命中任意即过滤）</label>
-          <input
-            value={props.excludeText}
-            onChange={(e) => props.onExcludeChange(e.target.value)}
-            placeholder="招聘, 教程, 软文"
-            className={inputCls}
-          />
-        </div>
-        <div>
-          <label className="block text-[11px] text-foreground/60 mb-1">只保留这些标签（留空则全部）</label>
-          <input
-            value={props.tagsText}
-            onChange={(e) => props.onTagsChange(e.target.value)}
-            placeholder="模型发布, Agent, 融资"
-            className={inputCls}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-2">
-        <div>
-          <label className="block text-[11px] text-foreground/60 mb-1">扫描频率</label>
-          <select
-            value={settings.scan_interval_hours}
-            onChange={(e) =>
-              props.onChange({ ...settings, scan_interval_hours: Number(e.target.value) })
-            }
-            className={inputCls}
-          >
-            <option value={1}>每小时</option>
-            <option value={3}>每 3 小时</option>
-            <option value={6}>每 6 小时</option>
-            <option value={12}>每 12 小时</option>
-            <option value={24}>每天</option>
-            <option value={48}>每 2 天</option>
-            <option value={168}>每周</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-[11px] text-foreground/60 mb-1">时间窗口</label>
-          <select
-            value={settings.time_window}
-            onChange={(e) =>
-              props.onChange({
-                ...settings,
-                time_window: e.target.value as AiNewsSettings["time_window"],
-              })
-            }
-            className={inputCls}
-          >
-            {TIME_WINDOWS.map((w) => (
-              <option key={w.value} value={w.value}>{w.label}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-[11px] text-foreground/60 mb-1">每源条数</label>
-          <input
-            type="number"
-            min={1}
-            max={20}
-            value={settings.per_source_limit}
-            onChange={(e) =>
-              props.onChange({
-                ...settings,
-                per_source_limit: Math.max(1, Math.min(20, Number(e.target.value) || 1)),
-              })
-            }
-            className={inputCls}
-          />
-        </div>
-      </div>
-
-      {settings.last_scanned_at && (
-        <p className="text-[10px] text-foreground/40">
-          上次扫描：{new Date(settings.last_scanned_at).toLocaleString()}
-        </p>
-      )}
-
-      <div className="flex justify-end gap-2 pt-1">
+      <div className="flex items-center justify-end gap-2 pt-1">
         <button
-          onClick={props.onClose}
+          onClick={onClose}
           className="px-3 py-1.5 rounded-full text-xs bg-foreground/5 border border-foreground/10 text-foreground/60 hover:bg-foreground/10"
         >
           取消
         </button>
         <button
-          onClick={props.onSave}
-          disabled={saving}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs bg-amber-glow text-background hover:scale-[1.02] transition disabled:opacity-40"
+          onClick={onSaveDirect}
+          disabled={saving || parsing}
+          className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs bg-foreground/5 border border-foreground/10 text-foreground/70 hover:bg-foreground/10 disabled:opacity-40"
+          title="保存当前显示的配置（如开/关状态）"
         >
           {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
-          {saving ? "保存中" : "保存"}
+          保存当前
+        </button>
+        <button
+          onClick={onParse}
+          disabled={parsing || saving || prompt.trim().length < 2}
+          className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs bg-amber-glow text-background hover:scale-[1.02] transition disabled:opacity-40"
+        >
+          {parsing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+          {parsing ? "理解中" : "应用 Prompt"}
         </button>
       </div>
     </div>
@@ -250,13 +169,13 @@ export function AiNewsRadar() {
   const scanFn = useServerFn(scanAiNewsNow);
   const getSettingsFn = useServerFn(getAiNewsSettings);
   const updateSettingsFn = useServerFn(updateAiNewsSettings);
+  const parsePromptFn = useServerFn(parseRadarPrompt);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState<AiNewsSettings | null>(null);
   const [savingSettings, setSavingSettings] = useState(false);
-  const [includeText, setIncludeText] = useState("");
-  const [excludeText, setExcludeText] = useState("");
-  const [tagsText, setTagsText] = useState("");
+  const [parsing, setParsing] = useState(false);
+  const [promptText, setPromptText] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -272,9 +191,7 @@ export function AiNewsRadar() {
     }
   }, [listFn]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useEffect(() => { void load(); }, [load]);
 
   const onScan = async () => {
     setScanning(true);
@@ -294,68 +211,67 @@ export function AiNewsRadar() {
     if (settings) return;
     try {
       const r = await getSettingsFn();
-      if (r.ok) {
-        setSettings(r.settings);
-        setIncludeText(r.settings.include_keywords.join(", "));
-        setExcludeText(r.settings.exclude_keywords.join(", "));
-        setTagsText(r.settings.tag_filters.join(", "));
-      }
+      if (r.ok) setSettings(r.settings);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
   };
 
-  const parseList = (s: string) =>
-    s.split(/[,，\n]/).map((x) => x.trim()).filter(Boolean).slice(0, 30);
-
-  const onSaveSettings = async () => {
-    if (!settings) return;
+  const persist = async (next: AiNewsSettings) => {
     setSavingSettings(true);
     setError(null);
     try {
       const payload = {
-        enabled: settings.enabled,
-        sources: settings.sources.filter((s) => s.name.trim() && s.query.trim()),
-        include_keywords: parseList(includeText),
-        exclude_keywords: parseList(excludeText),
-        tag_filters: parseList(tagsText),
-        scan_interval_hours: settings.scan_interval_hours,
-        time_window: settings.time_window,
-        per_source_limit: settings.per_source_limit,
+        enabled: next.enabled,
+        sources: next.sources.filter((s) => s.name.trim() && s.query.trim()),
+        include_keywords: next.include_keywords,
+        exclude_keywords: next.exclude_keywords,
+        tag_filters: next.tag_filters,
+        scan_interval_hours: next.scan_interval_hours,
+        time_window: next.time_window,
+        per_source_limit: next.per_source_limit,
       };
       const r = await updateSettingsFn({ data: payload });
-      if (r.ok) {
-        setSettings({ ...settings, ...payload });
-        setSettingsOpen(false);
-      } else {
-        setError(r.error);
-      }
+      if (r.ok) setSettings({ ...next, ...payload });
+      else setError(r.error);
+      return r.ok;
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
+      return false;
     } finally {
       setSavingSettings(false);
     }
   };
 
-  const updateSource = (idx: number, patch: Partial<AiNewsSettings["sources"][number]>) => {
+  const onParsePrompt = async () => {
     if (!settings) return;
-    setSettings({
-      ...settings,
-      sources: settings.sources.map((s, i) => (i === idx ? { ...s, ...patch } : s)),
-    });
+    setParsing(true);
+    setError(null);
+    try {
+      const r = await parsePromptFn({ data: { prompt: promptText } });
+      if (!r.ok) { setError(r.error); return; }
+      const merged: AiNewsSettings = { ...settings, ...r.settings };
+      const ok = await persist(merged);
+      if (ok) {
+        setPromptText("");
+        setSettingsOpen(false);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setParsing(false);
+    }
   };
 
-  const removeSource = (idx: number) => {
+  const onSaveDirect = async () => {
     if (!settings) return;
-    setSettings({ ...settings, sources: settings.sources.filter((_, i) => i !== idx) });
+    const ok = await persist(settings);
+    if (ok) setSettingsOpen(false);
   };
 
-  const addSource = () => {
+  const onToggleEnabled = () => {
     if (!settings) return;
-    setSettings({
-      ...settings,
-      sources: [...settings.sources, { name: "新数据源", query: "site:example.com AI", enabled: true }],
-    });
+    setSettings({ ...settings, enabled: !settings.enabled });
   };
 
   const onSave = async (id: string) => {
@@ -432,19 +348,14 @@ export function AiNewsRadar() {
       {settingsOpen && (
         <SettingsPanel
           settings={settings}
-          includeText={includeText}
-          excludeText={excludeText}
-          tagsText={tagsText}
+          prompt={promptText}
+          onPromptChange={setPromptText}
+          parsing={parsing}
           saving={savingSettings}
+          onParse={onParsePrompt}
+          onSaveDirect={onSaveDirect}
           onClose={() => setSettingsOpen(false)}
-          onSave={onSaveSettings}
-          onChange={setSettings}
-          onIncludeChange={setIncludeText}
-          onExcludeChange={setExcludeText}
-          onTagsChange={setTagsText}
-          onAddSource={addSource}
-          onUpdateSource={updateSource}
-          onRemoveSource={removeSource}
+          onToggleEnabled={onToggleEnabled}
         />
       )}
 
@@ -538,4 +449,3 @@ export function AiNewsRadar() {
     </div>
   );
 }
-
