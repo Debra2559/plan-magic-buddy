@@ -150,10 +150,20 @@ export function ScheduleView() {
         {isRecapDone(selected) && (
           <div className="p-3 rounded-xl bg-moss/15 border border-moss/30 mb-2 flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-moss shrink-0" />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-moss font-medium">今日小结 · 已完成</p>
               <p className="text-[10px] text-white/50 mt-0.5">已通过飞书卡片提交并同步到日历</p>
             </div>
+            <button
+              onClick={async () => {
+                if (!confirm(`撤销 ${selected} 的「已完成」标记？\n这会清掉当天回执，同时取消待办与日历里的完成状态。`)) return;
+                try { await unmarkRecapDone(selected); } catch (e: any) { alert(e?.message ?? "撤销失败"); }
+              }}
+              title="撤销「已完成」标记"
+              className="p-1 rounded-full text-moss/80 hover:text-moss hover:bg-moss/20 shrink-0"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
 
