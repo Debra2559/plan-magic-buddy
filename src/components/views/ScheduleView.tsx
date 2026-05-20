@@ -90,27 +90,13 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
             <span className="text-xs text-white/40 tracking-widest">日程视图</span>
           </div>
           <div className="flex items-center gap-1">
-            <div className="relative mr-2 group">
-              <button
-                onClick={() => setAiOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-primary-foreground bg-amber-glow/85 hover:bg-amber-glow transition"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                新建日程
-
-              </button>
-              <div className="pointer-events-none absolute right-0 top-full mt-2 w-72 rounded-xl border border-white/10 bg-zinc-950/95 backdrop-blur-md shadow-2xl p-3 text-[11px] text-white/75 leading-relaxed opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition z-50">
-                <p className="text-amber-glow/90 font-medium mb-1.5 flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" /> 用 AI 帮你排日程
-                </p>
-                <ol className="space-y-1 list-decimal list-inside marker:text-amber-glow/60">
-                  <li>点击弹出规划面板</li>
-                  <li>用自然语言描述目标，比如「这周要复习答辩 + 每天 30 分钟英语」</li>
-                  <li>AI 会拆成事件 / 待办 / 提醒</li>
-                  <li>确认后一键写回这里的日历</li>
-                </ol>
-              </div>
-            </div>
+            <button
+              onClick={() => setAiOpen(true)}
+              className="mr-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-primary-foreground bg-amber-glow/85 hover:bg-amber-glow transition"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              新建日程
+            </button>
             <button
               onClick={() => setCursor(new Date(year, month - 1, 1))}
               className="p-2 rounded-lg hover:bg-white/10 text-white/70"
