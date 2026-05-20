@@ -40,11 +40,12 @@ const tagColors: Record<string, string> = {
 export function AiPlanner({ onGoSettings }: { onGoSettings?: () => void } = {}) {
   const { items: confirmedFull, addItems, replaceItems, removeItem, clearItems, enterToSubmit } = useSylva();
   const confirmed = confirmedFull;
-  const [mode, setMode] = useState<Mode>("create");
+  const [mode, setMode] = useState<Mode>("auto");
   const [idea, setIdea] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<Plan | null>(null);
+  const [draftMode, setDraftMode] = useState<"create" | "adjust" | "add">("create");
   const planFn = useServerFn(generatePlan);
   const chatFn = useServerFn(chatPlan);
   const syncFn = useServerFn(syncToFeishu);
