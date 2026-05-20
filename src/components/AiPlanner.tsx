@@ -245,101 +245,37 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
           <span className="text-xs tracking-wider text-amber-glow">一键生成 · 直接把想法变成完整规划</span>
         </div>
 
-        {mode === "goal" ? (
-          <div className="space-y-3">
-            {chatMessages.length > 0 && (
-              <div className="max-h-[260px] overflow-auto space-y-2 pr-1">
-                {chatMessages.map((m, i) => (
-                  <div
-                    key={i}
-                    className={`p-3 rounded-xl text-sm leading-relaxed whitespace-pre-wrap ${
-                      m.role === "user"
-                        ? "bg-amber-glow/15 border border-amber-glow/30 text-foreground/90 ml-6"
-                        : "bg-foreground/5 border border-foreground/10 text-foreground/85 mr-6"
-                    }`}
-                  >
-                    {m.content}
-                    {m.quickReplies && m.quickReplies.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {m.quickReplies.map((q) => (
-                          <button
-                            key={q}
-                            onClick={() => runChat(q)}
-                            disabled={loading}
-                            className="text-[11px] px-2.5 py-1 rounded-full bg-amber-glow/10 border border-amber-glow/30 text-amber-glow hover:bg-amber-glow/20 transition disabled:opacity-40"
-                          >
-                            {q}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {loading && chatStep?.kind === "research" && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground p-2">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    <span className="flex items-center gap-1"><Globe className="w-3 h-3" /> 正在联网查方案…</span>
-                  </div>
-                )}
-              </div>
-            )}
-            <div className="flex flex-col sm:flex-row gap-2">
-              <textarea
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (shouldSubmitOnKey(e, enterToSubmit)) {
-                    e.preventDefault();
-                    handleSubmit();
-                  }
-                }}
-                placeholder={chatMessages.length === 0 ? "告诉我一个目标，例如：我要考雅思 / 想 3 个月跑下半马" : "继续回答…"}
-                rows={4}
-                className="flex-1 min-h-[110px] bg-foreground/5 border border-foreground/10 rounded-xl px-4 py-3 text-sm leading-relaxed resize-none outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
-              />
-              <button
-                onClick={handleSubmit}
-                disabled={loading || !chatInput.trim()}
-                className="shrink-0 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition disabled:opacity-40 disabled:scale-100"
-              >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                {loading ? "思考中" : chatMessages.length === 0 ? "开始拆解" : "发送"}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col sm:flex-row gap-2">
-            <textarea
-              value={idea}
-              onChange={(e) => setIdea(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                  e.preventDefault();
-                  handleSubmit();
-                }
-              }}
-              placeholder={
-                mode === "create"
-                  ? "例如：下周要准备毕业答辩，同时跑通飞书提效系统，每天还要泛听英语..."
-                  : mode === "adjust"
-                  ? "例如：周三下午突然有个会，把那天的安排往后推..."
-                  : mode === "add"
-                  ? "例如：再加一个每天 30 分钟的力量训练..."
-                  : "一句话描述你想做的事，例如：这周冲毕业答辩 + 每天 30 分钟英语"
+        <div className="flex flex-col sm:flex-row gap-2">
+          <textarea
+            value={idea}
+            onChange={(e) => setIdea(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                handleSubmit();
               }
-              rows={4}
-              className="flex-1 min-h-[110px] bg-foreground/5 border border-foreground/10 rounded-xl px-4 py-3 text-sm leading-relaxed resize-none outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
-            />
-            <button
-              onClick={handleSubmit}
-              disabled={loading || !idea.trim()}
-              className="shrink-0 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition disabled:opacity-40 disabled:scale-100"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {loading ? "生成中" : "生成规划"}
-            </button>
-          </div>
-        )}
+            }}
+            placeholder={
+              mode === "create"
+                ? "例如：下周要准备毕业答辩，同时跑通飞书提效系统，每天还要泛听英语..."
+                : mode === "adjust"
+                ? "例如：周三下午突然有个会，把那天的安排往后推..."
+                : mode === "add"
+                ? "例如：再加一个每天 30 分钟的力量训练..."
+                : "一句话描述你想做的事，例如：这周冲毕业答辩 + 每天 30 分钟英语"
+            }
+            rows={4}
+            className="flex-1 min-h-[110px] bg-foreground/5 border border-foreground/10 rounded-xl px-4 py-3 text-sm leading-relaxed resize-none outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
+          />
+          <button
+            onClick={handleSubmit}
+            disabled={loading || !idea.trim()}
+            className="shrink-0 flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition disabled:opacity-40 disabled:scale-100"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {loading ? "生成中" : "生成规划"}
+          </button>
+        </div>
 
         <ThinkingTrace
           active={loading}
