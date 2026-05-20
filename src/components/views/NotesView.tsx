@@ -596,7 +596,7 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
                   <span className="text-xs text-white/70 tracking-wider">{d.date}</span>
                   {m && <span className="text-xs">{m.emoji}</span>}
                 </div>
-                <p className="text-xs text-white/60 line-clamp-2 whitespace-pre-wrap">{d.content || "（空白）"}</p>
+                <div className="text-xs text-white/60 line-clamp-2 whitespace-pre-wrap [&_img]:hidden" dangerouslySetInnerHTML={{ __html: d.content || "（空白）" }} />
               </button>
             );
           })
