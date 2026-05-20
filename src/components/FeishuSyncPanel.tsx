@@ -173,7 +173,7 @@ export function FeishuSyncPanel() {
   };
 
   const onSelectCalendar = async (c: RealCalendar) => {
-    setState((s) => ({ ...s, calendarId: c.id }));
+    setState((s) => ({ ...s, calendarId: c.id, status: "connected" }));
     try {
       await runSelect({ data: { calendarId: c.id, calendarName: c.name } });
     } catch (e) {
