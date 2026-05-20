@@ -381,6 +381,8 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
         unmarkRecapDone,
         recapBackfillStrategy,
         setRecapBackfillStrategy,
+        enterToSubmit,
+        setEnterToSubmit,
       }}
     >
       {children}
