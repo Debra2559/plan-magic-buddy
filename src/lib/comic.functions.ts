@@ -73,36 +73,77 @@ export const generateDailyComic = createServerFn({ method: "POST" })
         "Seedream 需要 ARK_API_KEY：在设置里添加火山引擎方舟的 API Key 后再试",
       );
     }
-    const res = await fetch(
-      "https://ark.cn-beijing.volces.com/api/v3/images/generations",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${ark}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: process.env.ARK_SEEDREAM_MODEL || "doubao-seedream-5-0-lite",
-          prompt,
-          size: "1024x1024",
-          response_format: "url",
-          watermark: false,
-        }),
-      },
+    // 多模型回退：优先使用环境变量指定的模型，然后依次回退
+    const envModel = process.env.ARK_SEEDREAM_MODEL?.trim();
+    const fallbackModels = [
+      "doubao-seedream-5-0-lite",
+      "doubao-seedream-4-0-250828",
+      "doubao-seedream-3-0-t2i-250415",
+    ];
+    const candidates = Array.from(
+      new Set([envModel, ...fallbackModels].filter(Boolean) as string[]),
     );
-    if (!res.ok) {
+
+    const attempts: string[] = [];
+    for (let i = 0; i < candidates.length; i++) {
+      const model = candidates[i];
+      const res = await fetch(
+        "https://ark.cn-beijing.volces.com/api/v3/images/generations",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${ark}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            prompt,
+            size: "1024x1024",
+            response_format: "url",
+            watermark: false,
+          }),
+        },
+      );
+
+      if (res.ok) {
+        const j: any = await res.json();
+        const url: string | undefined =
+          j?.data?.[0]?.url || j?.data?.[0]?.b64_json
+            ? (j.data[0].url ?? `data:image/png;base64,${j.data[0].b64_json}`)
+            : undefined;
+        if (!url) throw new Error("Seedream 没返回图片");
+        return {
+          imageUrl: url,
+          caption: "",
+          provider: "seedream" as const,
+          model,
+        };
+      }
+
       const t = await res.text();
-      if (t.includes("ModelNotOpen")) {
+      const notOpen =
+        t.includes("ModelNotOpen") ||
+        t.includes("AccessDenied") ||
+        t.includes("ModelNotFound") ||
+        t.includes("model not found") ||
+        res.status === 404;
+
+      attempts.push(`${model} [${res.status}]`);
+
+      // 模型未开通 → 尝试下一个候选
+      if (notOpen && i < candidates.length - 1) {
+        continue;
+      }
+
+      // 最后一个仍未开通，给出汇总错误
+      if (notOpen) {
         throw new Error(
-          "Seedream 模型未开通：请到火山方舟控制台 → 模型广场，开通 doubao-seedream-5-0-lite（或在环境变量 ARK_SEEDREAM_MODEL 指定你已开通的模型）后重试",
+          `Seedream 所有候选模型均未开通（尝试过：${attempts.join("、")}）。请到火山方舟控制台 → 模型广场开通其中之一，或在环境变量 ARK_SEEDREAM_MODEL 指定你已开通的模型`,
         );
       }
+
       throw new Error(`Seedream 失败 [${res.status}]: ${t.slice(0, 200)}`);
     }
-    const j: any = await res.json();
-    const url: string | undefined = j?.data?.[0]?.url || j?.data?.[0]?.b64_json
-      ? (j.data[0].url ?? `data:image/png;base64,${j.data[0].b64_json}`)
-      : undefined;
-    if (!url) throw new Error("Seedream 没返回图片");
-    return { imageUrl: url, caption: "", provider: "seedream" as const };
+
+    throw new Error("Seedream 没有可用的候选模型");
   });
