@@ -182,6 +182,28 @@ export function HabitsView() {
           }}
         />
       )}
+
+      <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
+        <AlertDialogContent className="bg-zinc-950 border-rose-400/30">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display">
+              删除习惯「{deleting?.emoji} {deleting?.name}」？
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              该习惯的全部打卡历史也会一并清除，且无法恢复。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { if (deleting) removeHabit(deleting.id); setDeleting(null); }}
+              className="bg-rose-500 hover:bg-rose-600 text-white"
+            >
+              删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
