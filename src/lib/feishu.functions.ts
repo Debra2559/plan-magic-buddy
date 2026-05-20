@@ -120,9 +120,50 @@ export const getFeishuSettings = createServerFn({ method: 'GET' }).handler(
       selectedCalendarName: data?.selected_calendar_name ?? null,
       direction: (data?.direction as 'two-way' | 'push-only') ?? 'two-way',
       lastSyncAt: data?.last_sync_at ?? null,
+      pushRules: {
+        requireTime: (data as any)?.push_require_time ?? true,
+        defaultTime: ((data as any)?.push_default_time as string) ?? '09:00',
+        allowedTypes: (((data as any)?.push_allowed_types as string[]) ?? ['event','reminder','todo']) as Array<'event'|'reminder'|'todo'>,
+        includeDone: (data as any)?.push_include_done ?? false,
+      },
     }
   }
 )
+
+// ---------- 设置：推送规则 ----------
+const pushRulesSchema = z.object({
+  requireTime: z.boolean(),
+  defaultTime: z.string().regex(/^\d{2}:\d{2}$/),
+  allowedTypes: z.array(z.enum(['event','reminder','todo'])).min(1).max(3),
+  includeDone: z.boolean(),
+})
+
+export const setFeishuPushRules = createServerFn({ method: 'POST' })
+  .inputValidator((input) => pushRulesSchema.parse(input))
+  .handler(async ({ data }) => {
+    const patch = {
+      push_require_time: data.requireTime,
+      push_default_time: data.defaultTime,
+      push_allowed_types: data.allowedTypes,
+      push_include_done: data.includeDone,
+    }
+    const { data: row } = await supabaseAdmin
+      .from('feishu_settings')
+      .select('id')
+      .limit(1)
+      .maybeSingle()
+    if (!row) {
+      const { error } = await supabaseAdmin.from('feishu_settings').insert(patch as any)
+      if (error) throw new Error(error.message)
+    } else {
+      const { error } = await supabaseAdmin
+        .from('feishu_settings')
+        .update(patch as any)
+        .eq('id', row.id)
+      if (error) throw new Error(error.message)
+    }
+    return { ok: true as const }
+  })
 
 // ---------- 设置：选中日历 ----------
 const selectSchema = z.object({
