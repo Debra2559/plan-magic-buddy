@@ -107,37 +107,24 @@ function Index() {
         </div>
       </section>
 
-      {/* AI section */}
-      <section id="ai" className="relative px-8 lg:px-16 py-32">
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
-          <div>
-            <p className="text-xs tracking-widest text-amber-glow mb-3">AI · 智能规划</p>
-            <h2 className="font-display text-4xl md:text-5xl leading-tight mb-6">
+      {/* AI section - LIVE */}
+      <section id="ai" className="relative px-6 lg:px-16 py-32">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-14">
+            <p className="text-xs tracking-widest text-amber-glow mb-3">AI · 智能规划 · 实时</p>
+            <h2 className="font-display text-4xl md:text-6xl leading-tight mb-5">
               把想法<span className="italic">说出口</span>，<br />
               剩下的交给 Sylva。
             </h2>
-            <p className="text-foreground/70 leading-relaxed mb-8">
-              不必再手动建日程、拆任务、设提醒。说一句"下周要准备答辩"，
-              AI 自动把它拆成每天的待办、绑上合适的时间段、
-              提前在你需要的时候提醒你。
+            <p className="text-foreground/70 leading-relaxed max-w-2xl mx-auto">
+              下面就是真实的 AI 规划面板 —— 输入一段想法，Sylva 会自动拆成日程、待办和提醒；
+              你可以从 0 创建、调整重排、或者往现有规划里追加。
             </p>
-            <ul className="space-y-3 text-sm">
-              {[
-                { i: Sparkles, t: "自然语言输入，秒级拆解" },
-                { i: Calendar, t: "自动占用日历空档，避开会议冲突" },
-                { i: CheckSquare, t: "生成可执行的待办与习惯链" },
-                { i: Bell, t: "上下文感知的智能提醒" },
-                { i: PenLine, t: "随手语音记录，AI 自动归档" },
-              ].map((f, i) => {
-                const Icon = f.i;
-                return (
-                  <li key={i} className="flex items-center gap-3">
-                    <Icon className="w-4 h-4 text-amber-glow" />
-                    <span className="text-foreground/85">{f.t}</span>
-                  </li>
-                );
-              })}
-            </ul>
+          </div>
+          <AiPlanner />
+        </div>
+      </section>
+
           </div>
           <div className="flex justify-center lg:justify-end">
             <AiInputWidget />
