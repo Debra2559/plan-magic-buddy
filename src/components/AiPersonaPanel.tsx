@@ -1,16 +1,23 @@
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Wand2, LogOut, Loader2, Camera, Trash2 } from "lucide-react";
+import { Sparkles, Wand2, LogOut, Loader2, Camera, Trash2, Upload } from "lucide-react";
 import { usePersona } from "@/lib/persona";
 import { useAuth } from "@/lib/auth-context";
 import { generatePlan } from "@/lib/plan.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { AvatarCropDialog } from "@/components/AvatarCropDialog";
 
 const PRESET_AVATARS: string[] = [
   "fox", "panda", "cat", "dog", "koala", "tiger", "bear", "rabbit",
   "owl", "penguin", "monkey", "lion", "wolf", "frog", "duck", "pig",
 ].map((seed) => `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${seed}&backgroundType=gradientLinear`);
+
+export function AiPersonaPanel() {
+  const { persona, loading, save } = usePersona();
+  const { user, signOut } = useAuth();
+  const [local, setLocal] = useState(persona);
+  const [savingTip, setSavingTip] = useState(false);
 
 export function AiPersonaPanel() {
   const { persona, loading, save } = usePersona();
