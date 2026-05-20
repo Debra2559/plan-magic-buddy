@@ -8,7 +8,8 @@ import { HackathonInbox } from "./HackathonInbox";
 import { AiNewsRadar } from "./AiNewsRadar";
 import { EnterHint } from "@/components/EnterHint";
 import { shouldSubmitOnKey } from "@/lib/keybinds";
-import { Sparkles, ArrowUp, Loader2, Calendar, CheckSquare, Bell, Plus, RefreshCw, Wand2, Check, X, Trash2, Target, Globe, Send, Settings as SettingsIcon } from "lucide-react";
+import { Sparkles, ArrowUp, Loader2, Calendar, CheckSquare, Bell, Plus, RefreshCw, Wand2, Check, X, Trash2, Target, Globe, Send, Settings as SettingsIcon, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 type Mode = "auto" | "create" | "adjust" | "add" | "goal";
 
