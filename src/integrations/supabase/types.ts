@@ -634,6 +634,7 @@ export type Database = {
           updated_at: string
           user_id: string
           verbosity_level: number
+          version: number
         }
         Insert: {
           avatar_url?: string | null
@@ -648,6 +649,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           verbosity_level?: number
+          version?: number
         }
         Update: {
           avatar_url?: string | null
@@ -662,6 +664,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           verbosity_level?: number
+          version?: number
         }
         Relationships: []
       }
