@@ -366,6 +366,7 @@ export function AiNewsRadar() {
           onSaveDirect={onSaveDirect}
           onClose={() => setSettingsOpen(false)}
           onToggleEnabled={onToggleEnabled}
+          onSourcesChange={(next) => settings && setSettings({ ...settings, sources: next })}
         />
       )}
 
