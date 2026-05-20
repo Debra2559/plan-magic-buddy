@@ -890,7 +890,50 @@ export function FeishuSyncPanel() {
             placeholder="接收人 ID（推荐 open_id 或群 chat_id）"
             className="flex-1 bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white/90 placeholder:text-white/30 outline-none"
           />
+          <button
+            type="button"
+            onClick={() => setLookup((s) => ({ ...s, open: !s.open, result: null }))}
+            className="text-[11px] px-2 py-1 rounded-md bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 whitespace-nowrap"
+          >
+            查我的 open_id
+          </button>
         </div>
+        {lookup.open && (
+          <div className="mb-2 px-3 py-2 rounded-md border border-white/10 bg-white/[0.03] space-y-2">
+            <div className="text-[11px] text-white/60">
+              输入企业内邮箱或手机号，反查你的 <code>open_id</code>（需应用开通 <code>contact:user.base:readonly</code>）。
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={lookup.type}
+                onChange={(e) => setLookup({ ...lookup, type: e.target.value as any, result: null })}
+                className="bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white/80 outline-none"
+              >
+                <option value="email">邮箱</option>
+                <option value="mobile">手机号</option>
+              </select>
+              <input
+                value={lookup.value}
+                onChange={(e) => setLookup({ ...lookup, value: e.target.value, result: null })}
+                onKeyDown={(e) => e.key === "Enter" && doLookupOpenId()}
+                placeholder={lookup.type === "email" ? "name@company.com" : "+8613800000000 或 13800000000"}
+                className="flex-1 bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white/90 placeholder:text-white/30 outline-none"
+              />
+              <button
+                onClick={doLookupOpenId}
+                disabled={lookup.loading || !lookup.value.trim()}
+                className="text-[11px] px-3 py-1 rounded-md bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-50 flex items-center gap-1"
+              >
+                {lookup.loading ? <Loader2 className="w-3 h-3 animate-spin" /> : null} 查询
+              </button>
+            </div>
+            {lookup.result && (
+              <div className={`text-[11px] ${lookup.result.ok ? "text-emerald-300" : "text-rose-300"}`}>
+                {lookup.result.ok ? "✓ " : "✗ "}{lookup.result.msg}
+              </div>
+            )}
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-3 mb-2 text-[11px] text-white/70">
           <label className="flex items-center gap-1.5">
             <input type="checkbox" checked={notify.notifyOnDiscover} onChange={(e) => setNotify({ ...notify, notifyOnDiscover: e.target.checked })} /> 发现新比赛时推送
