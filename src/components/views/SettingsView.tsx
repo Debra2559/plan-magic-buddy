@@ -300,7 +300,7 @@ export function SettingsView() {
       case "comic": return <ComicSettingsPanel />;
       case "feishu": return <FeishuSyncPanel />;
       case "webhook": return <FeishuWebhookLogsPanel />;
-      case "reminders": return <RowList rows={simpleSections.reminders.rows} />;
+      case "reminders": return <RemindersPanel />;
       case "appearance": return (
         <div className="space-y-4">
           <div className="widget p-4 flex items-center justify-between">
