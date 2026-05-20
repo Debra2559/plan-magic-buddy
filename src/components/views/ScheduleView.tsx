@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useSylva } from "@/lib/sylva-store";
-import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X, CheckCircle2, RotateCcw } from "lucide-react";
 import type { PlanItem } from "@/lib/plan.functions";
 
 
@@ -18,7 +18,7 @@ const tagColor: Record<string, string> = {
 const typeIcon = { event: CalIcon, todo: Clock, reminder: Bell } as const;
 
 export function ScheduleView() {
-  const { items, addItems, updateItem, removeItem, isRecapDone } = useSylva();
+  const { items, addItems, updateItem, removeItem, isRecapDone, unmarkRecapDone } = useSylva();
   const [cursor, setCursor] = useState(new Date(2026, 4, 1)); // May 2026
   const [selected, setSelected] = useState("2026-05-19");
   const [editorDate, setEditorDate] = useState<string | null>(null);
@@ -150,10 +150,20 @@ export function ScheduleView() {
         {isRecapDone(selected) && (
           <div className="p-3 rounded-xl bg-moss/15 border border-moss/30 mb-2 flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-moss shrink-0" />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-moss font-medium">今日小结 · 已完成</p>
               <p className="text-[10px] text-white/50 mt-0.5">已通过飞书卡片提交并同步到日历</p>
             </div>
+            <button
+              onClick={async () => {
+                if (!confirm(`撤销 ${selected} 的「已完成」标记？\n这会清掉当天回执，同时取消待办与日历里的完成状态。`)) return;
+                try { await unmarkRecapDone(selected); } catch (e: any) { alert(e?.message ?? "撤销失败"); }
+              }}
+              title="撤销「已完成」标记"
+              className="p-1 rounded-full text-moss/80 hover:text-moss hover:bg-moss/20 shrink-0"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
 

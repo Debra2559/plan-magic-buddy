@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSylva, type Mood, type Note, habitStreak, habitDaysSinceLast, isHabitDoneOn } from "@/lib/sylva-store";
-import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, ListChecks, NotebookPen, Sparkles, CheckCircle2, Circle, Flame, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, ListChecks, NotebookPen, Sparkles, CheckCircle2, Circle, Flame, AlertTriangle, RotateCcw } from "lucide-react";
 import { markRecapDone, getDailyRecap } from "@/lib/feishu.functions";
 
 type Tab = "notes" | "diary" | "summary";
@@ -324,7 +324,7 @@ function useMemoSync(key: string, fn: () => void) {
 
 /* ---------------- Daily Summary ---------------- */
 function SummaryTab({ initialDate }: { initialDate?: string | null }) {
-  const { items, habits, diary, upsertDiary, isRecapDone, refreshRecapDoneDates } = useSylva();
+  const { items, habits, diary, upsertDiary, isRecapDone, refreshRecapDoneDates, unmarkRecapDone } = useSylva();
   const [date, setDate] = useState(initialDate ?? todayStr());
   useEffect(() => { refreshRecapDoneDates(); }, [refreshRecapDoneDates]);
   const recapDone = isRecapDone(date);
@@ -388,6 +388,16 @@ function SummaryTab({ initialDate }: { initialDate?: string | null }) {
           {recapDone && (
             <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-moss/15 border border-moss/30 text-[10px] text-moss" title="已通过飞书卡片提交并同步到日历">
               <CheckCircle2 className="w-3 h-3" /> 飞书已提交
+              <button
+                onClick={async () => {
+                  if (!confirm(`撤销 ${date} 的「飞书已提交」标记？\n这会清掉当天回执，同时取消日历与待办里的完成状态。`)) return;
+                  try { await unmarkRecapDone(date); } catch (e: any) { alert(e?.message ?? "撤销失败"); }
+                }}
+                title="撤销已提交标记"
+                className="ml-1 -mr-0.5 p-0.5 rounded-full hover:bg-moss/25 text-moss/80 hover:text-moss"
+              >
+                <RotateCcw className="w-3 h-3" />
+              </button>
             </span>
           )}
         </div>
