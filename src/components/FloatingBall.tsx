@@ -26,6 +26,9 @@ function loadPos(): Pos {
 
 export function FloatingBall() {
   const { addItems, navigateTo } = useSylva();
+  const { persona } = usePersona();
+  const avatarSrc = resolveAvatarUrl(persona?.avatar_url);
+  const aiName = persona?.ai_nickname || "Sylva";
   const [mounted, setMounted] = useState(false);
   const [pos, setPos] = useState<Pos>({ x: 24, y: 200, enabled: true });
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
