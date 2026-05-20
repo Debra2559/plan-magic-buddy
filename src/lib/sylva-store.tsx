@@ -257,11 +257,17 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
   const removeComicHistory = (id: string) =>
     setComicHistory((prev) => prev.filter((p) => p.id !== id));
 
-  const addItems = (newOnes: PlanItem[]) =>
-    setItems((prev) => [...prev, ...newOnes.map((i) => ({ ...i, id: (i as any).id ?? nextId() }))]);
+  const addItems = (newOnes: PlanItem[]): string[] => {
+    const withIds = newOnes.map((i) => ({ ...i, id: (i as any).id ?? nextId() }));
+    setItems((prev) => [...prev, ...withIds]);
+    return withIds.map((i) => i.id);
+  };
 
-  const replaceItems = (newOnes: PlanItem[]) =>
-    setItems(newOnes.map((i) => ({ ...i, id: nextId() })));
+  const replaceItems = (newOnes: PlanItem[]): string[] => {
+    const withIds = newOnes.map((i) => ({ ...i, id: nextId() }));
+    setItems(withIds);
+    return withIds.map((i) => i.id);
+  };
 
   const removeItem = (id: string) =>
     setItems((prev) => prev.filter((i) => i.id !== id));
