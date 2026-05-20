@@ -101,10 +101,13 @@ function NotesTab() {
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit();
+            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              submit();
+            }
           }}
           rows={3}
-          placeholder="此刻在想什么？ ⌘ + Enter 保存"
+          placeholder="此刻在想什么？Enter 保存 · Shift + Enter 换行"
           className="w-full bg-transparent outline-none text-sm leading-relaxed text-white/90 placeholder:text-white/30 resize-none"
         />
         <div className="flex flex-wrap items-center gap-2 mt-3">
