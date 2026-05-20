@@ -486,14 +486,19 @@ export function FeishuSyncPanel() {
   );
 }
 
-function mkLog(op: SyncLog["op"], source: SyncLog["source"], title: string): SyncLog {
+function mkLog(
+  op: SyncLog["op"],
+  source: SyncLog["source"],
+  title: string,
+  status: SyncLog["status"] = "ok"
+): SyncLog {
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     at: new Date().toISOString(),
     op,
     source,
     title,
-    status: "ok",
+    status,
   };
 }
 
