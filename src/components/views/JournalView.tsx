@@ -373,46 +373,6 @@ export function JournalView({ embedded = false }: { embedded?: boolean } = {}) {
                 </div>
               )}
 
-              {/* —— 随手记 —— */}
-              <SectionHeader icon={<StickyNote className="w-3.5 h-3.5" />} title={`随手记 · ${dayNotes.length}`} />
-              {dayNotes.length === 0 ? (
-                <EmptyLine text="没有抓到飘过的念头" />
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-7">
-                  {dayNotes.map((n) => (
-                    <div
-                      key={n.id}
-                      className="p-3 rounded-xl bg-white/[0.04] border border-white/8 hover:border-amber-glow/30 transition"
-                      style={{ transform: `rotate(${(parseInt(n.id.slice(-2), 36) % 5 - 2) * 0.25}deg)` }}
-                    >
-                      <p className="text-sm text-white/85 leading-relaxed whitespace-pre-wrap line-clamp-4">
-                        {n.text}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2 text-[10px] text-white/40">
-                        <span>{(n.createdAt ?? "").slice(11, 16)}</span>
-                        {n.mood && <span>{MOODS[n.mood]?.emoji}</span>}
-                        {(n.tags ?? []).slice(0, 3).map((t) => (
-                          <span key={t} className="px-1.5 py-0.5 rounded-full bg-white/5">#{t}</span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* —— 日记 —— */}
-              <SectionHeader icon={<BookHeart className="w-3.5 h-3.5" />} title="今日日记" />
-              {dayDiary?.content ? (
-                <div className="journal-lines p-5 rounded-2xl bg-white/[0.03] border border-white/8 mb-7">
-                  <div
-                    className="diary-editor text-sm text-white/85 leading-8 whitespace-pre-wrap break-words"
-                    dangerouslySetInnerHTML={{ __html: dayDiary.content }}
-                  />
-                </div>
-
-              ) : (
-                <EmptyLine text="还没有写下今天 —— 去『随手记 · 日记』补一笔吧" />
-              )}
 
               {/* —— 每日漫画 —— */}
               <SectionHeader icon={<Wand2 className="w-3.5 h-3.5" />} title="每日漫画" />
