@@ -18,7 +18,7 @@ const modeMeta: Record<Mode, { label: string; icon: typeof Wand2; hint: string }
   add: { label: "追加事项", icon: Plus, hint: "往现有规划里加" },
 };
 
-type ChatMsg = { role: "user" | "assistant"; content: string; quickReplies?: string[] };
+
 
 const typeMeta: Record<PlanItem["type"], { icon: typeof Calendar; color: string; label: string }> = {
   event: { icon: Calendar, color: "text-amber-glow", label: "日程" },
