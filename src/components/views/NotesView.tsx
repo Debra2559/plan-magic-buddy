@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSylva, type Mood, type Note, habitStreak, habitDaysSinceLast, isHabitDoneOn } from "@/lib/sylva-store";
-import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, ListChecks, NotebookPen, Sparkles, CheckCircle2, Circle, Flame, AlertTriangle, RotateCcw, Filter, X as XIcon } from "lucide-react";
+import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, NotebookPen, Sparkles, CheckCircle2, Circle, Flame, AlertTriangle, RotateCcw, Filter, X as XIcon } from "lucide-react";
 import { markRecapDone, getDailyRecap } from "@/lib/feishu.functions";
 import { EnterHint } from "@/components/EnterHint";
 import { shouldSubmitOnKey } from "@/lib/keybinds";
 
-type Tab = "notes" | "diary" | "summary";
+type Tab = "notes" | "diary";
 
 const MOODS: { value: Mood; emoji: string; label: string }[] = [
   { value: "great", emoji: "😄", label: "很棒" },
@@ -22,7 +22,8 @@ function readUrlParams() {
   const p = new URLSearchParams(window.location.search);
   const t = p.get("tab");
   const d = p.get("date");
-  const tab = (t === "notes" || t === "diary" || t === "summary") ? (t as Tab) : null;
+  // 兼容历史链接：summary 已合并入「手帐」，这里回退到 diary
+  const tab: Tab | null = t === "notes" ? "notes" : (t === "diary" || t === "summary") ? "diary" : null;
   const date = d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null;
   return { tab, date };
 }
@@ -40,15 +41,14 @@ export function NotesView() {
       <div className="flex items-center gap-1 mb-6 p-1 rounded-full bg-white/[0.04] border border-white/8 w-fit">
         <TabBtn active={tab === "notes"} onClick={() => setTab("notes")} icon={<NotebookPen className="w-3.5 h-3.5" />}>随手记</TabBtn>
         <TabBtn active={tab === "diary"} onClick={() => setTab("diary")} icon={<BookHeart className="w-3.5 h-3.5" />}>日记</TabBtn>
-        <TabBtn active={tab === "summary"} onClick={() => setTab("summary")} icon={<ListChecks className="w-3.5 h-3.5" />}>今日小结</TabBtn>
       </div>
 
       {tab === "notes" && <NotesTab />}
       {tab === "diary" && <DiaryTab initialDate={initialDate} />}
-      {tab === "summary" && <SummaryTab initialDate={initialDate} />}
     </div>
   );
 }
+
 
 function TabBtn({ active, onClick, icon, children }: { active: boolean; onClick: () => void; icon: React.ReactNode; children: React.ReactNode }) {
   return (
