@@ -3,6 +3,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createLovableAiGatewayProvider } from "./ai-gateway";
+import { notifyHackathonDiscovered, notifyHackathonAccepted } from "./feishu.functions";
 
 // ------- Types -------
 export interface HackathonRow {
