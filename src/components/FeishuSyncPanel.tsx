@@ -139,17 +139,18 @@ export function FeishuSyncPanel() {
     type: "email" | "mobile";
     value: string;
     loading: boolean;
-    result: { ok: boolean; msg: string } | null;
-  }>({ open: false, type: "email", value: "", loading: false, result: null });
+    result: { ok: boolean; msg: string; openId?: string } | null;
+    copied: boolean;
+    saving: boolean;
+  }>({ open: false, type: "email", value: "", loading: false, result: null, copied: false, saving: false });
 
   const doLookupOpenId = async () => {
     if (!lookup.value.trim()) return;
-    setLookup((s) => ({ ...s, loading: true, result: null }));
+    setLookup((s) => ({ ...s, loading: true, result: null, copied: false }));
     try {
       const res = await runLookupOpenId({ data: { type: lookup.type, value: lookup.value.trim() } });
       if (res.ok) {
-        setNotify((n) => ({ ...n, receiveId: res.openId, receiveIdType: "open_id" }));
-        setLookup((s) => ({ ...s, loading: false, result: { ok: true, msg: "已填入 open_id ✓" } }));
+        setLookup((s) => ({ ...s, loading: false, result: { ok: true, msg: "查询成功", openId: res.openId } }));
       } else {
         setLookup((s) => ({
           ...s,
@@ -159,6 +160,30 @@ export function FeishuSyncPanel() {
       }
     } catch (e: any) {
       setLookup((s) => ({ ...s, loading: false, result: { ok: false, msg: e?.message ?? "请求失败" } }));
+    }
+  };
+
+  const copyOpenId = async () => {
+    if (!lookup.result?.openId) return;
+    try {
+      await navigator.clipboard.writeText(lookup.result.openId);
+      setLookup((s) => ({ ...s, copied: true }));
+      setTimeout(() => setLookup((s) => ({ ...s, copied: false })), 1500);
+    } catch {}
+  };
+
+  const fillAndSaveOpenId = async () => {
+    const openId = lookup.result?.openId;
+    if (!openId) return;
+    setLookup((s) => ({ ...s, saving: true }));
+    const next = { ...notify, receiveId: openId, receiveIdType: "open_id" as const };
+    setNotify(next);
+    try {
+      await runSetNotify({ data: next });
+      setNotifySaved(true);
+      setTimeout(() => setNotifySaved(false), 1500);
+    } finally {
+      setLookup((s) => ({ ...s, saving: false }));
     }
   };
 
@@ -936,8 +961,33 @@ export function FeishuSyncPanel() {
               </button>
             </div>
             {lookup.result && (
-              <div className={`text-[11px] ${lookup.result.ok ? "text-emerald-300" : "text-rose-300"}`}>
-                {lookup.result.ok ? "✓ " : "✗ "}{lookup.result.msg}
+              <div className="space-y-1.5">
+                <div className={`text-[11px] ${lookup.result.ok ? "text-emerald-300" : "text-rose-300"}`}>
+                  {lookup.result.ok ? "✓ " : "✗ "}{lookup.result.msg}
+                </div>
+                {lookup.result.ok && lookup.result.openId && (
+                  <>
+                    <div className="text-[11px] font-mono break-all px-2 py-1 rounded bg-black/30 border border-white/10 text-white/80">
+                      {lookup.result.openId}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={copyOpenId}
+                        className="text-[11px] px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-white/80 hover:bg-white/10"
+                      >
+                        {lookup.copied ? "✓ 已复制" : "复制 open_id"}
+                      </button>
+                      <button
+                        onClick={fillAndSaveOpenId}
+                        disabled={lookup.saving}
+                        className="text-[11px] px-2.5 py-1 rounded-md bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-50 flex items-center gap-1"
+                      >
+                        {lookup.saving ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                        {notifySaved ? "✓ 已填入并保存" : "填入并保存"}
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
