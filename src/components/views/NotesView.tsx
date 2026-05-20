@@ -199,7 +199,12 @@ function DiaryTab() {
     setMood(e?.mood);
   });
 
-  const save = () => upsertDiary(date, { content, mood });
+  const save = () => {
+    upsertDiary(date, { content, mood });
+    if (content.trim().length > 0) {
+      markRecapDone({ data: { date } }).catch(() => {});
+    }
+  };
   const sorted = [...diary].sort((a, b) => b.date.localeCompare(a.date));
 
   return (
