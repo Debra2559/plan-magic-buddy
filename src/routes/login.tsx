@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import forestBg from "@/assets/forest-bg.jpg";
-import { Sparkles, Mail, Loader2, Eye, EyeOff } from "lucide-react";
+import { Sparkles, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
