@@ -150,7 +150,7 @@ export function AiPlanner({ onGoSettings }: { onGoSettings?: () => void } = {}) 
       },
       { event: 0, todo: 0, reminder: 0 } as Record<PlanItem["type"], number>,
     );
-    if (mode === "add") {
+    if (draftMode === "add") {
       addItems(draft.items);
     } else {
       replaceItems(draft.items);
@@ -160,7 +160,7 @@ export function AiPlanner({ onGoSettings }: { onGoSettings?: () => void } = {}) 
       counts.todo ? `待办 ${counts.todo}` : "",
       counts.reminder ? `提醒 ${counts.reminder}` : "",
     ].filter(Boolean).join(" · ");
-    toast.success(mode === "add" ? "已追加到我的规划" : "规划已同步", {
+    toast.success(draftMode === "add" ? "已追加到我的规划" : "规划已同步", {
       description: `${parts || `共 ${draft.items.length} 项`}　已写入日程 / 待办 / 提醒`,
       duration: 4000,
     });
