@@ -88,7 +88,7 @@ function ThinkingTrace({ active, variant }: { active: boolean; variant: "plan" |
 }
 
 export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => void; onConfirmed?: () => void } = {}) {
-  const { items: confirmedFull, addItems, replaceItems, enterToSubmit, markRecentlySynced, setSyncSummary } = useSylva();
+  const { items: confirmedFull, addItems, enterToSubmit, markRecentlySynced, setSyncSummary } = useSylva();
   const confirmed = confirmedFull;
   const [mode, setMode] = useState<Mode>("auto");
   const [idea, setIdea] = useState("");
@@ -204,7 +204,8 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
       },
       { event: 0, todo: 0, reminder: 0 } as Record<PlanItem["type"], number>,
     );
-    const ids = draftMode === "add" ? addItems(draft.items) : replaceItems(draft.items);
+    // 始终追加，不覆盖/删除原有规划
+    const ids = addItems(draft.items);
     markRecentlySynced(ids);
     // 构造带 id 的快照，供汇总弹窗展示
     const withIds = draft.items.map((it, i) => ({ ...it, id: ids[i] }));
@@ -214,7 +215,7 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
       events: withIds.filter((i) => i.type === "event"),
       todos: withIds.filter((i) => i.type === "todo"),
       reminders: withIds.filter((i) => i.type === "reminder"),
-      appliedMode: draftMode,
+      appliedMode: "add",
     });
     const parts = [
       counts.event ? `日程 ${counts.event}` : "",
@@ -445,11 +446,9 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-auto">
           <DialogHeader>
-            <DialogTitle className="font-display text-xl">
-              {draftMode === "add" ? "追加预览" : draftMode === "adjust" ? "调整重排预览" : "写入预览"}
-            </DialogTitle>
+            <DialogTitle className="font-display text-xl">追加预览</DialogTitle>
             <DialogDescription>
-              {draft ? <>本次将{draftMode === "adjust" ? "替换" : draftMode === "add" ? "追加" : "写入"} <b className="text-foreground">{draft.items.length}</b> 项 · {buildPreviewMeta(draft.items)}</> : null}
+              {draft ? <>本次将追加 <b className="text-foreground">{draft.items.length}</b> 项 · {buildPreviewMeta(draft.items)}（不会删除原有规划）</> : null}
             </DialogDescription>
           </DialogHeader>
           {draft && (
@@ -476,9 +475,6 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
                 <div className="text-amber-glow tracking-wider mb-1">条目明细</div>
                 <ItemGroups grouped={groupByDate(draft.items.map((it, i) => ({ ...it, _key: `pv-${i}` })))} variant="draft" />
               </div>
-              {draftMode === "adjust" && confirmed.length > 0 && (
-                <p className="text-[11px] text-destructive/80">⚠ 调整模式会替换现有 {confirmed.length} 项规划</p>
-              )}
             </div>
           )}
           <DialogFooter className="gap-2">
