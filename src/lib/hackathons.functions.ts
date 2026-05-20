@@ -90,8 +90,9 @@ const ExtractedSchema = z.object({
       z.object({
         title: z.string().describe("黑客松名称, 中文优先"),
         url: z.string().describe("详情/报名链接 (完整 https://)"),
-        deadline: z.string().nullable().describe("报名截止或比赛结束日期 (YYYY-MM-DD 或简述)"),
-        starts_at: z.string().nullable().describe("开始日期 (YYYY-MM-DD 或简述)"),
+        deadline: z.string().nullable().describe("⚠️ 报名截止日期 (YYYY-MM-DD)。注意区分: 这是「报名结束」, 不是比赛结束"),
+        starts_at: z.string().nullable().describe("比赛开始日期 (YYYY-MM-DD)"),
+        ends_at: z.string().nullable().describe("比赛结束日期 (YYYY-MM-DD), 如果只是单日活动可以和 starts_at 相同"),
         location: z.string().nullable().describe("线上 / 城市 / 混合"),
         prize: z.string().nullable().describe("奖金/奖品概述, 一句话"),
         summary: z.string().describe("一句中文简介, 不超过 60 字"),
@@ -110,7 +111,7 @@ async function extractWithAI(
   if (snippets.length === 0) return { data: { hackathons: [] } };
 
   const corpus = snippets
-    .map((s, i) => `[${i + 1}] ${s.title ?? ""}\nURL: ${s.url ?? ""}\n${(s.markdown ?? s.description ?? "").slice(0, 800)}`)
+    .map((s, i) => `[${i + 1}] ${s.title ?? ""}\nURL: ${s.url ?? ""}\n${(s.markdown ?? s.description ?? "").slice(0, 1600)}`)
     .join("\n\n---\n\n");
 
   const now = new Date();
@@ -118,7 +119,7 @@ async function extractWithAI(
   const todayStr = now.toISOString().slice(0, 10);
 
   const gateway = createLovableAiGatewayProvider(apiKey);
-  const models = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash"] as const;
+  const models = ["google/gemini-2.5-flash", "google/gemini-3-flash-preview"] as const;
   let lastErr = "";
   for (const m of models) {
     try {
@@ -126,14 +127,28 @@ async function extractWithAI(
         model: gateway(m),
         schema: ExtractedSchema,
         system: `你是黑客松信息提取器。从搜索结果里挑出所有看起来像黑客松/编程比赛/创新比赛的条目。
-当前是 ${ym} (today=${todayStr})。要求:
-- 只要 url 是完整 https:// 链接, 都尽量保留, 不要因为信息不全而丢弃
-- 如果不确定截止日期, 字段填 null 就行, 不要因此丢掉条目
+当前是 ${ym} (today=${todayStr})。
+
+【关键时间提取要求 - 非常重要】
+仔细阅读每条 markdown 内容, 提取三个关键日期, 统一输出 YYYY-MM-DD:
+- deadline: 「报名截止」时间。识别关键词: 报名截止 / 报名结束 / 截止日期 / register by / registration deadline / submission deadline / apply by
+- starts_at: 「比赛开始」时间。识别关键词: 比赛开始 / 开赛 / 开始日期 / starts / event starts / hackathon begins / kickoff
+- ends_at: 「比赛结束」时间。识别关键词: 比赛结束 / 结束日期 / 闭幕 / ends / event ends / final day / demo day
+
+中文日期解析示例:
+- "2025年9月30日24时" → deadline=2025-09-30
+- "报名开始日期为2025年5月22日, 报名截止日期为2025年6月13日" → deadline=2025-06-13
+- "5月22日 至 6月13日" 在「报名」语境 → deadline=06-13; 在「比赛」语境 → starts_at=05-22, ends_at=06-13
+- 只写「2025-09-30」无上下文, 默认当作 deadline
+
+其他规则:
+- url 必须是完整 https:// 链接
+- 找不到的日期填 null, 不要瞎编, 但要尽力从正文里找
 - 不要只挑「中文」的, 英文比赛也保留
 - 跳过纯会议/课程/招聘/广告
 - 一次最多 12 条, 信息差不多的去重
 来源: ${source}`,
-        prompt: `下面是 ${snippets.length} 条搜索结果, 把里面的黑客松全提出来:\n\n${corpus}`,
+        prompt: `下面是 ${snippets.length} 条搜索结果, 把里面的黑客松全提出来, 务必尽力提取报名截止/比赛开始/比赛结束三个日期:\n\n${corpus}`,
       });
       return { data: object };
     } catch (err) {
