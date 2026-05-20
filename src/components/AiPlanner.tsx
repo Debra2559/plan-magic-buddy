@@ -143,6 +143,11 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
     setError(null);
   };
 
+  const openPreview = () => {
+    if (!draft) return;
+    setPreviewOpen(true);
+  };
+
   const confirmDraft = () => {
     if (!draft) return;
     const counts = draft.items.reduce(
@@ -173,6 +178,7 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
       description: `${parts || `共 ${draft.items.length} 项`}　可在汇总入口快速跳转`,
       duration: 4000,
     });
+    setPreviewOpen(false);
     setDraft(null);
     setIdea("");
     onConfirmed?.();
