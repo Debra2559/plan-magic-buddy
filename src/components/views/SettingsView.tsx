@@ -53,6 +53,7 @@ export function SettingsView() {
 
       <div className="space-y-7">
         <FeishuSyncPanel />
+        {sections.map((s) => {
           const Icon = s.icon;
           return (
             <div key={s.title}>
