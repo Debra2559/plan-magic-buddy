@@ -31,7 +31,7 @@ import {
   Maximize2,
   Calendar as CalIcon,
   CheckSquare,
-  StickyNote,
+  
   Sparkles,
   Settings,
   Music,
