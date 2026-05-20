@@ -418,12 +418,10 @@ function ItemCard({
           {item.tag}
         </span>
         <div className="ml-auto flex items-center gap-1">
-          <input
-            type="time"
+          <TimePicker
             value={item.time ?? ""}
-            onChange={(e) => onChange({ time: e.target.value || undefined })}
-            title="点击编辑时间"
-            className="bg-black/30 border border-white/10 hover:border-white/25 rounded px-1 py-0.5 text-[11px] font-mono text-white/85 w-[72px] focus:outline-none cursor-pointer"
+            onChange={(v) => onChange({ time: v || undefined })}
+            size="sm"
           />
           <button
             onClick={onDelete}
