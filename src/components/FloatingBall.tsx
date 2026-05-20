@@ -25,11 +25,17 @@ function loadPos(): Pos {
 
 export function FloatingBall() {
   const { addItems, navigateTo } = useSylva();
-  const [pos, setPos] = useState<Pos>(() => loadPos());
+  const [mounted, setMounted] = useState(false);
+  const [pos, setPos] = useState<Pos>({ x: 24, y: 200, enabled: true });
   const [open, setOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const movedRef = useRef(false);
   const offsetRef = useRef({ dx: 0, dy: 0 });
+
+  useEffect(() => {
+    setPos(loadPos());
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     try {
@@ -120,7 +126,7 @@ export function FloatingBall() {
   const goAI = () => { navigateTo("ai"); setOpen(false); };
   const goToday = () => { navigateTo("schedule"); setOpen(false); };
 
-  if (!pos.enabled) return null;
+  if (!mounted || !pos.enabled) return null;
 
   const snapLeft = pos.x < window.innerWidth / 2;
 
