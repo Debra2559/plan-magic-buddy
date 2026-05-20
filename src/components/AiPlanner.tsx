@@ -415,66 +415,11 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
       </div>
 
 
-      {/* Feishu sync bar */}
-      <div className="widget p-5">
-        <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Send className="w-4 h-4 text-amber-glow" />
-            <span className="text-xs tracking-wider text-amber-glow">飞书日程同步</span>
-            <span className="text-[10px] text-muted-foreground">选择范围后一键推送到飞书日历</span>
-          </div>
-          {onGoSettings && (
-            <button
-              onClick={onGoSettings}
-              className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-amber-glow transition"
-              title="去设置选日历 / 调方向"
-            >
-              <SettingsIcon className="w-3 h-3" /> 飞书设置
-            </button>
-          )}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {(Object.keys(scopeMeta) as Array<keyof typeof scopeMeta>).map((k) => {
-            const active = syncScope === k;
-            const disabled = k === "draft" && !draft;
-            return (
-              <button
-                key={k}
-                disabled={disabled}
-                onClick={() => setSyncScope(k)}
-                title={scopeMeta[k].desc}
-                className={`px-3 py-1.5 rounded-full text-xs border transition
-                  ${active ? "bg-amber-glow/20 border-amber-glow/50 text-amber-glow" : "bg-foreground/5 border-foreground/10 text-foreground/70 hover:bg-foreground/10"}
-                  ${disabled ? "opacity-30 cursor-not-allowed" : ""}`}
-              >
-                {scopeMeta[k].label}
-              </button>
-            );
-          })}
-          <div className="flex-1" />
-          <span className="text-[10px] text-muted-foreground">{scopeMeta[syncScope].desc}</span>
-          <button
-            onClick={runSync}
-            disabled={syncing}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition disabled:opacity-40 disabled:scale-100"
-          >
-            {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            {syncing ? "同步中" : "同步到飞书"}
-          </button>
-        </div>
-        <p className="mt-2 text-[10px] text-muted-foreground">
-          提示：飞书日历只接收带时间的事项；未连接飞书时请先在「设置 → 飞书同步」选好日历。
-        </p>
-      </div>
-
-
       {/* Preview + Confirmed */}
-      <div className="grid lg:grid-cols-2 gap-6 items-start">
+      <div className="space-y-6">
         <div className="space-y-6">
-          <HackathonInbox />
-          <AiNewsRadar />
-        </div>
-        <div className="space-y-6">
+
+
 
         {/* Draft preview */}
         {draft && draftGrouped && (
