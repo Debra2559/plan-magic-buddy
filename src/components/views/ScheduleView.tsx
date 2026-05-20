@@ -18,9 +18,12 @@ const tagColor: Record<string, string> = {
 const typeIcon = { event: CalIcon, todo: Clock, reminder: Bell } as const;
 
 export function ScheduleView() {
-  const { items } = useSylva();
+  const { items, addItems, updateItem, removeItem } = useSylva();
   const [cursor, setCursor] = useState(new Date(2026, 4, 1)); // May 2026
   const [selected, setSelected] = useState("2026-05-19");
+  const [editorDate, setEditorDate] = useState<string | null>(null);
+  const [editorAnchor, setEditorAnchor] = useState<{ x: number; y: number } | null>(null);
+
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
