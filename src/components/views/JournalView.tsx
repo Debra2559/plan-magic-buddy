@@ -752,7 +752,7 @@ function ComicPanel({
   onCopyToNote: (line: string) => void;
 }) {
   const [provider, setProvider] = useState<Provider>(comic?.provider ?? "gemini");
-  const [panels, setPanels] = useState<number>(4);
+  
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState<"diary" | "note" | null>(null);
