@@ -21,6 +21,7 @@ import {
   listFeishuChats,
   batchLookupFeishuOpenId,
   getLastCapturedOpenId,
+  getFeishuPermissionStatus,
 } from "@/lib/feishu.functions";
 import {
   getFeishuAuthUrl,
@@ -161,6 +162,22 @@ export function FeishuSyncPanel() {
       setCaptureRefreshing(false);
     }
   }, [runGetCapture]);
+
+  const runGetPerm = useServerFn(getFeishuPermissionStatus);
+  const [perm, setPerm] = useState<{
+    webhookReceived: boolean;
+    lastEventType: string | null;
+    lastEventAt: string | null;
+    imMessageSubscribed: boolean;
+    lastImMessageAt: string | null;
+    sendScopeIssue: boolean;
+    lastSendError: string | null;
+  } | null>(null);
+  const [permRefreshing, setPermRefreshing] = useState(false);
+  const refreshPerm = useCallback(async () => {
+    setPermRefreshing(true);
+    try { setPerm(await runGetPerm()); } catch {} finally { setPermRefreshing(false); }
+  }, [runGetPerm]);
 
   const [lookup, setLookup] = useState<{
     open: boolean;
@@ -555,6 +572,7 @@ export function FeishuSyncPanel() {
         setRecap(rc);
       } catch {}
       refreshCapture();
+      refreshPerm();
       loadCalendars();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1079,6 +1097,61 @@ export function FeishuSyncPanel() {
           <Bell className="w-3.5 h-3.5 text-amber-glow" />
           <h4 className="text-sm text-white/90">黑客松雷达 · 飞书推送</h4>
         </div>
+        {perm && (() => {
+          const ok = perm.imMessageSubscribed && !perm.sendScopeIssue;
+          const warn = !perm.webhookReceived || !perm.imMessageSubscribed || perm.sendScopeIssue;
+          return (
+            <div className={`mb-2 rounded-md border px-2.5 py-2 text-[11px] ${
+              ok ? "border-emerald-400/30 bg-emerald-400/5 text-emerald-200"
+                 : warn ? "border-amber-400/30 bg-amber-400/5 text-amber-100"
+                 : "border-white/10 bg-white/[0.03] text-white/70"
+            }`}>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-medium">权限与订阅自检</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded ${perm.webhookReceived ? "bg-emerald-400/15 text-emerald-300" : "bg-rose-400/15 text-rose-300"}`}>
+                  回调 URL {perm.webhookReceived ? "✓" : "未收到任何事件"}
+                </span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded ${perm.imMessageSubscribed ? "bg-emerald-400/15 text-emerald-300" : "bg-rose-400/15 text-rose-300"}`}>
+                  im.message.receive_v1 {perm.imMessageSubscribed ? "✓ 已订阅" : "✗ 未订阅"}
+                </span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded ${perm.sendScopeIssue ? "bg-rose-400/15 text-rose-300" : "bg-white/5 text-white/60"}`}>
+                  im:message 发送权限 {perm.sendScopeIssue ? "✗ 可能缺失" : "未发现错误"}
+                </span>
+                <button
+                  type="button"
+                  onClick={refreshPerm}
+                  disabled={permRefreshing}
+                  className="ml-auto text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-50"
+                >
+                  {permRefreshing ? "检测中…" : "重新检测"}
+                </button>
+              </div>
+              {!ok && (
+                <ul className="mt-1.5 space-y-0.5 text-[11px] text-white/80 list-disc pl-4">
+                  {!perm.webhookReceived && (
+                    <li>
+                      未收到任何 webhook：去飞书开放平台「事件订阅」配置回调 URL 为
+                      <code className="font-mono mx-1 text-amber-glow/90">/api/public/feishu/webhook</code>
+                      并保存（验证通过后会留下记录）。
+                    </li>
+                  )}
+                  {!perm.imMessageSubscribed && (
+                    <li>
+                      未收到 <code className="font-mono text-amber-glow/90">im.message.receive_v1</code>：在飞书开放平台 →「权限管理」开通
+                      <code className="font-mono mx-1 text-amber-glow/90">im:message</code> / <code className="font-mono text-amber-glow/90">im:message.group_at_msg</code>，再到「事件订阅」勾选「接收消息 v2.0」事件，然后给机器人私聊一条消息。
+                    </li>
+                  )}
+                  {perm.sendScopeIssue && (
+                    <li>
+                      发送消息时报权限错误：开通 <code className="font-mono text-amber-glow/90">im:message:send_as_bot</code> 权限并重新发布版本。
+                      {perm.lastSendError && <span className="text-white/50"> · 最近错误：{perm.lastSendError}</span>}
+                    </li>
+                  )}
+                </ul>
+              )}
+            </div>
+          );
+        })()}
         <div className="mb-2 rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[11px] text-white/70 flex items-center gap-2 flex-wrap">
           <span className="text-white/50 shrink-0">最近捕获：</span>
           {capture?.openId ? (

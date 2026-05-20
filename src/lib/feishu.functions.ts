@@ -737,6 +737,48 @@ export const getLastCapturedOpenId = createServerFn({ method: 'GET' }).handler(a
   }
 })
 
+export const getFeishuPermissionStatus = createServerFn({ method: 'GET' }).handler(async () => {
+  // 1) 是否曾收到过 im.message.receive_v1 事件（说明已订阅且 im:message 权限到位）
+  const { data: msgEvt } = await supabaseAdmin
+    .from('feishu_webhook_logs')
+    .select('created_at')
+    .eq('event_type', 'im.message.receive_v1')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  // 2) 是否收到过任意 webhook（说明回调 URL 已通过验证）
+  const { data: anyEvt } = await supabaseAdmin
+    .from('feishu_webhook_logs')
+    .select('created_at, event_type')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  // 3) 最近的 send_message 错误（用于反推权限是否缺失）
+  const { data: lastSendErr } = await supabaseAdmin
+    .from('feishu_webhook_logs')
+    .select('created_at, error, message')
+    .eq('level', 'error')
+    .ilike('step', '%send%')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const sendErrText = `${lastSendErr?.error ?? ''} ${lastSendErr?.message ?? ''}`
+  const scopeMissing = /99991672|99991663|99991661|scope|permission|access.?denied/i.test(sendErrText)
+
+  return {
+    webhookReceived: !!anyEvt,
+    lastEventType: anyEvt?.event_type ?? null,
+    lastEventAt: anyEvt?.created_at ?? null,
+    imMessageSubscribed: !!msgEvt,
+    lastImMessageAt: msgEvt?.created_at ?? null,
+    sendScopeIssue: scopeMissing,
+    lastSendError: lastSendErr?.error ?? lastSendErr?.message ?? null,
+  }
+})
+
 const notifyConfigSchema = z.object({
   receiveId: z.string().max(200),
   receiveIdType: z.enum(['open_id', 'chat_id', 'user_id', 'email']),
