@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Bell, Cloud, Palette, Keyboard, User, Info, Sparkles, Bot, Webhook, ChevronRight } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Bell, Cloud, Palette, Keyboard, User, Info, Sparkles, Bot, Webhook, ChevronRight, ChevronDown } from "lucide-react";
 import { FeishuSyncPanel } from "@/components/FeishuSyncPanel";
 import { FeishuWebhookLogsPanel } from "@/components/FeishuWebhookLogsPanel";
 import { AiPersonaPanel } from "@/components/AiPersonaPanel";
@@ -150,11 +150,82 @@ const TITLES: Record<NavKey, { title: string; desc: string }> = {
   about: { title: "关于", desc: "版本与项目信息" },
 };
 
+const ALL_KEYS = NAV.flatMap((g) => g.items.map((i) => i.key));
+const STORAGE_KEY = "sylva:settings:expanded-groups";
+const HASH_PREFIX = "#settings/";
+
+function groupOfKey(key: NavKey): string {
+  return NAV.find((g) => g.items.some((i) => i.key === key))?.label ?? NAV[0].label;
+}
+
+function readHashKey(): NavKey | null {
+  if (typeof window === "undefined") return null;
+  const h = window.location.hash;
+  if (!h.startsWith(HASH_PREFIX)) return null;
+  const k = h.slice(HASH_PREFIX.length) as NavKey;
+  return ALL_KEYS.includes(k) ? k : null;
+}
+
 export function SettingsView() {
-  const [active, setActive] = useState<NavKey>("general");
+  const [active, setActive] = useState<NavKey>(() => readHashKey() ?? "general");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    NAV.forEach((g) => { initial[g.label] = true; });
+    if (typeof window !== "undefined") {
+      try {
+        const raw = window.localStorage.getItem(STORAGE_KEY);
+        if (raw) Object.assign(initial, JSON.parse(raw));
+      } catch { /* ignore */ }
+    }
+    // 保证当前激活项所在分组保持展开
+    initial[groupOfKey(active)] = true;
+    return initial;
+  });
+
   const meta = TITLES[active];
 
-  const renderContent = () => {
+  // 持久化展开状态
+  useEffect(() => {
+    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(expanded)); } catch { /* ignore */ }
+  }, [expanded]);
+
+  // active -> URL hash 同步
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const target = `${HASH_PREFIX}${active}`;
+    if (window.location.hash !== target) {
+      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}${target}`);
+    }
+  }, [active]);
+
+  // 监听浏览器前进后退 / 外部 hash 改变
+  useEffect(() => {
+    const onHash = () => {
+      const k = readHashKey();
+      if (k && k !== active) {
+        setActive(k);
+        setExpanded((prev) => ({ ...prev, [groupOfKey(k)]: true }));
+      }
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, [active]);
+
+  const select = (key: NavKey) => {
+    setActive(key);
+    setExpanded((prev) => ({ ...prev, [groupOfKey(key)]: true }));
+  };
+
+  const toggleGroup = (label: string) => {
+    setExpanded((prev) => {
+      const next = { ...prev, [label]: !prev[label] };
+      // 当前激活项所在分组不可折叠
+      if (label === groupOfKey(active)) next[label] = true;
+      return next;
+    });
+  };
+
+  const renderContent = useMemo(() => {
     switch (active) {
       case "general": return <RowList rows={simpleSections.general.rows} />;
       case "persona": return <AiPersonaPanel />;
@@ -173,7 +244,7 @@ export function SettingsView() {
           </div>
         );
     }
-  };
+  }, [active]);
 
   return (
     <div className="h-full overflow-hidden">
@@ -184,34 +255,51 @@ export function SettingsView() {
             <p className="text-[10px] tracking-widest text-amber-glow mb-1">偏好设置</p>
             <h2 className="font-display text-2xl text-white leading-tight">让 Sylva<br/>长成你的样子。</h2>
           </div>
-          <nav className="flex flex-col gap-4">
-            {NAV.map((group) => (
-              <div key={group.label}>
-                <div className="text-[10px] uppercase tracking-widest text-white/35 px-2 mb-1.5">{group.label}</div>
-                <div className="flex flex-col gap-0.5">
-                  {group.items.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = active === item.key;
-                    return (
-                      <button
-                        key={item.key}
-                        type="button"
-                        onClick={() => setActive(item.key)}
-                        className={`group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition border ${
-                          isActive
-                            ? "bg-white/[0.06] border-white/15 text-white"
-                            : "border-transparent text-white/65 hover:bg-white/[0.04] hover:text-white"
-                        }`}
-                      >
-                        <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-amber-glow" : "text-white/50"}`} />
-                        <span className="flex-1 text-left truncate">{item.title}</span>
-                        {isActive && <ChevronRight className="w-3.5 h-3.5 text-white/40" />}
-                      </button>
-                    );
-                  })}
+          <nav className="flex flex-col gap-3">
+            {NAV.map((group) => {
+              const isOpen = expanded[group.label] ?? true;
+              const isActiveGroup = groupOfKey(active) === group.label;
+              return (
+                <div key={group.label}>
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(group.label)}
+                    className="w-full flex items-center gap-1 px-2 mb-1.5 text-[10px] uppercase tracking-widest text-white/35 hover:text-white/60 transition"
+                  >
+                    <ChevronDown
+                      className={`w-3 h-3 transition-transform ${isOpen ? "rotate-0" : "-rotate-90"} ${
+                        isActiveGroup ? "text-amber-glow/70" : ""
+                      }`}
+                    />
+                    <span className="flex-1 text-left">{group.label}</span>
+                  </button>
+                  {isOpen && (
+                    <div className="flex flex-col gap-0.5">
+                      {group.items.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = active === item.key;
+                        return (
+                          <a
+                            key={item.key}
+                            href={`${HASH_PREFIX}${item.key}`}
+                            onClick={(e) => { e.preventDefault(); select(item.key); }}
+                            className={`group flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition border ${
+                              isActive
+                                ? "bg-white/[0.06] border-white/15 text-white"
+                                : "border-transparent text-white/65 hover:bg-white/[0.04] hover:text-white"
+                            }`}
+                          >
+                            <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-amber-glow" : "text-white/50"}`} />
+                            <span className="flex-1 text-left truncate">{item.title}</span>
+                            {isActive && <ChevronRight className="w-3.5 h-3.5 text-white/40" />}
+                          </a>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </nav>
         </aside>
 
@@ -219,11 +307,15 @@ export function SettingsView() {
         <div className="md:hidden absolute left-0 right-0 px-4">
           <select
             value={active}
-            onChange={(e) => setActive(e.target.value as NavKey)}
+            onChange={(e) => select(e.target.value as NavKey)}
             className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
           >
-            {NAV.flatMap((g) => g.items).map((i) => (
-              <option key={i.key} value={i.key}>{i.title}</option>
+            {NAV.map((g) => (
+              <optgroup key={g.label} label={g.label}>
+                {g.items.map((i) => (
+                  <option key={i.key} value={i.key}>{i.title}</option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </div>
@@ -231,11 +323,12 @@ export function SettingsView() {
         {/* 右侧内容 */}
         <main className="flex-1 min-w-0 overflow-y-auto">
           <header className="mb-5 pb-4 border-b border-white/8">
+            <div className="text-[10px] uppercase tracking-widest text-white/35 mb-1">{groupOfKey(active)}</div>
             <h3 className="font-display text-2xl text-white">{meta.title}</h3>
             <p className="text-xs text-white/50 mt-1">{meta.desc}</p>
           </header>
           <div className="pb-10">
-            {renderContent()}
+            {renderContent}
           </div>
         </main>
       </div>
