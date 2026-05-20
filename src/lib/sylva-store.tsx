@@ -1,6 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { PlanItem } from "./plan.functions";
 import { getRecapDoneDates, getDailyRecap, unmarkRecapDone as unmarkRecapDoneFn } from "./feishu.functions";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  remote, fetchAllRemote,
+  itemFromRow, noteFromRow, habitFromRow, diaryFromRow, comicFromRow,
+} from "./cloud-sync";
+
 
 export interface DoneItem extends PlanItem {
   id: string;
