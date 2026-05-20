@@ -1213,8 +1213,37 @@ export function FeishuSyncPanel() {
         )}
         {lookup.open && (
           <div className="mb-2 px-3 py-2 rounded-md border border-white/10 bg-white/[0.03] space-y-2">
-            <div className="text-[11px] text-white/60">
-              输入企业内 <b>邮箱 / 手机号 / 姓名 / 工号</b>，反查你的 <code>open_id</code>（需开通 <code>contact:user.base:readonly</code>；按姓名搜索还需 <code>search:user.id:readonly</code>）。
+            <div className="flex items-center justify-between gap-2 text-[11px] text-white/60">
+              <div>
+                输入企业内 <b>邮箱 / 手机号 / 姓名 / 工号</b>，反查你的 <code>open_id</code>。
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {userAuth.authorized ? (
+                  <>
+                    <span className="text-emerald-300">
+                      ✓ 已授权{userAuth.name ? ` · ${userAuth.name}` : ""}
+                      {userAuth.expired ? "（已过期）" : ""}
+                    </span>
+                    <button
+                      onClick={revokeFeishuAuth}
+                      className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/70 hover:bg-white/10"
+                    >
+                      解除
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={startFeishuAuth}
+                    disabled={userAuth.loading}
+                    className="px-2 py-0.5 rounded bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-50"
+                  >
+                    授权飞书
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="text-[10px] text-white/40">
+              按姓名搜索需先点「授权飞书」完成 OAuth（获取 <code>user_access_token</code>）；邮箱 / 手机号 / 工号可直接用机器人 token 查询。
             </div>
             <div className="flex items-center gap-2">
               <select
