@@ -37,7 +37,7 @@ const tagColors: Record<string, string> = {
 };
 
 export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => void; onConfirmed?: () => void } = {}) {
-  const { items: confirmedFull, addItems, replaceItems, removeItem, clearItems, enterToSubmit, markRecentlySynced, setSyncSummary } = useSylva();
+  const { items: confirmedFull, addItems, addItemsPending, replaceItems, removeItem, clearItems, enterToSubmit, markRecentlySynced, setSyncSummary } = useSylva();
   const confirmed = confirmedFull;
   const [mode, setMode] = useState<Mode>("auto");
   const [idea, setIdea] = useState("");
@@ -153,7 +153,7 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
       },
       { event: 0, todo: 0, reminder: 0 } as Record<PlanItem["type"], number>,
     );
-    const ids = draftMode === "add" ? addItems(draft.items) : replaceItems(draft.items);
+    const ids = draftMode === "add" ? addItemsPending(draft.items) : replaceItems(draft.items);
     markRecentlySynced(ids);
     // 构造带 id 的快照，供汇总弹窗展示
     const withIds = draft.items.map((it, i) => ({ ...it, id: ids[i] }));
@@ -170,8 +170,10 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
       counts.todo ? `待办 ${counts.todo}` : "",
       counts.reminder ? `提醒 ${counts.reminder}` : "",
     ].filter(Boolean).join(" · ");
-    toast.success(draftMode === "add" ? "已追加到我的规划" : "规划已同步", {
-      description: `${parts || `共 ${draft.items.length} 项`}　可在汇总入口快速跳转`,
+    toast.success(draftMode === "add" ? "已写入待确认，请在日程页确认" : "规划已同步", {
+      description: draftMode === "add"
+        ? `${parts || `共 ${draft.items.length} 项`}　日历里以虚线标记，确认后才会同步`
+        : `${parts || `共 ${draft.items.length} 项`}　可在汇总入口快速跳转`,
       duration: 4000,
     });
     setPreviewOpen(false);

@@ -11,6 +11,8 @@ import {
 export interface DoneItem extends PlanItem {
   id: string;
   done?: boolean;
+  /** AI 新增规划写入但尚未由用户确认，仅本地展示，不入云端 / 飞书 */
+  pending?: boolean;
 }
 
 export type Mood = "great" | "good" | "ok" | "down" | "tired";
@@ -145,6 +147,11 @@ interface SylvaContextValue {
   addComicHistory: (item: Omit<ComicHistoryItem, "id">) => void;
   removeComicHistory: (id: string) => void;
   addItems: (items: PlanItem[]) => string[];
+  /** 写入待确认项（仅本地，不上云、不同步飞书），返回 id 列表 */
+  addItemsPending: (items: PlanItem[]) => string[];
+  confirmPending: (ids: string[]) => void;
+  revertPending: (ids: string[]) => void;
+  pendingIds: string[];
   replaceItems: (items: PlanItem[]) => string[];
   removeItem: (id: string) => void;
   updateItem: (id: string, patch: Partial<PlanItem>) => void;
@@ -276,6 +283,30 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
     void remote.upsertItems(withIds as DoneItem[]);
     return withIds.map((i) => i.id);
   };
+
+  const addItemsPending = (newOnes: PlanItem[]): string[] => {
+    const withIds = newOnes.map((i) => ({ ...i, id: nextId(), pending: true as const }));
+    setItems((prev) => [...prev, ...withIds as DoneItem[]]);
+    // 故意不调用 remote.upsertItems：待用户确认后再上云
+    return withIds.map((i) => i.id);
+  };
+
+  const confirmPending = (ids: string[]) => {
+    setItems((prev) => {
+      const idSet = new Set(ids);
+      const next = prev.map((i) => (idSet.has(i.id) && i.pending ? { ...i, pending: undefined } : i));
+      const toPush = next.filter((i) => idSet.has(i.id) && !i.pending);
+      if (toPush.length) void remote.upsertItems(toPush as DoneItem[]);
+      return next;
+    });
+  };
+
+  const revertPending = (ids: string[]) => {
+    const idSet = new Set(ids);
+    setItems((prev) => prev.filter((i) => !(idSet.has(i.id) && i.pending)));
+    // 未上云，无需 remote 删除
+  };
+
 
   const replaceItems = (newOnes: PlanItem[]): string[] => {
     const withIds = newOnes.map((i) => ({ ...i, id: nextId() }));
@@ -680,6 +711,10 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
         addComicHistory,
         removeComicHistory,
         addItems,
+        addItemsPending,
+        confirmPending,
+        revertPending,
+        pendingIds: items.filter((i) => i.pending).map((i) => i.id),
         replaceItems,
         removeItem,
         updateItem,

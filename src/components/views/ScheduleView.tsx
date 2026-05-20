@@ -25,7 +25,7 @@ const tagColor: Record<string, string> = {
 const typeIcon = { event: CalIcon, todo: Clock, reminder: Bell } as const;
 
 export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void; onGoSettings?: () => void } = {}) {
-  const { items, addItems, updateItem, removeItem, toggleDone, isRecapDone, unmarkRecapDone, isRecentlySynced } = useSylva();
+  const { items, addItems, updateItem, removeItem, toggleDone, isRecapDone, unmarkRecapDone, isRecentlySynced, pendingIds, confirmPending, revertPending } = useSylva();
   const [cursor, setCursor] = useState(new Date(2026, 4, 1)); // May 2026
   const [selected, setSelected] = useState("2026-05-19");
   const [editorDate, setEditorDate] = useState<string | null>(null);
@@ -111,6 +111,29 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
           </div>
         </div>
 
+        {pendingIds.length > 0 && (
+          <div className="mb-3 flex items-center gap-3 px-3 py-2 rounded-xl border border-amber-glow/40 bg-amber-glow/10 text-amber-glow text-xs">
+            <Sparkles className="w-3.5 h-3.5 shrink-0" />
+            <span className="flex-1">
+              AI 新增了 <b>{pendingIds.length}</b> 项待确认安排，确认后才会同步到云端 / 飞书
+            </span>
+            <button
+              onClick={() => revertPending(pendingIds)}
+              className="px-2.5 py-1 rounded-md border border-white/15 text-white/70 hover:text-white hover:bg-white/10 text-[11px]"
+            >
+              全部撤销
+            </button>
+            <button
+              onClick={() => confirmPending(pendingIds)}
+              className="px-2.5 py-1 rounded-md bg-amber-glow text-primary-foreground hover:brightness-110 text-[11px] inline-flex items-center gap-1"
+            >
+              <Check className="w-3 h-3" /> 全部确认
+            </button>
+          </div>
+        )}
+
+
+
         <div className="grid grid-cols-7 gap-px bg-white/10 rounded-xl overflow-hidden border border-white/10">
           {weekdays.map((d) => (
             <div key={d} className="bg-black/30 py-2 text-center text-[11px] text-white/50 tracking-wider">
@@ -154,9 +177,11 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                       className={`text-[10px] px-1.5 py-0.5 rounded truncate border ${
                         tagColor[it.tag] ?? "bg-white/10 text-white/70 border-white/15"
                       } ${it.done ? "opacity-50 line-through" : ""} ${
+                        it.pending ? "border-dashed border-amber-glow/70 text-amber-glow bg-amber-glow/5" : ""
+                      } ${
                         isRecentlySynced(it.id) ? "ring-1 ring-amber-glow/70 shadow-[0_0_8px_rgba(245,184,67,0.4)]" : ""
                       }`}
-                      title={it.title}
+                      title={it.pending ? `${it.title}（待确认）` : it.title}
                     >
                       {it.time && <span className="font-mono mr-1 opacity-70">{it.time}</span>}
                       {it.title}
@@ -219,6 +244,8 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                 onChange={(patch) => updateItem(it.id, patch)}
                 onToggleDone={() => toggleDone(it.id)}
                 onDelete={() => removeItem(it.id)}
+                onConfirm={it.pending ? () => confirmPending([it.id]) : undefined}
+                onRevert={it.pending ? () => revertPending([it.id]) : undefined}
               />
             ))}
           </div>
@@ -522,16 +549,21 @@ function ItemCard({
   onChange,
   onToggleDone,
   onDelete,
+  onConfirm,
+  onRevert,
 }: {
-  item: PlanItem & { id: string; done?: boolean };
+  item: PlanItem & { id: string; done?: boolean; pending?: boolean };
   onChange: (patch: Partial<PlanItem>) => void;
   onToggleDone: () => void;
   onDelete: () => void;
+  onConfirm?: () => void;
+  onRevert?: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(item.title);
   const Icon = typeIcon[item.type];
   const done = !!item.done;
+  const pending = !!item.pending;
 
   const commit = () => {
     const t = title.trim();
@@ -541,7 +573,18 @@ function ItemCard({
   };
 
   return (
-    <div className={`group relative p-3 rounded-xl border transition ${done ? "bg-moss/10 border-moss/30" : "bg-white/[0.04] border-white/10 hover:border-white/20"}`}>
+    <div className={`group relative p-3 rounded-xl border transition ${
+      pending
+        ? "bg-amber-glow/10 border-dashed border-amber-glow/60"
+        : done
+          ? "bg-moss/10 border-moss/30"
+          : "bg-white/[0.04] border-white/10 hover:border-white/20"
+    }`}>
+      {pending && (
+        <div className="absolute -top-2 left-3 px-1.5 py-0.5 rounded-full text-[9px] tracking-wider bg-amber-glow text-primary-foreground font-bold">
+          待确认
+        </div>
+      )}
       <div className="flex items-center gap-2 mb-1.5">
         <DoneCheckbox done={done} onToggle={onToggleDone} />
         <Icon className="w-3.5 h-3.5 text-amber-glow/80 shrink-0" />
@@ -554,13 +597,33 @@ function ItemCard({
             onChange={(v) => onChange({ time: v || undefined })}
             size="sm"
           />
-          <button
-            onClick={onDelete}
-            className="opacity-0 group-hover:opacity-100 transition p-1 rounded hover:bg-white/10 text-white/40 hover:text-destructive"
-            title="删除"
-          >
-            <Trash2 className="w-3 h-3" />
-          </button>
+          {pending && onConfirm && (
+            <button
+              onClick={onConfirm}
+              className="p-1 rounded hover:bg-amber-glow/20 text-amber-glow"
+              title="确认此项"
+            >
+              <Check className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {pending && onRevert && (
+            <button
+              onClick={onRevert}
+              className="p-1 rounded hover:bg-white/10 text-white/50 hover:text-destructive"
+              title="撤销此项"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {!pending && (
+            <button
+              onClick={onDelete}
+              className="opacity-0 group-hover:opacity-100 transition p-1 rounded hover:bg-white/10 text-white/40 hover:text-destructive"
+              title="删除"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          )}
         </div>
       </div>
       {editing ? (
