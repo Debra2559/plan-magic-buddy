@@ -293,6 +293,7 @@ export function SettingsView() {
       case "general": return <AccountPanel />;
       case "persona": return <AiPersonaPanel />;
       case "insights": return <InsightsSettingsPanel />;
+      case "comic": return <ComicSettingsPanel />;
       case "feishu": return <FeishuSyncPanel />;
       case "webhook": return <FeishuWebhookLogsPanel />;
       case "reminders": return <RowList rows={simpleSections.reminders.rows} />;
