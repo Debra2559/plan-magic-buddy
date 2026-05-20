@@ -273,9 +273,9 @@ function DayEditor({
       onMouseDown={(e) => e.stopPropagation()}
     >
       <div className="h-9 shrink-0 flex items-center px-3 border-b border-white/10 bg-black/30">
-        <button onClick={onClose} className="w-3 h-3 rounded-full bg-[#ff5f57] hover:brightness-110" />
+        <button onClick={onClose} title="关闭" className="w-3 h-3 rounded-full bg-[#ff5f57] hover:brightness-110" />
         <div className="flex-1 text-center text-xs font-medium text-white/85">{headerLabel}</div>
-        <X className="w-3 h-3 text-white/30" />
+        <span className="w-3 h-3" />
       </div>
 
       <div className="flex-1 overflow-auto p-3 space-y-1.5">
