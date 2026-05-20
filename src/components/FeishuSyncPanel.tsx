@@ -24,20 +24,15 @@ import {
 type Status = "disconnected" | "connecting" | "connected";
 type Direction = "two-way" | "push-only";
 
-interface MockCalendar {
+interface RealCalendar {
   id: string;
   name: string;
-  color: string;
   role: string;
-  count: number;
+  type: string;
 }
 
-const MOCK_CALENDARS: MockCalendar[] = [
-  { id: "cal_primary", name: "我的日历", color: "#f5b942", role: "所有者", count: 142 },
-  { id: "cal_work", name: "Sylva · 产品研发", color: "#7dd3fc", role: "所有者", count: 87 },
-  { id: "cal_team", name: "团队周会", color: "#a78bfa", role: "可编辑", count: 24 },
-  { id: "cal_personal", name: "个人 · 健康", color: "#86efac", role: "所有者", count: 56 },
-];
+// 飞书日历没颜色，给一组固定色循环用
+const CAL_COLORS = ["#f5b942", "#7dd3fc", "#a78bfa", "#86efac", "#fb7185", "#fbbf24", "#60a5fa"];
 
 interface SyncLog {
   id: string;
