@@ -63,46 +63,56 @@ export function InsightsBell() {
 
       {/* Drawer */}
       {open && (
-        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setOpen(false)}>
-          <div
-            className="w-full max-w-md h-full bg-black/85 backdrop-blur-2xl border-l border-white/10 shadow-2xl flex flex-col"
+        <div className="fixed inset-0 z-50 flex justify-end animate-fade-in" onClick={() => setOpen(false)}>
+          <aside
+            className="relative w-full max-w-md h-full bg-[#080908]/95 backdrop-blur-2xl border-l border-white/5 shadow-[-20px_0_50px_rgba(0,0,0,0.5)] flex flex-col animate-slide-in-right"
             onClick={(e) => e.stopPropagation()}
           >
-            <header className="flex items-center justify-between px-5 py-4 border-b border-white/8">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-amber-glow" />
-                <h2 className="font-display text-base text-white">AI 行为洞察</h2>
+            {/* Ambient glow */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-glow/5 blur-[100px] pointer-events-none" />
+
+            <header className="relative flex items-center justify-between px-6 py-6 border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-amber-glow animate-pulse shadow-[0_0_10px_hsl(var(--amber-glow))]" />
+                <h2 className="font-display text-2xl text-white font-semibold tracking-wide">AI 行为洞察</h2>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => generateMut.mutate()}
                   disabled={generateMut.isPending}
-                  className="p-2 rounded-md hover:bg-white/10 text-white/70 hover:text-white transition disabled:opacity-50"
+                  className="p-2 rounded-full hover:bg-white/5 text-white/40 hover:text-white transition disabled:opacity-50"
                   title="重新生成"
                 >
                   <RefreshCw className={`w-4 h-4 ${generateMut.isPending ? "animate-spin" : ""}`} />
                 </button>
                 <button
                   onClick={() => setOpen(false)}
-                  className="p-2 rounded-md hover:bg-white/10 text-white/70 hover:text-white transition"
+                  className="p-2 rounded-full hover:bg-white/5 text-white/40 hover:text-white transition"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {isLoading && <div className="text-center text-white/50 text-sm py-8">加载中…</div>}
+            <div className="relative flex-1 overflow-y-auto px-6 py-6 space-y-4 insights-scroll">
+              {isLoading && <div className="text-center text-white/40 text-sm py-12">加载中…</div>}
+
               {!isLoading && insights.length === 0 && (
-                <div className="text-center py-12">
-                  <Bell className="w-10 h-10 mx-auto text-white/20 mb-3" />
-                  <p className="text-white/50 text-sm">暂时没有新的提示</p>
+                <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
+                  <div className="relative mb-6">
+                    <div className="absolute inset-0 bg-amber-glow/20 blur-3xl rounded-full animate-pulse" />
+                    <Sparkles className="w-14 h-14 text-amber-glow/50 relative z-10" strokeWidth={1} />
+                  </div>
+                  <p className="font-display text-xl text-white/70 mb-2 italic">星辰指引中…</p>
+                  <p className="text-sm text-white/35 mb-8 max-w-[220px] leading-relaxed">
+                    让 AI 梳理你最近的行为轨迹，生成专属洞察
+                  </p>
                   <button
                     onClick={() => generateMut.mutate()}
                     disabled={generateMut.isPending}
-                    className="mt-4 px-4 py-2 rounded-full bg-amber-glow/90 hover:bg-amber-glow text-primary-foreground text-xs font-medium transition disabled:opacity-50"
+                    className="px-6 py-2.5 rounded-full bg-amber-glow text-primary-foreground font-semibold text-sm hover:scale-105 active:scale-95 transition-transform shadow-[0_0_20px_hsl(var(--amber-glow)/0.3)] disabled:opacity-60 disabled:hover:scale-100"
                   >
-                    {generateMut.isPending ? "生成中…" : "让 AI 看看我最近的行为"}
+                    {generateMut.isPending ? "生成中…" : "刷新洞察"}
                   </button>
                 </div>
               )}
@@ -110,40 +120,68 @@ export function InsightsBell() {
               {insights.map((i: AiInsight) => {
                 const meta = KIND_META[i.kind] ?? KIND_META.suggestion;
                 const Icon = meta.icon;
+                const slotLabel = i.slot === "morning" ? "早晨" : i.slot === "noon" ? "午间" : "傍晚";
                 return (
-                  <div key={i.id} className="group relative rounded-xl bg-white/[0.04] hover:bg-white/[0.06] border border-white/10 p-4 transition">
-                    <div className="flex items-start gap-3">
-                      <div className={`mt-0.5 w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center ${meta.tone}`}>
-                        <Icon className="w-3.5 h-3.5" />
+                  <div
+                    key={i.id}
+                    className="group relative bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/[0.08] hover:border-amber-glow/30 transition-all duration-300"
+                  >
+                    <button
+                      onClick={() => dismissMut.mutate(i.id)}
+                      className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 text-white/30 hover:text-white transition-opacity"
+                      title="忽略"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+
+                    <div className="flex items-start gap-4">
+                      <div className={`mt-1 w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 ${meta.tone}`}>
+                        <Icon className="w-4 h-4" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-medium text-white text-sm leading-tight">{i.title}</h3>
-                          <span className="text-[10px] uppercase tracking-wider text-white/35">{meta.label}</span>
-                        </div>
-                        <p className="text-[13px] text-white/75 leading-relaxed">{i.content}</p>
-                        <div className="mt-2 text-[10px] text-white/35">
-                          {i.date} · {i.slot === "morning" ? "早晨" : i.slot === "noon" ? "午间" : "傍晚"}
-                        </div>
+                      <div className="flex-1 min-w-0 pr-6">
+                        <h3 className="text-sm font-semibold text-white/90 mb-1.5 leading-tight">{i.title}</h3>
+                        <p className="text-[13px] text-white/60 leading-relaxed">{i.content}</p>
                       </div>
-                      <button
-                        onClick={() => dismissMut.mutate(i.id)}
-                        className="opacity-0 group-hover:opacity-100 transition p-1 rounded hover:bg-white/10 text-white/40 hover:text-white/80"
-                        title="忽略"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between text-[10px] tracking-wider uppercase text-white/30">
+                      <span>{i.date} · {slotLabel}</span>
+                      <span className={`px-2 py-0.5 rounded-full border font-medium ${
+                        i.kind === "warning"
+                          ? "bg-rose-500/10 border-rose-500/20 text-rose-300/80"
+                          : i.kind === "encouragement"
+                          ? "bg-amber-glow/10 border-amber-glow/20 text-amber-glow/80"
+                          : "bg-white/5 border-white/5 text-white/40"
+                      }`}>
+                        {meta.label}
+                      </span>
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            <footer className="px-5 py-3 border-t border-white/8 text-[11px] text-white/40 flex items-center justify-between">
-              <span>每日早/午/晚自动生成</span>
-              <a href="#settings/insights" onClick={() => setOpen(false)} className="text-white/60 hover:text-amber-glow transition">设置 →</a>
+            <footer className="relative px-6 py-5 border-t border-white/5 bg-gradient-to-t from-black/30 to-transparent flex items-center justify-between text-[11px] text-white/30 tracking-tight">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60" />
+                <span>每日早/午/晚自动生成</span>
+              </div>
+              <a
+                href="#settings/insights"
+                onClick={() => setOpen(false)}
+                className="hover:text-amber-glow transition-colors"
+              >
+                洞察设置 →
+              </a>
             </footer>
-          </div>
+          </aside>
+
+          <style>{`
+            .insights-scroll::-webkit-scrollbar { width: 3px; }
+            .insights-scroll::-webkit-scrollbar-track { background: transparent; }
+            .insights-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
+            .insights-scroll::-webkit-scrollbar-thumb:hover { background: hsl(var(--amber-glow) / 0.2); }
+          `}</style>
         </div>
       )}
     </>
