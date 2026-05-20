@@ -71,6 +71,7 @@ function NotesTab() {
   const [text, setText] = useState("");
   const [mood, setMood] = useState<Mood | undefined>();
   const [tagsRaw, setTagsRaw] = useState("");
+  const [images, setImages] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [diaryOpen, setDiaryOpen] = useState(false);
 
@@ -83,15 +84,28 @@ function NotesTab() {
   const [showFilters, setShowFilters] = useState(false);
 
   const submit = () => {
-    if (!text.trim()) return;
+    if (!text.trim() && images.length === 0) return;
     const tags = tagsRaw
       .split(/[,，#\s]+/)
       .map((t) => t.replace(/^#/, "").trim())
       .filter(Boolean);
-    addNote(text.trim(), { mood, tags: tags.length ? tags : undefined });
+    addNote(text.trim(), {
+      mood,
+      tags: tags.length ? tags : undefined,
+      images: images.length ? images : undefined,
+    });
     setText("");
     setMood(undefined);
     setTagsRaw("");
+    setImages([]);
+  };
+
+  const onPasteOrDrop = async (e: React.ClipboardEvent | React.DragEvent) => {
+    const files = extractImagesFromEvent(e);
+    if (files.length === 0) return;
+    e.preventDefault();
+    const urls = await Promise.all(files.map((f) => fileToCompressedDataURL(f)));
+    setImages((prev) => [...prev, ...urls].slice(0, 6));
   };
 
   const noteDate = (n: Note) => {
