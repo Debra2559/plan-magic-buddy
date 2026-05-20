@@ -18,6 +18,7 @@ import {
   sendDailyRecapNow,
   setFeishuPushRules,
   lookupFeishuOpenId,
+  listFeishuChats,
 } from "@/lib/feishu.functions";
 import {
   Check,
