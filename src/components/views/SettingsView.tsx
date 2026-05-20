@@ -289,6 +289,7 @@ export function SettingsView() {
     switch (active) {
       case "general": return <AccountPanel />;
       case "persona": return <AiPersonaPanel />;
+      case "insights": return <InsightsSettingsPanel />;
       case "feishu": return <FeishuSyncPanel />;
       case "webhook": return <FeishuWebhookLogsPanel />;
       case "reminders": return <RowList rows={simpleSections.reminders.rows} />;
