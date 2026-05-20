@@ -287,6 +287,7 @@ function DayEditor({
             key={it.id}
             item={it}
             onChange={(patch) => onUpdate(it.id, patch)}
+            onToggleDone={() => onToggleDone(it.id)}
             onDelete={() => onDelete(it.id)}
           />
         ))}
