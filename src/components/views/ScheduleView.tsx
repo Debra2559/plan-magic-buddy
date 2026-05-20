@@ -167,29 +167,13 @@ export function ScheduleView() {
           </div>
         )}
 
-        {selectedItems.length === 0 && !isRecapDone(selected) ? (
-          <div className="text-center py-10 text-xs text-white/40">这一天还没有安排</div>
-        ) : (
-          <div className="space-y-2">
-            {selectedItems.map((it) => {
-              const Icon = typeIcon[it.type];
-              return (
-                <div key={it.id} className="p-3 rounded-xl bg-white/5 border border-white/8">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Icon className="w-3.5 h-3.5 text-amber-glow" />
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded border ${tagColor[it.tag]}`}>
-                      {it.tag}
-                    </span>
-                    {it.time && <span className="text-xs text-white/60 font-mono ml-auto">{it.time}</span>}
-                  </div>
-                  <p className="text-sm text-white/90 leading-snug">{it.title}</p>
-                  {it.note && <p className="text-xs text-white/50 mt-1">{it.note}</p>}
-                </div>
-              );
-            })}
-          </div>
-        )}
+        <DayTimeline
+          items={selectedItems}
+          onSetTime={(id, time) => updateItem(id, { time })}
+          onClearTime={(id) => updateItem(id, { time: undefined })}
+        />
       </aside>
+
 
       {editorDate && (
         <DayEditor
