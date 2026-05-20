@@ -184,6 +184,7 @@ export function ScheduleView() {
           </div>
         )}
 
+        <QuickAdd date={selected} onAdd={(item) => addItems([item])} />
       </aside>
 
 
@@ -199,6 +200,48 @@ export function ScheduleView() {
           onAdd={(item) => addItems([item])}
         />
       )}
+    </div>
+  );
+}
+
+function QuickAdd({ date, onAdd }: { date: string; onAdd: (item: PlanItem) => void }) {
+  const [draft, setDraft] = useState("");
+  const [draftTime, setDraftTime] = useState("");
+  const submit = () => {
+    const title = draft.trim();
+    if (!title) return;
+    onAdd({
+      type: draftTime ? "event" : "todo",
+      title,
+      date,
+      time: draftTime || undefined,
+      tag: "生活",
+    });
+    setDraft("");
+    setDraftTime("");
+  };
+  return (
+    <div className="mt-3 p-2 rounded-xl bg-white/[0.03] border border-white/10 flex items-center gap-1.5">
+      <TimePicker value={draftTime} onChange={setDraftTime} size="sm" />
+      <input
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+            e.preventDefault();
+            submit();
+          }
+        }}
+        placeholder="新增安排…（Enter）"
+        className="flex-1 min-w-0 bg-transparent border-none px-1 py-1 text-xs text-white placeholder:text-white/30 focus:outline-none"
+      />
+      <button
+        onClick={submit}
+        className="p-1.5 rounded bg-amber-glow/80 text-primary-foreground hover:bg-amber-glow shrink-0"
+        title="添加（Enter）"
+      >
+        <Plus className="w-3.5 h-3.5" />
+      </button>
     </div>
   );
 }
