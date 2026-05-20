@@ -1413,3 +1413,51 @@ export async function handleHackathonCardAction(payload: {
   }
 }
 
+
+// ---------- 查 open_id ----------
+// 用邮箱或手机号反查 open_id，便于用户在设置里一键填入。
+// 飞书接口：POST /contact/v3/users/batch_get_id
+// 需要开通权限：contact:user.base:readonly（或 contact:contact.base:readonly）
+export const lookupFeishuOpenId = createServerFn({ method: 'POST' })
+  .inputValidator((input) =>
+    z
+      .object({
+        type: z.enum(['email', 'mobile']),
+        value: z.string().min(3).max(120),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    try {
+      const body =
+        data.type === 'email' ? { emails: [data.value] } : { mobiles: [data.value] }
+      const res = await feishu<{
+        code: number
+        msg: string
+        data?: { user_list?: Array<{ email?: string; mobile?: string; user_id?: string; open_id?: string }> }
+      }>('/contact/v3/users/batch_get_id?user_id_type=open_id', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      })
+      if (res.code !== 0) {
+        return {
+          ok: false as const,
+          error: `飞书接口错误 code=${res.code} msg=${res.msg}`,
+          hint:
+            res.code === 99991672 || /scope/i.test(res.msg ?? '')
+              ? '应用缺少 contact:user.base:readonly 权限，请到飞书后台「权限管理」开通后重发布版本'
+              : undefined,
+        }
+      }
+      const user = res.data?.user_list?.[0]
+      if (!user?.open_id) {
+        return {
+          ok: false as const,
+          error: '未匹配到用户，请确认邮箱/手机号属于本企业成员',
+        }
+      }
+      return { ok: true as const, openId: user.open_id }
+    } catch (e: any) {
+      return { ok: false as const, error: e?.message ?? '请求失败' }
+    }
+  })
