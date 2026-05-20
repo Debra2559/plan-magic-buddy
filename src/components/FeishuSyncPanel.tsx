@@ -7,6 +7,7 @@ import {
   getFeishuSettings,
   selectFeishuCalendar,
   setFeishuDirection,
+  syncToFeishu,
 } from "@/lib/feishu.functions";
 import {
   Check,
@@ -71,12 +72,58 @@ export function FeishuSyncPanel() {
   const [calendars, setCalendars] = useState<RealCalendar[]>([]);
   const [loadingCalendars, setLoadingCalendars] = useState(false);
   const [calendarsError, setCalendarsError] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   const runTest = useServerFn(testFeishuConnection);
   const runList = useServerFn(listFeishuCalendars);
   const runGetSettings = useServerFn(getFeishuSettings);
   const runSelect = useServerFn(selectFeishuCalendar);
   const runSetDir = useServerFn(setFeishuDirection);
+  const runSync = useServerFn(syncToFeishu);
+
+  const doSync = useCallback(
+    async (reason: string) => {
+      if (!state.calendarId) return;
+      setSyncing(true);
+      try {
+        const r = await runSync({
+          data: {
+            items: items.map((i) => ({
+              id: i.id,
+              type: i.type,
+              title: i.title,
+              date: i.date,
+              time: i.time,
+              durationMin: i.durationMin,
+              tag: i.tag,
+              note: i.note,
+              done: i.done,
+            })),
+          },
+        });
+        if (!r.ok) {
+          setLogs((prev) => [mkLog("update", "sylva", `同步失败: ${r.error}`, "conflict"), ...prev].slice(0, 12));
+          return;
+        }
+        const newLogs: SyncLog[] = r.entries.slice(0, 8).map((e) =>
+          mkLog(
+            e.op === "delete" ? "delete" : e.op === "update" ? "update" : "create",
+            "sylva",
+            e.status === "ok" ? e.title : `${e.title} · ${e.error ?? "失败"}`,
+            e.status === "ok" ? "ok" : "conflict"
+          )
+        );
+        if (r.entries.length === 0) {
+          newLogs.push(mkLog("pull", "feishu", `${reason} · 无需同步`, "ok"));
+        }
+        setLogs((prev) => [...newLogs, ...prev].slice(0, 12));
+        setState((s) => ({ ...s, lastSyncAt: new Date().toISOString() }));
+      } finally {
+        setSyncing(false);
+      }
+    },
+    [items, runSync, state.calendarId]
+  );
 
   const loadCalendars = useCallback(async () => {
     setLoadingCalendars(true);
@@ -102,6 +149,7 @@ export function FeishuSyncPanel() {
           calendarId: s.selectedCalendarId ?? prev.calendarId,
           direction: s.direction,
           lastSyncAt: s.lastSyncAt ?? prev.lastSyncAt,
+          status: s.selectedCalendarId ? "connected" : prev.status,
         }));
       } catch {}
       loadCalendars();
@@ -126,7 +174,7 @@ export function FeishuSyncPanel() {
   };
 
   const onSelectCalendar = async (c: RealCalendar) => {
-    setState((s) => ({ ...s, calendarId: c.id }));
+    setState((s) => ({ ...s, calendarId: c.id, status: "connected" }));
     try {
       await runSelect({ data: { calendarId: c.id, calendarName: c.name } });
     } catch (e) {
@@ -149,6 +197,7 @@ export function FeishuSyncPanel() {
     } catch {}
   }, [state]);
 
+  // 本地有变化时，debounce 1.5s 后自动推到飞书
   useEffect(() => {
     const sig = items.map((i) => `${i.id}:${i.title}:${i.date}:${i.time ?? ""}:${i.done ? 1 : 0}`).join("|");
     if (lastItemSignature.current === "") {
@@ -156,31 +205,14 @@ export function FeishuSyncPanel() {
       return;
     }
     if (sig === lastItemSignature.current) return;
-
-    if (state.status === "connected" && state.calendarId) {
-      const prev = new Set(lastItemSignature.current.split("|").map((s) => s.split(":")[0]));
-      const curr = new Set(items.map((i) => i.id));
-      const added = [...curr].filter((id) => !prev.has(id));
-      const removed = [...prev].filter((id) => !curr.has(id));
-      const changed = items.filter((i) => prev.has(i.id) && !added.includes(i.id));
-
-      const entries: SyncLog[] = [];
-      added.forEach((id) => {
-        const it = items.find((x) => x.id === id);
-        if (it && it.type !== "todo") entries.push(mkLog("create", "sylva", it.title));
-      });
-      removed.forEach((id) => entries.push(mkLog("delete", "sylva", `已删除条目 ${id.slice(-4)}`)));
-      changed.slice(0, 2).forEach((it) => {
-        if (it.type !== "todo") entries.push(mkLog("update", "sylva", it.title));
-      });
-
-      if (entries.length) {
-        setLogs((prev) => [...entries, ...prev].slice(0, 12));
-        setState((s) => ({ ...s, lastSyncAt: new Date().toISOString() }));
-      }
-    }
     lastItemSignature.current = sig;
-  }, [items, state.status, state.calendarId]);
+
+    if (!state.calendarId) return;
+    const t = setTimeout(() => {
+      doSync("自动同步");
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [items, state.calendarId, doSync]);
 
   const selected = useMemo(
     () => calendars.find((c) => c.id === state.calendarId) ?? null,
@@ -208,10 +240,7 @@ export function FeishuSyncPanel() {
   };
 
   const syncNow = async () => {
-    if (state.status !== "connected") return;
-    setLogs((prev) => [mkLog("pull", "feishu", "手动同步 · 拉取远端变更"), ...prev].slice(0, 12));
-    await new Promise((r) => setTimeout(r, 600));
-    setState((s) => ({ ...s, lastSyncAt: new Date().toISOString() }));
+    await doSync("立即同步");
   };
 
   return (
@@ -262,18 +291,21 @@ export function FeishuSyncPanel() {
                 <Check className="w-4 h-4 text-emerald-300" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm text-white/90">飞书工作台 · sylva@dev</div>
+                <div className="text-sm text-white/90 truncate">
+                  {selected ? selected.name : "已选日历"}
+                </div>
                 <div className="text-[11px] text-white/50">
                   {state.lastSyncAt ? `上次同步 ${fmtTime(state.lastSyncAt)}` : "尚未同步"}
-                  {" · "}
-                  <span className="text-amber-glow/80">Mock 模式</span>
+                  {syncing && <span className="ml-2 text-amber-glow/80">同步中…</span>}
                 </div>
               </div>
               <button
                 onClick={syncNow}
-                className="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 flex items-center gap-1.5"
+                disabled={syncing}
+                className="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 disabled:opacity-50 flex items-center gap-1.5"
               >
-                <RefreshCw className="w-3 h-3" /> 立即同步
+                {syncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                立即同步
               </button>
               <button
                 onClick={disconnect}
@@ -288,8 +320,8 @@ export function FeishuSyncPanel() {
                 <Link2 className="w-4 h-4 text-white/50" />
               </div>
               <div className="flex-1">
-                <div className="text-sm text-white/90">连接飞书账号开始双向同步</div>
-                <div className="text-[11px] text-white/50">将打开飞书授权 · 当前为 Mock 流程</div>
+                <div className="text-sm text-white/90">从下方挑一个飞书日历开始同步</div>
+                <div className="text-[11px] text-white/50">选中后会自动把本地日程推到该日历</div>
               </div>
               <button
                 onClick={connect}
@@ -432,21 +464,26 @@ export function FeishuSyncPanel() {
       <div className="mt-2 flex items-start gap-1.5 text-[11px] text-white/40">
         <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
         <span>
-          当前为 Mock 模式：所有同步动作仅在本地模拟。拿到飞书 App ID / Secret 后，告诉我即可切到真接口。
+          已接入真接口：本地新增/修改/删除 1.5 秒后自动推到选中的飞书日历。回流（飞书→Sylva）还需配 Encrypt Key + 订阅事件。
         </span>
       </div>
     </div>
   );
 }
 
-function mkLog(op: SyncLog["op"], source: SyncLog["source"], title: string): SyncLog {
+function mkLog(
+  op: SyncLog["op"],
+  source: SyncLog["source"],
+  title: string,
+  status: SyncLog["status"] = "ok"
+): SyncLog {
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     at: new Date().toISOString(),
     op,
     source,
     title,
-    status: "ok",
+    status,
   };
 }
 

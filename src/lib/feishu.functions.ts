@@ -182,3 +182,176 @@ export const setFeishuDirection = createServerFn({ method: 'POST' })
     }
     return { ok: true as const }
   })
+
+// ============= 真实推送 =============
+
+const TZ = 'Asia/Shanghai'
+
+// 把 YYYY-MM-DD + HH:MM 解成 Unix 秒（按 +08:00 处理）
+function toUnixSeconds(date: string, time: string): number {
+  // 直接拼成带时区偏移的 ISO，避免依赖运行时时区
+  const iso = `${date}T${time}:00+08:00`
+  return Math.floor(new Date(iso).getTime() / 1000)
+}
+
+interface PushItem {
+  id: string
+  type: 'event' | 'todo' | 'reminder'
+  title: string
+  date: string
+  time?: string
+  durationMin?: number
+  tag?: string
+  note?: string
+  done?: boolean
+}
+
+const pushSchema = z.object({
+  items: z.array(
+    z.object({
+      id: z.string().min(1),
+      type: z.enum(['event', 'todo', 'reminder']),
+      title: z.string().min(1).max(500),
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+      durationMin: z.number().int().min(5).max(24 * 60).optional(),
+      tag: z.string().max(20).optional(),
+      note: z.string().max(2000).optional(),
+      done: z.boolean().optional(),
+    })
+  ).max(500),
+})
+
+function buildEventBody(it: PushItem) {
+  // event 必有 time；reminder/todo 有 time 也按事件推（默认 30 分钟）
+  const time = it.time ?? '09:00'
+  const start = toUnixSeconds(it.date, time)
+  const dur = (it.durationMin ?? (it.type === 'event' ? 60 : 30)) * 60
+  return {
+    summary: it.title,
+    description: [it.tag ? `#${it.tag}` : '', it.note ?? ''].filter(Boolean).join('\n') || undefined,
+    start_time: { timestamp: String(start), timezone: TZ },
+    end_time: { timestamp: String(start + dur), timezone: TZ },
+  }
+}
+
+type SyncEntry = {
+  op: 'create' | 'update' | 'delete'
+  localId: string
+  title: string
+  status: 'ok' | 'error'
+  error?: string
+}
+
+export const syncToFeishu = createServerFn({ method: 'POST' })
+  .inputValidator((input) => pushSchema.parse(input))
+  .handler(async ({ data }) => {
+    // 1) 读选中的日历
+    const { data: settings } = await supabaseAdmin
+      .from('feishu_settings')
+      .select('selected_calendar_id')
+      .limit(1)
+      .maybeSingle()
+
+    const calendarId = settings?.selected_calendar_id
+    if (!calendarId) {
+      return { ok: false as const, error: '请先在面板里选一个飞书日历' }
+    }
+
+    // 2) 只推「能映射成事件」的条目：必须有 time
+    const pushable = data.items.filter((i) => i.time && !i.done)
+
+    // 3) 已有 mapping
+    const { data: existingMaps } = await supabaseAdmin
+      .from('feishu_event_map')
+      .select('local_id, feishu_event_id, calendar_id')
+
+    const mapByLocal = new Map(
+      (existingMaps ?? []).map((m) => [m.local_id, m])
+    )
+
+    const entries: SyncEntry[] = []
+
+    // 4) create / update
+    for (const it of pushable) {
+      const body = buildEventBody(it)
+      const existing = mapByLocal.get(it.id)
+      try {
+        if (existing && existing.calendar_id === calendarId) {
+          const r = await feishu<{ code: number; msg: string }>(
+            `/calendar/v4/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(existing.feishu_event_id)}`,
+            { method: 'PATCH', body: JSON.stringify(body) }
+          )
+          if (r.code === 0) {
+            entries.push({ op: 'update', localId: it.id, title: it.title, status: 'ok' })
+          } else {
+            entries.push({ op: 'update', localId: it.id, title: it.title, status: 'error', error: `${r.code} ${r.msg}` })
+          }
+        } else {
+          const r = await feishu<{
+            code: number
+            msg: string
+            data?: { event?: { event_id?: string } }
+          }>(
+            `/calendar/v4/calendars/${encodeURIComponent(calendarId)}/events`,
+            { method: 'POST', body: JSON.stringify(body) }
+          )
+          const evId = r.data?.event?.event_id
+          if (r.code === 0 && evId) {
+            await supabaseAdmin.from('feishu_event_map').upsert(
+              {
+                local_id: it.id,
+                feishu_event_id: evId,
+                calendar_id: calendarId,
+                last_pushed_at: new Date().toISOString(),
+              },
+              { onConflict: 'local_id' }
+            )
+            entries.push({ op: 'create', localId: it.id, title: it.title, status: 'ok' })
+          } else {
+            entries.push({ op: 'create', localId: it.id, title: it.title, status: 'error', error: `${r.code} ${r.msg}` })
+          }
+        }
+      } catch (e: any) {
+        entries.push({
+          op: existing ? 'update' : 'create',
+          localId: it.id,
+          title: it.title,
+          status: 'error',
+          error: e?.message ?? '请求失败',
+        })
+      }
+    }
+
+    // 5) delete：本地已不存在 / 已标记 done / 已没 time，但映射还在
+    const keep = new Set(pushable.map((i) => i.id))
+    for (const m of existingMaps ?? []) {
+      if (m.calendar_id !== calendarId) continue
+      if (keep.has(m.local_id)) continue
+      try {
+        const r = await feishu<{ code: number; msg: string }>(
+          `/calendar/v4/calendars/${encodeURIComponent(m.calendar_id)}/events/${encodeURIComponent(m.feishu_event_id)}`,
+          { method: 'DELETE' }
+        )
+        if (r.code === 0 || r.code === 195100) {
+          // 195100 = 事件不存在，视为已删
+          await supabaseAdmin.from('feishu_event_map').delete().eq('local_id', m.local_id)
+          entries.push({ op: 'delete', localId: m.local_id, title: `(${m.local_id.slice(-4)})`, status: 'ok' })
+        } else {
+          entries.push({ op: 'delete', localId: m.local_id, title: `(${m.local_id.slice(-4)})`, status: 'error', error: `${r.code} ${r.msg}` })
+        }
+      } catch (e: any) {
+        entries.push({ op: 'delete', localId: m.local_id, title: `(${m.local_id.slice(-4)})`, status: 'error', error: e?.message ?? '请求失败' })
+      }
+    }
+
+    // 6) 写入 last_sync_at
+    await supabaseAdmin
+      .from('feishu_settings')
+      .update({ last_sync_at: new Date().toISOString() })
+      .eq('selected_calendar_id', calendarId)
+
+    const okCount = entries.filter((e) => e.status === 'ok').length
+    const errCount = entries.length - okCount
+    return { ok: true as const, entries, okCount, errCount }
+  })
