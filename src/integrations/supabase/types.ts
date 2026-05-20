@@ -46,6 +46,7 @@ export type Database = {
           daily_recap_hour: number
           daily_recap_last_followup_date: string | null
           daily_recap_last_sent_date: string | null
+          daily_recap_timezone: string
           direction: string
           id: string
           last_sync_at: string | null
@@ -65,6 +66,7 @@ export type Database = {
           daily_recap_hour?: number
           daily_recap_last_followup_date?: string | null
           daily_recap_last_sent_date?: string | null
+          daily_recap_timezone?: string
           direction?: string
           id?: string
           last_sync_at?: string | null
@@ -84,6 +86,7 @@ export type Database = {
           daily_recap_hour?: number
           daily_recap_last_followup_date?: string | null
           daily_recap_last_sent_date?: string | null
+          daily_recap_timezone?: string
           direction?: string
           id?: string
           last_sync_at?: string | null

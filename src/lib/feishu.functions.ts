@@ -763,22 +763,30 @@ export async function runDailyRecapTick(): Promise<{
   results: Array<{ ok: boolean; error?: string }>
 }> {
   const now = new Date()
-  // UTC+8 当前小时与日期
-  const cn = new Date(now.getTime() + 8 * 3600 * 1000)
-  const hour = cn.getUTCHours()
-  const today = cn.toISOString().slice(0, 10)
 
   const { data: rows } = await supabaseAdmin
     .from('feishu_settings')
-    .select('id, notify_receive_id, notify_receive_id_type, daily_recap_enabled, daily_recap_hour, daily_recap_last_sent_date, daily_recap_done_dates, daily_recap_last_followup_date')
+    .select('id, notify_receive_id, notify_receive_id_type, daily_recap_enabled, daily_recap_hour, daily_recap_timezone, daily_recap_last_sent_date, daily_recap_done_dates, daily_recap_last_followup_date')
 
   const results: Array<{ ok: boolean; error?: string }> = []
   let sent = 0
-  const yesterday = new Date(cn.getTime() - 24 * 3600 * 1000).toISOString().slice(0, 10)
 
   for (const r of (rows ?? []) as any[]) {
     if (!r.daily_recap_enabled) continue
     if (!r.notify_receive_id) continue
+
+    const tz = (r.daily_recap_timezone as string) || 'Asia/Shanghai'
+    let hour: number
+    let today: string
+    let yesterday: string
+    try {
+      hour = hourInTz(now, tz)
+      today = dateInTz(now, tz)
+      yesterday = dateInTz(new Date(now.getTime() - 24 * 3600 * 1000), tz)
+    } catch (e: any) {
+      results.push({ ok: false, error: `时区无效 ${tz}` })
+      continue
+    }
     if (Number(r.daily_recap_hour) !== hour) continue
 
     const doneDates: string[] = Array.isArray(r.daily_recap_done_dates) ? r.daily_recap_done_dates : []
@@ -844,6 +852,28 @@ export async function runDailyRecapTick(): Promise<{
   return { checked: (rows ?? []).length, sent, results }
 }
 
+/** 给定时区下当前的小时（0-23）。 */
+function hourInTz(d: Date, tz: string): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz, hour: '2-digit', hour12: false,
+  }).formatToParts(d)
+  const h = parts.find((p) => p.type === 'hour')?.value ?? '0'
+  // 部分实现对 00 点返回 "24"
+  const n = Number(h)
+  return n === 24 ? 0 : n
+}
+
+/** 给定时区下当前的 YYYY-MM-DD。 */
+function dateInTz(d: Date, tz: string): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(d)
+  const y = parts.find((p) => p.type === 'year')?.value
+  const m = parts.find((p) => p.type === 'month')?.value
+  const day = parts.find((p) => p.type === 'day')?.value
+  return `${y}-${m}-${day}`
+}
+
 /** 标记某天的小结已完成（在 done_dates 数组里追加去重）。 */
 async function markRecapDoneInternal(date: string) {
   const { data: rows } = await supabaseAdmin
@@ -885,29 +915,39 @@ export const markRecapDone = createServerFn({ method: 'POST' })
 export const getDailyRecapConfig = createServerFn({ method: 'GET' }).handler(async () => {
   const { data } = await supabaseAdmin
     .from('feishu_settings')
-    .select('daily_recap_enabled, daily_recap_hour')
+    .select('daily_recap_enabled, daily_recap_hour, daily_recap_timezone')
     .limit(1)
     .maybeSingle()
   return {
     enabled: ((data as any)?.daily_recap_enabled ?? false) as boolean,
     hour: Number((data as any)?.daily_recap_hour ?? 21),
+    timezone: ((data as any)?.daily_recap_timezone as string) ?? 'Asia/Shanghai',
   }
 })
 
 const dailyRecapSchema = z.object({
   enabled: z.boolean(),
   hour: z.number().int().min(0).max(23),
+  timezone: z.string().min(1).max(64).regex(/^[A-Za-z_]+(?:\/[A-Za-z0-9_+-]+){0,2}$|^UTC$/),
 })
 
 export const setDailyRecapConfig = createServerFn({ method: 'POST' })
   .inputValidator((d) => dailyRecapSchema.parse(d))
   .handler(async ({ data }) => {
+    // 校验时区有效性
+    try { new Intl.DateTimeFormat('en-US', { timeZone: data.timezone }).format(new Date()) }
+    catch { throw new Error(`无效的时区：${data.timezone}`) }
+
     const { data: row } = await supabaseAdmin
       .from('feishu_settings')
       .select('id')
       .limit(1)
       .maybeSingle()
-    const patch = { daily_recap_enabled: data.enabled, daily_recap_hour: data.hour }
+    const patch = {
+      daily_recap_enabled: data.enabled,
+      daily_recap_hour: data.hour,
+      daily_recap_timezone: data.timezone,
+    }
     if (!row) {
       const { error } = await supabaseAdmin.from('feishu_settings').insert(patch as any)
       if (error) throw new Error(error.message)
@@ -919,7 +959,13 @@ export const setDailyRecapConfig = createServerFn({ method: 'POST' })
   })
 
 export const sendDailyRecapNow = createServerFn({ method: 'POST' }).handler(async () => {
-  const today = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10)
+  const { data } = await supabaseAdmin
+    .from('feishu_settings')
+    .select('daily_recap_timezone')
+    .limit(1)
+    .maybeSingle()
+  const tz = ((data as any)?.daily_recap_timezone as string) || 'Asia/Shanghai'
+  const today = dateInTz(new Date(), tz)
   return sendCardToFeishu(dailyRecapCard(today))
 })
 
