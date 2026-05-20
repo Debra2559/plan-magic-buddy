@@ -1221,13 +1221,18 @@ export function FeishuSyncPanel() {
                   receiveIdType: (capture.receiveIdType as any) || "open_id",
                 };
                 setNotify(next);
+                pushTL("overwrite", "pending", `覆盖保存接收人 → ${next.receiveId.slice(0, 12)}…（${next.receiveIdType}）`);
                 try {
                   await runSetNotify({ data: next });
+                  pushTL("overwrite", "ok", "已覆盖保存接收人到飞书设置");
                   // 重新从后端拉取最新通知配置，确保后续同步/推送都使用最新接收人
                   try {
                     const fresh = await runGetNotify();
                     setNotify(fresh);
-                  } catch {}
+                    pushTL("config", "ok", `已刷新通知配置 · 接收人=${(fresh.receiveId || "").slice(0, 12)}…`);
+                  } catch (e: any) {
+                    pushTL("config", "warn", `通知配置刷新失败：${e?.message ?? "请求失败"}`);
+                  }
                   // 同步刷新飞书设置与捕获状态
                   try {
                     const s = await runGetSettings();
@@ -1238,30 +1243,38 @@ export function FeishuSyncPanel() {
                       lastSyncAt: s.lastSyncAt ?? prev.lastSyncAt,
                       status: s.selectedCalendarId ? "connected" : prev.status,
                     }));
-                  } catch {}
+                    pushTL("config", "ok", `已刷新飞书同步设置 · 日历=${s.selectedCalendarId ? "已绑定" : "未绑定"}`);
+                  } catch (e: any) {
+                    pushTL("config", "warn", `飞书设置刷新失败：${e?.message ?? "请求失败"}`);
+                  }
                   setNotifySaved(true);
                   setNotifyResult({ ok: true, msg: "已覆盖并应用到飞书同步设置，正在验证…" });
                   setTimeout(() => setNotifySaved(false), 1500);
-                  refreshCapture();
-                  refreshPerm();
+                  refreshCapture(true);
+                  refreshPerm(true);
                   // 自动验证：用新接收人发送一张测试卡片，确认同步链路通畅
                   setVerify({ status: "verifying" });
+                  pushTL("verify", "pending", "正在用新接收人发送测试卡片…");
                   try {
                     const r = await runTestNotify();
                     if (r.ok) {
                       setVerify({ status: "ok", msg: "已用新接收人成功投递测试卡片", at: new Date().toISOString() });
                       setNotifyResult({ ok: true, msg: "验证通过：后续日程同步将使用新接收人" });
+                      pushTL("verify", "ok", "验证通过 · 测试卡片已投递到新接收人");
                     } else {
                       setVerify({ status: "fail", msg: r.error ?? "测试投递失败", at: new Date().toISOString() });
                       setNotifyResult({ ok: false, msg: `验证失败：${r.error ?? "测试投递失败"}` });
+                      pushTL("verify", "fail", `验证失败：${r.error ?? "测试投递失败"}`);
                     }
                   } catch (e: any) {
                     setVerify({ status: "fail", msg: e?.message ?? "验证请求失败", at: new Date().toISOString() });
                     setNotifyResult({ ok: false, msg: `验证失败：${e?.message ?? "请求失败"}` });
+                    pushTL("verify", "fail", `验证异常：${e?.message ?? "请求失败"}`);
                   }
-                  refreshPerm();
+                  refreshPerm(true);
                 } catch (e: any) {
                   setNotifyResult({ ok: false, msg: e?.message ?? "保存失败" });
+                  pushTL("overwrite", "fail", `覆盖保存失败：${e?.message ?? "请求失败"}`);
                 }
               }}
               className="ml-auto text-[10px] px-2 py-0.5 rounded bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110"
