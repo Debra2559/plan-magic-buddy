@@ -8,7 +8,8 @@ import { HackathonInbox } from "./HackathonInbox";
 import { AiNewsRadar } from "./AiNewsRadar";
 import { EnterHint } from "@/components/EnterHint";
 import { shouldSubmitOnKey } from "@/lib/keybinds";
-import { Sparkles, ArrowUp, Loader2, Calendar, CheckSquare, Bell, Plus, RefreshCw, Wand2, Check, X, Trash2, Target, Globe, Send, Settings as SettingsIcon } from "lucide-react";
+import { Sparkles, ArrowUp, Loader2, Calendar, CheckSquare, Bell, Plus, RefreshCw, Wand2, Check, X, Trash2, Target, Globe, Send, Settings as SettingsIcon, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 type Mode = "auto" | "create" | "adjust" | "add" | "goal";
 
@@ -51,6 +52,7 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
   const syncFn = useServerFn(syncToFeishu);
   const [syncScope, setSyncScope] = useState<"all" | "draft" | "today" | "week" | "timed">("all");
   const [syncing, setSyncing] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Goal-chat state
   const [chatMessages, setChatMessages] = useState<ChatMsg[]>([]);
@@ -141,6 +143,11 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
     setError(null);
   };
 
+  const openPreview = () => {
+    if (!draft) return;
+    setPreviewOpen(true);
+  };
+
   const confirmDraft = () => {
     if (!draft) return;
     const counts = draft.items.reduce(
@@ -171,6 +178,7 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
       description: `${parts || `共 ${draft.items.length} 项`}　可在汇总入口快速跳转`,
       duration: 4000,
     });
+    setPreviewOpen(false);
     setDraft(null);
     setIdea("");
     onConfirmed?.();
@@ -575,10 +583,10 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
                   <X className="w-3 h-3" /> 丢弃
                 </button>
                 <button
-                  onClick={confirmDraft}
+                  onClick={openPreview}
                   className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs bg-moss text-primary-foreground hover:scale-[1.02] transition"
                 >
-                  <Check className="w-3 h-3" /> 确认 ({draft.items.length})
+                  <Eye className="w-3 h-3" /> 预览并确认 ({draft.items.length})
                 </button>
               </div>
             </div>
@@ -620,8 +628,79 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
         </div>
       </div>
       </div>
+
+      {/* 预览确认弹窗 */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl">
+              {draftMode === "add" ? "追加预览" : draftMode === "adjust" ? "调整重排预览" : "写入预览"}
+            </DialogTitle>
+            <DialogDescription>
+              {draft ? <>本次将{draftMode === "adjust" ? "替换" : draftMode === "add" ? "追加" : "写入"} <b className="text-foreground">{draft.items.length}</b> 项 · {buildPreviewMeta(draft.items)}</> : null}
+            </DialogDescription>
+          </DialogHeader>
+          {draft && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-3 gap-2">
+                {(["event", "todo", "reminder"] as const).map((t) => {
+                  const Meta = typeMeta[t];
+                  const Icon = Meta.icon;
+                  const c = draft.items.filter((i) => i.type === t).length;
+                  return (
+                    <div key={t} className="rounded-xl border border-foreground/10 bg-foreground/[0.03] p-3 flex items-center gap-2">
+                      <div className={`w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center ${Meta.color}`}>
+                        <Icon className="w-4 h-4" strokeWidth={1.8} />
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-muted-foreground">{Meta.label}</div>
+                        <div className="font-display text-lg leading-none">{c}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="rounded-xl border border-amber-glow/20 bg-amber-glow/[0.06] p-3 text-xs text-foreground/80">
+                <div className="text-amber-glow tracking-wider mb-1">条目明细</div>
+                <ItemGroups grouped={groupByDate(draft.items.map((it, i) => ({ ...it, _key: `pv-${i}` })))} variant="draft" />
+              </div>
+              {draftMode === "adjust" && confirmed.length > 0 && (
+                <p className="text-[11px] text-destructive/80">⚠ 调整模式会替换现有 {confirmed.length} 项规划</p>
+              )}
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <button
+              onClick={() => setPreviewOpen(false)}
+              className="flex items-center gap-1 px-4 py-2 rounded-full text-xs bg-foreground/5 border border-foreground/10 text-foreground/70 hover:bg-foreground/10"
+            >
+              <X className="w-3 h-3" /> 返回修改
+            </button>
+            <button
+              onClick={confirmDraft}
+              className="flex items-center gap-1 px-4 py-2 rounded-full text-xs bg-moss text-primary-foreground hover:scale-[1.02] transition"
+            >
+              <Check className="w-3 h-3" /> 确认写入
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
+}
+
+function buildPreviewMeta(items: PlanItem[]): string {
+  const dates = items.map((i) => i.date).filter(Boolean).sort();
+  if (dates.length === 0) return "无日期";
+  const first = dates[0];
+  const last = dates[dates.length - 1];
+  const fmt = (iso: string) => {
+    const [y, m, d] = iso.split("-").map(Number);
+    return y && m && d ? `${m}月${d}日` : iso;
+  };
+  const range = first === last ? fmt(first) : `${fmt(first)} → ${fmt(last)}`;
+  const timed = items.filter((i) => i.time).length;
+  return `时间范围 ${range} · 含时间 ${timed} 项`;
 }
 
 type KeyedItem = PlanItem & { _key: string };
