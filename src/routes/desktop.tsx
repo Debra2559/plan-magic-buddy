@@ -140,8 +140,8 @@ function DesktopApp() {
                   </div>
                   <span className="font-display text-base">Sylva</span>
                 </div>
-                <SidebarItem icon={Sparkles} label="AI 规划" active={view === "ai"} onClick={() => setView("ai")} />
                 <SidebarItem icon={CalIcon} label="日程" active={view === "schedule"} onClick={() => setView("schedule")} />
+                <SidebarItem icon={Sparkles} label="规划" active={view === "ai"} onClick={() => setView("ai")} />
                 <SidebarItem icon={CheckSquare} label="待办" active={view === "todos"} onClick={() => setView("todos")} />
                 <SidebarItem icon={StickyNote} label="随手记" active={view === "notes"} onClick={() => setView("notes")} />
                 <SidebarItem icon={Sparkles} label="习惯" active={view === "habits"} onClick={() => setView("habits")} />
