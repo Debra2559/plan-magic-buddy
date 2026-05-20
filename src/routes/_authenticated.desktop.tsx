@@ -73,6 +73,16 @@ function DesktopApp() {
   });
   const [todosFilter, setTodosFilter] = useState<"todo" | "reminder" | "event" | "all">("all");
   const { registerNavigate } = useSylva();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("sylva:onboarding") === "1") {
+        setShowOnboarding(true);
+        localStorage.removeItem("sylva:onboarding");
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     registerNavigate((nextView, opts) => {
