@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NotesCanvas } from "@/components/NotesCanvas";
 import { LayoutGrid, Brush } from "lucide-react";
-import { useSylva, type Mood, type Note } from "@/lib/sylva-store";
-import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, NotebookPen, Filter, X as XIcon } from "lucide-react";
+import { useSylva, type Mood, type Note, type NoteKind } from "@/lib/sylva-store";
+import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, NotebookPen, Filter, X as XIcon, Sparkles, ListChecks } from "lucide-react";
 import { markRecapDone, getDailyRecap } from "@/lib/feishu.functions";
 import { EnterHint } from "@/components/EnterHint";
 import { shouldSubmitOnKey } from "@/lib/keybinds";
@@ -10,7 +10,7 @@ import { ImageAttacher, extractImagesFromEvent, fileToCompressedDataURL } from "
 import { MediaAttacher } from "@/components/MediaAttacher";
 import { JournalView } from "@/components/views/JournalView";
 
-type Tab = "notes" | "diary" | "handbook";
+type Tab = "log" | "reflection" | "handbook";
 
 const MOODS: { value: Mood; emoji: string; label: string }[] = [
   { value: "great", emoji: "😄", label: "很棒" },
