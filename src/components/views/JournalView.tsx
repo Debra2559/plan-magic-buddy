@@ -751,8 +751,9 @@ function ComicPanel({
   onCopyToDiary: (line: string) => void;
   onCopyToNote: (line: string) => void;
 }) {
-  const [provider, setProvider] = useState<Provider>(comic?.provider ?? "gemini");
-  
+  const { comicProvider, comicSeedreamModel, comicStyle } = useSylva();
+  const provider = comicProvider;
+
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState<"diary" | "note" | null>(null);
@@ -763,7 +764,13 @@ function ComicPanel({
     try {
       const summary = buildSummary();
       const res = await generateDailyComic({
-        data: { date, summary, provider },
+        data: {
+          date,
+          summary,
+          provider,
+          ...(provider === "seedream" && comicSeedreamModel ? { model: comicSeedreamModel } : {}),
+          ...(comicStyle.trim() ? { style: comicStyle.trim() } : {}),
+        },
       });
       onGenerated({
         date,
@@ -788,21 +795,6 @@ function ComicPanel({
   return (
     <div className="mb-7 rounded-2xl bg-white/[0.03] border border-white/8 p-4">
       <div className="flex flex-wrap items-center gap-2 mb-3">
-        <div className="flex rounded-full border border-white/10 overflow-hidden text-[11px]">
-          {(["gemini", "seedream"] as Provider[]).map((p) => (
-            <button
-              key={p}
-              onClick={() => setProvider(p)}
-              className={`px-3 py-1 transition ${
-                provider === p
-                  ? "bg-amber-glow/25 text-white"
-                  : "text-white/55 hover:text-white/85"
-              }`}
-            >
-              {p === "gemini" ? "Gemini" : "Seedream"}
-            </button>
-          ))}
-        </div>
         <button
           onClick={run}
           disabled={loading}
@@ -879,7 +871,7 @@ function ComicPanel({
         </div>
       ) : (
         <p className="text-xs text-white/40 italic px-1 py-3">
-          把这一天画成漫画 —— 用 {provider === "gemini" ? "Lovable 内置 Gemini" : "火山 Seedream"} 生成，格数由模型自行判断。
+          把这一天画成漫画 —— 格数由模型自行判断。可在「设置 → 漫画生成」切换模型与风格。
         </p>
       )}
     </div>

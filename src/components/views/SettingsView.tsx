@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bell, Cloud, Palette, Keyboard, User, Info, Sparkles, Bot, Webhook, ChevronRight, ChevronDown, LogOut, Lightbulb } from "lucide-react";
+import { Bell, Cloud, Palette, Keyboard, User, Info, Sparkles, Bot, Webhook, ChevronRight, ChevronDown, LogOut, Lightbulb, Wand2 } from "lucide-react";
+import { ComicSettingsPanel } from "@/components/ComicSettingsPanel";
 import { InsightsSettingsPanel } from "@/components/InsightsSettingsPanel";
 import { FeishuSyncPanel } from "@/components/FeishuSyncPanel";
 import { FeishuWebhookLogsPanel } from "@/components/FeishuWebhookLogsPanel";
@@ -163,7 +164,7 @@ function DateFlashPanel() {
   );
 }
 
-type NavKey = "general" | "persona" | "insights" | "feishu" | "webhook" | "reminders" | "appearance" | "shortcuts" | "about";
+type NavKey = "general" | "persona" | "insights" | "comic" | "feishu" | "webhook" | "reminders" | "appearance" | "shortcuts" | "about";
 type NavGroup = { label: string; items: { key: NavKey; title: string; icon: typeof User; subtitle?: string }[] };
 
 const NAV: NavGroup[] = [
@@ -173,6 +174,7 @@ const NAV: NavGroup[] = [
       { key: "general", title: "通用", icon: User },
       { key: "persona", title: "AI 人格", icon: Bot },
       { key: "insights", title: "AI 行为洞察", icon: Lightbulb },
+      { key: "comic", title: "漫画生成", icon: Wand2 },
     ],
   },
   {
@@ -202,6 +204,7 @@ const TITLES: Record<NavKey, { title: string; desc: string }> = {
   general: { title: "通用", desc: "账户、语言、主题等基础偏好" },
   persona: { title: "AI 人格", desc: "调整 AI 的说话风格与语气" },
   insights: { title: "AI 行为洞察", desc: "AI 根据你的日程、随手记、习惯行为生成的贴心提示" },
+  comic: { title: "漫画生成", desc: "选择默认图像模型与画面风格" },
   feishu: { title: "飞书同步", desc: "日历推送、接收人捕获与诊断" },
   webhook: { title: "Webhook 日志", desc: "查看最近的飞书事件回调" },
   reminders: { title: "提醒", desc: "桌面通知与每日总结" },
@@ -290,6 +293,7 @@ export function SettingsView() {
       case "general": return <AccountPanel />;
       case "persona": return <AiPersonaPanel />;
       case "insights": return <InsightsSettingsPanel />;
+      case "comic": return <ComicSettingsPanel />;
       case "feishu": return <FeishuSyncPanel />;
       case "webhook": return <FeishuWebhookLogsPanel />;
       case "reminders": return <RowList rows={simpleSections.reminders.rows} />;
