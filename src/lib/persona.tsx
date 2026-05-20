@@ -1,5 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { useAuth } from "./auth-context";
 
 export interface PersonaProfile {
@@ -13,9 +14,11 @@ export interface PersonaProfile {
   verbosity_level: number;
   tone_examples: string;
   taboos: string[];
+  /** 数据库自动维护的乐观锁版本号 */
+  version: number;
 }
 
-const DEFAULT_PERSONA: Omit<PersonaProfile, "user_id"> = {
+const DEFAULT_PERSONA: Omit<PersonaProfile, "user_id" | "version"> = {
   display_name: "主人",
   avatar_url: null,
   persona_prompt:
