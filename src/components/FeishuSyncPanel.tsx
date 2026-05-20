@@ -153,12 +153,15 @@ export function FeishuSyncPanel() {
     message: string | null;
   } | null>(null);
   const [captureRefreshing, setCaptureRefreshing] = useState(false);
-  const refreshCapture = useCallback(async () => {
+  const refreshCapture = useCallback(async (silent = false) => {
     setCaptureRefreshing(true);
     try {
       const c = await runGetCapture();
       setCapture(c);
-    } catch {} finally {
+      if (!silent) pushTLRef.current?.("capture", "info", c?.openId ? `已刷新捕获 · ${c.openId.slice(0, 10)}…` : "已刷新捕获 · 尚无 sender.open_id");
+    } catch (e: any) {
+      if (!silent) pushTLRef.current?.("capture", "fail", `捕获刷新失败：${e?.message ?? "请求失败"}`);
+    } finally {
       setCaptureRefreshing(false);
     }
   }, [runGetCapture]);
@@ -174,9 +177,18 @@ export function FeishuSyncPanel() {
     lastSendError: string | null;
   } | null>(null);
   const [permRefreshing, setPermRefreshing] = useState(false);
-  const refreshPerm = useCallback(async () => {
+  const refreshPerm = useCallback(async (silent = false) => {
     setPermRefreshing(true);
-    try { setPerm(await runGetPerm()); } catch {} finally { setPermRefreshing(false); }
+    try {
+      const p = await runGetPerm();
+      setPerm(p);
+      if (!silent) pushTLRef.current?.("perm", p.imMessageSubscribed && !p.sendScopeIssue ? "ok" : "warn",
+        `权限自检 · 订阅:${p.imMessageSubscribed ? "✓" : "✗"} / 发送权限:${p.sendScopeIssue ? "✗" : "✓"}`);
+    } catch (e: any) {
+      if (!silent) pushTLRef.current?.("perm", "fail", `权限自检失败：${e?.message ?? "请求失败"}`);
+    } finally {
+      setPermRefreshing(false);
+    }
   }, [runGetPerm]);
 
   const [verify, setVerify] = useState<{ status: "idle" | "verifying" | "ok" | "fail"; msg?: string; at?: string }>({ status: "idle" });
@@ -185,12 +197,14 @@ export function FeishuSyncPanel() {
   type TLStatus = "info" | "ok" | "warn" | "fail" | "pending";
   type TLEntry = { id: string; at: string; kind: TLKind; status: TLStatus; msg: string };
   const [timeline, setTimeline] = useState<TLEntry[]>([]);
+  const pushTLRef = useRef<((k: TLKind, s: TLStatus, m: string) => void) | null>(null);
   const pushTL = useCallback((kind: TLKind, status: TLStatus, msg: string) => {
     setTimeline((prev) => [
       { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, at: new Date().toISOString(), kind, status, msg },
       ...prev,
     ].slice(0, 30));
   }, []);
+  useEffect(() => { pushTLRef.current = pushTL; }, [pushTL]);
 
   const [lookup, setLookup] = useState<{
     open: boolean;
