@@ -336,6 +336,41 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
           </div>
         )}
 
+        {habits.length > 0 && (
+          <div className="mt-5 pt-4 border-t border-white/10">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] tracking-widest text-moss">习惯打卡</p>
+              <p className="text-[10px] text-white/40 font-mono">
+                {habits.filter((h) => isHabitDoneOn(h, selected)).length}/{habits.length}
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              {habits.map((h) => {
+                const done = isHabitDoneOn(h, selected);
+                return (
+                  <button
+                    key={h.id}
+                    onClick={() => toggleHabitOn(h.id, selected)}
+                    className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg border text-left transition ${
+                      done
+                        ? "bg-moss/15 border-moss/40 text-white"
+                        : "bg-white/[0.03] border-white/10 text-white/70 hover:bg-white/[0.06]"
+                    }`}
+                  >
+                    <span className="text-base">{h.emoji}</span>
+                    <span className="flex-1 text-xs truncate">{h.name}</span>
+                    {done ? (
+                      <Check className="w-3.5 h-3.5 text-moss" />
+                    ) : (
+                      <span className="w-3.5 h-3.5 rounded-full border border-white/25" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <QuickAdd date={selected} onAdd={(item) => addItems([item])} />
       </aside>
 
