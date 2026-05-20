@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { createHash, createDecipheriv, randomUUID } from 'crypto'
 import { supabaseAdmin } from '@/integrations/supabase/client.server'
-import { handleHackathonCardAction, handleRecapCardAction, handleRecapSubmit } from '@/lib/feishu.functions'
+import { handleHackathonCardAction, handleRecapCardAction, handleRecapSubmit, aiReplyToFeishuChat, sendFeishuText } from '@/lib/feishu.functions'
 
 /**
  * 飞书事件回调入口（带可追踪日志）
