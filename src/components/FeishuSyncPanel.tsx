@@ -91,6 +91,19 @@ export function FeishuSyncPanel() {
   const runSync = useServerFn(syncToFeishu);
   const runPull = useServerFn(pullFromFeishu);
   const runRecord = useServerFn(recordPulledMappings);
+  const runGetNotify = useServerFn(getFeishuNotifyConfig);
+  const runSetNotify = useServerFn(setFeishuNotifyConfig);
+  const runTestNotify = useServerFn(testHackathonNotify);
+
+  const [notify, setNotify] = useState<{
+    receiveId: string;
+    receiveIdType: "open_id" | "chat_id" | "user_id" | "email";
+    notifyOnDiscover: boolean;
+    notifyOnAccept: boolean;
+  }>({ receiveId: "", receiveIdType: "open_id", notifyOnDiscover: true, notifyOnAccept: true });
+  const [notifySaved, setNotifySaved] = useState(false);
+  const [notifySending, setNotifySending] = useState(false);
+  const [notifyResult, setNotifyResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
   const doSync = useCallback(
     async (reason: string) => {
