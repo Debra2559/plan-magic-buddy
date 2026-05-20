@@ -10,6 +10,7 @@ import { ScheduleView } from "@/components/views/ScheduleView";
 import { TodosView } from "@/components/views/TodosView";
 import { NotesView } from "@/components/views/NotesView";
 import { HabitsView } from "@/components/views/HabitsView";
+import { JournalView } from "@/components/views/JournalView";
 import { SettingsView } from "@/components/views/SettingsView";
 import {
   Apple,
