@@ -329,6 +329,7 @@ function SummaryTab() {
     const existing = diary.find((d) => d.date === date)?.content ?? "";
     const merged = existing ? existing + "\n\n" + lines.join("\n") : lines.join("\n");
     upsertDiary(date, { content: merged });
+    markRecapDone({ data: { date } }).catch(() => {});
   };
 
   return (
