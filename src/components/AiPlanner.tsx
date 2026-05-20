@@ -34,7 +34,7 @@ const tagColors: Record<string, string> = {
 };
 
 export function AiPlanner() {
-  const { items: confirmedFull, addItems, replaceItems, removeItem, clearItems } = useSylva();
+  const { items: confirmedFull, addItems, replaceItems, removeItem, clearItems, enterToSubmit } = useSylva();
   const confirmed = confirmedFull;
   const [mode, setMode] = useState<Mode>("create");
   const [idea, setIdea] = useState("");
