@@ -52,8 +52,9 @@ async function detectMode(
 }
 
 export const generatePlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => PlanInput.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) {
       return { ok: false as const, error: "AI 服务未配置 (LOVABLE_API_KEY 缺失)" };
@@ -72,8 +73,10 @@ export const generatePlan = createServerFn({ method: "POST" })
       add: "用户已有一份规划(在 EXISTING 里), 现在想往里追加一些新事项。只输出新增的事项, 不要重复 EXISTING 里的内容。",
     };
 
+    const memoryBlock = await fetchMemoryBlockForUser(context.userId);
     const personaPrefix = data.personaPrompt ? `${data.personaPrompt}\n\n` : "";
-    const system = `${personaPrefix}你是 Sylva, 一个智能规划助手。
+    const memoryPrefix = memoryBlock ? `${memoryBlock}\n\n` : "";
+    const system = `${personaPrefix}${memoryPrefix}你是 Sylva, 一个智能规划助手。
 今天是 ${today}。
 请把用户的想法拆解成结构化的 items 数组。规则:
 - type=event 的必须有 time 和 durationMin
