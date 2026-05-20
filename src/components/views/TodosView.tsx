@@ -57,20 +57,6 @@ export function TodosView({ initialFilter = "all", filterKey }: { initialFilter?
       {/* Filters */}
       <div className="flex items-center gap-2 mb-5 flex-wrap">
         <Filter className="w-3.5 h-3.5 text-white/40" />
-        {(["all", "todo", "event", "reminder"] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`text-xs px-3 py-1 rounded-full border ${
-              filter === f
-                ? "bg-amber-glow/20 border-amber-glow/50 text-amber-glow"
-                : "border-white/10 text-white/60 hover:bg-white/5"
-            }`}
-          >
-            {f === "all" ? "全部" : f === "todo" ? "待办" : f === "event" ? "日程" : "提醒"}
-          </button>
-        ))}
-        <div className="w-px h-4 bg-white/15 mx-2" />
         <button
           onClick={() => setTagFilter("all")}
           className={`text-xs px-3 py-1 rounded-full border ${
