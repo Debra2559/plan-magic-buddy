@@ -170,7 +170,29 @@ export function FeishuSyncPanel() {
         >
           {state.status === "connected" ? "已连接" : state.status === "connecting" ? "连接中…" : "未连接"}
         </span>
+        <button
+          onClick={onTest}
+          disabled={testing}
+          className="ml-auto text-[11px] px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-50 flex items-center gap-1.5"
+          title="用 App ID/Secret 换 tenant_access_token，验证凭证"
+        >
+          {testing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+          测试连接
+        </button>
       </div>
+
+      {testResult && (
+        <div
+          className={`mb-3 px-3 py-2 rounded-lg text-[11px] border ${
+            testResult.ok
+              ? "bg-emerald-500/10 border-emerald-400/30 text-emerald-200"
+              : "bg-rose-500/10 border-rose-400/30 text-rose-200"
+          }`}
+        >
+          {testResult.ok ? "✓ " : "✗ "}
+          {testResult.msg}
+        </div>
+      )}
 
       <div className="widget overflow-hidden">
         <div className="px-4 py-3 flex items-center gap-3 border-b border-white/8">
