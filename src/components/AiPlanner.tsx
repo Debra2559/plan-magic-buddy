@@ -80,8 +80,8 @@ export function AiPlanner() {
     removeItem(id);
   };
 
-  const grouped = groupByDateWithId(confirmed);
-  const draftGrouped = draft ? groupByDate(draft.items) : null;
+  const grouped = groupByDate(confirmed.map((c) => ({ ...c, _key: c.id })));
+  const draftGrouped = draft ? groupByDate(draft.items.map((it, i) => ({ ...it, _key: `d-${i}` }))) : null;
 
   return (
     <div className="grid lg:grid-cols-[1fr_1.2fr] gap-8 items-start">
