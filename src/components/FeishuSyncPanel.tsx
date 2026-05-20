@@ -181,6 +181,17 @@ export function FeishuSyncPanel() {
 
   const [verify, setVerify] = useState<{ status: "idle" | "verifying" | "ok" | "fail"; msg?: string; at?: string }>({ status: "idle" });
 
+  type TLKind = "overwrite" | "verify" | "config" | "sync" | "pull" | "schedule" | "perm" | "capture";
+  type TLStatus = "info" | "ok" | "warn" | "fail" | "pending";
+  type TLEntry = { id: string; at: string; kind: TLKind; status: TLStatus; msg: string };
+  const [timeline, setTimeline] = useState<TLEntry[]>([]);
+  const pushTL = useCallback((kind: TLKind, status: TLStatus, msg: string) => {
+    setTimeline((prev) => [
+      { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, at: new Date().toISOString(), kind, status, msg },
+      ...prev,
+    ].slice(0, 30));
+  }, []);
+
   const [lookup, setLookup] = useState<{
     open: boolean;
     type: "email" | "mobile" | "name" | "employee_id";
