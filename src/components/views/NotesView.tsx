@@ -1,23 +1,89 @@
-import { useState } from "react";
-import { useSylva } from "@/lib/sylva-store";
-import { Plus, Trash2, StickyNote } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useSylva, type Mood, type Note } from "@/lib/sylva-store";
+import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, ListChecks, NotebookPen, Sparkles, CheckCircle2, Circle } from "lucide-react";
+
+type Tab = "notes" | "diary" | "summary";
+
+const MOODS: { value: Mood; emoji: string; label: string }[] = [
+  { value: "great", emoji: "😄", label: "很棒" },
+  { value: "good", emoji: "🙂", label: "不错" },
+  { value: "ok", emoji: "😐", label: "一般" },
+  { value: "down", emoji: "🙁", label: "低落" },
+  { value: "tired", emoji: "😴", label: "疲惫" },
+];
+
+const moodOf = (m?: Mood) => MOODS.find((x) => x.value === m);
 
 export function NotesView() {
-  const { notes, addNote, removeNote } = useSylva();
-  const [text, setText] = useState("");
-
-  const submit = () => {
-    if (!text.trim()) return;
-    addNote(text.trim());
-    setText("");
-  };
+  const [tab, setTab] = useState<Tab>("notes");
 
   return (
     <div className="p-7 overflow-auto h-full max-w-3xl mx-auto">
-      <p className="text-[10px] tracking-widest text-amber-glow mb-1">随手记</p>
-      <h2 className="font-display text-3xl text-white mb-6">把脑子里飘过的，先存下来。</h2>
+      <p className="text-[10px] tracking-widest text-amber-glow mb-1">每日笔记</p>
+      <h2 className="font-display text-3xl text-white mb-5">把脑子里飘过的，先存下来。</h2>
 
-      <div className="widget p-4 mb-6 widget-glow">
+      <div className="flex items-center gap-1 mb-6 p-1 rounded-full bg-white/[0.04] border border-white/8 w-fit">
+        <TabBtn active={tab === "notes"} onClick={() => setTab("notes")} icon={<NotebookPen className="w-3.5 h-3.5" />}>随手记</TabBtn>
+        <TabBtn active={tab === "diary"} onClick={() => setTab("diary")} icon={<BookHeart className="w-3.5 h-3.5" />}>日记</TabBtn>
+        <TabBtn active={tab === "summary"} onClick={() => setTab("summary")} icon={<ListChecks className="w-3.5 h-3.5" />}>今日小结</TabBtn>
+      </div>
+
+      {tab === "notes" && <NotesTab />}
+      {tab === "diary" && <DiaryTab />}
+      {tab === "summary" && <SummaryTab />}
+    </div>
+  );
+}
+
+function TabBtn({ active, onClick, icon, children }: { active: boolean; onClick: () => void; icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs transition ${
+        active ? "bg-amber-glow text-primary-foreground font-medium" : "text-white/60 hover:text-white"
+      }`}
+    >
+      {icon}
+      {children}
+    </button>
+  );
+}
+
+/* ---------------- Notes ---------------- */
+function NotesTab() {
+  const { notes, addNote, removeNote, updateNote } = useSylva();
+  const [text, setText] = useState("");
+  const [mood, setMood] = useState<Mood | undefined>();
+  const [tagsRaw, setTagsRaw] = useState("");
+  const [query, setQuery] = useState("");
+
+  const submit = () => {
+    if (!text.trim()) return;
+    const tags = tagsRaw
+      .split(/[,，#\s]+/)
+      .map((t) => t.replace(/^#/, "").trim())
+      .filter(Boolean);
+    addNote(text.trim(), { mood, tags: tags.length ? tags : undefined });
+    setText("");
+    setMood(undefined);
+    setTagsRaw("");
+  };
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = q
+      ? notes.filter(
+          (n) =>
+            n.text.toLowerCase().includes(q) ||
+            (n.tags ?? []).some((t) => t.toLowerCase().includes(q))
+        )
+      : notes;
+    return [...list].sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned));
+  }, [notes, query]);
+
+  return (
+    <>
+      <div className="widget p-4 mb-4 widget-glow">
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -28,7 +94,29 @@ export function NotesView() {
           placeholder="此刻在想什么？ ⌘ + Enter 保存"
           className="w-full bg-transparent outline-none text-sm leading-relaxed text-white/90 placeholder:text-white/30 resize-none"
         />
-        <div className="flex items-center justify-between mt-2">
+        <div className="flex flex-wrap items-center gap-2 mt-3">
+          <div className="flex items-center gap-1">
+            {MOODS.map((m) => (
+              <button
+                key={m.value}
+                onClick={() => setMood(mood === m.value ? undefined : m.value)}
+                title={m.label}
+                className={`w-7 h-7 rounded-full text-base transition ${
+                  mood === m.value ? "bg-amber-glow/30 ring-1 ring-amber-glow" : "hover:bg-white/10"
+                }`}
+              >
+                {m.emoji}
+              </button>
+            ))}
+          </div>
+          <input
+            value={tagsRaw}
+            onChange={(e) => setTagsRaw(e.target.value)}
+            placeholder="#标签 用逗号或空格"
+            className="flex-1 min-w-[140px] bg-transparent text-xs text-white/80 placeholder:text-white/30 outline-none border-b border-white/10 focus:border-white/30 py-1"
+          />
+        </div>
+        <div className="flex items-center justify-between mt-3">
           <span className="text-[10px] text-white/40 tracking-wider">{text.length} 字</span>
           <button
             onClick={submit}
@@ -40,36 +128,255 @@ export function NotesView() {
         </div>
       </div>
 
+      <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-full bg-white/[0.04] border border-white/8">
+        <Search className="w-3.5 h-3.5 text-white/40" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="搜索内容或标签"
+          className="flex-1 bg-transparent text-xs text-white/80 placeholder:text-white/30 outline-none"
+        />
+        <span className="text-[10px] text-white/40">{filtered.length} 条</span>
+      </div>
+
       <div className="space-y-3">
-        {notes.length === 0 ? (
-          <div className="text-center py-16 text-white/40 text-sm">还没有任何记录</div>
+        {filtered.length === 0 ? (
+          <div className="text-center py-16 text-white/40 text-sm">{query ? "没有匹配的记录" : "还没有任何记录"}</div>
         ) : (
-          notes.map((n) => (
-            <div
-              key={n.id}
-              className="group p-4 rounded-2xl bg-white/[0.04] border border-white/8 hover:border-white/15 transition"
-            >
-              <div className="flex items-start gap-3">
-                <StickyNote className="w-4 h-4 text-amber-glow mt-0.5 shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm text-white/90 leading-relaxed whitespace-pre-wrap">{n.text}</p>
-                  <p className="text-[10px] text-white/40 mt-2 tracking-wider">{fmt(n.createdAt)}</p>
-                </div>
-                <button
-                  onClick={() => removeNote(n.id)}
-                  className="opacity-0 group-hover:opacity-100 text-white/30 hover:text-destructive p-1 transition"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
+          filtered.map((n) => (
+            <NoteCard key={n.id} n={n} onRemove={() => removeNote(n.id)} onPin={() => updateNote(n.id, { pinned: !n.pinned })} />
           ))
         )}
+      </div>
+    </>
+  );
+}
+
+function NoteCard({ n, onRemove, onPin }: { n: Note; onRemove: () => void; onPin: () => void }) {
+  const m = moodOf(n.mood);
+  return (
+    <div className="group p-4 rounded-2xl bg-white/[0.04] border border-white/8 hover:border-white/15 transition">
+      <div className="flex items-start gap-3">
+        <StickyNote className="w-4 h-4 text-amber-glow mt-0.5 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-white/90 leading-relaxed whitespace-pre-wrap break-words">{n.text}</p>
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            <span className="text-[10px] text-white/40 tracking-wider">{fmt(n.createdAt)}</span>
+            {m && <span className="text-[10px]" title={m.label}>{m.emoji}</span>}
+            {(n.tags ?? []).map((t) => (
+              <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 text-white/60">#{t}</span>
+            ))}
+            {n.pinned && <span className="text-[10px] text-amber-glow">已置顶</span>}
+          </div>
+        </div>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+          <button onClick={onPin} className="text-white/40 hover:text-amber-glow p-1" title={n.pinned ? "取消置顶" : "置顶"}>
+            {n.pinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+          </button>
+          <button onClick={onRemove} className="text-white/30 hover:text-destructive p-1">
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
+/* ---------------- Diary ---------------- */
+function DiaryTab() {
+  const { diary, upsertDiary } = useSylva();
+  const today = todayStr();
+  const [date, setDate] = useState(today);
+  const entry = diary.find((d) => d.date === date);
+  const [content, setContent] = useState(entry?.content ?? "");
+  const [mood, setMood] = useState<Mood | undefined>(entry?.mood);
+
+  // sync on date change
+  useMemoSync(date, () => {
+    const e = diary.find((d) => d.date === date);
+    setContent(e?.content ?? "");
+    setMood(e?.mood);
+  });
+
+  const save = () => upsertDiary(date, { content, mood });
+  const sorted = [...diary].sort((a, b) => b.date.localeCompare(a.date));
+
+  return (
+    <>
+      <div className="widget p-5 mb-4 widget-glow">
+        <div className="flex items-center justify-between mb-3">
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="bg-transparent text-sm text-white/90 outline-none border border-white/10 rounded-md px-2 py-1"
+          />
+          <div className="flex items-center gap-1">
+            {MOODS.map((m) => (
+              <button
+                key={m.value}
+                onClick={() => setMood(mood === m.value ? undefined : m.value)}
+                title={m.label}
+                className={`w-7 h-7 rounded-full text-base transition ${
+                  mood === m.value ? "bg-amber-glow/30 ring-1 ring-amber-glow" : "hover:bg-white/10"
+                }`}
+              >
+                {m.emoji}
+              </button>
+            ))}
+          </div>
+        </div>
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          onBlur={save}
+          rows={10}
+          placeholder="今天发生了什么？做了什么、感受如何、想感谢谁……"
+          className="w-full bg-transparent outline-none text-sm leading-7 text-white/90 placeholder:text-white/30 resize-none"
+        />
+        <div className="flex items-center justify-between mt-2">
+          <span className="text-[10px] text-white/40">失焦自动保存 · {content.length} 字</span>
+          <button onClick={save} className="px-4 py-1.5 rounded-full bg-amber-glow text-primary-foreground text-xs font-medium">保存</button>
+        </div>
+      </div>
+
+      <p className="text-[10px] tracking-widest text-white/40 mb-2">过往</p>
+      <div className="space-y-2">
+        {sorted.length === 0 ? (
+          <div className="text-center py-12 text-white/40 text-sm">还没有日记，从今天开始 ✨</div>
+        ) : (
+          sorted.map((d) => {
+            const m = moodOf(d.mood);
+            return (
+              <button
+                key={d.date}
+                onClick={() => setDate(d.date)}
+                className={`w-full text-left p-3 rounded-xl bg-white/[0.03] border transition ${
+                  d.date === date ? "border-amber-glow/40" : "border-white/8 hover:border-white/15"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs text-white/70 tracking-wider">{d.date}</span>
+                  {m && <span className="text-xs">{m.emoji}</span>}
+                </div>
+                <p className="text-xs text-white/60 line-clamp-2 whitespace-pre-wrap">{d.content || "（空白）"}</p>
+              </button>
+            );
+          })
+        )}
+      </div>
+    </>
+  );
+}
+
+// Tiny helper: re-run effect when key changes (without importing useEffect everywhere we already did)
+function useMemoSync(key: string, fn: () => void) {
+  useMemo(() => { fn(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [key]);
+}
+
+/* ---------------- Daily Summary ---------------- */
+function SummaryTab() {
+  const { items, habits, diary, upsertDiary } = useSylva();
+  const [date, setDate] = useState(todayStr());
+
+  const dayItems = items.filter((i) => i.date === date);
+  const done = dayItems.filter((i) => i.done);
+  const pending = dayItems.filter((i) => !i.done);
+  const ratio = dayItems.length ? Math.round((done.length / dayItems.length) * 100) : 0;
+  const habitDone = habits.filter((h) => h.doneToday);
+
+  const generateRecap = () => {
+    const lines: string[] = [];
+    lines.push(`📅 ${date} 小结`);
+    lines.push(`完成 ${done.length}/${dayItems.length} 项任务（${ratio}%）`);
+    if (done.length) lines.push("✅ 已完成：\n  · " + done.map((i) => i.title).join("\n  · "));
+    if (pending.length) lines.push("◻️ 未完成：\n  · " + pending.map((i) => i.title).join("\n  · "));
+    if (habitDone.length) lines.push("习惯：" + habitDone.map((h) => `${h.emoji}${h.name}`).join(" "));
+    const existing = diary.find((d) => d.date === date)?.content ?? "";
+    const merged = existing ? existing + "\n\n" + lines.join("\n") : lines.join("\n");
+    upsertDiary(date, { content: merged });
+  };
+
+  return (
+    <>
+      <div className="flex items-center justify-between mb-4">
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="bg-transparent text-sm text-white/90 outline-none border border-white/10 rounded-md px-2 py-1"
+        />
+        <button
+          onClick={generateRecap}
+          disabled={!dayItems.length}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-glow text-primary-foreground text-xs font-medium disabled:opacity-30"
+        >
+          <Sparkles className="w-3 h-3" /> 写入当日日记
+        </button>
+      </div>
+
+      <div className="widget p-5 mb-4 widget-glow">
+        <div className="flex items-end justify-between mb-3">
+          <div>
+            <p className="text-[10px] tracking-widest text-white/40">完成率</p>
+            <p className="font-display text-4xl text-white">{ratio}%</p>
+          </div>
+          <p className="text-xs text-white/60">{done.length} / {dayItems.length} 项</p>
+        </div>
+        <div className="h-2 rounded-full bg-white/8 overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-amber-glow to-amber-glow/70 transition-all"
+            style={{ width: `${ratio}%` }}
+          />
+        </div>
+      </div>
+
+      <Section title="已完成" icon={<CheckCircle2 className="w-3.5 h-3.5 text-amber-glow" />} list={done} empty="今天还没有完成的任务" />
+      <Section title="未完成" icon={<Circle className="w-3.5 h-3.5 text-white/40" />} list={pending} empty="全部完成，太棒了 🎉" />
+
+      <p className="text-[10px] tracking-widest text-white/40 mt-6 mb-2">习惯打卡</p>
+      <div className="flex flex-wrap gap-2">
+        {habits.map((h) => (
+          <span
+            key={h.id}
+            className={`text-xs px-2.5 py-1 rounded-full border ${
+              h.doneToday ? "bg-amber-glow/15 border-amber-glow/40 text-white" : "bg-white/[0.03] border-white/8 text-white/50"
+            }`}
+          >
+            {h.emoji} {h.name} · {h.streak}d
+          </span>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function Section({ title, icon, list, empty }: { title: string; icon: React.ReactNode; list: { id: string; title: string; time?: string; tag?: string }[]; empty: string }) {
+  return (
+    <div className="mb-4">
+      <p className="flex items-center gap-1.5 text-[10px] tracking-widest text-white/50 mb-2">{icon} {title} · {list.length}</p>
+      {list.length === 0 ? (
+        <p className="text-xs text-white/40 pl-5">{empty}</p>
+      ) : (
+        <div className="space-y-1.5">
+          {list.map((i) => (
+            <div key={i.id} className="flex items-center gap-2 text-xs text-white/80 p-2.5 rounded-lg bg-white/[0.03] border border-white/8">
+              <span className="flex-1 truncate">{i.title}</span>
+              {i.time && <span className="text-white/40 tracking-wider">{i.time}</span>}
+              {i.tag && <span className="text-[10px] text-amber-glow">#{i.tag}</span>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------------- utils ---------------- */
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 function fmt(iso: string) {
   const d = new Date(iso);
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
