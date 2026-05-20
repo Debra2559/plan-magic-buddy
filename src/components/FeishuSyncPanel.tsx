@@ -846,6 +846,19 @@ export function FeishuSyncPanel() {
           >
             {recapSending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} 立即发送一次
           </button>
+          <button
+            onClick={refreshTodayRecap}
+            disabled={recapRefreshing}
+            className="text-[11px] px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 disabled:opacity-50 flex items-center gap-1"
+            title="重新从飞书拉取今日已提交的小结/日记/心情，并刷新日历与待办的完成标记"
+          >
+            {recapRefreshing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} 刷新今日小结
+          </button>
+          {recapRefreshResult && (
+            <span className={`text-[11px] ${recapRefreshResult.ok ? "text-emerald-300" : "text-rose-300"}`}>
+              {recapRefreshResult.ok ? "✓ " : "✗ "}{recapRefreshResult.msg}
+            </span>
+          )}
           {recapResult && (
             <span className={`text-[11px] ${recapResult.ok ? "text-emerald-300" : "text-rose-300"}`}>
               {recapResult.ok ? "✓ " : "✗ "}{recapResult.msg}
