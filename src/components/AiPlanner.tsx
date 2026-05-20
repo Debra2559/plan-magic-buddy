@@ -193,32 +193,8 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
   const grouped = groupByDate(confirmed.map((c) => ({ ...c, _key: c.id })));
   const draftGrouped = draft ? groupByDate(draft.items.map((it, i) => ({ ...it, _key: `d-${i}` }))) : null;
 
-  const [quickIdea, setQuickIdea] = useState("");
-  const runQuick = async () => {
-    const text = quickIdea.trim();
-    if (!text || loading) return;
-    setMode("auto");
-    setIdea(text);
-    setLoading(true);
-    setError(null);
-    setDraft(null);
-    try {
-      const existing: PlanItem[] = confirmed.map(({ id: _id, done: _done, ...rest }) => rest);
-      const result = await planFn({ data: { idea: text, mode: "auto", existing: existing.length ? existing : undefined } });
-      if (!result.ok) setError(result.error);
-      else {
-        setDraft(result.plan);
-        setDraftMode(result.mode);
-        setQuickIdea("");
-        const label = result.mode === "add" ? "追加" : result.mode === "adjust" ? "调整重排" : "全新规划";
-        toast.message(`AI 识别为：${label}`, { duration: 2500 });
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "未知错误");
-    } finally {
-      setLoading(false);
-    }
-  };
+
+
 
   const pickSyncItems = (): PlanItem[] => {
     const source = syncScope === "draft" ? (draft?.items ?? []) : confirmed.map(({ id: _id, done: _done, ...rest }) => ({ ...rest }));
