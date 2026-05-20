@@ -34,12 +34,39 @@ function readUrlParams() {
 export function NotesView() {
   const urlInit = readUrlParams();
   const [tab, setTab] = useState<Tab>(urlInit.tab ?? "notes");
+  const [mode, setMode] = useState<"list" | "canvas">(() => {
+    if (typeof window === "undefined") return "list";
+    return (window.localStorage.getItem("notes:mode") as "list" | "canvas") ?? "list";
+  });
+  useEffect(() => { try { window.localStorage.setItem("notes:mode", mode); } catch {} }, [mode]);
   const initialDate = urlInit.date;
+
+  if (mode === "canvas") {
+    return (
+      <div className="h-full flex flex-col">
+        <div className="flex items-center justify-between px-7 pt-5">
+          <div>
+            <p className="text-[10px] tracking-widest text-amber-glow mb-1">每日笔记</p>
+            <h2 className="font-display text-2xl text-white">自由画布 · 拖、画、贴</h2>
+          </div>
+          <ModeToggle mode={mode} onChange={setMode} />
+        </div>
+        <div className="flex-1 mt-3 mx-7 mb-5 rounded-2xl overflow-hidden border border-white/10">
+          <FreeformCanvas kind="notes" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-7 overflow-auto h-full max-w-3xl mx-auto">
-      <p className="text-[10px] tracking-widest text-amber-glow mb-1">每日笔记</p>
-      <h2 className="font-display text-3xl text-white mb-5">把脑子里飘过的，先存下来。</h2>
+      <div className="flex items-start justify-between mb-1 gap-3">
+        <div>
+          <p className="text-[10px] tracking-widest text-amber-glow mb-1">每日笔记</p>
+          <h2 className="font-display text-3xl text-white mb-5">把脑子里飘过的，先存下来。</h2>
+        </div>
+        <ModeToggle mode={mode} onChange={setMode} />
+      </div>
 
       <div className="flex items-center gap-1 mb-6 p-1 rounded-full bg-white/[0.04] border border-white/8 w-fit">
         <TabBtn active={tab === "notes"} onClick={() => setTab("notes")} icon={<NotebookPen className="w-3.5 h-3.5" />}>随手记</TabBtn>
