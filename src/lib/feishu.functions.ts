@@ -1982,3 +1982,133 @@ export const batchLookupFeishuOpenId = createServerFn({ method: 'POST' })
       return { ok: false as const, error: e?.message ?? '请求失败' }
     }
   })
+
+// ---------- 飞书 Bot AI 对话回复 ----------
+
+/**
+ * 发送纯文本消息到飞书
+ */
+export async function sendFeishuText(params: {
+  receiveId: string
+  receiveIdType: 'chat_id' | 'open_id' | 'user_id' | 'email' | 'union_id'
+  text: string
+}): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const r = await feishu<{ code: number; msg: string }>(
+      `/im/v1/messages?receive_id_type=${encodeURIComponent(params.receiveIdType)}`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          receive_id: params.receiveId,
+          msg_type: 'text',
+          content: JSON.stringify({ text: params.text }),
+        }),
+      },
+    )
+    if (r.code !== 0) return { ok: false, error: `code=${r.code} msg=${r.msg}` }
+    return { ok: true }
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? '发送失败' }
+  }
+}
+
+/**
+ * 调用 Lovable AI Gateway 生成回复
+ */
+async function callLovableAI(params: {
+  systemPrompt: string
+  userText: string
+}): Promise<string> {
+  const apiKey = process.env.LOVABLE_API_KEY
+  if (!apiKey) throw new Error('LOVABLE_API_KEY 未配置')
+  const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'google/gemini-2.5-flash',
+      messages: [
+        { role: 'system', content: params.systemPrompt },
+        { role: 'user', content: params.userText },
+      ],
+    }),
+  })
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    if (res.status === 429) throw new Error('AI 调用频率受限，请稍后再试')
+    if (res.status === 402) throw new Error('AI 额度已用尽，请联系管理员充值')
+    throw new Error(`Lovable AI 请求失败: ${res.status} ${body.slice(0, 200)}`)
+  }
+  const json = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string } }>
+  }
+  const text = json.choices?.[0]?.message?.content?.trim()
+  if (!text) throw new Error('AI 未返回有效内容')
+  return text
+}
+
+/**
+ * 处理飞书用户消息：调用 AI 生成回复并发送
+ * 返回 reply 是否成功；调用方负责日志
+ */
+export async function aiReplyToFeishuChat(params: {
+  chatId: string
+  chatType: string | undefined
+  text: string
+  senderOpenId?: string | null
+}): Promise<{ ok: boolean; reply?: string; error?: string }> {
+  try {
+    const userText = params.text.trim()
+    if (!userText) return { ok: false, error: 'empty text' }
+
+    // 读取人格设定（取第一个 profile，应用为单用户）
+    let aiName = 'Sylva'
+    let personaPrompt = ''
+    try {
+      const { data: profile } = await supabaseAdmin
+        .from('user_profiles')
+        .select('ai_nickname, persona_prompt, display_name, tone_examples, taboos')
+        .limit(1)
+        .maybeSingle()
+      if (profile) {
+        const p: any = profile
+        if (p.ai_nickname?.trim()) aiName = String(p.ai_nickname).trim()
+        const parts: string[] = []
+        if (p.persona_prompt) parts.push(String(p.persona_prompt))
+        if (p.display_name) parts.push(`用户的名字是 ${p.display_name}。`)
+        if (Array.isArray(p.tone_examples) && p.tone_examples.length) {
+          parts.push(`语气示例：\n${p.tone_examples.slice(0, 5).join('\n')}`)
+        }
+        if (Array.isArray(p.taboos) && p.taboos.length) {
+          parts.push(`需要避免：${p.taboos.join('、')}`)
+        }
+        personaPrompt = parts.join('\n\n')
+      }
+    } catch {
+      // ignore，使用默认 persona
+    }
+
+    const systemPrompt = [
+      `你是 ${aiName}，用户在飞书中与你对话的 AI 伙伴。`,
+      '请用自然、简洁、有温度的中文回复；除非用户要求，否则不要使用 Markdown 语法或代码块。',
+      '回答控制在 200 字以内；如果用户在记录事件、感受或灵感，请先共情再轻轻回应。',
+      personaPrompt,
+    ]
+      .filter(Boolean)
+      .join('\n\n')
+
+    const reply = await callLovableAI({ systemPrompt, userText })
+
+    const sendRes = await sendFeishuText({
+      receiveId: params.chatId,
+      receiveIdType: 'chat_id',
+      text: reply,
+    })
+    if (!sendRes.ok) return { ok: false, error: sendRes.error, reply }
+    return { ok: true, reply }
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? 'ai reply failed' }
+  }
+}
