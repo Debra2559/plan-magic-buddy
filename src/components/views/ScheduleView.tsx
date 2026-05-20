@@ -223,6 +223,20 @@ export function ScheduleView({ onGoPlan }: { onGoPlan?: () => void } = {}) {
           onAdd={(item) => addItems([item])}
         />
       )}
+
+      <Dialog open={aiOpen} onOpenChange={setAiOpen}>
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-auto bg-zinc-950/95 backdrop-blur-xl border-white/10">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-glow">
+              <Sparkles className="w-4 h-4" /> AI 规划
+            </DialogTitle>
+            <DialogDescription className="text-white/50 text-xs">
+              用自然语言说出目标，AI 会自动拆成事件 / 待办 / 提醒，确认后写回当前日历。
+            </DialogDescription>
+          </DialogHeader>
+          <AiPlanner />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
