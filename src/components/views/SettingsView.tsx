@@ -232,6 +232,8 @@ function readHashKey(): NavKey | null {
 
 export function SettingsView() {
   const [active, setActive] = useState<NavKey>(() => readHashKey() ?? "general");
+  const { persona } = usePersona();
+  const aiName = (persona?.ai_nickname || "").trim() || "Sylva";
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
     NAV.forEach((g) => { initial[g.label] = true; });
