@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSylva, type Mood, type Note, habitStreak, habitDaysSinceLast, isHabitDoneOn } from "@/lib/sylva-store";
 import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, ListChecks, NotebookPen, Sparkles, CheckCircle2, Circle, Flame, AlertTriangle, RotateCcw } from "lucide-react";
 import { markRecapDone, getDailyRecap } from "@/lib/feishu.functions";
+import { EnterHint } from "@/components/EnterHint";
 
 type Tab = "notes" | "diary" | "summary";
 
@@ -107,9 +108,12 @@ function NotesTab() {
             }
           }}
           rows={3}
-          placeholder="此刻在想什么？Enter 保存 · Shift + Enter 换行"
+          placeholder="此刻在想什么？"
           className="w-full bg-transparent outline-none text-sm leading-relaxed text-white/90 placeholder:text-white/30 resize-none"
         />
+        <div className="flex justify-end -mt-1 mb-1">
+          <EnterHint example={"灵感：把答辩比喻成森林徒步 ↵（Shift+Enter）\n开场用 30 秒抛痛点"} />
+        </div>
         <div className="flex flex-wrap items-center gap-2 mt-3">
           <div className="flex items-center gap-1">
             {MOODS.map((m) => (
@@ -278,12 +282,15 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
             }
           }}
           rows={10}
-          placeholder="今天发生了什么？Enter 保存 · Shift + Enter 换行"
+          placeholder="今天发生了什么？"
           className="w-full bg-transparent outline-none text-sm leading-7 text-white/90 placeholder:text-white/30 resize-none"
         />
-        <div className="flex items-center justify-between mt-2">
+        <div className="flex items-center justify-between mt-2 gap-2">
           <span className="text-[10px] text-white/40">失焦自动保存 · {content.length} 字</span>
-          <button onClick={save} className="px-4 py-1.5 rounded-full bg-amber-glow text-primary-foreground text-xs font-medium">保存</button>
+          <div className="flex items-center gap-3">
+            <EnterHint example={"今天搞定了答辩 PPT ↵（Shift+Enter）\n明天要去和导师对齐节奏"} />
+            <button onClick={save} className="px-4 py-1.5 rounded-full bg-amber-glow text-primary-foreground text-xs font-medium">保存</button>
+          </div>
         </div>
       </div>
 

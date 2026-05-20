@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { generatePlan, chatPlan, type Plan, type PlanItem, type ChatStep } from "@/lib/plan.functions";
 import { useSylva } from "@/lib/sylva-store";
 import { HackathonInbox } from "./HackathonInbox";
+import { EnterHint } from "@/components/EnterHint";
 import { Sparkles, ArrowUp, Loader2, Calendar, CheckSquare, Bell, Plus, RefreshCw, Wand2, Check, X, Trash2, Target, Globe } from "lucide-react";
 
 type Mode = "create" | "adjust" | "add" | "goal";
@@ -261,13 +262,12 @@ export function AiPlanner() {
           />
         )}
 
-        <div className="flex items-center justify-between mt-3">
-          <span className="text-[10px] text-muted-foreground tracking-wider">
+        <div className="flex items-center justify-between mt-3 gap-2">
+          <span className="text-[10px] text-muted-foreground tracking-wider flex items-center gap-3">
             {mode === "goal" && chatMessages.length > 0 ? (
               <button onClick={resetChat} className="hover:text-foreground transition">重新开始</button>
-            ) : (
-              "⌘ + Enter 发送"
-            )}
+            ) : null}
+            <EnterHint example={"我要在 3 个月内跑下半马 ↵（Shift+Enter）\n每周至少 4 次跑步训练"} />
           </span>
           <button
             onClick={handleSubmit}
