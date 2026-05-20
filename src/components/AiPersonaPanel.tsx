@@ -48,15 +48,19 @@ export function AiPersonaPanel() {
     setTimeout(() => setSavingTip(false), 900);
   };
 
-  const handleAvatarPick = async (file: File) => {
-    if (!user) return;
+  const handleAvatarPick = (file: File) => {
+    if (!user) { toast.error("请先登录"); return; }
     if (!file.type.startsWith("image/")) { toast.error("请选择图片文件"); return; }
     if (file.size > 5 * 1024 * 1024) { toast.error("图片需小于 5MB"); return; }
+    setPickedFile(file);
+  };
+
+  const handleCroppedUpload = async (blob: Blob) => {
+    if (!user) return;
     setUploadingAvatar(true);
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-      const path = `${user.id}/avatar-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
+      const path = `${user.id}/avatar-${Date.now()}.png`;
+      const { error: upErr } = await supabase.storage.from("avatars").upload(path, blob, { upsert: true, contentType: "image/png" });
       if (upErr) throw upErr;
       const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
       await commit({ avatar_url: pub.publicUrl });
@@ -67,6 +71,13 @@ export function AiPersonaPanel() {
       setUploadingAvatar(false);
     }
   };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setDragOver(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) handleAvatarPick(f);
+  };
+
 
   const handleAvatarRemove = async () => {
     await commit({ avatar_url: null });
