@@ -7,6 +7,7 @@ import {
   todayLocal,
   type Mood,
 } from "@/lib/sylva-store";
+import { generateDailyComic } from "@/lib/comic.functions";
 import {
   BookHeart,
   Calendar as CalIcon,
@@ -23,6 +24,11 @@ import {
   ChevronRight,
   NotebookPen,
   Check,
+  Wand2,
+  Loader2,
+  RefreshCw,
+  Download,
+  X as XIcon,
 } from "lucide-react";
 
 const MOODS: Record<Mood, { emoji: string; label: string }> = {
@@ -49,7 +55,7 @@ function fmtLong(iso: string) {
 }
 
 export function JournalView() {
-  const { items, habits, notes, diary, isRecapDone, toggleHabitOn, addNote, upsertDiary } = useSylva();
+  const { items, habits, notes, diary, comics, isRecapDone, toggleHabitOn, addNote, upsertDiary, setComic, removeComic } = useSylva();
   const [date, setDate] = useState<string>(todayLocal());
 
   const dayItems = useMemo(
@@ -281,6 +287,23 @@ export function JournalView() {
               ) : (
                 <EmptyLine text="还没有写下今天 —— 去『随手记 · 日记』补一笔吧" />
               )}
+
+              {/* —— 每日漫画 —— */}
+              <SectionHeader icon={<Wand2 className="w-3.5 h-3.5" />} title="每日漫画" />
+              <ComicPanel
+                date={date}
+                comic={comics.find((c) => c.date === date)}
+                buildSummary={() =>
+                  buildComicSummary({ date, fmt, dayItems, habitsDone: habits.filter((h) => isHabitDoneOn(h, date)), habitsMissed: habits.filter((h) => !isHabitDoneOn(h, date)), dayNotes, dayDiary })
+                }
+                onGenerated={(c) => setComic(c)}
+                onRemove={() => removeComic(date)}
+                onCopyToDiary={(line) => {
+                  const prev = diary.find((d) => d.date === date)?.content ?? "";
+                  upsertDiary(date, { content: prev ? `${prev}\n\n${line}` : line });
+                }}
+                onCopyToNote={(line) => addNote(line, { tags: ["每日漫画"] })}
+              />
 
               {/* —— 给未来的建议 —— */}
               <SectionHeader icon={<Sparkles className="w-3.5 h-3.5" />} title="给未来的自己" />
@@ -529,4 +552,196 @@ function buildSuggestions(args: {
   }
 
   return out.slice(0, 4);
+}
+
+/* ---------------- Daily Comic ---------------- */
+
+function buildComicSummary(args: {
+  date: string;
+  fmt: { big: string; sub: string };
+  dayItems: ReturnType<typeof useSylva>["items"];
+  habitsDone: ReturnType<typeof useSylva>["habits"];
+  habitsMissed: ReturnType<typeof useSylva>["habits"];
+  dayNotes: ReturnType<typeof useSylva>["notes"];
+  dayDiary?: { content: string; mood?: Mood };
+}): string {
+  const { date, dayItems, habitsDone, habitsMissed, dayNotes, dayDiary } = args;
+  const lines: string[] = [];
+  lines.push(`Date: ${date}`);
+  if (dayDiary?.mood) lines.push(`Mood: ${MOODS[dayDiary.mood].label} (${MOODS[dayDiary.mood].emoji})`);
+  if (dayDiary?.content) lines.push(`Diary: ${dayDiary.content.slice(0, 600)}`);
+  if (dayItems.length) {
+    lines.push(`Schedule (${dayItems.filter((i) => i.done).length}/${dayItems.length} done):`);
+    dayItems.slice(0, 10).forEach((i) => {
+      lines.push(`- ${i.time ?? "—"} ${i.done ? "[done]" : "[ ]"} ${i.title} (${i.tag})`);
+    });
+  }
+  if (habitsDone.length) lines.push(`Habits done: ${habitsDone.map((h) => `${h.emoji}${h.name}`).join(", ")}`);
+  if (habitsMissed.length) lines.push(`Habits missed: ${habitsMissed.map((h) => `${h.emoji}${h.name}`).join(", ")}`);
+  if (dayNotes.length) {
+    lines.push(`Notes:`);
+    dayNotes.slice(0, 5).forEach((n) => lines.push(`- ${n.text.slice(0, 160)}`));
+  }
+  return lines.join("\n");
+}
+
+type Provider = "gemini" | "seedream";
+
+function ComicPanel({
+  date,
+  comic,
+  buildSummary,
+  onGenerated,
+  onRemove,
+  onCopyToDiary,
+  onCopyToNote,
+}: {
+  date: string;
+  comic?: { imageUrl: string; provider: Provider; caption?: string; createdAt: string };
+  buildSummary: () => string;
+  onGenerated: (c: { date: string; imageUrl: string; provider: Provider; caption?: string; createdAt: string }) => void;
+  onRemove: () => void;
+  onCopyToDiary: (line: string) => void;
+  onCopyToNote: (line: string) => void;
+}) {
+  const [provider, setProvider] = useState<Provider>(comic?.provider ?? "gemini");
+  const [panels, setPanels] = useState<number>(4);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [copied, setCopied] = useState<"diary" | "note" | null>(null);
+
+  const run = async () => {
+    setErr(null);
+    setLoading(true);
+    try {
+      const summary = buildSummary();
+      const res = await generateDailyComic({
+        data: { date, summary, provider, panels },
+      });
+      onGenerated({
+        date,
+        imageUrl: res.imageUrl,
+        provider: res.provider as Provider,
+        caption: res.caption,
+        createdAt: new Date().toISOString(),
+      });
+    } catch (e: any) {
+      setErr(e?.message ?? "生成失败");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const flash = (kind: "diary" | "note", fn: () => void) => {
+    fn();
+    setCopied(kind);
+    setTimeout(() => setCopied(null), 1400);
+  };
+
+  return (
+    <div className="mb-7 rounded-2xl bg-white/[0.03] border border-white/8 p-4">
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <div className="flex rounded-full border border-white/10 overflow-hidden text-[11px]">
+          {(["gemini", "seedream"] as Provider[]).map((p) => (
+            <button
+              key={p}
+              onClick={() => setProvider(p)}
+              className={`px-3 py-1 transition ${
+                provider === p
+                  ? "bg-amber-glow/25 text-white"
+                  : "text-white/55 hover:text-white/85"
+              }`}
+            >
+              {p === "gemini" ? "Gemini" : "Seedream"}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1 text-[11px] text-white/55">
+          <span>格数</span>
+          <select
+            value={panels}
+            onChange={(e) => setPanels(Number(e.target.value))}
+            className="bg-black/40 border border-white/10 rounded px-1.5 py-0.5 text-white/80"
+          >
+            {[2, 3, 4, 6, 8, 9].map((n) => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+        </div>
+        <button
+          onClick={run}
+          disabled={loading}
+          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-glow/20 hover:bg-amber-glow/30 border border-amber-glow/40 text-xs text-amber-glow disabled:opacity-50"
+        >
+          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : comic ? <RefreshCw className="w-3.5 h-3.5" /> : <Wand2 className="w-3.5 h-3.5" />}
+          {loading ? "正在画…" : comic ? "重新生成" : "生成今日漫画"}
+        </button>
+      </div>
+
+      {err && (
+        <p className="text-xs text-red-300/90 mb-2 px-2 py-1.5 rounded bg-red-500/10 border border-red-400/20">
+          {err}
+        </p>
+      )}
+
+      {comic ? (
+        <div className="space-y-2">
+          <div className="relative rounded-xl overflow-hidden bg-black/40 border border-white/8">
+            <img src={comic.imageUrl} alt={`${date} 漫画`} className="w-full h-auto block" />
+            <button
+              onClick={onRemove}
+              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 text-white/80 flex items-center justify-center"
+              title="删除"
+            >
+              <XIcon className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-[10px] text-white/45">
+            <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10">
+              {comic.provider === "gemini" ? "Gemini" : "Seedream"}
+            </span>
+            <span>{new Date(comic.createdAt).toLocaleString()}</span>
+            <a
+              href={comic.imageUrl}
+              download={`sylva-${date}.png`}
+              target="_blank"
+              rel="noreferrer"
+              className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/70"
+            >
+              <Download className="w-3 h-3" /> 下载
+            </a>
+            <button
+              onClick={() =>
+                flash("diary", () =>
+                  onCopyToDiary(`🖼️ 今日漫画（${comic.provider}）：${comic.imageUrl}`),
+                )
+              }
+              className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 hover:bg-amber-glow/20 border border-white/10 hover:border-amber-glow/40 text-white/70 hover:text-amber-glow"
+            >
+              {copied === "diary" ? <Check className="w-3 h-3" /> : <BookHeart className="w-3 h-3" />}
+              {copied === "diary" ? "已追加" : "→ 日记"}
+            </button>
+            <button
+              onClick={() =>
+                flash("note", () =>
+                  onCopyToNote(`今日漫画 · ${comic.provider}\n${comic.imageUrl}`),
+                )
+              }
+              className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 hover:bg-amber-glow/20 border border-white/10 hover:border-amber-glow/40 text-white/70 hover:text-amber-glow"
+            >
+              {copied === "note" ? <Check className="w-3 h-3" /> : <NotebookPen className="w-3 h-3" />}
+              {copied === "note" ? "已保存" : "→ 随手记"}
+            </button>
+          </div>
+          {comic.caption && (
+            <p className="text-xs text-white/55 italic px-1">{comic.caption}</p>
+          )}
+        </div>
+      ) : (
+        <p className="text-xs text-white/40 italic px-1 py-3">
+          把这一天画成 {panels} 格漫画 —— 用 {provider === "gemini" ? "Lovable 内置 Gemini" : "火山 Seedream"} 生成。
+        </p>
+      )}
+    </div>
+  );
 }
