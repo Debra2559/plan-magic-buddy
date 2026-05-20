@@ -37,7 +37,7 @@ const tagColors: Record<string, string> = {
 };
 
 export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => void; onConfirmed?: () => void } = {}) {
-  const { items: confirmedFull, addItems, replaceItems, removeItem, clearItems, enterToSubmit, markRecentlySynced, setSyncSummary } = useSylva();
+  const { items: confirmedFull, addItems, addItemsPending, replaceItems, removeItem, clearItems, enterToSubmit, markRecentlySynced, setSyncSummary } = useSylva();
   const confirmed = confirmedFull;
   const [mode, setMode] = useState<Mode>("auto");
   const [idea, setIdea] = useState("");
