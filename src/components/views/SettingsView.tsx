@@ -112,6 +112,7 @@ export function SettingsView() {
 
       <div className="space-y-7">
         <FeishuSyncPanel />
+        <FeishuWebhookLogsPanel />
         <DateFlashPanel />
         {sections.map((s) => {
           const Icon = s.icon;
