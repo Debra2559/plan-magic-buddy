@@ -308,6 +308,48 @@ export type Database = {
         }
         Relationships: []
       }
+      feishu_webhook_logs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          event_type: string | null
+          id: string
+          level: string
+          message: string | null
+          payload: Json | null
+          request_id: string
+          status: number | null
+          step: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          event_type?: string | null
+          id?: string
+          level?: string
+          message?: string | null
+          payload?: Json | null
+          request_id: string
+          status?: number | null
+          step: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          event_type?: string | null
+          id?: string
+          level?: string
+          message?: string | null
+          payload?: Json | null
+          request_id?: string
+          status?: number | null
+          step?: string
+        }
+        Relationships: []
+      }
       habits: {
         Row: {
           created_at: string
