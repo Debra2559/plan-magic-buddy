@@ -280,10 +280,12 @@ export function JournalView() {
               <SectionHeader icon={<BookHeart className="w-3.5 h-3.5" />} title="今日日记" />
               {dayDiary?.content ? (
                 <div className="journal-lines p-5 rounded-2xl bg-white/[0.03] border border-white/8 mb-7">
-                  <p className="text-sm text-white/85 leading-8 whitespace-pre-wrap">
-                    {dayDiary.content}
-                  </p>
+                  <div
+                    className="diary-editor text-sm text-white/85 leading-8 whitespace-pre-wrap break-words"
+                    dangerouslySetInnerHTML={{ __html: dayDiary.content }}
+                  />
                 </div>
+
               ) : (
                 <EmptyLine text="还没有写下今天 —— 去『随手记 · 日记』补一笔吧" />
               )}
