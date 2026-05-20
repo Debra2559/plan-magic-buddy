@@ -329,6 +329,7 @@ export function AiPlanner() {
 
       {/* RIGHT: Preview + Confirmed */}
       <div className="space-y-6">
+        <HackathonInbox />
         {/* Draft preview */}
         {draft && draftGrouped && (
           <div className="widget widget-glow p-7 animate-in fade-in slide-in-from-bottom-2 duration-500">
