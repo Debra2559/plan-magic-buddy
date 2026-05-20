@@ -803,18 +803,6 @@ function ComicPanel({
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-1 text-[11px] text-white/55">
-          <span>格数</span>
-          <select
-            value={panels}
-            onChange={(e) => setPanels(Number(e.target.value))}
-            className="bg-black/40 border border-white/10 rounded px-1.5 py-0.5 text-white/80"
-          >
-            {[2, 3, 4, 6, 8, 9].map((n) => (
-              <option key={n} value={n}>{n}</option>
-            ))}
-          </select>
-        </div>
         <button
           onClick={run}
           disabled={loading}
