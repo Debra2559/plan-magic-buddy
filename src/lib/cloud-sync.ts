@@ -86,47 +86,70 @@ const swallow = (label: string) => (err: any) => {
 
 export const remote = {
   // schedule_items
-  upsertItem: (i: DoneItem) =>
-    supabase.from("schedule_items").upsert(itemToRow(i)).then(({ error }) => swallow("upsertItem")(error)),
-  upsertItems: (xs: DoneItem[]): Promise<void> =>
-    xs.length
-      ? supabase.from("schedule_items").upsert(xs.map(itemToRow)).then(({ error }) => swallow("upsertItems")(error))
-      : Promise.resolve(),
-
-  softDeleteItem: (id: string) =>
-    supabase.from("schedule_items").update({ deleted_at: new Date().toISOString() }).eq("id", id)
-      .then(({ error }) => swallow("softDeleteItem")(error)),
-  clearItems: () =>
-    supabase.from("schedule_items").update({ deleted_at: new Date().toISOString() }).is("deleted_at", null)
-      .then(({ error }) => swallow("clearItems")(error)),
+  async upsertItem(i: DoneItem) {
+    const { error } = await supabase.from("schedule_items").upsert(itemToRow(i));
+    swallow("upsertItem")(error);
+  },
+  async upsertItems(xs: DoneItem[]) {
+    if (!xs.length) return;
+    const { error } = await supabase.from("schedule_items").upsert(xs.map(itemToRow));
+    swallow("upsertItems")(error);
+  },
+  async softDeleteItem(id: string) {
+    const { error } = await supabase.from("schedule_items")
+      .update({ deleted_at: new Date().toISOString() }).eq("id", id);
+    swallow("softDeleteItem")(error);
+  },
+  async clearItems() {
+    const { error } = await supabase.from("schedule_items")
+      .update({ deleted_at: new Date().toISOString() }).is("deleted_at", null);
+    swallow("clearItems")(error);
+  },
 
   // notes
-  upsertNote: (n: Note) =>
-    supabase.from("notes").upsert(noteToRow(n)).then(({ error }) => swallow("upsertNote")(error)),
-  softDeleteNote: (id: string) =>
-    supabase.from("notes").update({ deleted_at: new Date().toISOString() }).eq("id", id)
-      .then(({ error }) => swallow("softDeleteNote")(error)),
+  async upsertNote(n: Note) {
+    const { error } = await supabase.from("notes").upsert(noteToRow(n));
+    swallow("upsertNote")(error);
+  },
+  async softDeleteNote(id: string) {
+    const { error } = await supabase.from("notes")
+      .update({ deleted_at: new Date().toISOString() }).eq("id", id);
+    swallow("softDeleteNote")(error);
+  },
 
   // habits
-  upsertHabit: (h: Habit) =>
-    supabase.from("habits").upsert(habitToRow(h)).then(({ error }) => swallow("upsertHabit")(error)),
-  upsertHabits: (xs: Habit[]) =>
-    xs.length &&
-    supabase.from("habits").upsert(xs.map(habitToRow)).then(({ error }) => swallow("upsertHabits")(error)),
-  softDeleteHabit: (id: string) =>
-    supabase.from("habits").update({ deleted_at: new Date().toISOString() }).eq("id", id)
-      .then(({ error }) => swallow("softDeleteHabit")(error)),
+  async upsertHabit(h: Habit) {
+    const { error } = await supabase.from("habits").upsert(habitToRow(h));
+    swallow("upsertHabit")(error);
+  },
+  async upsertHabits(xs: Habit[]) {
+    if (!xs.length) return;
+    const { error } = await supabase.from("habits").upsert(xs.map(habitToRow));
+    swallow("upsertHabits")(error);
+  },
+  async softDeleteHabit(id: string) {
+    const { error } = await supabase.from("habits")
+      .update({ deleted_at: new Date().toISOString() }).eq("id", id);
+    swallow("softDeleteHabit")(error);
+  },
 
   // diary
-  upsertDiary: (d: DiaryEntry) =>
-    supabase.from("diary_entries").upsert(diaryToRow(d)).then(({ error }) => swallow("upsertDiary")(error)),
+  async upsertDiary(d: DiaryEntry) {
+    const { error } = await supabase.from("diary_entries").upsert(diaryToRow(d));
+    swallow("upsertDiary")(error);
+  },
 
   // comics
-  upsertComic: (c: DailyComic) =>
-    supabase.from("comics").upsert(comicToRow(c)).then(({ error }) => swallow("upsertComic")(error)),
-  removeComic: (date: string) =>
-    supabase.from("comics").delete().eq("date", date).then(({ error }) => swallow("removeComic")(error)),
+  async upsertComic(c: DailyComic) {
+    const { error } = await supabase.from("comics").upsert(comicToRow(c));
+    swallow("upsertComic")(error);
+  },
+  async removeComic(date: string) {
+    const { error } = await supabase.from("comics").delete().eq("date", date);
+    swallow("removeComic")(error);
+  },
 };
+
 
 // ---------- 初次拉取 ----------
 
