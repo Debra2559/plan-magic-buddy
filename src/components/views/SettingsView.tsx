@@ -1,5 +1,6 @@
 import { Bell, Cloud, Palette, Keyboard, User, Info, Sparkles } from "lucide-react";
 import { FeishuSyncPanel } from "@/components/FeishuSyncPanel";
+import { FeishuWebhookLogsPanel } from "@/components/FeishuWebhookLogsPanel";
 import { AiPersonaPanel } from "@/components/AiPersonaPanel";
 import { useSylva } from "@/lib/sylva-store";
 
