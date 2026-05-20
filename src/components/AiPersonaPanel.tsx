@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AvatarCropDialog } from "@/components/AvatarCropDialog";
 import { ProfileHistoryPanel } from "@/components/ProfileHistoryPanel";
 import { PersonaPreviewPanel } from "@/components/PersonaPreviewPanel";
+import { TaboosEditor } from "@/components/TaboosEditor";
 
 // 精选两组风格：极简线条肖像（notionists-neutral）+ 抽象几何渐变（shapes）
 // 整体走 Linear / Notion / Apple 设计审美，避免花哨的卡通 emoji
