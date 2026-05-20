@@ -11,6 +11,26 @@ import lineartThumb from "@/assets/comic-styles/lineart.jpg";
 import pixelThumb from "@/assets/comic-styles/pixel.jpg";
 import chineseInkThumb from "@/assets/comic-styles/chinese-ink.jpg";
 import cyberpunkThumb from "@/assets/comic-styles/cyberpunk.jpg";
+import celluloidThumb from "@/assets/comic-styles/celluloid.jpg";
+import americanComicsThumb from "@/assets/comic-styles/american-comics.jpg";
+import pixelRetroThumb from "@/assets/comic-styles/pixel-retro.jpg";
+import ghibli2Thumb from "@/assets/comic-styles/ghibli2.jpg";
+import makotoThumb from "@/assets/comic-styles/makoto-shinkai.jpg";
+import chibiThumb from "@/assets/comic-styles/chibi.jpg";
+import cardManThumb from "@/assets/comic-styles/card-man.jpg";
+import jpCartoonThumb from "@/assets/comic-styles/japanese-cartoon.jpg";
+import chineseComicsThumb from "@/assets/comic-styles/chinese-comics.jpg";
+import chineseInk2Thumb from "@/assets/comic-styles/chinese-ink2.jpg";
+import pixarThumb from "@/assets/comic-styles/pixar.jpg";
+import jojoThumb from "@/assets/comic-styles/jojo.jpg";
+import miyazakiThumb from "@/assets/comic-styles/miyazaki.jpg";
+import pictureBookThumb from "@/assets/comic-styles/picture-book.jpg";
+import retroAnimeThumb from "@/assets/comic-styles/retro-anime.jpg";
+import crayonThumb from "@/assets/comic-styles/crayon.jpg";
+import boldLineThumb from "@/assets/comic-styles/bold-line.jpg";
+import gouacheThumb from "@/assets/comic-styles/gouache.jpg";
+import flatStyleThumb from "@/assets/comic-styles/flat-style.jpg";
+import dunhuangThumb from "@/assets/comic-styles/dunhuang.jpg";
 
 type Provider = "gemini" | "seedream";
 
@@ -34,48 +54,33 @@ type StylePreset = {
 };
 
 const STYLE_PRESETS: StylePreset[] = [
-  {
-    id: "watercolor",
-    label: "温暖水彩",
-    thumb: watercolorThumb,
-    prompt: "warm, cozy, hand-drawn watercolor diary comic, soft amber & moss palette, gentle linework, slight grain",
-  },
-  {
-    id: "ghibli",
-    label: "吉卜力",
-    thumb: ghibliThumb,
-    prompt: "Studio Ghibli anime style, soft pastel colors, lush nature, dreamy lighting, hand-drawn cel animation aesthetic",
-  },
-  {
-    id: "lineart",
-    label: "极简线稿",
-    thumb: lineartThumb,
-    prompt: "minimal black line art on cream paper, clean continuous lines, lots of whitespace, New Yorker editorial illustration vibe, monochrome",
-  },
-  {
-    id: "pixel",
-    label: "像素风",
-    thumb: pixelThumb,
-    prompt: "16-bit pixel art, vibrant limited palette, chunky pixels, nostalgic SNES-era aesthetic",
-  },
-  {
-    id: "chinese-ink",
-    label: "国风水墨",
-    thumb: chineseInkThumb,
-    prompt: "traditional Chinese ink wash painting style, muted earth tones, rice paper texture, elegant brush strokes",
-  },
-  {
-    id: "cyberpunk",
-    label: "赛博朋克",
-    thumb: cyberpunkThumb,
-    prompt: "cyberpunk comic, neon pink and cyan glow, rain-soaked streets, holographic billboards, moody noir lighting",
-  },
-  {
-    id: "custom",
-    label: "自定义",
-    thumb: "",
-    prompt: "",
-  },
+  { id: "watercolor", label: "温暖水彩", thumb: watercolorThumb, prompt: "warm, cozy, hand-drawn watercolor diary comic, soft amber & moss palette, gentle linework, slight grain" },
+  { id: "ghibli", label: "吉卜力 (柔)", thumb: ghibliThumb, prompt: "Studio Ghibli anime style, soft pastel colors, lush nature, dreamy lighting, hand-drawn cel animation aesthetic" },
+  { id: "ghibli2", label: "吉卜力 (画风2)", thumb: ghibli2Thumb, prompt: "classic Ghibli/Hayao Miyazaki style, soft cel-shaded anime, gentle expressions, warm storybook palette" },
+  { id: "miyazaki", label: "宫崎骏旅行", thumb: miyazakiThumb, prompt: "Miyazaki-style watercolor anime scenery, vibrant skies, slice-of-life travel composition, painterly background" },
+  { id: "makoto-shinkai", label: "新海诚", thumb: makotoThumb, prompt: "Makoto Shinkai anime style, hyper-detailed skies, cinematic lighting, lens flares, melancholic atmosphere, vivid blues" },
+  { id: "retro-anime", label: "古早日漫", thumb: retroAnimeThumb, prompt: "90s shoujo anime style, large sparkling eyes, soft cel shading, retro VHS color grading" },
+  { id: "japanese-cartoon", label: "日式卡通", thumb: jpCartoonThumb, prompt: "modern Japanese anime portrait style, soft skin shading, gentle natural lighting, clean line art" },
+  { id: "celluloid", label: "赛璐璐", thumb: celluloidThumb, prompt: "anime cel-shaded (celluloid) style, bold flat colors, crisp ink outline, vivid pink/black accents, sticker pop culture vibe" },
+  { id: "chibi", label: "Q版萌系", thumb: chibiThumb, prompt: "ultra-cute chibi 3D style, big head small body, soft fluffy textures, pastel palette, kawaii" },
+  { id: "card-man", label: "卡片人", thumb: cardManThumb, prompt: "trading card game character art, neon holographic background, dynamic action pose, glowing rim light" },
+  { id: "american-comics", label: "美式漫画", thumb: americanComicsThumb, prompt: "American superhero comic book style, bold inks, halftone shading, dramatic perspective, saturated primary colors" },
+  { id: "jojo", label: "JOJO奇妙冒险", thumb: jojoThumb, prompt: "JoJo's Bizarre Adventure manga style, exaggerated dramatic poses, sharp angular faces, bold outlines, vivid magenta/purple palette" },
+  { id: "chinese-comics", label: "国漫", thumb: chineseComicsThumb, prompt: "modern Chinese xianxia comic style, flowing black hair, ink splash background, elegant ancient costume, ethereal mood" },
+  { id: "chinese-ink", label: "国风水墨", thumb: chineseInkThumb, prompt: "traditional Chinese ink wash painting style, muted earth tones, rice paper texture, elegant brush strokes" },
+  { id: "chinese-ink2", label: "水墨工笔", thumb: chineseInk2Thumb, prompt: "Chinese gongbi ink painting with delicate color, soft brushwork, traditional costume, rice paper background" },
+  { id: "dunhuang", label: "敦煌美学", thumb: dunhuangThumb, prompt: "Dunhuang mural aesthetic, flying apsaras motifs, mineral pigment palette of cinnabar/malachite/azurite, ornate patterns" },
+  { id: "picture-book", label: "绘本", thumb: pictureBookThumb, prompt: "children's picture book illustration, soft watercolor and colored pencil, gentle round shapes, warm storybook palette" },
+  { id: "crayon", label: "蜡笔画", thumb: crayonThumb, prompt: "wax crayon children's book illustration, textured strokes, warm earthy palette, Little Prince storybook vibe" },
+  { id: "gouache", label: "水粉", thumb: gouacheThumb, prompt: "gouache illustration, soft matte texture, dreamy starlit color palette, gentle storybook composition" },
+  { id: "flat-style", label: "扁平风格", thumb: flatStyleThumb, prompt: "flat vector illustration, clean geometric shapes, limited modern palette, editorial corporate style" },
+  { id: "bold-line", label: "粗线条", thumb: boldLineThumb, prompt: "bold thick black outline illustration, flat color blocks, modern Korean/Japanese editorial style, urban scene" },
+  { id: "lineart", label: "极简线稿", thumb: lineartThumb, prompt: "minimal black line art on cream paper, clean continuous lines, lots of whitespace, New Yorker editorial vibe, monochrome" },
+  { id: "pixar", label: "皮克斯3D", thumb: pixarThumb, prompt: "Pixar-style 3D animated render, cinematic lighting, expressive character design, polished CGI textures" },
+  { id: "pixel", label: "像素风", thumb: pixelThumb, prompt: "16-bit pixel art, vibrant limited palette, chunky pixels, nostalgic SNES-era aesthetic" },
+  { id: "pixel-retro", label: "像素复古", thumb: pixelRetroThumb, prompt: "cozy lofi pixel art scene, neon city night, purple/pink palette, animated retro vibe" },
+  { id: "cyberpunk", label: "赛博朋克", thumb: cyberpunkThumb, prompt: "cyberpunk comic, neon pink and cyan glow, rain-soaked streets, holographic billboards, moody noir lighting" },
+  { id: "custom", label: "自定义", thumb: "", prompt: "" },
 ];
 
 export function ComicSettingsPanel() {
