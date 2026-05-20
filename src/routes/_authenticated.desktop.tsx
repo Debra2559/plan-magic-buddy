@@ -241,6 +241,15 @@ function DesktopApp() {
       </Link>
 
       {showOnboarding && <OnboardingHint onClose={() => setShowOnboarding(false)} />}
+
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="max-w-4xl w-[92vw] p-0 bg-[#1a1d24] border-white/10 text-white overflow-hidden">
+          <DialogTitle className="sr-only">设置</DialogTitle>
+          <div className="max-h-[82vh] overflow-auto">
+            <SettingsView />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
