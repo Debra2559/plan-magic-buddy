@@ -333,6 +333,17 @@ export const syncToFeishu = createServerFn({ method: 'POST' })
 
     const entries: SyncEntry[] = []
 
+    const verifyRemoteEvent = async (eventId: string) => {
+      const r = await feishu<{ code: number; msg: string; data?: { event?: { event_id?: string } } }>(
+        `/calendar/v4/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
+        { method: 'GET' }
+      )
+      return {
+        ok: r.code === 0 && !!r.data?.event,
+        error: r.code === 0 ? '飞书未返回事件详情' : `${r.code} ${r.msg}`,
+      }
+    }
+
     const createRemoteEvent = async (it: PushItem, body: ReturnType<typeof buildEventBody>) => {
       const r = await feishu<{
         code: number
@@ -344,6 +355,11 @@ export const syncToFeishu = createServerFn({ method: 'POST' })
       )
       const evId = r.data?.event?.event_id
       if (r.code === 0 && evId) {
+        const verified = await verifyRemoteEvent(evId)
+        if (!verified.ok) {
+          entries.push({ op: 'create', localId: it.id, title: it.title, status: 'error', error: `写入后校验失败：${verified.error}` })
+          return
+        }
         await supabaseAdmin.from('feishu_event_map').upsert(
           {
             local_id: it.id,
@@ -370,6 +386,11 @@ export const syncToFeishu = createServerFn({ method: 'POST' })
             { method: 'PATCH', body: JSON.stringify(body) }
           )
           if (r.code === 0) {
+            const verified = await verifyRemoteEvent(existing.feishu_event_id)
+            if (!verified.ok) {
+              entries.push({ op: 'update', localId: it.id, title: it.title, status: 'error', error: `写入后校验失败：${verified.error}` })
+              continue
+            }
             await supabaseAdmin
               .from('feishu_event_map')
               .update({ last_pushed_at: new Date().toISOString() })
