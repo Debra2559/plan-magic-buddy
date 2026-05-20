@@ -1,15 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { handleHackathonCardAction } from '@/lib/feishu.functions'
 
 /**
  * 飞书事件回调入口
  *
- * 飞书在配置「请求地址」时会先发一个 url_verification 包：
- *   { "challenge": "xxxx", "token": "...", "type": "url_verification" }
- * 服务端必须原样返回 { "challenge": "xxxx" } 才会校验通过。
- *
- * 之后的真实事件会带 encrypt 字段（如果在飞书后台配置了 Encrypt Key），
- * 这里先把 mock 的流程跑通 —— 校验地址 + 接收事件 + 200 ACK。
- * 真正的解密 & 反查 mapping 在接入 Lovable Cloud 数据表后补上。
+ * 处理：
+ *  1) url_verification（明文校验）
+ *  2) 卡片按钮回调 card.action.trigger（v2）/ action（v1 老结构）
+ *  3) 其它事件先 ACK，等接业务
  */
 
 const json = (data: unknown, status = 200) =>
@@ -37,15 +35,34 @@ export const Route = createFileRoute('/api/public/feishu/webhook')({
           return json({ challenge: body.challenge })
         }
 
-        // 2) URL 校验：加密模式 —— 飞书会把 challenge 放在 encrypt 内
-        //    在没拿到 Encrypt Key 之前，先把原文回吐，方便排查。
-        //    （生产环境会解密后再返回 challenge。）
-        if (body?.encrypt && !body?.type) {
-          console.log('[feishu/webhook] encrypted payload received, encrypt key not configured yet')
+        // 加密模式占位
+        if (body?.encrypt && !body?.type && !body?.header) {
+          console.log('[feishu/webhook] encrypted payload; encrypt key not configured')
           return json({ ok: true, note: 'encrypt key not configured' })
         }
 
-        // 3) 正常事件：先 ACK，业务逻辑后续接入 Lovable Cloud 后补
+        // 2) 卡片按钮回调 —— v2 事件结构
+        // header.event_type === 'card.action.trigger'
+        const eventType: string | undefined = body?.header?.event_type
+        const v2Action = body?.event?.action?.value
+        const v1Action = body?.action?.value // 旧版直接挂在顶层
+
+        const value = v2Action ?? v1Action
+        if (eventType === 'card.action.trigger' || value) {
+          try {
+            if (value?.kind === 'hackathon' && value?.id && (value?.action === 'accept' || value?.action === 'dismiss')) {
+              const result = await handleHackathonCardAction({ id: String(value.id), action: value.action })
+              // 飞书 v2 卡片回调要求返回 { toast } 来轻提示
+              return json({ toast: result.toast })
+            }
+          } catch (e: any) {
+            console.error('[feishu/webhook] card action error:', e?.message)
+            return json({ toast: { type: 'error', content: '处理失败，请稍后重试' } })
+          }
+          return json({ toast: { type: 'info', content: '未识别的操作' } })
+        }
+
+        // 3) 其它事件先 ACK
         console.log('[feishu/webhook] event:', JSON.stringify(body).slice(0, 500))
         return json({ ok: true })
       },

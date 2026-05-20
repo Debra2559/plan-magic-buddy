@@ -3,6 +3,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createLovableAiGatewayProvider } from "./ai-gateway";
+import { notifyHackathonDiscovered, notifyHackathonAccepted } from "./feishu.functions";
 
 // ------- Types -------
 export interface HackathonRow {
@@ -120,21 +121,39 @@ export const scanHackathonsNow = createServerFn({ method: "POST" }).handler(asyn
 
   let inserted = 0;
   for (const { source, item } of byUrl.values()) {
-    const { error } = await supabaseAdmin.from("hackathons").insert({
-      source,
-      url: item.url,
-      title: item.title,
-      deadline: item.deadline,
-      starts_at: item.starts_at,
-      location: item.location,
-      prize: item.prize,
-      summary: item.summary,
-      tags: item.tags ?? [],
-      status: "pending",
-      raw: item,
-    });
+    const { data: row, error } = await supabaseAdmin
+      .from("hackathons")
+      .insert({
+        source,
+        url: item.url,
+        title: item.title,
+        deadline: item.deadline,
+        starts_at: item.starts_at,
+        location: item.location,
+        prize: item.prize,
+        summary: item.summary,
+        tags: item.tags ?? [],
+        status: "pending",
+        raw: item,
+      })
+      .select("*")
+      .maybeSingle();
     // unique violation = already seen; ignore
-    if (!error) inserted += 1;
+    if (!error && row) {
+      inserted += 1;
+      // 发现新比赛 → 飞书推送（失败不影响主流程）
+      void notifyHackathonDiscovered({
+        id: (row as any).id,
+        title: (row as any).title,
+        source: (row as any).source,
+        summary: (row as any).summary,
+        deadline: (row as any).deadline,
+        starts_at: (row as any).starts_at,
+        location: (row as any).location,
+        prize: (row as any).prize,
+        url: (row as any).url,
+      }).catch(() => {});
+    }
   }
 
   return { ok: true as const, scanned: allFound.length, deduped: byUrl.size, inserted };
@@ -228,6 +247,19 @@ export const acceptHackathon = createServerFn({ method: "POST" })
       tag: "工作",
       note: row.url ?? undefined,
     });
+
+    // 推一张「已加入日程」的飞书卡片
+    void notifyHackathonAccepted({
+      id: (row as any).id,
+      title: (row as any).title,
+      source: (row as any).source,
+      summary: (row as any).summary,
+      deadline: (row as any).deadline,
+      starts_at: (row as any).starts_at,
+      location: (row as any).location,
+      prize: (row as any).prize,
+      url: (row as any).url,
+    }).catch(() => {});
 
     return { ok: true as const, items, hackathon: row as HackathonRow };
   });
