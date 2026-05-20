@@ -235,17 +235,18 @@ export const updateHackathonSettings = createServerFn({ method: "POST" })
 
 export const scanHackathonsNow = createServerFn({ method: "GET" }).handler(async () => {
   const settings = await loadSettings();
-  const sources = settings.sources.filter((s) => s.enabled);
+  const sources = settings.sources.filter((s) => s.enabled).slice(0, 5);
   const allFound: Array<{ source: string; item: z.infer<typeof ExtractedSchema>["hackathons"][number] }> = [];
   const debug: Array<{ source: string; query: string; snippets: number; extracted: number; error?: string }> = [];
 
   for (const src of sources) {
-    const snippets = await firecrawlSearch(src.query, 8);
+    const snippets = await firecrawlSearch(src.query, 6);
     if (snippets.length === 0) {
       debug.push({ source: src.name, query: src.query, snippets: 0, extracted: 0, error: "firecrawl 0 结果" });
       continue;
     }
-    const { data: ex, error } = await extractWithAI(src.name, snippets);
+    const fallback = { data: { hackathons: fallbackHackathons(src.name, snippets) }, error: "AI 提取超时，已用搜索结果兜底" };
+    const { data: ex, error } = await withTimeout(extractWithAI(src.name, snippets), 6_000, fallback);
     debug.push({ source: src.name, query: src.query, snippets: snippets.length, extracted: ex.hackathons.length, error });
     for (const h of ex.hackathons) {
       if (!h.url?.startsWith("http")) continue;
@@ -301,6 +302,10 @@ export const scanHackathonsNow = createServerFn({ method: "GET" }).handler(async
       }).catch(() => {});
     }
   }
+
+  await supabaseAdmin
+    .from("hackathon_settings" as never)
+    .upsert({ id: "singleton", last_scanned_at: new Date().toISOString(), last_scan_result: { scanned: allFound.length, deduped: byUrl.size, inserted, debug } } as never, { onConflict: "id" });
 
   return {
     ok: true as const,
