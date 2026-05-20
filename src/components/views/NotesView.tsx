@@ -550,27 +550,30 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
             ))}
           </div>
         </div>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
+        <div
+          ref={editorRef}
+          contentEditable
+          suppressContentEditableWarning
+          onInput={(e) => setContent((e.target as HTMLDivElement).innerHTML)}
           onBlur={save}
+          onPaste={handlePaste}
           onKeyDown={(e) => {
             if (shouldSubmitOnKey(e, enterToSubmit)) {
               e.preventDefault();
               save();
             }
           }}
-          rows={10}
-          placeholder="今天发生了什么？"
-          className="w-full bg-transparent outline-none text-sm leading-7 text-white/90 placeholder:text-white/30 resize-none"
+          data-placeholder="今天发生了什么？粘贴图片即可插入"
+          className="diary-editor min-h-[240px] w-full bg-transparent outline-none text-sm leading-7 text-white/90 whitespace-pre-wrap break-words"
         />
         <div className="flex items-center justify-between mt-2 gap-2">
-          <span className="text-[10px] text-white/40">失焦自动保存 · {content.length} 字</span>
+          <span className="text-[10px] text-white/40">失焦自动保存 · 支持粘贴图片 · {textLength} 字</span>
           <div className="flex items-center gap-3">
             <EnterHint example={"今天搞定了答辩 PPT ↵（Shift+Enter）\n明天要去和导师对齐节奏"} />
             <button onClick={save} className="px-4 py-1.5 rounded-full bg-amber-glow text-primary-foreground text-xs font-medium">保存</button>
           </div>
         </div>
+
       </div>
 
       <p className="text-[10px] tracking-widest text-white/40 mb-2">过往</p>
