@@ -347,9 +347,9 @@ export function FreeformCanvas({ kind, title }: Props) {
         <ToolBtn active={tool === "note"} onClick={() => setTool("note")} icon={<StickyNote className="w-3.5 h-3.5" />} label="便签" />
         <ToolBtn active={tool === "pen"} onClick={() => setTool("pen")} icon={<Pen className="w-3.5 h-3.5" />} label="画笔" />
         <ToolBtn active={tool === "arrow"} onClick={() => setTool("arrow")} icon={<ArrowRight className="w-3.5 h-3.5" />} label="箭头" />
-        <ToolBtn active={tool === "image"} onClick={() => fileRef.current?.click()} icon={<ImageIcon className="w-3.5 h-3.5" />} label="图片" />
-        <input ref={fileRef} type="file" accept="image/*" className="hidden"
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImage(f); e.target.value = ""; }} />
+        <ToolBtn active={tool === "image"} onClick={() => fileRef.current?.click()} icon={<ImageIcon className="w-3.5 h-3.5" />} label="文件" />
+        <input ref={fileRef} type="file" multiple className="hidden"
+          onChange={(e) => { const fs = Array.from(e.target.files ?? []); fs.forEach((f) => void handleAnyFile(f)); e.target.value = ""; }} />
 
         <div className="w-px h-5 bg-white/10 mx-1" />
         {tool === "note" && (
@@ -385,12 +385,15 @@ export function FreeformCanvas({ kind, title }: Props) {
       {/* Canvas */}
       <div
         ref={wrapRef}
-        className="relative flex-1 overflow-hidden bg-white"
+        className={`relative flex-1 overflow-hidden bg-white ${dragOver ? "ring-2 ring-amber-glow/70 ring-inset" : ""}`}
         style={{ cursor, touchAction: "none" }}
         onWheel={onWheel}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
         onClick={(e) => { if ((e.target as HTMLElement).dataset.canvasBg) setSelected(null); }}
       >
         {/* dotted bg */}
