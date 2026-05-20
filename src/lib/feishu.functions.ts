@@ -1068,20 +1068,33 @@ export async function handleRecapSubmit(payload: {
           : (calendarPushed ? `已记录并在日历上打勾 ✅` : `已记录 ${date} 的小结 ✅`),
       },
       // 返回一张「已完成」的回执卡片替换原卡，展示最新内容
-      card: recapDoneCard(date, { summary, diary, calendarPushed, isUpdate, updatedAt: nowIso }),
+      card: recapDoneCard(date, { summary, diary, mood, calendarPushed, isUpdate, updatedAt: nowIso }),
     }
   } catch (e: any) {
     return { toast: { type: 'error', content: e?.message ?? '保存失败' } }
   }
 }
 
+function moodToLabel(m: string): string {
+  switch (m) {
+    case 'great': return '😄 很棒'
+    case 'good': return '🙂 不错'
+    case 'ok': return '😐 一般'
+    case 'down': return '🙁 低落'
+    case 'tired': return '😴 疲惫'
+    default: return ''
+  }
+}
+
 function recapDoneCard(
   date: string,
-  opts: { summary: string; diary: string; calendarPushed: boolean; isUpdate?: boolean; updatedAt?: string },
+  opts: { summary: string; diary: string; mood?: string; calendarPushed: boolean; isUpdate?: boolean; updatedAt?: string },
 ) {
   const parts: string[] = []
   if (opts.summary) parts.push(`**今日小结**\n${opts.summary}`)
   if (opts.diary) parts.push(`**日记 / 心情**\n${opts.diary}`)
+  const moodLabel = moodToLabel(opts.mood ?? '')
+  if (moodLabel) parts.push(`**心情** ${moodLabel}`)
   const tsLabel = opts.updatedAt ? formatTsInTz(opts.updatedAt, TZ) : ''
   const noteParts: string[] = []
   noteParts.push(opts.isUpdate ? '内容已更新' : '内容已记录')
