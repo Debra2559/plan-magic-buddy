@@ -262,10 +262,22 @@ export const scanHackathonsNow = createServerFn({ method: "GET" }).handler(async
       debug.push({ source: src.name, query: src.query, snippets: 0, extracted: 0, error: "firecrawl 0 结果" });
       continue;
     }
-    const fallbackItems = fallbackHackathons(src.name, snippets);
-    const { data: ex, error } = fallbackItems.length > 0
-      ? { data: { hackathons: fallbackItems }, error: undefined }
-      : await withTimeout(extractWithAI(src.name, snippets), 3_000, { data: { hackathons: [] }, error: "AI 提取超时" });
+    // 总是优先用 AI 提取(能从 markdown 里抠出真实的报名截止/比赛开始/比赛结束时间)
+    // AI 失败/超时, 才退回只有标题/链接的关键词兜底
+    const aiResult = await withTimeout(
+      extractWithAI(src.name, snippets),
+      20_000,
+      { data: { hackathons: [] }, error: "AI 提取超时" },
+    );
+    let ex = aiResult.data;
+    let error = aiResult.error;
+    if (ex.hackathons.length === 0) {
+      const fb = fallbackHackathons(src.name, snippets);
+      if (fb.length > 0) {
+        ex = { hackathons: fb };
+        error = error ?? "AI 0 条, 用关键词兜底";
+      }
+    }
     debug.push({ source: src.name, query: src.query, snippets: snippets.length, extracted: ex.hackathons.length, error });
     for (const h of ex.hackathons) {
       if (!h.url?.startsWith("http")) continue;
