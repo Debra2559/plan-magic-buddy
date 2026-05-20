@@ -136,6 +136,14 @@ export function FloatingBall() {
 
   return (
     <>
+      {/* 柔光晕底 */}
+      <div
+        aria-hidden
+        style={{ left: pos.x - 10, top: pos.y - 10 }}
+        className={`fixed z-[59] w-[68px] h-[68px] rounded-full pointer-events-none
+          bg-gradient-to-br from-amber-glow/40 via-rose-300/20 to-moss/30 blur-2xl
+          transition-opacity duration-500 ${dragging ? "opacity-90" : "opacity-60"}`}
+      />
       <div
         role="button"
         aria-label="悬浮球"
@@ -143,13 +151,29 @@ export function FloatingBall() {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         style={{ left: pos.x, top: pos.y }}
-        className={`fixed z-[60] w-12 h-12 rounded-full select-none touch-none
+        className={`group fixed z-[60] w-12 h-12 rounded-full select-none touch-none
           flex items-center justify-center cursor-grab active:cursor-grabbing
-          bg-gradient-to-br from-amber-glow to-moss text-primary-foreground
-          shadow-[0_8px_24px_-6px_rgba(0,0,0,0.35)] ring-1 ring-foreground/10
-          hover:scale-105 transition ${dragging ? "scale-95" : ""}`}
+          bg-gradient-to-br from-amber-glow via-orange-400 to-moss
+          text-primary-foreground overflow-hidden
+          shadow-[0_10px_30px_-8px_rgba(180,90,30,0.55),inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-6px_12px_rgba(0,0,0,0.25)]
+          ring-1 ring-white/20
+          hover:scale-110 active:scale-95 transition-transform duration-200 ease-out
+          ${dragging ? "scale-95" : ""}`}
       >
-        <Sparkles className="w-5 h-5 drop-shadow" />
+        {/* 顶部高光 */}
+        <span aria-hidden className="absolute inset-x-2 top-1 h-3 rounded-full bg-white/35 blur-[3px]" />
+        {/* 旋转光环 */}
+        <span
+          aria-hidden
+          className="absolute inset-0 rounded-full opacity-60 group-hover:opacity-100 transition-opacity"
+          style={{
+            background: "conic-gradient(from 0deg, transparent 0%, rgba(255,255,255,0.45) 25%, transparent 50%, rgba(255,200,120,0.4) 75%, transparent 100%)",
+            maskImage: "radial-gradient(circle, transparent 55%, black 58%, black 100%)",
+            WebkitMaskImage: "radial-gradient(circle, transparent 55%, black 58%, black 100%)",
+            animation: "spin 6s linear infinite",
+          }}
+        />
+        <Sparkles className="relative w-5 h-5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" />
       </div>
 
       {open && (
