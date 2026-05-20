@@ -110,6 +110,11 @@ export function FeishuSyncPanel() {
   const [calendarsError, setCalendarsError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [pulling, setPulling] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<string | null>(null);
+  const [lastError, setLastError] = useState<{ scope: string; msg: string; at: string } | null>(null);
+  const [lastSummary, setLastSummary] = useState<{ ok: number; fail: number; scope: string; at: string } | null>(null);
+  const [recapRefreshing, setRecapRefreshing] = useState(false);
+  const [recapRefreshResult, setRecapRefreshResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
   const runTest = useServerFn(testFeishuConnection);
   const runList = useServerFn(listFeishuCalendars);
