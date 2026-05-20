@@ -235,12 +235,8 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
 
   const discardDraft = () => setDraft(null);
 
-  const removeConfirmed = (id: string) => {
-    removeItem(id);
-  };
-
-  const grouped = groupByDate(confirmed.map((c) => ({ ...c, _key: c.id })));
   const draftGrouped = draft ? groupByDate(draft.items.map((it, i) => ({ ...it, _key: `d-${i}` }))) : null;
+
 
 
 
