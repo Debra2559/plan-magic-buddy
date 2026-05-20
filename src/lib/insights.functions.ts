@@ -145,13 +145,15 @@ async function generateForUser(userId: string, slot: string) {
     .select("*")
     .eq("user_id", userId)
     .maybeSingle();
-  const settings = settingsRes.data ?? { enabled: true, scope: ["schedule", "notes", "habits", "insights"], lookback_days: 2, push_feishu: false, slots: ["morning", "noon", "evening"] };
+  const settings = settingsRes.data ?? { enabled: true, scope: ["schedule", "notes", "habits", "insights"], lookback_days: 2, push_feishu: false, slots: ["morning", "noon", "evening"], timezone: DEFAULT_TZ };
   if (!settings.enabled) return { ok: false as const, reason: "disabled" };
 
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) return { ok: false as const, reason: "no_api_key" };
 
-  const ctx = await gatherUserContext(userId, settings.lookback_days ?? 2);
+  const tz = (settings as any).timezone || DEFAULT_TZ;
+  const ctx = await gatherUserContext(userId, settings.lookback_days ?? 2, tz);
+
 
   const slotName = slot === "morning" ? "早晨" : slot === "noon" ? "午间" : "傍晚";
   const persona = ctx.profile?.persona_prompt ?? "你是用户的私人 AI 助理，亲切自然。";
