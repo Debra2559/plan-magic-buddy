@@ -506,18 +506,14 @@ export function AiPersonaPanel() {
 
 
 
-        <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">禁忌话题（逗号分隔，AI 永远不会碰）</label>
-          <input
-            value={local.taboos?.join("，") ?? ""}
-            onChange={(e) =>
-              patch({ taboos: e.target.value.split(/[,，]/).map((s) => s.trim()).filter(Boolean) })
-            }
-            onBlur={() => commit({ taboos: local.taboos })}
-            className="w-full px-3 py-2 rounded-lg bg-foreground/5 border border-border text-sm text-foreground outline-none focus:border-amber-glow/50"
-            placeholder="例：政治, 容貌焦虑"
+        <div>
+          <TaboosEditor
+            value={local.taboos ?? []}
+            onChange={(next) => patch({ taboos: next })}
+            onCommit={(next) => commit({ taboos: next })}
           />
         </div>
+
 
         <div className="pt-2 border-t border-border space-y-2">
           <button
