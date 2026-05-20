@@ -380,34 +380,117 @@ export function AiPersonaPanel() {
         </div>
 
 
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-xs text-muted-foreground">人设描述（所有 AI 输出都会按这个口吻）</label>
-            <span className="text-[10px] text-muted-foreground/70">点击模版一键套用</span>
+            <label className="text-xs text-muted-foreground">人设模板库 · 一键切换，下方可继续微调</label>
+            <span className="text-[10px] text-muted-foreground/70">{PERSONA_TEMPLATES.length} 款风格</span>
           </div>
+
+          {/* 分类筛选 */}
           <div className="flex flex-wrap gap-1.5">
-            {PERSONA_TEMPLATES.map((t) => (
-              <button
-                key={t.name}
-                type="button"
-                onClick={() => {
-                  const next = {
-                    persona_prompt: t.prompt,
-                    humor_level: t.humor_level,
-                    sass_level: t.sass_level,
-                    professional_level: t.professional_level,
-                    verbosity_level: t.verbosity_level,
-                  };
-                  patch(next);
-                  commit(next);
-                  toast.success(`已套用「${t.name}」`);
-                }}
-                title={t.desc}
-                className="px-2.5 py-1 rounded-full text-xs bg-foreground/5 border border-border text-foreground/85 hover:border-amber-glow/50 hover:text-amber-glow transition-colors"
-              >
-                {t.emoji} {t.name}
-              </button>
-            ))}
+            {CATEGORIES.map((c) => {
+              const active = templateCategory === c;
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setTemplateCategory(c)}
+                  className={`px-2.5 py-1 rounded-full text-[11px] border transition ${
+                    active
+                      ? "bg-amber-glow/20 border-amber-glow/60 text-amber-glow"
+                      : "bg-foreground/5 border-border text-foreground/70 hover:border-amber-glow/30"
+                  }`}
+                >
+                  {c}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 模板卡片 */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {PERSONA_TEMPLATES.filter((t) => templateCategory === "全部" || t.category === templateCategory).map((t) => {
+              const applied = local.persona_prompt?.trim() === t.prompt.trim();
+              const bars: Array<{ k: string; v: number }> = [
+                { k: "幽默", v: t.humor_level },
+                { k: "贱度", v: t.sass_level },
+                { k: "专业", v: t.professional_level },
+                { k: "啰嗦", v: t.verbosity_level },
+              ];
+              return (
+                <div
+                  key={t.name}
+                  className={`group relative rounded-xl p-3 border transition flex flex-col gap-2 ${
+                    applied
+                      ? "border-amber-glow/60 bg-amber-glow/10 shadow-[0_0_0_1px_rgba(245,184,67,0.25)]"
+                      : "border-border bg-background/40 hover:border-amber-glow/40 hover:bg-background/60"
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <span className="text-xl leading-none">{t.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-medium text-foreground">{t.name}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-foreground/10 text-muted-foreground">
+                          {t.category}
+                        </span>
+                        {applied && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-glow/25 text-amber-glow border border-amber-glow/40">
+                            当前
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{t.desc}</div>
+                    </div>
+                  </div>
+
+                  {/* 风格指标条 */}
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {bars.map((b) => (
+                      <div key={b.k} className="flex flex-col gap-0.5">
+                        <div className="h-1 rounded-full bg-foreground/10 overflow-hidden">
+                          <div
+                            className="h-full bg-amber-glow/70"
+                            style={{ width: `${(b.v / 5) * 100}%` }}
+                          />
+                        </div>
+                        <div className="text-[9px] text-muted-foreground/80 text-center tabular-nums">
+                          {b.k} {b.v}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = {
+                        persona_prompt: t.prompt,
+                        humor_level: t.humor_level,
+                        sass_level: t.sass_level,
+                        professional_level: t.professional_level,
+                        verbosity_level: t.verbosity_level,
+                      };
+                      patch(next);
+                      commit(next);
+                      toast.success(`已套用「${t.name}」`, { description: "下方可继续微调" });
+                    }}
+                    disabled={applied}
+                    className={`mt-0.5 text-[11px] px-2.5 py-1 rounded-md border transition ${
+                      applied
+                        ? "bg-foreground/5 border-border text-muted-foreground cursor-default"
+                        : "bg-amber-glow/15 border-amber-glow/40 text-amber-glow hover:bg-amber-glow/25"
+                    }`}
+                  >
+                    {applied ? "已套用" : "套用此模板"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="text-[10px] text-muted-foreground/70 pt-1">
+            ↓ 套用后可在下方文本框 / 滑杆里继续微调，所有改动会自动保存。
           </div>
           <textarea
             value={local.persona_prompt}
@@ -417,6 +500,7 @@ export function AiPersonaPanel() {
             className="w-full px-3 py-2 rounded-lg bg-foreground/5 border border-border text-sm text-foreground outline-none focus:border-amber-glow/50 resize-none leading-relaxed"
           />
         </div>
+
 
 
 
