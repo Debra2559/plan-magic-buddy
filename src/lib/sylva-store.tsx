@@ -1,6 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { PlanItem } from "./plan.functions";
 import { getRecapDoneDates, getDailyRecap, unmarkRecapDone as unmarkRecapDoneFn } from "./feishu.functions";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  remote, fetchAllRemote,
+  itemFromRow, noteFromRow, habitFromRow, diaryFromRow, comicFromRow,
+} from "./cloud-sync";
+
 
 export interface DoneItem extends PlanItem {
   id: string;
@@ -247,10 +253,15 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
   useEffect(() => saveLS("sylva.comics", comics), [comics]);
   useEffect(() => saveLS("sylva.comicHistory", comicHistory), [comicHistory]);
 
-  const setComic = (c: DailyComic) =>
+  const setComic = (c: DailyComic) => {
     setComics((prev) => [c, ...prev.filter((p) => p.date !== c.date)]);
-  const removeComic = (date: string) =>
+    void remote.upsertComic(c);
+  };
+  const removeComic = (date: string) => {
     setComics((prev) => prev.filter((p) => p.date !== date));
+    void remote.removeComic(date);
+  };
+
 
   const addComicHistory: SylvaContextValue["addComicHistory"] = (item) =>
     setComicHistory((prev) =>
@@ -262,43 +273,70 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
   const addItems = (newOnes: PlanItem[]): string[] => {
     const withIds = newOnes.map((i) => ({ ...i, id: (i as any).id ?? nextId() }));
     setItems((prev) => [...prev, ...withIds]);
+    void remote.upsertItems(withIds as DoneItem[]);
     return withIds.map((i) => i.id);
   };
 
   const replaceItems = (newOnes: PlanItem[]): string[] => {
     const withIds = newOnes.map((i) => ({ ...i, id: nextId() }));
     setItems(withIds);
+    void remote.clearItems().then(() => remote.upsertItems(withIds as DoneItem[]));
     return withIds.map((i) => i.id);
   };
 
-  const removeItem = (id: string) =>
+  const removeItem = (id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
+    void remote.softDeleteItem(id);
+  };
 
-  const updateItem: SylvaContextValue["updateItem"] = (id, patch) =>
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
+  const updateItem: SylvaContextValue["updateItem"] = (id, patch) => {
+    setItems((prev) => {
+      const next = prev.map((i) => (i.id === id ? { ...i, ...patch } : i));
+      const updated = next.find((i) => i.id === id);
+      if (updated) void remote.upsertItem(updated);
+      return next;
+    });
+  };
 
-  const toggleDone = (id: string) =>
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, done: !i.done } : i)));
+  const toggleDone = (id: string) => {
+    setItems((prev) => {
+      const next = prev.map((i) => (i.id === id ? { ...i, done: !i.done } : i));
+      const updated = next.find((i) => i.id === id);
+      if (updated) void remote.upsertItem(updated);
+      return next;
+    });
+  };
 
-  const clearItems = () => setItems([]);
+  const clearItems = () => {
+    setItems([]);
+    void remote.clearItems();
+  };
 
-  const addNote: SylvaContextValue["addNote"] = (text, opts) =>
-    setNotes((prev) => [
-      { id: nextId(), text, createdAt: new Date().toISOString(), mood: opts?.mood, tags: opts?.tags, images: opts?.images },
-      ...prev,
-    ]);
+  const addNote: SylvaContextValue["addNote"] = (text, opts) => {
+    const n: Note = { id: nextId(), text, createdAt: new Date().toISOString(), mood: opts?.mood, tags: opts?.tags, images: opts?.images };
+    setNotes((prev) => [n, ...prev]);
+    void remote.upsertNote(n);
+  };
 
-  const removeNote = (id: string) =>
+  const removeNote = (id: string) => {
     setNotes((prev) => prev.filter((n) => n.id !== id));
+    void remote.softDeleteNote(id);
+  };
 
-  const updateNote: SylvaContextValue["updateNote"] = (id, patch) =>
-    setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, ...patch } : n)));
+  const updateNote: SylvaContextValue["updateNote"] = (id, patch) => {
+    setNotes((prev) => {
+      const next = prev.map((n) => (n.id === id ? { ...n, ...patch } : n));
+      const updated = next.find((n) => n.id === id);
+      if (updated) void remote.upsertNote(updated);
+      return next;
+    });
+  };
 
   const toggleHabit = (id: string) => toggleHabitOn(id, todayLocal());
 
   const toggleHabitOn = (id: string, date: string) =>
-    setHabits((prev) =>
-      prev.map((h) => {
+    setHabits((prev) => {
+      const next = prev.map((h) => {
         if (h.id !== id) return h;
         const hist = h.history ?? [];
         const has = hist.includes(date);
@@ -306,34 +344,49 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
           ? hist.filter((d) => d !== date)
           : [date, ...hist].sort((a, b) => b.localeCompare(a));
         return { ...h, history: nextHist };
-      })
-    );
+      });
+      const updated = next.find((h) => h.id === id);
+      if (updated) void remote.upsertHabit(updated);
+      return next;
+    });
 
-  const addHabit: SylvaContextValue["addHabit"] = ({ name, emoji }) =>
-    setHabits((prev) => [
-      ...prev,
-      { id: `h-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, name: name.trim() || "新习惯", emoji: emoji?.trim() || "✨", history: [] },
-    ]);
+  const addHabit: SylvaContextValue["addHabit"] = ({ name, emoji }) => {
+    const h: Habit = { id: `h-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, name: name.trim() || "新习惯", emoji: emoji?.trim() || "✨", history: [] };
+    setHabits((prev) => [...prev, h]);
+    void remote.upsertHabit(h);
+  };
 
   const updateHabit: SylvaContextValue["updateHabit"] = (id, patch) =>
-    setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, ...patch } : h)));
+    setHabits((prev) => {
+      const next = prev.map((h) => (h.id === id ? { ...h, ...patch } : h));
+      const updated = next.find((h) => h.id === id);
+      if (updated) void remote.upsertHabit(updated);
+      return next;
+    });
 
-  const removeHabit: SylvaContextValue["removeHabit"] = (id) =>
+  const removeHabit: SylvaContextValue["removeHabit"] = (id) => {
     setHabits((prev) => prev.filter((h) => h.id !== id));
+    void remote.softDeleteHabit(id);
+  };
 
 
   const upsertDiary: SylvaContextValue["upsertDiary"] = (date, patch) =>
     setDiary((prev) => {
       const existing = prev.find((d) => d.date === date);
       const updatedAt = new Date().toISOString();
+      let next: DiaryEntry[];
+      let updatedRow: DiaryEntry;
       if (existing) {
-        return prev.map((d) => (d.date === date ? { ...d, ...patch, updatedAt } : d));
+        updatedRow = { ...existing, ...patch, updatedAt };
+        next = prev.map((d) => (d.date === date ? updatedRow : d));
+      } else {
+        updatedRow = { date, content: patch.content ?? "", mood: patch.mood, updatedAt };
+        next = [updatedRow, ...prev];
       }
-      return [
-        { date, content: patch.content ?? "", mood: patch.mood, updatedAt },
-        ...prev,
-      ];
+      void remote.upsertDiary(updatedRow);
+      return next;
     });
+
 
   // 远端：飞书卡片已提交完成的日期集合（轮询同步）
   const [recapDoneDates, setRecapDoneDates] = useState<Set<string>>(() => new Set());
@@ -459,6 +512,126 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, []);
 
+
+
+  // ---- 跨设备实时同步：首次拉远端 + Realtime 推送合并 ----
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const r = await fetchAllRemote();
+        if (cancelled) return;
+        if (r.hasAny) {
+          // 远端有数据 → 用远端覆盖本地
+          if (r.items.length) setItems(r.items);
+          if (r.notes.length) setNotes(r.notes);
+          if (r.habits.length) setHabits(r.habits);
+          if (r.diary.length) setDiary(r.diary);
+          if (r.comics.length) setComics(r.comics);
+        } else {
+          // 远端为空 → 把本地 seed/历史一次性推上去
+          void remote.upsertItems(items);
+          void remote.upsertHabits(habits);
+          for (const n of notes) void remote.upsertNote(n);
+          for (const d of diary) void remote.upsertDiary(d);
+          for (const c of comics) void remote.upsertComic(c);
+        }
+      } catch (e) {
+        console.warn("[cloud-sync] initial fetch failed", e);
+      }
+    })();
+
+    const ch = supabase
+      .channel("sylva-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "schedule_items" }, (p) => {
+        const row: any = p.new ?? p.old;
+        if (!row?.id) return;
+        if (p.eventType === "DELETE" || row.deleted_at) {
+          setItems((prev) => prev.filter((i) => i.id !== row.id));
+        } else {
+          const mapped = itemFromRow(row);
+          setItems((prev) => {
+            const idx = prev.findIndex((i) => i.id === mapped.id);
+            if (idx < 0) return [...prev, mapped];
+            const next = prev.slice();
+            next[idx] = mapped;
+            return next;
+          });
+        }
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "notes" }, (p) => {
+        const row: any = p.new ?? p.old;
+        if (!row?.id) return;
+        if (p.eventType === "DELETE" || row.deleted_at) {
+          setNotes((prev) => prev.filter((n) => n.id !== row.id));
+        } else {
+          const mapped = noteFromRow(row);
+          setNotes((prev) => {
+            const idx = prev.findIndex((n) => n.id === mapped.id);
+            if (idx < 0) return [mapped, ...prev];
+            const next = prev.slice();
+            next[idx] = mapped;
+            return next;
+          });
+        }
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "habits" }, (p) => {
+        const row: any = p.new ?? p.old;
+        if (!row?.id) return;
+        if (p.eventType === "DELETE" || row.deleted_at) {
+          setHabits((prev) => prev.filter((h) => h.id !== row.id));
+        } else {
+          const mapped = habitFromRow(row);
+          setHabits((prev) => {
+            const idx = prev.findIndex((h) => h.id === mapped.id);
+            if (idx < 0) return [...prev, mapped];
+            const next = prev.slice();
+            next[idx] = mapped;
+            return next;
+          });
+        }
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "diary_entries" }, (p) => {
+        const row: any = p.new ?? p.old;
+        if (!row?.date) return;
+        if (p.eventType === "DELETE") {
+          setDiary((prev) => prev.filter((d) => d.date !== row.date));
+        } else {
+          const mapped = diaryFromRow(row);
+          setDiary((prev) => {
+            const idx = prev.findIndex((d) => d.date === mapped.date);
+            if (idx < 0) return [mapped, ...prev];
+            const next = prev.slice();
+            next[idx] = mapped;
+            return next;
+          });
+        }
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "comics" }, (p) => {
+        const row: any = p.new ?? p.old;
+        if (!row?.date) return;
+        if (p.eventType === "DELETE") {
+          setComics((prev) => prev.filter((c) => c.date !== row.date));
+        } else {
+          const mapped = comicFromRow(row);
+          setComics((prev) => {
+            const idx = prev.findIndex((c) => c.date === mapped.date);
+            if (idx < 0) return [mapped, ...prev];
+            const next = prev.slice();
+            next[idx] = mapped;
+            return next;
+          });
+        }
+      })
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(ch);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   useEffect(() => {
