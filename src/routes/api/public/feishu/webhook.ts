@@ -205,10 +205,14 @@ export const Route = createFileRoute('/api/public/feishu/webhook')({
           return json({ toast: { type: 'info', content: '未识别的操作' } })
         }
 
-        // 2.5) 收到用户消息：自动捕获 sender.open_id 保存为通知接收人
+        // 2.5) 收到用户消息：保存 open_id + 调用 Lovable AI 自动回复
         if (eventType === 'im.message.receive_v1') {
+          const message = body?.event?.message
           const senderOpenId: string | undefined =
             body?.event?.sender?.sender_id?.open_id ?? body?.event?.sender?.open_id
+          const senderType: string | undefined = body?.event?.sender?.sender_type
+
+          // 捕获 open_id 作为通知接收人
           if (senderOpenId) {
             try {
               const { data: row } = await supabaseAdmin
@@ -229,19 +233,95 @@ export const Route = createFileRoute('/api/public/feishu/webhook')({
                 step: 'capture_open_id',
                 level: 'info',
                 event_type: eventType,
-                status: 200,
-                duration_ms: Date.now() - startedAt,
                 message: `saved sender open_id ${senderOpenId.slice(0, 8)}…`,
-                payload: { senderOpenId, receiveIdType: 'open_id' },
               })
             } catch (e: any) {
               log({ step: 'capture_open_id', level: 'error', event_type: eventType, error: e?.message, message: 'save open_id failed' })
             }
+          }
+
+          // 只处理来自普通用户的文本消息
+          if (senderType && senderType !== 'user') {
+            log({ step: 'ai_reply', level: 'info', event_type: eventType, message: `skip non-user sender: ${senderType}` })
+            return json({ ok: true })
+          }
+          if (!message?.chat_id) {
+            log({ step: 'ai_reply', level: 'warn', event_type: eventType, message: 'no chat_id in message' })
+            return json({ ok: true })
+          }
+          if (message.message_type !== 'text') {
+            await sendFeishuText({
+              receiveId: message.chat_id,
+              receiveIdType: 'chat_id',
+              text: '我暂时只能理解文字消息哦，发段文字给我吧 ✨',
+            }).catch(() => {})
+            return json({ ok: true })
+          }
+
+          // 事件去重（飞书会重试）
+          const eventId: string | undefined = body?.header?.event_id ?? message.message_id
+          if (eventId) {
+            const { error: dupErr } = await supabaseAdmin
+              .from('feishu_webhook_dedup')
+              .insert({ uuid: eventId } as any)
+            if (dupErr) {
+              log({ step: 'dedup', level: 'info', event_type: eventType, message: `duplicate event ${eventId.slice(0, 12)}…` })
+              return json({ ok: true })
+            }
+          }
+
+          // 解析文本内容
+          let userText = ''
+          try {
+            const content = typeof message.content === 'string' ? JSON.parse(message.content) : message.content
+            userText = String(content?.text ?? '').trim()
+            // 群聊中去掉 @bot 提及标记
+            userText = userText.replace(/@_user_\d+/g, '').trim()
+          } catch (e: any) {
+            log({ step: 'ai_reply', level: 'warn', event_type: eventType, error: e?.message, message: 'parse content failed' })
+          }
+          if (!userText) {
+            return json({ ok: true })
+          }
+
+          // 调用 Lovable AI 并回复
+          const aiStart = Date.now()
+          const result = await aiReplyToFeishuChat({
+            chatId: message.chat_id,
+            chatType: message.chat_type,
+            text: userText,
+            senderOpenId,
+          })
+          if (result.ok) {
+            log({
+              step: 'ai_reply',
+              level: 'info',
+              event_type: eventType,
+              status: 200,
+              duration_ms: Date.now() - aiStart,
+              message: `replied (${result.reply?.length ?? 0} chars)`,
+              payload: { userText: userText.slice(0, 200), reply: result.reply?.slice(0, 200) },
+            })
           } else {
-            log({ step: 'capture_open_id', level: 'warn', event_type: eventType, message: 'no sender.open_id in payload', payload: clip(body?.event?.sender) })
+            log({
+              step: 'ai_reply',
+              level: 'error',
+              event_type: eventType,
+              duration_ms: Date.now() - aiStart,
+              error: result.error,
+              message: 'ai reply failed',
+              payload: { userText: userText.slice(0, 200) },
+            })
+            // 兜底告知用户
+            await sendFeishuText({
+              receiveId: message.chat_id,
+              receiveIdType: 'chat_id',
+              text: '抱歉，我刚刚走神了，稍后再试一次吧。',
+            }).catch(() => {})
           }
           return json({ ok: true })
         }
+
 
         // 3) 其它事件先 ACK
         log({
