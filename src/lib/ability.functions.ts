@@ -156,6 +156,7 @@ const PlanSchema = z.object({
   focus_areas: z.array(z.string()).min(1).max(4),
   items: z.array(PlanItemSchema).min(2).max(6),
 });
+type AbilityPlanDraft = z.infer<typeof PlanSchema>;
 
 // ---------- Helpers ----------
 function todayStr(d = new Date()): string {
@@ -191,6 +192,64 @@ async function gatherActivity(userId: string, lookbackDays = 14) {
     recent_notes: (notes.data ?? []).map((n: any) => ({ text: (n.text ?? "").slice(0, 120), mood: n.mood, tags: n.tags })),
     recent_diaries: diaries.data ?? [],
     habits: habitStats,
+  };
+}
+
+function cleanFocusArea(text: unknown) {
+  return String(text ?? "")
+    .replace(/^可以继续培养/, "")
+    .replace(/^在/, "")
+    .replace(/上表现突出$/, "")
+    .trim();
+}
+
+function buildFallbackAbilityPlan(profile: any, activity: any): AbilityPlanDraft {
+  const abilities = (profile?.abilities ?? {}) as Record<string, number>;
+  const lowScoreAreas = Object.entries(abilities)
+    .sort((a, b) => a[1] - b[1])
+    .map(([key]) => DIM_LABELS[key] ?? key);
+  const profileGrowthAreas = Array.isArray(profile?.growth_areas)
+    ? profile.growth_areas.map(cleanFocusArea).filter(Boolean)
+    : [];
+  const focus_areas = Array.from(new Set([...profileGrowthAreas, ...lowScoreAreas])).slice(0, 3);
+  const areas = focus_areas.length > 0 ? focus_areas : ["计划力", "专注力"];
+  const completion = typeof activity?.completion_rate === "number" ? activity.completion_rate : null;
+  const tagline = completion === null
+    ? "先建立轻量节奏，再逐步提高稳定性。"
+    : completion >= 70
+      ? "保持当前完成节奏，把优势沉淀成可复用习惯。"
+      : "用更小的动作降低启动成本，先让计划跑起来。";
+
+  const actionMap: Record<string, string[]> = {
+    计划力: ["每天开始前写下 3 件最重要的事", "把超过 30 分钟的任务拆成下一步动作", "每晚用 5 分钟复盘明天第一件事"],
+    专注力: ["每天安排 1 段 25 分钟免打扰专注块", "开始前关闭无关通知和页面", "把临时想法先记到收集箱，结束后再处理"],
+    健康力: ["每天固定一个 10 分钟活动窗口", "睡前 30 分钟减少屏幕和刺激信息", "久坐 60 分钟后起身走动 3 分钟"],
+    创造力: ["每周记录 3 个新点子或新工具", "把一个旧任务尝试换一种做法", "每周做一次 20 分钟跨领域素材收集"],
+    社交力: ["每周主动联系 1 位朋友或同事", "重要沟通前先写下想表达的 3 个点", "对收到的帮助及时反馈和感谢"],
+    反思力: ["每天记录一个有效动作和一个卡点", "每周复盘一次高耗能事件的原因", "把失败经验改写成下一次的具体规则"],
+  };
+
+  const items = areas.map((area) => ({
+    area,
+    goal: `在未来 7 天稳定提升${area}，先形成可持续的小循环。`,
+    actions: actionMap[area] ?? ["每天选择一个最小动作完成", "完成后记录一句反馈", "周末根据实际情况调整难度"],
+    cadence: area === "健康力" ? "每天10分钟" : "每周3-5次，每次15-25分钟",
+  }));
+
+  while (items.length < 2) {
+    items.push({
+      area: "稳定执行",
+      goal: "降低计划启动成本，让成长计划持续发生。",
+      actions: ["每天只承诺一个最小可完成动作", "完成后立即打勾或记录一句反馈", "连续两天中断时主动降级任务难度"],
+      cadence: "每天5分钟",
+    });
+  }
+
+  return {
+    title: `${todayStr()} 成长计划`,
+    tagline,
+    focus_areas: areas.slice(0, 4),
+    items: items.slice(0, 6),
   };
 }
 
@@ -280,31 +339,37 @@ export const generateMyAbilityPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { userId } = context as any;
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("AI 网关未配置");
-
     const { data: profile } = await supabaseAdmin.from("user_ability_profiles").select("*").eq("user_id", userId).maybeSingle();
     if (!profile) throw new Error("请先完成能力测评");
 
     const activity = await gatherActivity(userId, 14);
+    let planDraft = buildFallbackAbilityPlan(profile, activity);
+    const apiKey = process.env.LOVABLE_API_KEY;
 
-    const gateway = createLovableAiGatewayProvider(apiKey);
-    const { object } = await generateObject({
-      model: gateway("google/gemini-2.5-flash"),
-      schema: PlanSchema,
-      system: `你是一位个人成长教练。基于用户的能力画像与最近 14 天的真实行为数据，制定一份「可执行、具体、轻量」的成长计划。聚焦 1-3 个成长领域；每个领域给 2-5 条具体动作；动作要符合用户当前能力水平（不要太激进）；明确节奏（每天/每周几次）。`,
-      prompt: `用户画像：\n${JSON.stringify({ abilities: profile.abilities, personality: profile.personality, strengths: profile.strengths, growth_areas: profile.growth_areas, tagline: profile.tagline }, null, 0)}\n\n最近 14 天行为数据：\n${JSON.stringify(activity, null, 0)}`,
-    });
+    if (apiKey) {
+      try {
+        const gateway = createLovableAiGatewayProvider(apiKey);
+        const { object } = await generateObject({
+          model: gateway("google/gemini-2.5-flash"),
+          schema: PlanSchema,
+          system: `你是一位个人成长教练。基于用户的能力画像与最近 14 天的真实行为数据，制定一份「可执行、具体、轻量」的成长计划。聚焦 1-3 个成长领域；每个领域给 2-5 条具体动作；动作要符合用户当前能力水平（不要太激进）；明确节奏（每天/每周几次）。必须严格按 schema 输出。`,
+          prompt: `用户画像：\n${JSON.stringify({ abilities: profile.abilities, personality: profile.personality, strengths: profile.strengths, growth_areas: profile.growth_areas, tagline: profile.tagline }, null, 0)}\n\n最近 14 天行为数据：\n${JSON.stringify(activity, null, 0)}`,
+        });
+        planDraft = object;
+      } catch (error) {
+        console.error("Ability plan AI generation failed, using fallback", error);
+      }
+    }
 
     // archive previous active plans
     await supabaseAdmin.from("ability_plans").update({ status: "archived" }).eq("user_id", userId).eq("status", "active");
 
     const { data: inserted, error } = await supabaseAdmin.from("ability_plans").insert({
       user_id: userId,
-      title: object.title,
-      tagline: object.tagline,
-      focus_areas: object.focus_areas,
-      content: object.items as any,
+      title: planDraft.title,
+      tagline: planDraft.tagline,
+      focus_areas: planDraft.focus_areas,
+      content: planDraft.items as any,
       status: "active",
     }).select("*").single();
     if (error) throw new Error(error.message);
