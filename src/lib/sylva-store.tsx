@@ -206,17 +206,28 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
   );
   const [diary, setDiary] = useState<DiaryEntry[]>(() => loadLS<DiaryEntry[]>("sylva.diary", []));
   const [comics, setComics] = useState<DailyComic[]>(() => loadLS<DailyComic[]>("sylva.comics", []));
+  const [comicHistory, setComicHistory] = useState<ComicHistoryItem[]>(() =>
+    loadLS<ComicHistoryItem[]>("sylva.comicHistory", []),
+  );
 
   useEffect(() => saveLS("sylva.items", items), [items]);
   useEffect(() => saveLS("sylva.notes", notes), [notes]);
   useEffect(() => saveLS("sylva.habits", habits), [habits]);
   useEffect(() => saveLS("sylva.diary", diary), [diary]);
   useEffect(() => saveLS("sylva.comics", comics), [comics]);
+  useEffect(() => saveLS("sylva.comicHistory", comicHistory), [comicHistory]);
 
   const setComic = (c: DailyComic) =>
     setComics((prev) => [c, ...prev.filter((p) => p.date !== c.date)]);
   const removeComic = (date: string) =>
     setComics((prev) => prev.filter((p) => p.date !== date));
+
+  const addComicHistory: SylvaContextValue["addComicHistory"] = (item) =>
+    setComicHistory((prev) =>
+      [{ ...item, id: `ch-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` }, ...prev].slice(0, 80),
+    );
+  const removeComicHistory = (id: string) =>
+    setComicHistory((prev) => prev.filter((p) => p.id !== id));
 
   const addItems = (newOnes: PlanItem[]) =>
     setItems((prev) => [...prev, ...newOnes.map((i) => ({ ...i, id: (i as any).id ?? nextId() }))]);
