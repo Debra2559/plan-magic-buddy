@@ -153,12 +153,15 @@ export function FeishuSyncPanel() {
     message: string | null;
   } | null>(null);
   const [captureRefreshing, setCaptureRefreshing] = useState(false);
-  const refreshCapture = useCallback(async () => {
+  const refreshCapture = useCallback(async (silent = false) => {
     setCaptureRefreshing(true);
     try {
       const c = await runGetCapture();
       setCapture(c);
-    } catch {} finally {
+      if (!silent) pushTLRef.current?.("capture", "info", c?.openId ? `已刷新捕获 · ${c.openId.slice(0, 10)}…` : "已刷新捕获 · 尚无 sender.open_id");
+    } catch (e: any) {
+      if (!silent) pushTLRef.current?.("capture", "fail", `捕获刷新失败：${e?.message ?? "请求失败"}`);
+    } finally {
       setCaptureRefreshing(false);
     }
   }, [runGetCapture]);
@@ -174,12 +177,35 @@ export function FeishuSyncPanel() {
     lastSendError: string | null;
   } | null>(null);
   const [permRefreshing, setPermRefreshing] = useState(false);
-  const refreshPerm = useCallback(async () => {
+  const refreshPerm = useCallback(async (silent = false) => {
     setPermRefreshing(true);
-    try { setPerm(await runGetPerm()); } catch {} finally { setPermRefreshing(false); }
+    try {
+      const p = await runGetPerm();
+      setPerm(p);
+      if (!silent) pushTLRef.current?.("perm", p.imMessageSubscribed && !p.sendScopeIssue ? "ok" : "warn",
+        `权限自检 · 订阅:${p.imMessageSubscribed ? "✓" : "✗"} / 发送权限:${p.sendScopeIssue ? "✗" : "✓"}`);
+    } catch (e: any) {
+      if (!silent) pushTLRef.current?.("perm", "fail", `权限自检失败：${e?.message ?? "请求失败"}`);
+    } finally {
+      setPermRefreshing(false);
+    }
   }, [runGetPerm]);
 
   const [verify, setVerify] = useState<{ status: "idle" | "verifying" | "ok" | "fail"; msg?: string; at?: string }>({ status: "idle" });
+
+  type TLKind = "overwrite" | "verify" | "config" | "sync" | "pull" | "schedule" | "perm" | "capture";
+  type TLStatus = "info" | "ok" | "warn" | "fail" | "pending";
+  type TLEntry = { id: string; at: string; kind: TLKind; status: TLStatus; msg: string };
+  const [timeline, setTimeline] = useState<TLEntry[]>([]);
+  const pushTLRef = useRef<((k: TLKind, s: TLStatus, m: string) => void) | null>(null);
+  const pushTL = useCallback((kind: TLKind, status: TLStatus, msg: string) => {
+    setTimeline((prev) => [
+      { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, at: new Date().toISOString(), kind, status, msg },
+      ...prev,
+    ].slice(0, 30));
+  }, []);
+  useEffect(() => { pushTLRef.current = pushTL; }, [pushTL]);
+  const [nextAutoSyncAt, setNextAutoSyncAt] = useState<string | null>(null);
 
   const [lookup, setLookup] = useState<{
     open: boolean;
@@ -403,6 +429,7 @@ export function FeishuSyncPanel() {
       if (!state.calendarId) return;
       setSyncing(true);
       setSyncProgress(`${reason} · 正在推送 ${items.length} 条本地日程…`);
+      pushTLRef.current?.("sync", "pending", `${reason} · 推送 ${items.length} 条本地日程`);
       try {
         const r = await runSync({
           data: {
@@ -424,6 +451,7 @@ export function FeishuSyncPanel() {
           setLogs((prev) => [mkLog("update", "sylva", `同步失败: ${msg}`, "conflict"), ...prev].slice(0, 12));
           setLastError({ scope: `${reason} · 推送`, msg, at: new Date().toISOString() });
           setLastSummary(null);
+          pushTLRef.current?.("sync", "fail", `${reason} · 推送失败：${msg}`);
           return;
         }
         const okCount = r.entries.filter((e) => e.status === "ok").length;
@@ -452,10 +480,16 @@ export function FeishuSyncPanel() {
         } else {
           setLastError(null);
         }
+        pushTLRef.current?.(
+          "sync",
+          failCount > 0 ? "warn" : "ok",
+          `${reason} · 完成：成功 ${okCount} / 失败 ${failCount}`
+        );
       } catch (e: any) {
         const msg = e?.message ?? String(e);
         setLogs((prev) => [mkLog("update", "sylva", `同步异常: ${msg}`, "conflict"), ...prev].slice(0, 12));
         setLastError({ scope: `${reason} · 推送`, msg, at: new Date().toISOString() });
+        pushTLRef.current?.("sync", "fail", `${reason} · 异常：${msg}`);
       } finally {
         setSyncing(false);
         setSyncProgress(null);
@@ -699,7 +733,11 @@ export function FeishuSyncPanel() {
     lastItemSignature.current = sig;
 
     if (!state.calendarId) return;
+    const nextAt = new Date(Date.now() + 1500);
+    setNextAutoSyncAt(nextAt.toISOString());
+    pushTLRef.current?.("schedule", "info", `检测到本地变更，计划在 ${nextAt.toLocaleTimeString()} 自动同步`);
     const t = setTimeout(() => {
+      setNextAutoSyncAt(null);
       doSync("自动同步");
     }, 1500);
     return () => clearTimeout(t);
@@ -1121,7 +1159,7 @@ export function FeishuSyncPanel() {
                 </span>
                 <button
                   type="button"
-                  onClick={refreshPerm}
+                  onClick={() => refreshPerm()}
                   disabled={permRefreshing}
                   className="ml-auto text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-50"
                 >
@@ -1183,13 +1221,18 @@ export function FeishuSyncPanel() {
                   receiveIdType: (capture.receiveIdType as any) || "open_id",
                 };
                 setNotify(next);
+                pushTL("overwrite", "pending", `覆盖保存接收人 → ${next.receiveId.slice(0, 12)}…（${next.receiveIdType}）`);
                 try {
                   await runSetNotify({ data: next });
+                  pushTL("overwrite", "ok", "已覆盖保存接收人到飞书设置");
                   // 重新从后端拉取最新通知配置，确保后续同步/推送都使用最新接收人
                   try {
                     const fresh = await runGetNotify();
                     setNotify(fresh);
-                  } catch {}
+                    pushTL("config", "ok", `已刷新通知配置 · 接收人=${(fresh.receiveId || "").slice(0, 12)}…`);
+                  } catch (e: any) {
+                    pushTL("config", "warn", `通知配置刷新失败：${e?.message ?? "请求失败"}`);
+                  }
                   // 同步刷新飞书设置与捕获状态
                   try {
                     const s = await runGetSettings();
@@ -1200,30 +1243,38 @@ export function FeishuSyncPanel() {
                       lastSyncAt: s.lastSyncAt ?? prev.lastSyncAt,
                       status: s.selectedCalendarId ? "connected" : prev.status,
                     }));
-                  } catch {}
+                    pushTL("config", "ok", `已刷新飞书同步设置 · 日历=${s.selectedCalendarId ? "已绑定" : "未绑定"}`);
+                  } catch (e: any) {
+                    pushTL("config", "warn", `飞书设置刷新失败：${e?.message ?? "请求失败"}`);
+                  }
                   setNotifySaved(true);
                   setNotifyResult({ ok: true, msg: "已覆盖并应用到飞书同步设置，正在验证…" });
                   setTimeout(() => setNotifySaved(false), 1500);
-                  refreshCapture();
-                  refreshPerm();
+                  refreshCapture(true);
+                  refreshPerm(true);
                   // 自动验证：用新接收人发送一张测试卡片，确认同步链路通畅
                   setVerify({ status: "verifying" });
+                  pushTL("verify", "pending", "正在用新接收人发送测试卡片…");
                   try {
                     const r = await runTestNotify();
                     if (r.ok) {
                       setVerify({ status: "ok", msg: "已用新接收人成功投递测试卡片", at: new Date().toISOString() });
                       setNotifyResult({ ok: true, msg: "验证通过：后续日程同步将使用新接收人" });
+                      pushTL("verify", "ok", "验证通过 · 测试卡片已投递到新接收人");
                     } else {
                       setVerify({ status: "fail", msg: r.error ?? "测试投递失败", at: new Date().toISOString() });
                       setNotifyResult({ ok: false, msg: `验证失败：${r.error ?? "测试投递失败"}` });
+                      pushTL("verify", "fail", `验证失败：${r.error ?? "测试投递失败"}`);
                     }
                   } catch (e: any) {
                     setVerify({ status: "fail", msg: e?.message ?? "验证请求失败", at: new Date().toISOString() });
                     setNotifyResult({ ok: false, msg: `验证失败：${e?.message ?? "请求失败"}` });
+                    pushTL("verify", "fail", `验证异常：${e?.message ?? "请求失败"}`);
                   }
-                  refreshPerm();
+                  refreshPerm(true);
                 } catch (e: any) {
                   setNotifyResult({ ok: false, msg: e?.message ?? "保存失败" });
+                  pushTL("overwrite", "fail", `覆盖保存失败：${e?.message ?? "请求失败"}`);
                 }
               }}
               className="ml-auto text-[10px] px-2 py-0.5 rounded bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110"
@@ -1233,7 +1284,7 @@ export function FeishuSyncPanel() {
           )}
           <button
             type="button"
-            onClick={refreshCapture}
+            onClick={() => refreshCapture()}
             disabled={captureRefreshing}
             className={`${capture?.openId && capture.openId !== notify.receiveId ? "" : "ml-auto"} text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 disabled:opacity-50`}
           >
@@ -1583,6 +1634,62 @@ export function FeishuSyncPanel() {
           飞书后台需为应用开启 <code>im:message</code> 权限，并把「事件订阅 · 卡片回调」指向 <code>/api/public/feishu/webhook</code>。点击卡片「参加」会自动加入选中日历的日程。
         </p>
       </div>
+
+      {/* 同步事件时间线 */}
+      <div className="widget mt-3 px-4 py-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Bell className="w-3.5 h-3.5 text-sky-300" />
+          <h4 className="text-sm text-white/90">同步事件时间线</h4>
+          {nextAutoSyncAt && (
+            <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-glow/15 text-amber-glow tabular-nums">
+              下次自动同步 · {new Date(nextAutoSyncAt).toLocaleTimeString()}
+            </span>
+          )}
+          {timeline.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setTimeline([])}
+              className="ml-auto text-[10px] px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/60 hover:bg-white/10"
+            >
+              清空
+            </button>
+          )}
+        </div>
+        {timeline.length === 0 ? (
+          <p className="text-[11px] text-white/40">还没有事件 · 覆盖保存接收人、刷新配置或触发同步后会显示在这里。</p>
+        ) : (
+          <ul className="space-y-1 max-h-56 overflow-y-auto pr-1">
+            {timeline.map((e) => {
+              const dotColor =
+                e.status === "ok" ? "bg-emerald-400"
+                : e.status === "fail" ? "bg-rose-400"
+                : e.status === "warn" ? "bg-amber-400"
+                : e.status === "pending" ? "bg-sky-400 animate-pulse"
+                : "bg-white/40";
+              const kindLabel = ({
+                overwrite: "覆盖保存",
+                verify: "验证",
+                config: "配置刷新",
+                sync: "推送同步",
+                pull: "拉取同步",
+                schedule: "计划",
+                perm: "权限自检",
+                capture: "捕获",
+              } as const)[e.kind];
+              return (
+                <li key={e.id} className="flex items-start gap-2 text-[11px]">
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 mt-1.5 ${dotColor}`} />
+                  <span className="text-white/40 tabular-nums shrink-0 mt-px">{new Date(e.at).toLocaleTimeString()}</span>
+                  <span className="text-white/50 shrink-0 mt-px">{kindLabel}</span>
+                  <span className="text-white/85 break-words">{e.msg}</span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+
 
       {/* 每日小结提醒 */}
       <div className="widget mt-3 px-4 py-3">
