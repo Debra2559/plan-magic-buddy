@@ -57,6 +57,12 @@ function fmtLong(iso: string) {
 export function JournalView() {
   const { items, habits, notes, diary, comics, isRecapDone, toggleHabitOn, addNote, upsertDiary, setComic, removeComic } = useSylva();
   const [date, setDate] = useState<string>(todayLocal());
+  const dateBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    const el = dateBtnRefs.current[date];
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [date]);
 
   const dayItems = useMemo(
     () =>
