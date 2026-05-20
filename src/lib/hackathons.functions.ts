@@ -13,6 +13,7 @@ export interface HackathonRow {
   title: string;
   deadline: string | null;
   starts_at: string | null;
+  ends_at: string | null;
   location: string | null;
   prize: string | null;
   summary: string | null;
