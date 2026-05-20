@@ -285,14 +285,10 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
                     )}
                   </div>
                 ))}
-                {loading && (
+                {loading && chatStep?.kind === "research" && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground p-2">
                     <Loader2 className="w-3 h-3 animate-spin" />
-                    {chatStep?.kind === "research" ? (
-                      <span className="flex items-center gap-1"><Globe className="w-3 h-3" /> 正在联网查方案…</span>
-                    ) : (
-                      "AI 思考中…"
-                    )}
+                    <span className="flex items-center gap-1"><Globe className="w-3 h-3" /> 正在联网查方案…</span>
                   </div>
                 )}
               </div>
