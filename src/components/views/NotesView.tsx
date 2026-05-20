@@ -71,6 +71,7 @@ function NotesTab() {
   const [mood, setMood] = useState<Mood | undefined>();
   const [tagsRaw, setTagsRaw] = useState("");
   const [query, setQuery] = useState("");
+  const [diaryOpen, setDiaryOpen] = useState(false);
 
   const submit = () => {
     if (!text.trim()) return;
