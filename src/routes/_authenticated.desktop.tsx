@@ -21,6 +21,7 @@ import { SyncSummaryModal } from "@/components/SyncSummaryModal";
 import { OnboardingHint } from "@/components/OnboardingHint";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useSylva } from "@/lib/sylva-store";
+import { usePersona } from "@/lib/persona";
 import {
   Apple,
   Wifi,
