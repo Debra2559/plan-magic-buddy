@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { generatePlan, chatPlan, type Plan, type PlanItem, type ChatStep } from "@/lib/plan.functions";
+import { generatePlan, type Plan, type PlanItem } from "@/lib/plan.functions";
 import { useSylva } from "@/lib/sylva-store";
 import { EnterHint } from "@/components/EnterHint";
 import { shouldSubmitOnKey } from "@/lib/keybinds";
