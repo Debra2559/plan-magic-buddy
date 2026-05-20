@@ -179,6 +179,8 @@ export function FeishuSyncPanel() {
     try { setPerm(await runGetPerm()); } catch {} finally { setPermRefreshing(false); }
   }, [runGetPerm]);
 
+  const [verify, setVerify] = useState<{ status: "idle" | "verifying" | "ok" | "fail"; msg?: string; at?: string }>({ status: "idle" });
+
   const [lookup, setLookup] = useState<{
     open: boolean;
     type: "email" | "mobile" | "name" | "employee_id";
