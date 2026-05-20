@@ -1202,9 +1202,25 @@ export function FeishuSyncPanel() {
                     }));
                   } catch {}
                   setNotifySaved(true);
-                  setNotifyResult({ ok: true, msg: "已覆盖并应用到飞书同步设置，后续同步将使用新接收人" });
+                  setNotifyResult({ ok: true, msg: "已覆盖并应用到飞书同步设置，正在验证…" });
                   setTimeout(() => setNotifySaved(false), 1500);
                   refreshCapture();
+                  refreshPerm();
+                  // 自动验证：用新接收人发送一张测试卡片，确认同步链路通畅
+                  setVerify({ status: "verifying" });
+                  try {
+                    const r = await runTestNotify();
+                    if (r.ok) {
+                      setVerify({ status: "ok", msg: "已用新接收人成功投递测试卡片", at: new Date().toISOString() });
+                      setNotifyResult({ ok: true, msg: "验证通过：后续日程同步将使用新接收人" });
+                    } else {
+                      setVerify({ status: "fail", msg: r.error ?? "测试投递失败", at: new Date().toISOString() });
+                      setNotifyResult({ ok: false, msg: `验证失败：${r.error ?? "测试投递失败"}` });
+                    }
+                  } catch (e: any) {
+                    setVerify({ status: "fail", msg: e?.message ?? "验证请求失败", at: new Date().toISOString() });
+                    setNotifyResult({ ok: false, msg: `验证失败：${e?.message ?? "请求失败"}` });
+                  }
                   refreshPerm();
                 } catch (e: any) {
                   setNotifyResult({ ok: false, msg: e?.message ?? "保存失败" });
