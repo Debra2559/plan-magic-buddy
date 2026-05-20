@@ -24,12 +24,18 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (next: boolean) => vo
 
 function TimeInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <input
-      type="time"
-      value={value}
-      onChange={(e) => onChange(e.target.value || "00:00")}
-      className="bg-foreground/5 border border-border rounded-md px-2 py-1 text-sm text-foreground font-mono outline-none focus:border-amber-glow/60"
-    />
+    <label
+      className="group inline-flex items-center gap-1.5 bg-foreground/5 hover:bg-amber-glow/10 border border-border hover:border-amber-glow/60 focus-within:border-amber-glow rounded-md pl-2 pr-1 py-1 cursor-text transition"
+      title="点击直接输入时间"
+    >
+      <span className="text-[10px] tracking-wider text-muted-foreground group-hover:text-amber-glow">自定义</span>
+      <input
+        type="time"
+        value={value}
+        onChange={(e) => onChange(e.target.value || "00:00")}
+        className="bg-transparent text-sm text-foreground font-mono outline-none w-[78px] cursor-text"
+      />
+    </label>
   );
 }
 
