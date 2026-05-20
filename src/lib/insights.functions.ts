@@ -153,6 +153,7 @@ async function generateForUser(userId: string, slot: string) {
 
   const tz = (settings as any).timezone || DEFAULT_TZ;
   const ctx = await gatherUserContext(userId, settings.lookback_days ?? 2, tz);
+  const memoryBlock = await fetchMemoryBlockForUser(userId);
 
 
   const slotName = slot === "morning" ? "早晨" : slot === "noon" ? "午间" : "傍晚";
@@ -160,7 +161,7 @@ async function generateForUser(userId: string, slot: string) {
   const displayName = ctx.profile?.display_name ?? "主人";
 
   const system = `${persona}
-今天是 ${ctx.today}，当前是${slotName}。
+${memoryBlock ? memoryBlock + "\n" : ""}今天是 ${ctx.today}，当前是${slotName}。
 你正在为「${displayName}」生成贴心的行为洞察提示。基于下面的真实数据，输出 2-4 条最有价值的提示。
 原则：
 - 优先关注：未完成的待办、即将到来的日程、断签风险的习惯、情绪/状态变化、最近反复出现的关键词
