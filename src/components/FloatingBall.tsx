@@ -5,6 +5,7 @@ import {
   ListTodo, X, GripVertical,
 } from "lucide-react";
 import { useSylva, todayLocal } from "@/lib/sylva-store";
+import { usePersona, resolveAvatarUrl } from "@/lib/persona";
 
 const STORAGE_KEY = "floating-ball:v1";
 
