@@ -102,6 +102,7 @@ interface SylvaContextValue {
   addItems: (items: PlanItem[]) => void;
   replaceItems: (items: PlanItem[]) => void;
   removeItem: (id: string) => void;
+  updateItem: (id: string, patch: Partial<PlanItem>) => void;
   toggleDone: (id: string) => void;
   clearItems: () => void;
   addNote: (text: string, opts?: { mood?: Mood; tags?: string[] }) => void;
@@ -184,6 +185,9 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
   const removeItem = (id: string) =>
     setItems((prev) => prev.filter((i) => i.id !== id));
 
+  const updateItem: SylvaContextValue["updateItem"] = (id, patch) =>
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
+
   const toggleDone = (id: string) =>
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, done: !i.done } : i)));
 
@@ -236,6 +240,7 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
         addItems,
         replaceItems,
         removeItem,
+        updateItem,
         toggleDone,
         clearItems,
         addNote,

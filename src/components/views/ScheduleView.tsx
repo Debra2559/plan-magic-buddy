@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSylva } from "@/lib/sylva-store";
-import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X } from "lucide-react";
+import type { PlanItem } from "@/lib/plan.functions";
+
 
 const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
 
@@ -16,9 +18,12 @@ const tagColor: Record<string, string> = {
 const typeIcon = { event: CalIcon, todo: Clock, reminder: Bell } as const;
 
 export function ScheduleView() {
-  const { items } = useSylva();
+  const { items, addItems, updateItem, removeItem } = useSylva();
   const [cursor, setCursor] = useState(new Date(2026, 4, 1)); // May 2026
   const [selected, setSelected] = useState("2026-05-19");
+  const [editorDate, setEditorDate] = useState<string | null>(null);
+  const [editorAnchor, setEditorAnchor] = useState<{ x: number; y: number } | null>(null);
+
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
@@ -92,6 +97,13 @@ export function ScheduleView() {
               <button
                 key={i}
                 onClick={() => setSelected(cell.iso)}
+                onDoubleClick={(e) => {
+                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  setSelected(cell.iso);
+                  setEditorDate(cell.iso);
+                  setEditorAnchor({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+                }}
+                title="双击编辑这一天"
                 className={`min-h-[110px] p-2 text-left transition relative overflow-hidden
                   ${isSelected ? "bg-amber-glow/15 ring-2 ring-amber-glow/60 z-10" : "bg-black/30 hover:bg-black/40"}`}
               >
@@ -153,9 +165,203 @@ export function ScheduleView() {
           </div>
         )}
       </aside>
+
+      {editorDate && (
+        <DayEditor
+          date={editorDate}
+          anchor={editorAnchor}
+          items={(itemsByDate[editorDate] ?? []).sort((a, b) => (a.time ?? "99:99").localeCompare(b.time ?? "99:99"))}
+          onClose={() => setEditorDate(null)}
+          onUpdate={(id, patch) => updateItem(id, patch)}
+          onDelete={(id) => removeItem(id)}
+          onAdd={(item) => addItems([item])}
+        />
+      )}
     </div>
   );
 }
+
+function DayEditor({
+  date,
+  anchor,
+  items,
+  onClose,
+  onUpdate,
+  onDelete,
+  onAdd,
+}: {
+  date: string;
+  anchor: { x: number; y: number } | null;
+  items: Array<PlanItem & { id: string }>;
+  onClose: () => void;
+  onUpdate: (id: string, patch: Partial<PlanItem>) => void;
+  onDelete: (id: string) => void;
+  onAdd: (item: PlanItem) => void;
+}) {
+  const [draft, setDraft] = useState("");
+  const [draftTime, setDraftTime] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    setTimeout(() => window.addEventListener("mousedown", onDown), 0);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("mousedown", onDown);
+    };
+  }, [onClose]);
+
+  const [y, m, d] = date.split("-").map(Number);
+  const headerLabel = `${y}年${m}月${d}日`;
+
+  const submit = () => {
+    const title = draft.trim();
+    if (!title) return;
+    onAdd({
+      type: draftTime ? "event" : "todo",
+      title,
+      date,
+      time: draftTime || undefined,
+      tag: "生活",
+    });
+    setDraft("");
+    setDraftTime("");
+  };
+
+  // Position the popup near the anchor, clamped to viewport
+  const width = 320;
+  const height = 360;
+  const margin = 12;
+  const vw = typeof window !== "undefined" ? window.innerWidth : 1280;
+  const vh = typeof window !== "undefined" ? window.innerHeight : 800;
+  const x = anchor ? Math.max(margin, Math.min(anchor.x - width / 2, vw - width - margin)) : (vw - width) / 2;
+  const yPos = anchor ? Math.max(margin, Math.min(anchor.y - 40, vh - height - margin)) : (vh - height) / 2;
+
+  return (
+    <div
+      ref={ref}
+      style={{ position: "fixed", left: x, top: yPos, width, maxHeight: height, zIndex: 100 }}
+      className="rounded-xl shadow-2xl border border-white/15 bg-[#1d1d1f]/95 backdrop-blur-2xl flex flex-col overflow-hidden text-white"
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      <div className="h-9 shrink-0 flex items-center px-3 border-b border-white/10 bg-black/30">
+        <button onClick={onClose} className="w-3 h-3 rounded-full bg-[#ff5f57] hover:brightness-110" />
+        <div className="flex-1 text-center text-xs font-medium text-white/85">{headerLabel}</div>
+        <X className="w-3 h-3 text-white/30" />
+      </div>
+
+      <div className="flex-1 overflow-auto p-3 space-y-1.5">
+        {items.length === 0 && (
+          <div className="text-[11px] text-white/40 text-center py-6">这一天还没有安排，下方添加</div>
+        )}
+        {items.map((it) => (
+          <EditableRow
+            key={it.id}
+            item={it}
+            onChange={(patch) => onUpdate(it.id, patch)}
+            onDelete={() => onDelete(it.id)}
+          />
+        ))}
+      </div>
+
+      <div className="shrink-0 border-t border-white/10 p-2 flex items-center gap-1.5 bg-black/20">
+        <input
+          type="time"
+          value={draftTime}
+          onChange={(e) => setDraftTime(e.target.value)}
+          className="bg-white/5 border border-white/10 rounded px-1.5 py-1 text-[11px] text-white/80 font-mono w-[78px] focus:outline-none focus:border-amber-glow/50"
+        />
+        <input
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+          placeholder="添加一条安排…"
+          className="flex-1 bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-amber-glow/50"
+        />
+        <button
+          onClick={submit}
+          className="p-1.5 rounded bg-amber-glow/80 text-primary-foreground hover:bg-amber-glow"
+          title="添加"
+        >
+          <Plus className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EditableRow({
+  item,
+  onChange,
+  onDelete,
+}: {
+  item: PlanItem & { id: string };
+  onChange: (patch: Partial<PlanItem>) => void;
+  onDelete: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState(item.title);
+  const [time, setTime] = useState(item.time ?? "");
+
+  const commit = () => {
+    const t = title.trim();
+    if (t && (t !== item.title || time !== (item.time ?? ""))) {
+      onChange({ title: t, time: time || undefined });
+    } else {
+      setTitle(item.title);
+      setTime(item.time ?? "");
+    }
+    setEditing(false);
+  };
+
+  return (
+    <div className="group flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-white/5 border border-white/10 hover:border-white/20">
+      {editing ? (
+        <>
+          <input
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            className="bg-black/30 border border-white/15 rounded px-1 py-0.5 text-[10px] font-mono text-white/80 w-[68px] focus:outline-none"
+          />
+          <input
+            autoFocus
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commit();
+              if (e.key === "Escape") { setTitle(item.title); setTime(item.time ?? ""); setEditing(false); }
+            }}
+            className="flex-1 bg-black/30 border border-white/15 rounded px-1.5 py-0.5 text-xs text-white focus:outline-none"
+          />
+        </>
+      ) : (
+        <button
+          onDoubleClick={() => setEditing(true)}
+          className="flex-1 flex items-center gap-1.5 text-left"
+          title="双击编辑"
+        >
+          {item.time && <span className="text-[10px] font-mono text-amber-glow/90 shrink-0">{item.time}</span>}
+          <span className="text-xs text-white/90 truncate">{item.title}</span>
+        </button>
+      )}
+      <button
+        onClick={onDelete}
+        className="opacity-0 group-hover:opacity-100 transition p-1 rounded hover:bg-white/10 text-white/50 hover:text-white/90"
+        title="删除"
+      >
+        <Trash2 className="w-3 h-3" />
+      </button>
+    </div>
+  );
+}
+
 
 function formatLong(iso: string) {
   const [y, m, d] = iso.split("-").map(Number);
