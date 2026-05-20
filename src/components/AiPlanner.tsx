@@ -246,7 +246,7 @@ export function AiPlanner() {
             value={idea}
             onChange={(e) => setIdea(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+              if (shouldSubmitOnKey(e, enterToSubmit)) {
                 e.preventDefault();
                 handleSubmit();
               }
