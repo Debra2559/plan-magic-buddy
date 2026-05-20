@@ -97,6 +97,13 @@ export function ScheduleView() {
               <button
                 key={i}
                 onClick={() => setSelected(cell.iso)}
+                onDoubleClick={(e) => {
+                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  setSelected(cell.iso);
+                  setEditorDate(cell.iso);
+                  setEditorAnchor({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+                }}
+                title="双击编辑这一天"
                 className={`min-h-[110px] p-2 text-left transition relative overflow-hidden
                   ${isSelected ? "bg-amber-glow/15 ring-2 ring-amber-glow/60 z-10" : "bg-black/30 hover:bg-black/40"}`}
               >
