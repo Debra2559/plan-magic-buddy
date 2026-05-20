@@ -102,6 +102,7 @@ interface SylvaContextValue {
   addItems: (items: PlanItem[]) => void;
   replaceItems: (items: PlanItem[]) => void;
   removeItem: (id: string) => void;
+  updateItem: (id: string, patch: Partial<PlanItem>) => void;
   toggleDone: (id: string) => void;
   clearItems: () => void;
   addNote: (text: string, opts?: { mood?: Mood; tags?: string[] }) => void;
