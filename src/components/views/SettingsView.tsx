@@ -5,6 +5,7 @@ import { InsightsSettingsPanel } from "@/components/InsightsSettingsPanel";
 import { FeishuSyncPanel } from "@/components/FeishuSyncPanel";
 import { FeishuWebhookLogsPanel } from "@/components/FeishuWebhookLogsPanel";
 import { AiPersonaPanel } from "@/components/AiPersonaPanel";
+import { RemindersPanel } from "@/components/RemindersPanel";
 import { useSylva } from "@/lib/sylva-store";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/lib/auth-context";
@@ -299,7 +300,7 @@ export function SettingsView() {
       case "comic": return <ComicSettingsPanel />;
       case "feishu": return <FeishuSyncPanel />;
       case "webhook": return <FeishuWebhookLogsPanel />;
-      case "reminders": return <RowList rows={simpleSections.reminders.rows} />;
+      case "reminders": return <RemindersPanel />;
       case "appearance": return (
         <div className="space-y-4">
           <div className="widget p-4 flex items-center justify-between">
