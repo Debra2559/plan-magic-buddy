@@ -113,6 +113,7 @@ interface SylvaContextValue {
   comics: DailyComic[];
   setComic: (c: DailyComic) => void;
   removeComic: (date: string) => void;
+  addItems: (items: PlanItem[]) => void;
   replaceItems: (items: PlanItem[]) => void;
   removeItem: (id: string) => void;
   updateItem: (id: string, patch: Partial<PlanItem>) => void;
