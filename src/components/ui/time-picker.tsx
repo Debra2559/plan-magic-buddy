@@ -145,10 +145,10 @@ export function TimePicker({
           className="w-[180px] rounded-xl border border-white/15 bg-zinc-950/95 backdrop-blur-md shadow-2xl shadow-black/60 overflow-hidden"
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between px-3 py-2 border-b border-white/8">
-            <span className="text-[10px] tracking-widest text-amber-glow/80 uppercase">时间</span>
-            <span className="font-mono text-sm text-white/90 tabular-nums">
-              {hh || "--"}<span className="text-white/30 mx-0.5">:</span>{mm || "--"}
+          <div className="flex items-center justify-between px-3 py-2 border-b border-white/15">
+            <span className="text-[10px] tracking-widest text-amber-glow uppercase font-semibold">时间</span>
+            <span className="font-mono text-sm text-white tabular-nums">
+              {hh || "--"}<span className="text-white/70 mx-0.5">:</span>{mm || "--"}
             </span>
           </div>
           <div className="relative flex h-44">
