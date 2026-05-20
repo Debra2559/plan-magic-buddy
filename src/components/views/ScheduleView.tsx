@@ -5,6 +5,10 @@ import type { PlanItem } from "@/lib/plan.functions";
 import { TimePicker } from "@/components/ui/time-picker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AiPlanner } from "@/components/AiPlanner";
+import { FeishuQuickSyncBar } from "@/components/FeishuQuickSyncBar";
+import { HackathonInbox } from "@/components/HackathonInbox";
+import { AiNewsRadar } from "@/components/AiNewsRadar";
+
 
 
 const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
@@ -20,7 +24,7 @@ const tagColor: Record<string, string> = {
 
 const typeIcon = { event: CalIcon, todo: Clock, reminder: Bell } as const;
 
-export function ScheduleView({ onGoPlan }: { onGoPlan?: () => void } = {}) {
+export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void; onGoSettings?: () => void } = {}) {
   const { items, addItems, updateItem, removeItem, toggleDone, isRecapDone, unmarkRecapDone, isRecentlySynced } = useSylva();
   const [cursor, setCursor] = useState(new Date(2026, 4, 1)); // May 2026
   const [selected, setSelected] = useState("2026-05-19");
@@ -165,7 +169,17 @@ export function ScheduleView({ onGoPlan }: { onGoPlan?: () => void } = {}) {
             );
           })}
         </div>
+
+        {/* 飞书同步 + 雷达模块 */}
+        <div className="mt-6 space-y-6">
+          <FeishuQuickSyncBar onGoSettings={onGoSettings} />
+          <div className="grid lg:grid-cols-2 gap-6 items-start">
+            <HackathonInbox />
+            <AiNewsRadar />
+          </div>
+        </div>
       </div>
+
 
       {/* Right detail */}
       <aside className="w-72 shrink-0 bg-black/30 border-l border-white/10 p-5 overflow-auto">
