@@ -179,6 +179,18 @@ export function AiNewsRadar() {
                       <Bookmark className="w-3 h-3" /> 收藏
                     </button>
                     <button
+                      onClick={() => onAddTodo(n)}
+                      disabled={busyId === n.id || addedIds.has(n.id)}
+                      title="一键转为待办，加入今日规划"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs bg-amber-glow/15 border border-amber-glow/40 text-amber-glow hover:bg-amber-glow/25 transition disabled:opacity-60"
+                    >
+                      {addedIds.has(n.id) ? (
+                        <><Check className="w-3 h-3" /> 已加入</>
+                      ) : (
+                        <><ListPlus className="w-3 h-3" /> 转待办</>
+                      )}
+                    </button>
+                    <button
                       onClick={() => onDismiss(n.id)}
                       disabled={busyId === n.id}
                       className="px-3 py-1.5 rounded-full text-xs bg-foreground/5 border border-foreground/10 text-foreground/60 hover:bg-foreground/10 disabled:opacity-40"
