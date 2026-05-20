@@ -287,9 +287,26 @@ export function AiNewsRadar() {
   const onSave = async (id: string) => {
     setBusyId(id);
     try {
+      const target = items.find((i) => i.id === id);
       const r = await saveFn({ data: { id } });
-      if (r.ok) setItems((p) => p.filter((i) => i.id !== id));
-      else setError(r.error);
+      if (r.ok) {
+        if (target) {
+          const title = target.title.length > 24 ? target.title.slice(0, 22) + "…" : target.title;
+          const noteParts: string[] = [];
+          if (target.summary) noteParts.push(target.summary);
+          noteParts.push(`来源: ${target.source} · ${target.url}`);
+          addItems([
+            {
+              type: "event",
+              title: `收藏: ${title}`,
+              date: todayLocal(),
+              tag: "收藏",
+              note: noteParts.join(" · "),
+            },
+          ]);
+        }
+        setItems((p) => p.filter((i) => i.id !== id));
+      } else setError(r.error);
     } finally {
       setBusyId(null);
     }
