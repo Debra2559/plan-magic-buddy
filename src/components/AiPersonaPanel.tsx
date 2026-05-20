@@ -15,8 +15,33 @@ export function AiPersonaPanel() {
   const [tryingTip, setTryingTip] = useState(false);
   const [demoLine, setDemoLine] = useState<string>("");
   const planFn = useServerFn(generatePlan);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
-  useEffect(() => setLocal(persona), [persona]);
+  const handleAvatarPick = async (file: File) => {
+    if (!user) return;
+    if (!file.type.startsWith("image/")) { toast.error("请选择图片文件"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("图片需小于 5MB"); return; }
+    setUploadingAvatar(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+      const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      await commit({ avatar_url: pub.publicUrl });
+      toast.success("头像已更新");
+    } catch (e: any) {
+      toast.error(e?.message ?? "上传失败");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    await commit({ avatar_url: null });
+    toast.success("已移除头像");
+  };
 
   if (loading || !local) {
     return (
