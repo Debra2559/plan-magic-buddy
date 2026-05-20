@@ -28,6 +28,78 @@ const levelStyle: Record<LogRow["level"], string> = {
   error: "bg-destructive/15 text-destructive",
 };
 
+const STEP_LABEL: Record<string, { name: string; desc: string }> = {
+  rx: { name: "接收", desc: "收到飞书回调（通常为加密负载）" },
+  parse: { name: "解析", desc: "JSON 解析请求体" },
+  decrypt: { name: "解密", desc: "用 ENCRYPT_KEY 解密 encrypt 字段" },
+  url_verification: { name: "URL 校验", desc: "回应飞书 challenge" },
+  dispatch: { name: "派发", desc: "按 event_type 路由到处理器" },
+  handler: { name: "处理", desc: "业务处理（命令 / 卡片回调等）" },
+  capture_open_id: { name: "捕获 open_id", desc: "记录发送者 open_id 以便后续推送" },
+  ack: { name: "应答", desc: "返回 200 给飞书" },
+  send_message: { name: "发送消息", desc: "调用飞书 API 发送消息" },
+};
+
+function stepMeta(step: string) {
+  return STEP_LABEL[step] ?? { name: step, desc: "" };
+}
+
+// 简短摘要，避免直接展示加密 base64
+function summarize(r: LogRow): string {
+  if (r.error) return r.error;
+  if (r.step === "rx") {
+    const bytes = r.payload?.size ?? r.payload?.bytes ?? r.payload?.length;
+    return bytes ? `已接收 ${bytes} 字节（加密）` : "已接收回调（加密）";
+  }
+  if (r.step === "decrypt" && r.level === "info") return "解密成功";
+  if (r.step === "dispatch") return `派发：${r.event_type ?? "未知事件"}`;
+  if (r.step === "ack") return `应答 ${r.status ?? 200}`;
+  return r.message || "—";
+}
+
+type Thread = {
+  request_id: string;
+  startedAt: string;
+  level: LogRow["level"];
+  event_type: string | null;
+  duration_ms: number | null;
+  status: number | null;
+  ok: boolean;
+  rows: LogRow[];
+};
+
+function groupByRequest(rows: LogRow[]): Thread[] {
+  const m = new Map<string, Thread>();
+  // rows 来自后端按 created_at desc，按 request_id 聚合，组内按时间正序方便阅读
+  for (const r of rows) {
+    const key = r.request_id || r.id;
+    let t = m.get(key);
+    if (!t) {
+      t = {
+        request_id: key,
+        startedAt: r.created_at,
+        level: r.level,
+        event_type: r.event_type,
+        duration_ms: null,
+        status: null,
+        ok: true,
+        rows: [],
+      };
+      m.set(key, t);
+    }
+    t.rows.push(r);
+    if (r.event_type && !t.event_type) t.event_type = r.event_type;
+    if (typeof r.duration_ms === "number") t.duration_ms = r.duration_ms;
+    if (typeof r.status === "number") t.status = r.status;
+    if (r.level === "error") { t.level = "error"; t.ok = false; }
+    else if (r.level === "warn" && t.level !== "error") t.level = "warn";
+    // 起始时间取最早一条
+    if (new Date(r.created_at).getTime() < new Date(t.startedAt).getTime()) t.startedAt = r.created_at;
+  }
+  for (const t of m.values()) t.rows.sort((a, b) => +new Date(a.created_at) - +new Date(b.created_at));
+  return Array.from(m.values()).sort((a, b) => +new Date(b.startedAt) - +new Date(a.startedAt));
+}
+
 export function FeishuWebhookLogsPanel() {
   const fetchLogs = useServerFn(listFeishuWebhookLogs);
   const [rows, setRows] = useState<LogRow[]>([]);
