@@ -240,6 +240,13 @@ function NotesTab() {
         <div className="mt-2">
           <ImageAttacher images={images} onChange={setImages} max={6} />
         </div>
+        <div className="mt-2">
+          <MediaAttacher
+            videos={videos}
+            audios={audios}
+            onChange={(next) => { setVideos(next.videos); setAudios(next.audios); }}
+          />
+        </div>
         <div className="flex flex-wrap items-center gap-2 mt-3">
           <div className="flex items-center gap-1">
             {MOODS.map((m) => (
@@ -263,10 +270,15 @@ function NotesTab() {
           />
         </div>
         <div className="flex items-center justify-between mt-3">
-          <span className="text-[10px] text-white/40 tracking-wider">{text.length} 字{images.length > 0 ? ` · ${images.length} 张图片` : ""}</span>
+          <span className="text-[10px] text-white/40 tracking-wider">
+            {text.length} 字
+            {images.length > 0 ? ` · ${images.length} 图` : ""}
+            {videos.length > 0 ? ` · ${videos.length} 视频` : ""}
+            {audios.length > 0 ? ` · ${audios.length} 语音` : ""}
+          </span>
           <button
             onClick={submit}
-            disabled={!text.trim() && images.length === 0}
+            disabled={!text.trim() && images.length === 0 && videos.length === 0 && audios.length === 0}
             className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-glow text-primary-foreground text-xs font-medium disabled:opacity-30"
           >
             <Plus className="w-3 h-3" /> 保存
