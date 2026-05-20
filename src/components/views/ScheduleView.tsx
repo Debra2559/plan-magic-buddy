@@ -3,6 +3,8 @@ import { useSylva } from "@/lib/sylva-store";
 import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X, CheckCircle2, RotateCcw, Check, Sparkles } from "lucide-react";
 import type { PlanItem } from "@/lib/plan.functions";
 import { TimePicker } from "@/components/ui/time-picker";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { AiPlanner } from "@/components/AiPlanner";
 
 
 const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
@@ -24,6 +26,7 @@ export function ScheduleView({ onGoPlan }: { onGoPlan?: () => void } = {}) {
   const [selected, setSelected] = useState("2026-05-19");
   const [editorDate, setEditorDate] = useState<string | null>(null);
   const [editorAnchor, setEditorAnchor] = useState<{ x: number; y: number } | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
 
 
   const year = cursor.getFullYear();
@@ -62,28 +65,26 @@ export function ScheduleView({ onGoPlan }: { onGoPlan?: () => void } = {}) {
             <span className="text-xs text-white/40 tracking-widest">日程视图</span>
           </div>
           <div className="flex items-center gap-1">
-            {onGoPlan && (
-              <div className="relative mr-2 group">
-                <button
-                  onClick={onGoPlan}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-primary-foreground bg-amber-glow/85 hover:bg-amber-glow transition"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  AI 规划
-                </button>
-                <div className="pointer-events-none absolute right-0 top-full mt-2 w-72 rounded-xl border border-white/10 bg-zinc-950/95 backdrop-blur-md shadow-2xl p-3 text-[11px] text-white/75 leading-relaxed opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition z-50">
-                  <p className="text-amber-glow/90 font-medium mb-1.5 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" /> 用 AI 帮你排日程
-                  </p>
-                  <ol className="space-y-1 list-decimal list-inside marker:text-amber-glow/60">
-                    <li>点击进入「规划」对话页</li>
-                    <li>用自然语言描述目标，比如「这周要复习答辩 + 每天 30 分钟英语」</li>
-                    <li>AI 会拆成事件 / 待办 / 提醒</li>
-                    <li>确认后一键写回这里的日历</li>
-                  </ol>
-                </div>
+            <div className="relative mr-2 group">
+              <button
+                onClick={() => setAiOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-primary-foreground bg-amber-glow/85 hover:bg-amber-glow transition"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                AI 规划
+              </button>
+              <div className="pointer-events-none absolute right-0 top-full mt-2 w-72 rounded-xl border border-white/10 bg-zinc-950/95 backdrop-blur-md shadow-2xl p-3 text-[11px] text-white/75 leading-relaxed opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition z-50">
+                <p className="text-amber-glow/90 font-medium mb-1.5 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" /> 用 AI 帮你排日程
+                </p>
+                <ol className="space-y-1 list-decimal list-inside marker:text-amber-glow/60">
+                  <li>点击弹出规划面板</li>
+                  <li>用自然语言描述目标，比如「这周要复习答辩 + 每天 30 分钟英语」</li>
+                  <li>AI 会拆成事件 / 待办 / 提醒</li>
+                  <li>确认后一键写回这里的日历</li>
+                </ol>
               </div>
-            )}
+            </div>
             <button
               onClick={() => setCursor(new Date(year, month - 1, 1))}
               className="p-2 rounded-lg hover:bg-white/10 text-white/70"
@@ -222,6 +223,20 @@ export function ScheduleView({ onGoPlan }: { onGoPlan?: () => void } = {}) {
           onAdd={(item) => addItems([item])}
         />
       )}
+
+      <Dialog open={aiOpen} onOpenChange={setAiOpen}>
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-auto bg-zinc-950/95 backdrop-blur-xl border-white/10">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-glow">
+              <Sparkles className="w-4 h-4" /> AI 规划
+            </DialogTitle>
+            <DialogDescription className="text-white/50 text-xs">
+              用自然语言说出目标，AI 会自动拆成事件 / 待办 / 提醒，确认后写回当前日历。
+            </DialogDescription>
+          </DialogHeader>
+          <AiPlanner />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
