@@ -292,6 +292,17 @@ html.light .placeholder\:text-white\/50::placeholder { color: oklch(0.5 0.015 60
     inset 0 1px 0 oklch(1 0 0 / 0.04);
 }
 
+html.light .journal-paper {
+  background:
+    radial-gradient(1200px 600px at 0% 0%, oklch(0.78 0.13 70 / 0.08), transparent 60%),
+    radial-gradient(900px 500px at 100% 100%, oklch(0.55 0.09 145 / 0.06), transparent 60%),
+    linear-gradient(180deg, oklch(0.995 0.006 85), oklch(0.975 0.01 80));
+  border: 1px solid oklch(0.26 0.018 55 / 0.08);
+  box-shadow:
+    0 24px 50px -28px oklch(0.26 0.018 55 / 0.25),
+    inset 0 1px 0 oklch(1 0 0 / 0.6);
+}
+
 .journal-lines {
   background-image: repeating-linear-gradient(
     to bottom,
@@ -302,10 +313,21 @@ html.light .placeholder\:text-white\/50::placeholder { color: oklch(0.5 0.015 60
   );
 }
 
+html.light .journal-lines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 31px,
+    oklch(0.26 0.018 55 / 0.08) 31px,
+    oklch(0.26 0.018 55 / 0.08) 32px
+  );
+}
+
 
 .diary-editor:empty::before {
   content: attr(data-placeholder);
-  color: oklch(1 0 0 / 0.3);
+  color: var(--muted-foreground);
+  opacity: 0.6;
   pointer-events: none;
 }
 .diary-editor img {
