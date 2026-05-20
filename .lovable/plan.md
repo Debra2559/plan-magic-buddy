@@ -1,60 +1,61 @@
-## 背景
+## 目标
 
-目前 `sylva-store` 里所有用户数据（日程/待办、随手记、日记、习惯、漫画）都只存在浏览器的 `localStorage`，**根本没有写到数据库**。两台设备之间互不可见，所以「手机记录 → Mac 实时刷新」当前完全做不到。
+1. 加登录（邮箱 + Google），每人一套数据。
+2. 现有公共工作区的数据全部归到「第一个登录的账号」（也就是你）。
+3. 加 AI 人设设置，所有 AI 输出（提醒文案、早安总结、AI 规划、雷达卡片、日记反馈）都按该人设说话。
+4. 默认人设：「称呼我为主人；幽默搞笑、贱贱的，但很专业」。
 
-要做到真正的实时联动，需要把这些状态搬到 Supabase，并通过 Postgres Changes（Realtime）推送到其他设备。
+## 一、账号系统
 
-## 设计原则
+- 启用邮箱 + 密码 + Google（managed Lovable OAuth）。
+- 新增 `/login` 路由：tabs（登录 / 注册），底部一个「用 Google 继续」。
+- 把整个 app 套进 `_authenticated` layout，未登录跳 `/login`。
+- 顶部加用户菜单（头像 + 邮箱 + 退出）。
+- `__root.tsx` 监听 `onAuthStateChange` → `router.invalidate()` + `queryClient.invalidateQueries()`。
 
-- **无登录**：你选了「不加账号系统」。所有设备共享同一个 **全局工作区**（一个固定的 workspace 行）。优点是上手零摩擦，缺点是任何人打开链接都能看到/改你的内容 —— 这点必须先确认你能接受。
-- **本地优先 + 实时合并**：写操作仍然先改本地 state（保持 UI 反应快），再 upsert 到数据库；其它设备通过 Realtime 收到 row change 后合并到本地。
-- **localStorage 仍保留**：作为离线兜底 + 启动时的 instant render；联网后立刻被远端覆盖。
+## 二、数据按用户隔离
 
-## 数据库（新增 5 张表）
+每张业务表加 `user_id uuid not null`，重写 RLS 为「只能读写自己 user_id 的行」。涉及：
+`schedule_items` / `notes` / `habits` / `diary_entries` / `comics` / `feishu_settings` / `ai_news_settings` / `ai_news` / `hackathon_settings` / `hackathons` / `daily_recaps` / `feishu_event_map`。
 
-每张表都带 `updated_at`（用来做 last-write-wins 合并）和触发器自动维护。
+**数据迁移**：用 trigger + `claim_legacy_data()` 函数 —— 第一次有用户注册成功后，把所有现存 `user_id IS NULL` 的行批量更新成该用户的 id（你抢到沙发）。之后所有 NULL 列改成 NOT NULL。
 
-```text
-schedule_items   id text PK, type, title, date, time, duration_min, tag, note, done, updated_at, deleted_at
-notes            id text PK, text, mood, tags text[], pinned, images text[], created_at, updated_at, deleted_at
-habits           id text PK, name, emoji, history text[], updated_at, deleted_at
-diary_entries    date text PK, content, mood, updated_at
-comics           date text PK, image_url, provider, caption, created_at, updated_at
+`cloud-sync.ts` 里 upsert / fetch 全部带上当前 `auth.uid()`（让 supabase-js 在 insert 时由 default 写入即可，RLS 自动过滤 select）。
+
+## 三、AI 人设
+
+### DB
+新表 `user_profiles`：
+- `user_id uuid pk references auth.users on delete cascade`
+- `display_name text`（AI 怎么称呼你，默认「主人」）
+- `persona_prompt text`（一段自由文本，默认预填那段「幽默搞笑贱贱但专业」）
+- `persona_traits jsonb`（结构化标签：幽默度 1-5 / 礼貌度 1-5 / 是否允许玩梗 / 禁忌话题数组），方便以后拖滑块调整
+- `tone_examples text`（可选：放两三句示范语气，让模型对齐）
+
+### UI
+`SettingsView` 顶部加 `AiPersonaPanel`：
+- 「AI 怎么称呼我」单行输入
+- 「人设描述」多行 textarea（默认填上「幽默搞笑、贱贱的但很专业，称呼我为主人」）
+- 四个滑块：幽默度 / 贱度 / 专业度 / 啰嗦度
+- 「试一句」按钮 —— 调一次 AI 用当前设定输出一句晨间问候，让你即时感受效果
+
+### 注入
+新建 `src/lib/persona.ts` 暴露 `getActivePersona()` + `buildPersonaSystemPrompt(persona)`，所有 server function 调 AI 的地方（`plan.functions.ts` / `feishu.functions.ts` 的日报卡 / `ai-news.functions.ts` 的归类提示词 / `comic.functions.ts` 的 caption）都改为：
 ```
+system = personaSystemPrompt + "\n\n" + 原有任务 prompt
+```
+任务指令保持不变，只是说话风格被人设包裹。本地的 `ReminderRunner` 提醒文案目前是模板字符串，会改成「先按人设模板渲染，模板里塞 displayName + persona 短摘要」。
 
-RLS：因为是「公开共享工作区」，对 anon 开放 select/insert/update/delete（不存敏感字段；漫画、随手记里可能有图片 dataURL，这点你要确认可接受）。如果以后加登录，再补 user_id 列和策略即可。
+## 四、范围之外（这次不做）
 
-删除采用**软删除**（`deleted_at`），这样其它设备能正确同步「这条被删掉了」。
+- 多用户互相协作 / 分享某条日程。
+- 人设的「记忆」自动学习（先用静态 prompt，够用了再说）。
+- 现有飞书 webhook 路由的鉴权改造（webhook 是公共的，按 receive_id 路由到对应 user_id —— 这次先保留单用户行为，后续单独做）。
 
-## 同步层（`src/lib/sync.ts` 新文件）
+## 风险提醒
 
-每种实体一个 hook：`useSyncedItems()`、`useSyncedNotes()` 等。统一职责：
+- 一旦切换到「登录后可用」，你目前没登录的预览窗口会立刻被踢到 `/login`。
+- 现存数据会自动归到「第一个登录成功的账号」，请确保第一个登录的是你自己的邮箱，否则数据会跟到别人那。
+- 飞书侧推过来的事件目前认不出是谁的，会先全部归到你的账号（和迁移规则一致）。
 
-1. 首次挂载：`select * where deleted_at is null`，结果合并进 store（远端优先）。
-2. 订阅 `postgres_changes`（INSERT/UPDATE/DELETE）→ 按 `updated_at` 合并。
-3. 暴露 `upsertRemote(row)` / `softDeleteRemote(id)` 给 store 的 mutator 调用。
-
-`sylva-store` 内的 `addItems`、`updateItem`、`addNote`、`toggleHabitOn` 等方法改成：本地 set + fire-and-forget upsert 到 Supabase。
-
-## 服务端
-
-- 新增一个 migration：建表 + 启用 Realtime（`alter publication supabase_realtime add table …` + `replica identity full`）+ RLS。
-- 不需要新 server function —— 直接用浏览器 `supabase` client 读写就行（公开表）。
-
-## 迁移现有数据
-
-挂载时如果远端表为空 而本地有 seed 数据，则一次性把本地推上去（避免你打开就看到空白）。之后远端永远是 source of truth。
-
-## 不做的事（避免范围爆炸）
-
-- 不引入登录 / 多账户隔离（你已经选了「不加」）。
-- 不做冲突 UI —— 用最朴素的 `updated_at` 比较即可。
-- 不动飞书同步、AI 雷达这些已经在 DB 里的功能。
-- 漫画历史 `comicHistory`（80 条循环缓存）保持本地，没有跨端价值。
-
-## 风险提醒（请确认）
-
-1. **公开访问**：任何拿到你预览链接的人都能读写你的日程/随手记/日记。如果不接受 → 必须加登录，请告诉我。
-2. **图片体积**：随手记的图片是 dataURL（最大压到 1280px），存进 Postgres 会让行很大。如果图片多建议改成 Supabase Storage —— 但那是另一块工作，本次默认仍然存 dataURL。
-
-确认接受这两点之后我就开干。
+确认 OK 就开干。
