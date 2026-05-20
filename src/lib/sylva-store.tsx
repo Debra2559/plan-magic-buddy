@@ -28,8 +28,70 @@ export interface Habit {
   id: string;
   name: string;
   emoji: string;
-  streak: number;
-  doneToday: boolean;
+  /** 历史打卡日期，YYYY-MM-DD，倒序去重 */
+  history: string[];
+  /** @deprecated 仍保留以兼容旧数据；新逻辑用 history 计算 */
+  streak?: number;
+  /** @deprecated 用 isHabitDoneOn(h, today) 代替 */
+  doneToday?: boolean;
+}
+
+/** 本地日期 YYYY-MM-DD */
+export function todayLocal(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function addDays(date: string, delta: number): string {
+  const [y, m, d] = date.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + delta);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+}
+
+export function isHabitDoneOn(h: Habit, date: string): boolean {
+  return (h.history ?? []).includes(date);
+}
+
+/** 截至 `today` 仍在保持的连续天数。
+ *  规则：如果今天打了 → 从今天往前数；如果今天没打但昨天打了 → 算上昨天（仍“未中断”）；否则 0。 */
+export function habitStreak(h: Habit, today: string = todayLocal()): number {
+  const set = new Set(h.history ?? []);
+  let cursor = today;
+  if (!set.has(cursor)) {
+    const y = addDays(today, -1);
+    if (!set.has(y)) return 0;
+    cursor = y;
+  }
+  let n = 0;
+  while (set.has(cursor)) {
+    n++;
+    cursor = addDays(cursor, -1);
+  }
+  return n;
+}
+
+/** 距离上次打卡过了几天（0 = 今天已打；1 = 昨天；…；Infinity = 从未打过） */
+export function habitDaysSinceLast(h: Habit, today: string = todayLocal()): number {
+  const set = new Set(h.history ?? []);
+  if (!set.size) return Infinity;
+  let cursor = today;
+  for (let i = 0; i < 365; i++) {
+    if (set.has(cursor)) return i;
+    cursor = addDays(cursor, -1);
+  }
+  return Infinity;
+}
+
+/** 迁移老数据：把 streak+doneToday 反推成 history */
+function migrateHabit(h: any): Habit {
+  if (Array.isArray(h.history)) return h as Habit;
+  const today = todayLocal();
+  const lastDay = h.doneToday ? today : addDays(today, -1);
+  const n = Math.max(0, Number(h.streak ?? 0));
+  const history: string[] = [];
+  for (let i = 0; i < n; i++) history.push(addDays(lastDay, -i));
+  return { id: h.id, name: h.name, emoji: h.emoji, history };
 }
 
 interface SylvaContextValue {
