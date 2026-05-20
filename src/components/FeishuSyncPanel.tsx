@@ -7,6 +7,7 @@ import {
   getFeishuSettings,
   selectFeishuCalendar,
   setFeishuDirection,
+  syncToFeishu,
 } from "@/lib/feishu.functions";
 import {
   Check,
