@@ -17,6 +17,8 @@ export function AiNewsRadar() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
+  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
+  const { addItems } = useSylva();
 
   const listFn = useServerFn(listPendingAiNews);
   const saveFn = useServerFn(saveAiNews);
