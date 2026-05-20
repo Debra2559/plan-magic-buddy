@@ -1,0 +1,353 @@
+import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { generatePlan, type Plan, type PlanItem } from "@/lib/plan.functions";
+import { Sparkles, ArrowUp, Loader2, Calendar, CheckSquare, Bell, Plus, RefreshCw, Wand2, Check, X, Trash2 } from "lucide-react";
+
+type Mode = "create" | "adjust" | "add";
+
+const modeMeta: Record<Mode, { label: string; icon: typeof Wand2; hint: string }> = {
+  create: { label: "全新规划", icon: Wand2, hint: "从 0 到 1 帮我排" },
+  adjust: { label: "调整重排", icon: RefreshCw, hint: "重新平衡现有规划" },
+  add: { label: "追加事项", icon: Plus, hint: "往现有规划里加" },
+};
+
+const typeMeta: Record<PlanItem["type"], { icon: typeof Calendar; color: string; label: string }> = {
+  event: { icon: Calendar, color: "text-amber-glow", label: "日程" },
+  todo: { icon: CheckSquare, color: "text-moss", label: "待办" },
+  reminder: { icon: Bell, color: "text-accent", label: "提醒" },
+};
+
+const tagColors: Record<string, string> = {
+  工作: "bg-moss/15 text-moss border-moss/30",
+  学习: "bg-amber-glow/15 text-amber-glow border-amber-glow/30",
+  健康: "bg-accent/15 text-accent border-accent/30",
+  生活: "bg-foreground/10 text-foreground/70 border-foreground/20",
+  英语: "bg-amber-glow/15 text-amber-glow border-amber-glow/30",
+  习惯: "bg-moss/15 text-moss border-moss/30",
+};
+
+export function AiPlanner() {
+  const [mode, setMode] = useState<Mode>("create");
+  const [idea, setIdea] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Plan | null>(null);
+  const [confirmed, setConfirmed] = useState<PlanItem[]>([]);
+  const planFn = useServerFn(generatePlan);
+
+  const handleSubmit = async () => {
+    if (!idea.trim() || loading) return;
+    setLoading(true);
+    setError(null);
+    setDraft(null);
+    try {
+      const result = await planFn({
+        data: {
+          idea: idea.trim(),
+          mode,
+          existing: mode !== "create" ? confirmed : undefined,
+        },
+      });
+      if (!result.ok) {
+        setError(result.error);
+      } else {
+        setDraft(result.plan);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "未知错误");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmDraft = () => {
+    if (!draft) return;
+    if (mode === "add") {
+      setConfirmed([...confirmed, ...draft.items]);
+    } else {
+      setConfirmed(draft.items);
+    }
+    setDraft(null);
+    setIdea("");
+  };
+
+  const discardDraft = () => setDraft(null);
+
+  const removeConfirmed = (idx: number) => {
+    setConfirmed(confirmed.filter((_, i) => i !== idx));
+  };
+
+  const grouped = groupByDate(confirmed);
+  const draftGrouped = draft ? groupByDate(draft.items) : null;
+
+  return (
+    <div className="grid lg:grid-cols-[1fr_1.2fr] gap-8 items-start">
+      {/* LEFT: Input */}
+      <div className="widget widget-glow p-7 lg:sticky lg:top-8">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="w-4 h-4 text-amber-glow animate-pulse-glow" />
+          <span className="text-xs tracking-wider text-amber-glow">Sylva AI · 实时规划</span>
+        </div>
+
+        <h3 className="font-display text-2xl mb-4">说一个想法</h3>
+
+        {/* Mode tabs */}
+        <div className="flex gap-2 mb-4">
+          {(Object.keys(modeMeta) as Mode[]).map((m) => {
+            const Icon = modeMeta[m].icon;
+            const active = mode === m;
+            const disabled = m !== "create" && confirmed.length === 0;
+            return (
+              <button
+                key={m}
+                disabled={disabled}
+                onClick={() => setMode(m)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition
+                  ${active ? "bg-amber-glow/20 border-amber-glow/50 text-amber-glow" : "bg-foreground/5 border-foreground/10 text-foreground/70 hover:bg-foreground/10"}
+                  ${disabled ? "opacity-30 cursor-not-allowed" : ""}`}
+                title={modeMeta[m].hint}
+              >
+                <Icon className="w-3 h-3" />
+                {modeMeta[m].label}
+              </button>
+            );
+          })}
+        </div>
+
+        <textarea
+          value={idea}
+          onChange={(e) => setIdea(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSubmit();
+          }}
+          placeholder={
+            mode === "create"
+              ? "例如：下周要准备毕业答辩，同时跑通飞书提效系统，每天还要泛听英语..."
+              : mode === "adjust"
+              ? "例如：周三下午突然有个会，把那天的安排往后推..."
+              : "例如：再加一个每天 30 分钟的力量训练..."
+          }
+          rows={5}
+          className="w-full bg-foreground/5 border border-foreground/10 rounded-2xl p-4 text-sm leading-relaxed resize-none outline-none focus:border-amber-glow/40 placeholder:text-foreground/40"
+        />
+
+        <div className="flex items-center justify-between mt-3">
+          <span className="text-[10px] text-muted-foreground tracking-wider">⌘ + Enter 发送</span>
+          <button
+            onClick={handleSubmit}
+            disabled={!idea.trim() || loading}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition disabled:opacity-40 disabled:scale-100"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                AI 思考中
+              </>
+            ) : (
+              <>
+                让 AI 拆解
+                <ArrowUp className="w-4 h-4" strokeWidth={2.5} />
+              </>
+            )}
+          </button>
+        </div>
+
+        {error && (
+          <div className="mt-4 p-3 rounded-xl bg-destructive/15 border border-destructive/30 text-xs text-destructive-foreground">
+            {error}
+          </div>
+        )}
+
+        {/* Example prompts */}
+        {!draft && !loading && (
+          <div className="mt-5 pt-5 border-t border-foreground/10">
+            <p className="text-[10px] tracking-wider text-muted-foreground mb-2">试试看 →</p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                "下周冲一份毕业答辩 PPT",
+                "三个月内雅思考到 7 分",
+                "周末搬家 + 布置新家",
+              ].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setIdea(s)}
+                  className="text-xs px-3 py-1.5 rounded-full bg-foreground/5 border border-foreground/10 text-foreground/70 hover:bg-foreground/10 transition"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* RIGHT: Preview + Confirmed */}
+      <div className="space-y-6">
+        {/* Draft preview */}
+        {draft && draftGrouped && (
+          <div className="widget widget-glow p-7 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="flex items-start justify-between mb-5 gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Wand2 className="w-3.5 h-3.5 text-amber-glow" />
+                  <span className="text-xs tracking-wider text-amber-glow">AI 拟定草稿 · 待你确认</span>
+                </div>
+                <p className="font-display text-lg text-foreground/90 leading-snug">{draft.summary}</p>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <button
+                  onClick={discardDraft}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs bg-foreground/5 border border-foreground/10 text-foreground/70 hover:bg-foreground/10"
+                >
+                  <X className="w-3 h-3" /> 丢弃
+                </button>
+                <button
+                  onClick={confirmDraft}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs bg-moss text-primary-foreground hover:scale-[1.02] transition"
+                >
+                  <Check className="w-3 h-3" /> 确认 ({draft.items.length})
+                </button>
+              </div>
+            </div>
+            <ItemGroups grouped={draftGrouped} variant="draft" />
+          </div>
+        )}
+
+        {/* Confirmed schedule */}
+        <div className="widget p-7">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <p className="text-xs tracking-widest text-muted-foreground mb-1">我的规划</p>
+              <h3 className="font-display text-2xl">
+                {confirmed.length === 0 ? "还没有任何安排" : `${confirmed.length} 项 · 按日期`}
+              </h3>
+            </div>
+            {confirmed.length > 0 && (
+              <button
+                onClick={() => setConfirmed([])}
+                className="text-xs text-foreground/40 hover:text-destructive transition"
+              >
+                全部清空
+              </button>
+            )}
+          </div>
+
+          {confirmed.length === 0 ? (
+            <div className="py-12 text-center">
+              <div className="inline-flex w-14 h-14 rounded-2xl bg-foreground/5 items-center justify-center mb-3">
+                <Sparkles className="w-6 h-6 text-foreground/30" />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                在左边输入一个想法 — Sylva 会自动帮你拆成日程、待办和提醒
+              </p>
+            </div>
+          ) : (
+            <ItemGroups grouped={grouped} variant="confirmed" onRemove={removeConfirmed} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function groupByDate(items: PlanItem[]) {
+  const map = new Map<string, { item: PlanItem; originalIdx: number }[]>();
+  items.forEach((item, originalIdx) => {
+    const arr = map.get(item.date) ?? [];
+    arr.push({ item, originalIdx });
+    map.set(item.date, arr);
+  });
+  return Array.from(map.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, entries]) => ({
+      date,
+      entries: entries.sort((a, b) => (a.item.time ?? "99:99").localeCompare(b.item.time ?? "99:99")),
+    }));
+}
+
+function ItemGroups({
+  grouped,
+  variant,
+  onRemove,
+}: {
+  grouped: { date: string; entries: { item: PlanItem; originalIdx: number }[] }[];
+  variant: "draft" | "confirmed";
+  onRemove?: (idx: number) => void;
+}) {
+  return (
+    <div className="space-y-5">
+      {grouped.map(({ date, entries }) => (
+        <div key={date}>
+          <div className="flex items-baseline gap-3 mb-2">
+            <span className="font-display text-base text-amber-glow">{formatDate(date)}</span>
+            <span className="text-[10px] text-muted-foreground tracking-wider">
+              {entries.length} 项
+            </span>
+            <div className="flex-1 border-b border-foreground/10" />
+          </div>
+          <div className="space-y-1.5">
+            {entries.map(({ item, originalIdx }, i) => {
+              const Type = typeMeta[item.type];
+              const TypeIcon = Type.icon;
+              return (
+                <div
+                  key={i}
+                  className={`group flex items-start gap-3 p-3 rounded-xl border transition
+                    ${variant === "draft"
+                      ? "bg-amber-glow/[0.06] border-amber-glow/15"
+                      : "bg-foreground/[0.03] border-foreground/[0.07] hover:border-foreground/15"}`}
+                >
+                  <div className={`w-7 h-7 rounded-lg bg-foreground/5 flex items-center justify-center shrink-0 ${Type.color}`}>
+                    <TypeIcon className="w-3.5 h-3.5" strokeWidth={1.8} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm text-foreground/90">{item.title}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-md border ${tagColors[item.tag] ?? "border-foreground/10 text-foreground/50"}`}>
+                        {item.tag}
+                      </span>
+                    </div>
+                    {item.note && (
+                      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.note}</p>
+                    )}
+                  </div>
+                  <div className="text-right shrink-0 flex items-center gap-2">
+                    <div>
+                      {item.time && (
+                        <div className="text-xs font-mono text-foreground/80">{item.time}</div>
+                      )}
+                      {item.durationMin && (
+                        <div className="text-[10px] text-muted-foreground">{item.durationMin} 分钟</div>
+                      )}
+                      {!item.time && (
+                        <div className="text-[10px] text-muted-foreground">{Type.label}</div>
+                      )}
+                    </div>
+                    {variant === "confirmed" && onRemove && (
+                      <button
+                        onClick={() => onRemove(originalIdx)}
+                        className="opacity-0 group-hover:opacity-100 transition text-foreground/30 hover:text-destructive p-1"
+                        title="移除"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function formatDate(iso: string) {
+  // Expected YYYY-MM-DD
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return iso;
+  const date = new Date(y, m - 1, d);
+  const weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+  return `${m}月${d}日 · ${weekdays[date.getDay()]}`;
+}
