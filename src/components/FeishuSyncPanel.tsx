@@ -1898,7 +1898,7 @@ export function FeishuSyncPanel() {
                 setRecap(next);
                 saveRecap(next);
               }}
-            /> 每天定时提醒填写今日小结 + 日记
+            /> 每天定时提醒填写今日小结 + 手帐
           </label>
           <label className="flex items-center gap-1.5">
             时间
