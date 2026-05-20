@@ -554,7 +554,12 @@ export function FeishuSyncPanel() {
         return;
       }
       if (r.newItems.length === 0) {
-        setLogs((prev) => [mkLog("pull", "feishu", `无新事件 (共 ${r.total} 条)`, "ok"), ...prev].slice(0, 12));
+        const skipped = (r as any).skippedNoTime ?? 0;
+        const already = (r as any).alreadyImported ?? r.total;
+        const detail = skipped > 0
+          ? `无新事件 · 已导入 ${already} 条 · 跳过 ${skipped} 条无时间`
+          : `无新事件 (已导入 ${already}/${r.total} 条)`;
+        setLogs((prev) => [mkLog("pull", "feishu", detail, "ok"), ...prev].slice(0, 12));
         setLastSummary({ ok: 0, fail: 0, scope: `拉取 · 远端共 ${r.total} 条`, at: new Date().toISOString() });
         setLastError(null);
         return;
