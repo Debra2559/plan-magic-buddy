@@ -379,32 +379,7 @@ export function AiPersonaPanel() {
         </div>
 
 
-        <div className="grid grid-cols-2 gap-4">
-          {([
-            ["humor_level", "幽默度", "冷静", "段子手"],
-            ["sass_level", "贱度", "正经", "贱兮兮"],
-            ["professional_level", "专业度", "随意", "专业"],
-            ["verbosity_level", "啰嗦度", "简洁", "话痨"],
-          ] as const).map(([k, label, lo, hi]) => (
-            <div key={k}>
-              <div className="flex justify-between text-xs text-foreground/75 mb-1">
-                <span>{label}</span>
-                <span className="text-amber-glow tabular-nums">{local[k]}/5</span>
-              </div>
-              <input
-                type="range" min={1} max={5} step={1}
-                value={local[k]}
-                onChange={(e) => patch({ [k]: Number(e.target.value) } as any)}
-                onMouseUp={() => commit({ [k]: local[k] } as any)}
-                onTouchEnd={() => commit({ [k]: local[k] } as any)}
-                className="w-full accent-amber-glow"
-              />
-              <div className="flex justify-between text-[10px] text-muted-foreground/70">
-                <span>{lo}</span><span>{hi}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+
 
         <div className="space-y-1">
           <label className="text-xs text-muted-foreground">禁忌话题（逗号分隔，AI 永远不会碰）</label>
