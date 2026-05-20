@@ -82,7 +82,7 @@ export function TimePicker({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`group inline-flex items-center gap-1.5 rounded-md bg-white/5 border border-white/10 hover:border-amber-glow/40 hover:bg-amber-glow/[0.06] transition ${padded} font-mono tabular-nums ${
+        className={`group inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-md bg-white/5 border border-white/10 hover:border-amber-glow/40 hover:bg-amber-glow/[0.06] transition ${padded} font-mono tabular-nums ${
           value ? "text-amber-glow/95" : "text-white/40"
         } focus:outline-none focus:border-amber-glow/50`}
         title="选择时间"
