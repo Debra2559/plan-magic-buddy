@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { PlanItem } from "./plan.functions";
 import { getRecapDoneDates, getDailyRecap, unmarkRecapDone as unmarkRecapDoneFn } from "./feishu.functions";
 
@@ -95,6 +95,8 @@ function migrateHabit(h: any): Habit {
   return { id: h.id, name: h.name, emoji: h.emoji, history };
 }
 
+export type RecapBackfillStrategy = "overwrite" | "merge" | "fill-empty";
+
 interface SylvaContextValue {
   items: DoneItem[];
   notes: Note[];
@@ -115,6 +117,8 @@ interface SylvaContextValue {
   isRecapDone: (date: string) => boolean;
   refreshRecapDoneDates: () => Promise<void>;
   unmarkRecapDone: (date: string) => Promise<void>;
+  recapBackfillStrategy: RecapBackfillStrategy;
+  setRecapBackfillStrategy: (s: RecapBackfillStrategy) => void;
 }
 
 const SylvaContext = createContext<SylvaContextValue | null>(null);
@@ -238,11 +242,21 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
   // 远端：飞书卡片已提交完成的日期集合（轮询同步）
   const [recapDoneDates, setRecapDoneDates] = useState<Set<string>>(() => new Set());
 
+  // 飞书回填策略：覆盖 / 合并 / 仅在为空时更新
+  const [recapBackfillStrategy, setRecapBackfillStrategyState] = useState<RecapBackfillStrategy>(
+    () => loadLS<RecapBackfillStrategy>("sylva.recapBackfillStrategy", "fill-empty")
+  );
+  const setRecapBackfillStrategy = useCallback((s: RecapBackfillStrategy) => {
+    setRecapBackfillStrategyState(s);
+    saveLS("sylva.recapBackfillStrategy", s);
+  }, []);
+  const strategyRef = useRef<RecapBackfillStrategy>(recapBackfillStrategy);
+  useEffect(() => { strategyRef.current = recapBackfillStrategy; }, [recapBackfillStrategy]);
+
   const refreshRecapDoneDates = useCallback(async () => {
     try {
       const res = await getRecapDoneDates();
       const nextSet = new Set(res.dates);
-      // 找出新增的"已完成"日期：把对应当日所有待办/日程也置为完成
       setRecapDoneDates((prev) => {
         const newlyDone = res.dates.filter((d) => !prev.has(d));
         if (newlyDone.length) {
@@ -255,35 +269,49 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
         }
         return nextSet;
       });
-      // 顺手把今天的远端 recap 内容同步进本地 diary（若本地为空）
+      // 按策略把今天的远端 recap 内容回填到本地 diary
       const today = todayLocal();
       if (res.dates.includes(today)) {
         const row = await getDailyRecap({ data: { date: today } });
         if (row) {
           const remote = [row.summary, row.diary].filter(Boolean).join("\n\n").trim();
+          const remoteMood = (row.mood as Mood | undefined) || undefined;
+          const strategy = strategyRef.current;
           setDiary((prev) => {
             const existing = prev.find((d) => d.date === today);
             const localContent = (existing?.content ?? "").trim();
             const localMood = existing?.mood;
-            const remoteMood = (row.mood as Mood | undefined) || undefined;
-            if ((remote && !localContent) || (remoteMood && !localMood)) {
-              const updatedAt = new Date().toISOString();
-              if (existing) {
-                return prev.map((d) => d.date === today ? {
-                  ...d,
-                  content: localContent ? d.content : remote,
-                  mood: localMood ?? remoteMood,
-                  updatedAt,
-                } : d);
+            const updatedAt = new Date().toISOString();
+
+            let nextContent = existing?.content ?? "";
+            let nextMood = localMood;
+            if (strategy === "overwrite") {
+              if (remote) nextContent = remote;
+              if (remoteMood) nextMood = remoteMood;
+            } else if (strategy === "merge") {
+              if (remote && !localContent.includes(remote)) {
+                nextContent = localContent ? `${localContent}\n\n${remote}` : remote;
               }
-              return [{ date: today, content: remote, mood: remoteMood, updatedAt }, ...prev];
+              if (!localMood && remoteMood) nextMood = remoteMood;
+            } else {
+              // fill-empty：只在本地为空时填
+              if (remote && !localContent) nextContent = remote;
+              if (!localMood && remoteMood) nextMood = remoteMood;
             }
-            return prev;
+
+            const changed = nextContent !== (existing?.content ?? "") || nextMood !== localMood;
+            if (!existing && !nextContent && !nextMood) return prev;
+            if (!changed && existing) return prev;
+            if (existing) {
+              return prev.map((d) => d.date === today ? { ...d, content: nextContent, mood: nextMood, updatedAt } : d);
+            }
+            return [{ date: today, content: nextContent, mood: nextMood, updatedAt }, ...prev];
           });
         }
       }
     } catch {}
   }, []);
+
 
 
   useEffect(() => {
@@ -340,6 +368,8 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
         isRecapDone,
         refreshRecapDoneDates,
         unmarkRecapDone,
+        recapBackfillStrategy,
+        setRecapBackfillStrategy,
       }}
     >
       {children}
