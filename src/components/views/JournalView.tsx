@@ -189,8 +189,34 @@ export function JournalView() {
     return () => window.removeEventListener("keydown", onKey);
   }, [allDates, date, setDate]);
 
+  const [jMode, setJMode] = useState<"list" | "canvas">(() => {
+    if (typeof window === "undefined") return "list";
+    return (window.localStorage.getItem("journal:mode") as "list" | "canvas") ?? "list";
+  });
+  useEffect(() => { try { window.localStorage.setItem("journal:mode", jMode); } catch {} }, [jMode]);
+
+  if (jMode === "canvas") {
+    return (
+      <div className="h-full flex flex-col">
+        <div className="flex items-center justify-between px-7 pt-5">
+          <div>
+            <p className="text-[10px] tracking-widest text-amber-glow mb-1">手帐</p>
+            <h2 className="font-display text-2xl text-white">自由画布 · 拼贴你的日子</h2>
+          </div>
+          <JournalModeToggle mode={jMode} onChange={setJMode} />
+        </div>
+        <div className="flex-1 mt-3 mx-7 mb-5 rounded-2xl overflow-hidden border border-white/10">
+          <FreeformCanvas kind="journal" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full">
+      <div className="absolute top-4 right-6 z-20">
+        <JournalModeToggle mode={jMode} onChange={setJMode} />
+      </div>
       {/* 手帐主页 */}
       <div className="flex-1 overflow-auto">
         <div className="max-w-3xl mx-auto p-7">
