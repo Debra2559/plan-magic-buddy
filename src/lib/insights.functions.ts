@@ -76,9 +76,10 @@ function daysAgo(n: number, tz: string = DEFAULT_TZ): string {
 }
 
 
-async function gatherUserContext(userId: string, lookbackDays: number) {
-  const since = daysAgo(lookbackDays);
-  const today = todayStr();
+async function gatherUserContext(userId: string, lookbackDays: number, tz: string = DEFAULT_TZ) {
+  const since = daysAgo(lookbackDays, tz);
+  const today = todayStr(new Date(), tz);
+
 
   const [schedule, notes, diaries, habits, profile] = await Promise.all([
     supabaseAdmin
