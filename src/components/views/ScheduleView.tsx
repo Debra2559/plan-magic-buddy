@@ -125,7 +125,7 @@ export function ScheduleView() {
                       key={it.id}
                       className={`text-[10px] px-1.5 py-0.5 rounded truncate border ${
                         tagColor[it.tag] ?? "bg-white/10 text-white/70 border-white/15"
-                      }`}
+                      } ${it.done ? "opacity-50 line-through" : ""}`}
                       title={it.title}
                     >
                       {it.time && <span className="font-mono mr-1 opacity-70">{it.time}</span>}
