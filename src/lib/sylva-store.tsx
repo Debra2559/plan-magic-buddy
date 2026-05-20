@@ -16,6 +16,8 @@ export interface Note {
   mood?: Mood;
   tags?: string[];
   pinned?: boolean;
+  /** 内嵌的图片附件（data URL，已在客户端压缩） */
+  images?: string[];
 }
 
 export interface DailyComic {
