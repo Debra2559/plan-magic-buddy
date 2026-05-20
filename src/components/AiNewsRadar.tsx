@@ -62,13 +62,82 @@ export function AiNewsRadar() {
     setScanning(true);
     setError(null);
     try {
-      await scanFn();
+      await scanFn({ data: { force: true } });
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setScanning(false);
     }
+  };
+
+  const openSettings = async () => {
+    setSettingsOpen(true);
+    if (settings) return;
+    try {
+      const r = await getSettingsFn();
+      if (r.ok) {
+        setSettings(r.settings);
+        setIncludeText(r.settings.include_keywords.join(", "));
+        setExcludeText(r.settings.exclude_keywords.join(", "));
+        setTagsText(r.settings.tag_filters.join(", "));
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const parseList = (s: string) =>
+    s.split(/[,，\n]/).map((x) => x.trim()).filter(Boolean).slice(0, 30);
+
+  const onSaveSettings = async () => {
+    if (!settings) return;
+    setSavingSettings(true);
+    setError(null);
+    try {
+      const payload = {
+        enabled: settings.enabled,
+        sources: settings.sources.filter((s) => s.name.trim() && s.query.trim()),
+        include_keywords: parseList(includeText),
+        exclude_keywords: parseList(excludeText),
+        tag_filters: parseList(tagsText),
+        scan_interval_hours: settings.scan_interval_hours,
+        time_window: settings.time_window,
+        per_source_limit: settings.per_source_limit,
+      };
+      const r = await updateSettingsFn({ data: payload });
+      if (r.ok) {
+        setSettings({ ...settings, ...payload });
+        setSettingsOpen(false);
+      } else {
+        setError(r.error);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const updateSource = (idx: number, patch: Partial<AiNewsSettings["sources"][number]>) => {
+    if (!settings) return;
+    setSettings({
+      ...settings,
+      sources: settings.sources.map((s, i) => (i === idx ? { ...s, ...patch } : s)),
+    });
+  };
+
+  const removeSource = (idx: number) => {
+    if (!settings) return;
+    setSettings({ ...settings, sources: settings.sources.filter((_, i) => i !== idx) });
+  };
+
+  const addSource = () => {
+    if (!settings) return;
+    setSettings({
+      ...settings,
+      sources: [...settings.sources, { name: "新数据源", query: "site:example.com AI", enabled: true }],
+    });
   };
 
   const onSave = async (id: string) => {
