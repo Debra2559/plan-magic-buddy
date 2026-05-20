@@ -17,11 +17,12 @@ type ItemRow = {
 };
 export const itemFromRow = (r: ItemRow): DoneItem => ({
   id: r.id, type: r.type as any, title: r.title,
-  date: r.date ?? undefined, time: r.time ?? undefined,
+  date: (r.date ?? "") as any, time: r.time ?? undefined,
   durationMin: r.duration_min ?? undefined,
-  tag: r.tag ?? undefined, note: r.note ?? undefined,
+  tag: (r.tag ?? "生活") as any, note: r.note ?? undefined,
   done: r.done,
 });
+
 export const itemToRow = (i: DoneItem) => ({
   id: i.id, type: i.type, title: i.title,
   date: i.date ?? null, time: i.time ?? null,
