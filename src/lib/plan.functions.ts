@@ -175,40 +175,47 @@ export const chatPlan = createServerFn({ method: "POST" })
 
     // Step 1: ask AI what to do
     const gateway = createLovableAiGatewayProvider(apiKey);
-    let step: ChatStep;
-    try {
-      const { object } = await generateObject({
-        model: gateway("google/gemini-3-flash-preview"),
-        schema: ChatStepSchema,
-        system: baseSystem,
-        prompt: `对话记录:\n${conversation}${existingBlock}\n\n请输出下一步动作。`,
-      });
-      step = object;
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes("429")) return { ok: false, error: "请求过于频繁, 稍后再试" };
-      if (msg.includes("402")) return { ok: false, error: "AI 额度已用完, 请到工作区充值" };
-      return { ok: false, error: `AI 失败: ${msg}` };
+
+    async function callStep(extraSystem: string, extraPrompt: string): Promise<ChatStep | { error: string }> {
+      const models = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash"] as const;
+      let lastMsg = "";
+      for (const m of models) {
+        try {
+          const { object } = await generateObject({
+            model: gateway(m),
+            schema: ChatStepRawSchema,
+            system: baseSystem + extraSystem,
+            prompt: extraPrompt,
+          });
+          const norm = normalizeChatStep(object);
+          if (norm) return norm;
+          lastMsg = `字段缺失 (kind=${object.kind})`;
+        } catch (err: unknown) {
+          lastMsg = err instanceof Error ? err.message : String(err);
+          if (lastMsg.includes("429")) return { error: "请求过于频繁, 稍后再试" };
+          if (lastMsg.includes("402")) return { error: "AI 额度已用完, 请到工作区充值" };
+        }
+      }
+      return { error: `AI 失败: ${lastMsg}` };
     }
+
+    const first = await callStep(
+      "",
+      `对话记录:\n${conversation}${existingBlock}\n\n请输出下一步动作 (kind 必填: clarify/research/plan, 并填齐对应字段)。`,
+    );
+    if ("error" in first) return { ok: false, error: first.error };
 
     // Step 2: if research, do it server-side and re-ask for plan
-    if (step.kind === "research") {
-      const snippets = (await Promise.all(step.queries.map((q) => firecrawlSearchSnippets(q)))).join("\n\n---\n\n");
-      try {
-        const { object } = await generateObject({
-          model: gateway("google/gemini-3-flash-preview"),
-          schema: ChatStepSchema,
-          system: baseSystem + `\n\n现在你已经获得了联网搜索结果, 必须输出 kind="plan", 不能再 research 或 clarify。`,
-          prompt: `对话记录:\n${conversation}${existingBlock}\n\n联网搜索结果 (queries=${JSON.stringify(step.queries)}):\n${snippets || "(没有可用结果, 凭常识规划)"}\n\n请直接输出完整 plan。`,
-        });
-        if (object.kind !== "plan") {
-          return { ok: false, error: "AI 未能给出最终规划, 请再试一次" };
-        }
-        return { ok: true, step: object };
-      } catch (err: unknown) {
-        return { ok: false, error: err instanceof Error ? err.message : "联网规划失败" };
-      }
+    if (first.kind === "research") {
+      const snippets = (await Promise.all(first.queries.map((q) => firecrawlSearchSnippets(q)))).join("\n\n---\n\n");
+      const second = await callStep(
+        `\n\n现在你已经获得了联网搜索结果, 必须输出 kind="plan", 不能再 research 或 clarify。`,
+        `对话记录:\n${conversation}${existingBlock}\n\n联网搜索结果 (queries=${JSON.stringify(first.queries)}):\n${snippets || "(没有可用结果, 凭常识规划)"}\n\n请直接输出完整 plan (kind="plan", items 必填)。`,
+      );
+      if ("error" in second) return { ok: false, error: second.error };
+      if (second.kind !== "plan") return { ok: false, error: "AI 未能给出最终规划, 请再试一次" };
+      return { ok: true, step: second };
     }
 
-    return { ok: true, step };
+    return { ok: true, step: first };
   });
