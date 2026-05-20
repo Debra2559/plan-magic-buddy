@@ -47,7 +47,7 @@ export function AbilityView() {
   const hasProfile = !!data?.profile?.initial_done;
 
   return (
-    <div className="h-full overflow-auto bg-gradient-to-br from-[#1a1d24] via-[#181b22] to-[#15171c] text-foreground">
+    <div className="h-full overflow-auto bg-background text-foreground">
       <div className="max-w-5xl mx-auto p-6 space-y-6">
         <header>
           <h1 className="font-display text-3xl flex items-center gap-2">
