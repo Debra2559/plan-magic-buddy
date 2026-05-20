@@ -163,6 +163,22 @@ export function FeishuSyncPanel() {
     }
   }, [runGetCapture]);
 
+  const runGetPerm = useServerFn(getFeishuPermissionStatus);
+  const [perm, setPerm] = useState<{
+    webhookReceived: boolean;
+    lastEventType: string | null;
+    lastEventAt: string | null;
+    imMessageSubscribed: boolean;
+    lastImMessageAt: string | null;
+    sendScopeIssue: boolean;
+    lastSendError: string | null;
+  } | null>(null);
+  const [permRefreshing, setPermRefreshing] = useState(false);
+  const refreshPerm = useCallback(async () => {
+    setPermRefreshing(true);
+    try { setPerm(await runGetPerm()); } catch {} finally { setPermRefreshing(false); }
+  }, [runGetPerm]);
+
   const [lookup, setLookup] = useState<{
     open: boolean;
     type: "email" | "mobile" | "name" | "employee_id";
