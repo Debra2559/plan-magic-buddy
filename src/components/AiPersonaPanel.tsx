@@ -7,6 +7,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
+const PRESET_AVATARS: string[] = [
+  "fox", "panda", "cat", "dog", "koala", "tiger", "bear", "rabbit",
+  "owl", "penguin", "monkey", "lion", "wolf", "frog", "duck", "pig",
+].map((seed) => `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${seed}&backgroundType=gradientLinear`);
+
 export function AiPersonaPanel() {
   const { persona, loading, save } = usePersona();
   const { user, signOut } = useAuth();
