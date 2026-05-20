@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { useSylva } from "@/lib/sylva-store";
-import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X, CheckCircle2, RotateCcw, Check, Sparkles } from "lucide-react";
+import { useSylva, isHabitDoneOn } from "@/lib/sylva-store";
+import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X, CheckCircle2, RotateCcw, Check, Sparkles, Flame } from "lucide-react";
 import type { PlanItem } from "@/lib/plan.functions";
 import { TimePicker } from "@/components/ui/time-picker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -25,7 +25,7 @@ const tagColor: Record<string, string> = {
 const typeIcon = { event: CalIcon, todo: Clock, reminder: Bell } as const;
 
 export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void; onGoSettings?: () => void } = {}) {
-  const { items, addItems, updateItem, removeItem, toggleDone, isRecapDone, unmarkRecapDone, isRecentlySynced, markRecentlySynced, pendingIds, confirmPending, revertPending } = useSylva();
+  const { items, habits, toggleHabitOn, addItems, updateItem, removeItem, toggleDone, isRecapDone, unmarkRecapDone, isRecentlySynced, markRecentlySynced, pendingIds, confirmPending, revertPending } = useSylva();
   const [cursor, setCursor] = useState(new Date(2026, 4, 1)); // May 2026
   const [selected, setSelected] = useState("2026-05-19");
   const [editorDate, setEditorDate] = useState<string | null>(null);
@@ -266,6 +266,16 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                     <div className="text-[9px] text-white/50 px-1.5">+{dayItems.length - 3} 项</div>
                   )}
                 </div>
+                {habits.length > 0 && (() => {
+                  const doneCount = habits.filter((h) => isHabitDoneOn(h, cell.iso)).length;
+                  const emojis = habits.filter((h) => isHabitDoneOn(h, cell.iso)).slice(0, 3).map((h) => h.emoji).join("");
+                  return (
+                    <div className="absolute bottom-1 left-1.5 right-1.5 flex items-center gap-1 text-[9px] text-moss/85">
+                      <span className="truncate">{emojis || "·"}</span>
+                      <span className="ml-auto font-mono tabular-nums opacity-80">{doneCount}/{habits.length}</span>
+                    </div>
+                  );
+                })()}
               </button>
             );
           })}
@@ -323,6 +333,41 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                 onRevert={it.pending ? () => revertPending([it.id]) : undefined}
               />
             ))}
+          </div>
+        )}
+
+        {habits.length > 0 && (
+          <div className="mt-5 pt-4 border-t border-white/10">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] tracking-widest text-moss">习惯打卡</p>
+              <p className="text-[10px] text-white/40 font-mono">
+                {habits.filter((h) => isHabitDoneOn(h, selected)).length}/{habits.length}
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              {habits.map((h) => {
+                const done = isHabitDoneOn(h, selected);
+                return (
+                  <button
+                    key={h.id}
+                    onClick={() => toggleHabitOn(h.id, selected)}
+                    className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg border text-left transition ${
+                      done
+                        ? "bg-moss/15 border-moss/40 text-white"
+                        : "bg-white/[0.03] border-white/10 text-white/70 hover:bg-white/[0.06]"
+                    }`}
+                  >
+                    <span className="text-base">{h.emoji}</span>
+                    <span className="flex-1 text-xs truncate">{h.name}</span>
+                    {done ? (
+                      <Check className="w-3.5 h-3.5 text-moss" />
+                    ) : (
+                      <span className="w-3.5 h-3.5 rounded-full border border-white/25" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
