@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Mic, Square, Video, Trash2, Loader2, Play, Pause } from "lucide-react";
+import { Mic, Square, ImagePlus, Trash2, Loader2, Play, Pause, X } from "lucide-react";
+import { fileToCompressedDataURL } from "@/components/ImageAttacher";
 
 function mmssShort(s: number) {
   if (!isFinite(s) || s < 0) s = 0;
