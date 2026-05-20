@@ -286,7 +286,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
 
 
       {/* Right detail */}
-      <aside className="w-80 shrink-0 bg-gradient-to-b from-black/40 to-black/20 border-l border-border p-5 overflow-auto space-y-5">
+      <aside className="w-80 shrink-0 bg-card/40 border-l border-border p-5 overflow-auto space-y-5">
         <div>
           <p className="text-[10px] tracking-widest text-amber-glow mb-1">所选日期</p>
           <h3 className="font-display text-2xl text-foreground mb-1">{formatLong(selected)}</h3>
