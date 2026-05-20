@@ -154,16 +154,26 @@ function LoginPage() {
           </div>
           <div>
             <label className="text-xs text-foreground/60">密码</label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={pwd}
-              onChange={(e) => setPwd(e.target.value)}
-              className="mt-1 w-full px-3 py-2 rounded-lg bg-foreground/5 border border-foreground/10 text-sm outline-none focus:border-amber-glow/50"
-              placeholder="至少 6 位"
-            />
-            {mode === "signup" && pwdCheck.status !== "idle" && (
+            <div className="relative mt-1">
+              <input
+                type={showPwd ? "text" : "password"}
+                required
+                minLength={6}
+                value={pwd}
+                onChange={(e) => setPwd(e.target.value)}
+                className="w-full px-3 py-2 pr-10 rounded-lg bg-foreground/5 border border-foreground/10 text-sm outline-none focus:border-amber-glow/50"
+                placeholder="至少 6 位"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPwd((v) => !v)}
+                tabIndex={-1}
+                className="absolute inset-y-0 right-2 flex items-center px-1 text-foreground/40 hover:text-foreground/80"
+                title={showPwd ? "隐藏密码" : "显示密码"}
+              >
+                {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
               <p
                 className={`mt-1 text-[11px] ${
                   pwdCheck.status === "ok"
