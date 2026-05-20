@@ -351,6 +351,19 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
           </div>
         )}
 
+        <ThinkingTrace
+          active={loading}
+          variant={
+            mode === "goal"
+              ? chatStep?.kind === "research"
+                ? "goal-research"
+                : chatMessages.length >= 2
+                ? "goal-plan"
+                : "goal-clarify"
+              : "plan"
+          }
+        />
+
         {/* Mode tabs（输入框下方） */}
         <div className="flex gap-2 mt-3 flex-wrap items-center">
           <span className="text-[10px] tracking-wider text-muted-foreground mr-1">模式</span>
