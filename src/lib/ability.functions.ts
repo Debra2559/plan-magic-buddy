@@ -156,6 +156,7 @@ const PlanSchema = z.object({
   focus_areas: z.array(z.string()).min(1).max(4),
   items: z.array(PlanItemSchema).min(2).max(6),
 });
+type AbilityPlanDraft = z.infer<typeof PlanSchema>;
 
 // ---------- Helpers ----------
 function todayStr(d = new Date()): string {
@@ -191,6 +192,64 @@ async function gatherActivity(userId: string, lookbackDays = 14) {
     recent_notes: (notes.data ?? []).map((n: any) => ({ text: (n.text ?? "").slice(0, 120), mood: n.mood, tags: n.tags })),
     recent_diaries: diaries.data ?? [],
     habits: habitStats,
+  };
+}
+
+function cleanFocusArea(text: unknown) {
+  return String(text ?? "")
+    .replace(/^可以继续培养/, "")
+    .replace(/^在/, "")
+    .replace(/上表现突出$/, "")
+    .trim();
+}
+
+function buildFallbackAbilityPlan(profile: any, activity: any): AbilityPlanDraft {
+  const abilities = (profile?.abilities ?? {}) as Record<string, number>;
+  const lowScoreAreas = Object.entries(abilities)
+    .sort((a, b) => a[1] - b[1])
+    .map(([key]) => DIM_LABELS[key] ?? key);
+  const profileGrowthAreas = Array.isArray(profile?.growth_areas)
+    ? profile.growth_areas.map(cleanFocusArea).filter(Boolean)
+    : [];
+  const focus_areas = Array.from(new Set([...profileGrowthAreas, ...lowScoreAreas])).slice(0, 3);
+  const areas = focus_areas.length > 0 ? focus_areas : ["计划力", "专注力"];
+  const completion = typeof activity?.completion_rate === "number" ? activity.completion_rate : null;
+  const tagline = completion === null
+    ? "先建立轻量节奏，再逐步提高稳定性。"
+    : completion >= 70
+      ? "保持当前完成节奏，把优势沉淀成可复用习惯。"
+      : "用更小的动作降低启动成本，先让计划跑起来。";
+
+  const actionMap: Record<string, string[]> = {
+    计划力: ["每天开始前写下 3 件最重要的事", "把超过 30 分钟的任务拆成下一步动作", "每晚用 5 分钟复盘明天第一件事"],
+    专注力: ["每天安排 1 段 25 分钟免打扰专注块", "开始前关闭无关通知和页面", "把临时想法先记到收集箱，结束后再处理"],
+    健康力: ["每天固定一个 10 分钟活动窗口", "睡前 30 分钟减少屏幕和刺激信息", "久坐 60 分钟后起身走动 3 分钟"],
+    创造力: ["每周记录 3 个新点子或新工具", "把一个旧任务尝试换一种做法", "每周做一次 20 分钟跨领域素材收集"],
+    社交力: ["每周主动联系 1 位朋友或同事", "重要沟通前先写下想表达的 3 个点", "对收到的帮助及时反馈和感谢"],
+    反思力: ["每天记录一个有效动作和一个卡点", "每周复盘一次高耗能事件的原因", "把失败经验改写成下一次的具体规则"],
+  };
+
+  const items = areas.map((area) => ({
+    area,
+    goal: `在未来 7 天稳定提升${area}，先形成可持续的小循环。`,
+    actions: actionMap[area] ?? ["每天选择一个最小动作完成", "完成后记录一句反馈", "周末根据实际情况调整难度"],
+    cadence: area === "健康力" ? "每天10分钟" : "每周3-5次，每次15-25分钟",
+  }));
+
+  while (items.length < 2) {
+    items.push({
+      area: "稳定执行",
+      goal: "降低计划启动成本，让成长计划持续发生。",
+      actions: ["每天只承诺一个最小可完成动作", "完成后立即打勾或记录一句反馈", "连续两天中断时主动降级任务难度"],
+      cadence: "每天5分钟",
+    });
+  }
+
+  return {
+    title: `${todayStr()} 成长计划`,
+    tagline,
+    focus_areas: areas.slice(0, 4),
+    items: items.slice(0, 6),
   };
 }
 
