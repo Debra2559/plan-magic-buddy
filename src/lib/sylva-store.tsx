@@ -373,6 +373,31 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
     saveLS("sylva.dateFlashDurationMs", clamped);
   }, []);
 
+  // ---- AI 同步高亮 & 汇总 ----
+  const [recentlySyncedIds, setRecentlySyncedIds] = useState<Set<string>>(() => new Set());
+  const recentTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const markRecentlySynced = useCallback((ids: string[]) => {
+    if (!ids.length) return;
+    setRecentlySyncedIds(new Set(ids));
+    if (recentTimer.current) clearTimeout(recentTimer.current);
+    recentTimer.current = setTimeout(() => setRecentlySyncedIds(new Set()), 12_000);
+  }, []);
+  const clearRecentlySynced = useCallback(() => {
+    if (recentTimer.current) clearTimeout(recentTimer.current);
+    setRecentlySyncedIds(new Set());
+  }, []);
+  const isRecentlySynced = useCallback((id: string) => recentlySyncedIds.has(id), [recentlySyncedIds]);
+  const [syncSummary, setSyncSummary] = useState<SyncSummary | null>(null);
+
+  // 视图跳转：desktop.tsx 注册回调
+  const navigateRef = useRef<((view: NavigateView, opts?: { todosFilter?: "todo" | "reminder" | "event" }) => void) | null>(null);
+  const registerNavigate = useCallback((fn: (view: NavigateView, opts?: { todosFilter?: "todo" | "reminder" | "event" }) => void) => {
+    navigateRef.current = fn;
+  }, []);
+  const navigateTo = useCallback((view: NavigateView, opts?: { todosFilter?: "todo" | "reminder" | "event" }) => {
+    navigateRef.current?.(view, opts);
+  }, []);
+
   const refreshRecapDoneDates = useCallback(async () => {
     try {
       const res = await getRecapDoneDates();
