@@ -914,9 +914,17 @@ export function FeishuSyncPanel() {
               </select>
               <input
                 value={lookup.value}
-                onChange={(e) => setLookup({ ...lookup, value: e.target.value, result: null })}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  const trimmed = v.trim();
+                  // 自动识别：含 @ → 邮箱；以 + 或纯数字（≥6 位）→ 手机号
+                  let detected = lookup.type;
+                  if (trimmed.includes("@")) detected = "email";
+                  else if (/^\+?\d{6,}$/.test(trimmed)) detected = "mobile";
+                  setLookup({ ...lookup, value: v, type: detected, result: null });
+                }}
                 onKeyDown={(e) => e.key === "Enter" && doLookupOpenId()}
-                placeholder={lookup.type === "email" ? "name@company.com" : "+8613800000000 或 13800000000"}
+                placeholder="输入邮箱或手机号，自动识别"
                 className="flex-1 bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white/90 placeholder:text-white/30 outline-none"
               />
               <button
