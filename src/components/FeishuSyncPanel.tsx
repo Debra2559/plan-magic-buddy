@@ -499,6 +499,12 @@ export function FeishuSyncPanel() {
         const okCount = r.entries.filter((e) => e.status === "ok").length;
         const failCount = r.entries.length - okCount;
         const firstFail = r.entries.find((e) => e.status !== "ok");
+        const skipped = (r as any).skipped ?? { byType: 0, done: 0, noTime: 0 };
+        const skippedParts = [
+          skipped.noTime ? `${skipped.noTime} 条无时间` : null,
+          skipped.done ? `${skipped.done} 条已完成` : null,
+          skipped.byType ? `${skipped.byType} 条类型未勾选` : null,
+        ].filter(Boolean).join("、");
         const newLogs: SyncLog[] = r.entries.slice(0, 8).map((e) =>
           mkLog(
             e.op === "delete" ? "delete" : e.op === "update" ? "update" : "create",
@@ -508,11 +514,11 @@ export function FeishuSyncPanel() {
           )
         );
         if (r.entries.length === 0) {
-          newLogs.push(mkLog("pull", "feishu", `${reason} · 无需同步`, "ok"));
+          newLogs.push(mkLog("update", "sylva", skippedParts ? `${reason} · 未推送：${skippedParts}` : `${reason} · 无需同步`, "pending"));
         }
         setLogs((prev) => [...newLogs, ...prev].slice(0, 12));
         setState((s) => ({ ...s, lastSyncAt: new Date().toISOString() }));
-        setLastSummary({ ok: okCount, fail: failCount, scope: `${reason} · 推送`, at: new Date().toISOString() });
+        setLastSummary({ ok: okCount, fail: failCount, scope: `${reason} · 推送${skippedParts && okCount === 0 ? `（${skippedParts}）` : ""}`, at: new Date().toISOString() });
         if (failCount > 0 && firstFail) {
           setLastError({
             scope: `${reason} · 推送`,
@@ -524,8 +530,8 @@ export function FeishuSyncPanel() {
         }
         pushTLRef.current?.(
           "sync",
-          failCount > 0 ? "warn" : "ok",
-          `${reason} · 完成：成功 ${okCount} / 失败 ${failCount}`
+          failCount > 0 || (okCount === 0 && !!skippedParts) ? "warn" : "ok",
+          `${reason} · 完成：成功 ${okCount} / 失败 ${failCount}${skippedParts ? ` / 未推送 ${skippedParts}` : ""}`
         );
       } catch (e: any) {
         const msg = e?.message ?? String(e);
