@@ -147,7 +147,17 @@ export function ScheduleView() {
         <h3 className="font-display text-2xl text-white mb-1">{formatLong(selected)}</h3>
         <p className="text-xs text-white/40 mb-5">{selectedItems.length} 项安排</p>
 
-        {selectedItems.length === 0 ? (
+        {isRecapDone(selected) && (
+          <div className="p-3 rounded-xl bg-moss/15 border border-moss/30 mb-2 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-moss shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs text-moss font-medium">今日小结 · 已完成</p>
+              <p className="text-[10px] text-white/50 mt-0.5">已通过飞书卡片提交并同步到日历</p>
+            </div>
+          </div>
+        )}
+
+        {selectedItems.length === 0 && !isRecapDone(selected) ? (
           <div className="text-center py-10 text-xs text-white/40">这一天还没有安排</div>
         ) : (
           <div className="space-y-2">
