@@ -139,17 +139,18 @@ export function FeishuSyncPanel() {
     type: "email" | "mobile";
     value: string;
     loading: boolean;
-    result: { ok: boolean; msg: string } | null;
-  }>({ open: false, type: "email", value: "", loading: false, result: null });
+    result: { ok: boolean; msg: string; openId?: string } | null;
+    copied: boolean;
+    saving: boolean;
+  }>({ open: false, type: "email", value: "", loading: false, result: null, copied: false, saving: false });
 
   const doLookupOpenId = async () => {
     if (!lookup.value.trim()) return;
-    setLookup((s) => ({ ...s, loading: true, result: null }));
+    setLookup((s) => ({ ...s, loading: true, result: null, copied: false }));
     try {
       const res = await runLookupOpenId({ data: { type: lookup.type, value: lookup.value.trim() } });
       if (res.ok) {
-        setNotify((n) => ({ ...n, receiveId: res.openId, receiveIdType: "open_id" }));
-        setLookup((s) => ({ ...s, loading: false, result: { ok: true, msg: "已填入 open_id ✓" } }));
+        setLookup((s) => ({ ...s, loading: false, result: { ok: true, msg: "查询成功", openId: res.openId } }));
       } else {
         setLookup((s) => ({
           ...s,
@@ -159,6 +160,30 @@ export function FeishuSyncPanel() {
       }
     } catch (e: any) {
       setLookup((s) => ({ ...s, loading: false, result: { ok: false, msg: e?.message ?? "请求失败" } }));
+    }
+  };
+
+  const copyOpenId = async () => {
+    if (!lookup.result?.openId) return;
+    try {
+      await navigator.clipboard.writeText(lookup.result.openId);
+      setLookup((s) => ({ ...s, copied: true }));
+      setTimeout(() => setLookup((s) => ({ ...s, copied: false })), 1500);
+    } catch {}
+  };
+
+  const fillAndSaveOpenId = async () => {
+    const openId = lookup.result?.openId;
+    if (!openId) return;
+    setLookup((s) => ({ ...s, saving: true }));
+    const next = { ...notify, receiveId: openId, receiveIdType: "open_id" as const };
+    setNotify(next);
+    try {
+      await runSetNotify({ data: next });
+      setNotifySaved(true);
+      setTimeout(() => setNotifySaved(false), 1500);
+    } finally {
+      setLookup((s) => ({ ...s, saving: false }));
     }
   };
 
