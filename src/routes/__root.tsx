@@ -149,6 +149,7 @@ function RootComponent() {
               <ReminderRunner />
               <ThemedToaster />
               <AvatarStatsOverlay />
+              <QuickCaptureHotkey />
             </SylvaProvider>
           </PersonaProvider>
         </AuthProvider>
