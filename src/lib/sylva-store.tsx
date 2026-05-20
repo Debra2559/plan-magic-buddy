@@ -203,11 +203,14 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
 
   const toggleHabit = (id: string) =>
     setHabits((prev) =>
-      prev.map((h) =>
-        h.id === id
-          ? { ...h, doneToday: !h.doneToday, streak: !h.doneToday ? h.streak + 1 : Math.max(0, h.streak - 1) }
-          : h
-      )
+      prev.map((h) => {
+        if (h.id !== id) return h;
+        const today = todayLocal();
+        const hist = h.history ?? [];
+        const has = hist.includes(today);
+        const nextHist = has ? hist.filter((d) => d !== today) : [today, ...hist];
+        return { ...h, history: nextHist };
+      })
     );
 
   const upsertDiary: SylvaContextValue["upsertDiary"] = (date, patch) =>
