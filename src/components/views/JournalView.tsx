@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   useSylva,
   habitStreak,
@@ -95,6 +95,27 @@ export function JournalView() {
     habits.forEach((h) => (h.history ?? []).forEach((d) => set.add(d)));
     return [...set].filter(Boolean).sort((a, b) => b.localeCompare(a)).slice(0, 14);
   }, [items, notes, diary, habits]);
+
+  // 上下键切换日期（在「手帐翻页」列表中移动）
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (allDates.length === 0) return;
+      const idx = allDates.indexOf(date);
+      if (e.key === "ArrowUp") {
+        const next = idx <= 0 ? allDates[0] : allDates[idx - 1];
+        setDate(next);
+      } else {
+        const next = idx === -1 ? allDates[0] : idx >= allDates.length - 1 ? allDates[allDates.length - 1] : allDates[idx + 1];
+        setDate(next);
+      }
+      e.preventDefault();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [allDates, date, setDate]);
 
   return (
     <div className="flex h-full">
