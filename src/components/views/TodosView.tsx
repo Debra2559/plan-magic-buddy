@@ -107,7 +107,11 @@ export function TodosView({ initialFilter = "all", filterKey }: { initialFilter?
                 {list.map((it) => (
                   <div
                     key={it.id}
-                    className="group flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.07] hover:border-white/15 transition"
+                    className={`group flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border transition ${
+                      isRecentlySynced(it.id)
+                        ? "border-amber-glow/60 bg-amber-glow/10 ring-1 ring-amber-glow/40 animate-pulse-glow"
+                        : "border-white/[0.07] hover:border-white/15"
+                    }`}
                   >
                     <button onClick={() => toggleDone(it.id)} className="shrink-0">
                       {it.done ? (
