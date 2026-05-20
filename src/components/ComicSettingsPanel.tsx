@@ -201,12 +201,7 @@ export function ComicSettingsPanel() {
       )}
 
       {/* Style preset gallery */}
-      <StyleGallery
-        active={comicStylePreset}
-        onSelect={selectPreset}
-      />
-      </div>
-      ).slice(0, 1) /* placeholder so editor sees a valid expr */}
+      <StyleGallery active={comicStylePreset} onSelect={selectPreset} />
 
       {/* Custom style prompt (always shown, more weight when 自定义 selected) */}
       <div className="widget p-4 space-y-2">
