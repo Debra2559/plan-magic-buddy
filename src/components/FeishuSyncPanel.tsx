@@ -170,7 +170,7 @@ export function FeishuSyncPanel() {
       try {
         const r = await runSync({
           data: {
-            items: items.map((i) => ({
+            items: items.filter((i) => !i.pending).map((i) => ({
               id: i.id,
               type: i.type,
               title: i.title,
