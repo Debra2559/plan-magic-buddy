@@ -89,10 +89,10 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
             </h2>
             <span className="text-xs text-white/40 tracking-widest">日程视图</span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => setAiOpen(true)}
-              className="mr-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-primary-foreground bg-amber-glow/85 hover:bg-amber-glow transition"
+              className="mr-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-primary-foreground bg-amber-glow/85 hover:bg-amber-glow transition"
             >
               <Sparkles className="w-3.5 h-3.5" />
               新建日程
@@ -100,22 +100,32 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
             <button
               onClick={() => setCursor(new Date(year, month - 1, 1))}
               className="p-2 rounded-lg hover:bg-white/10 text-white/70"
+              aria-label="上一个月"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
-              onClick={() => setCursor(new Date())}
-              className="px-3 py-1.5 rounded-lg hover:bg-white/10 text-xs text-white/70"
-            >
-              今天
-            </button>
-            <button
               onClick={() => setCursor(new Date(year, month + 1, 1))}
               className="p-2 rounded-lg hover:bg-white/10 text-white/70"
+              aria-label="下一个月"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
+            {(() => {
+              const today = new Date();
+              const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+              if (isCurrentMonth) return null;
+              return (
+                <button
+                  onClick={() => setCursor(new Date())}
+                  className="ml-1 px-2.5 py-1 rounded-md text-[11px] text-white/60 hover:text-white hover:bg-white/10 transition"
+                >
+                  回到今天
+                </button>
+              );
+            })()}
           </div>
+
         </div>
 
         {pendingIds.length > 0 && (() => {
