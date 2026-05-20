@@ -475,9 +475,6 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
                 <div className="text-amber-glow tracking-wider mb-1">条目明细</div>
                 <ItemGroups grouped={groupByDate(draft.items.map((it, i) => ({ ...it, _key: `pv-${i}` })))} variant="draft" />
               </div>
-              {draftMode === "adjust" && confirmed.length > 0 && (
-                <p className="text-[11px] text-destructive/80">⚠ 调整模式会替换现有 {confirmed.length} 项规划</p>
-              )}
             </div>
           )}
           <DialogFooter className="gap-2">
