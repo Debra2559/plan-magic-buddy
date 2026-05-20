@@ -95,6 +95,8 @@ function migrateHabit(h: any): Habit {
   return { id: h.id, name: h.name, emoji: h.emoji, history };
 }
 
+export type RecapBackfillStrategy = "overwrite" | "merge" | "fill-empty";
+
 interface SylvaContextValue {
   items: DoneItem[];
   notes: Note[];
@@ -115,6 +117,8 @@ interface SylvaContextValue {
   isRecapDone: (date: string) => boolean;
   refreshRecapDoneDates: () => Promise<void>;
   unmarkRecapDone: (date: string) => Promise<void>;
+  recapBackfillStrategy: RecapBackfillStrategy;
+  setRecapBackfillStrategy: (s: RecapBackfillStrategy) => void;
 }
 
 const SylvaContext = createContext<SylvaContextValue | null>(null);
