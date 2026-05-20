@@ -379,6 +379,7 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
         removeNote,
         updateNote,
         toggleHabit,
+        toggleHabitOn,
         upsertDiary,
         recapDoneDates,
         isRecapDone,
