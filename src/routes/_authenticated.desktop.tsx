@@ -173,7 +173,7 @@ function DesktopApp() {
             <div className="flex h-full">
               {/* Sidebar */}
               <aside className="w-52 shrink-0 bg-black/30 backdrop-blur-xl border-r border-white/8 p-4 flex flex-col gap-1 text-[13px]">
-                <AssistantHeader />
+                <AssistantHeader onClick={openSettings} />
                 <SidebarItem icon={CalIcon} label="日程" active={view === "schedule"} onClick={() => setView("schedule")} />
                 <SidebarItem icon={Sparkles} label="规划" active={view === "ai"} onClick={() => setView("ai")} />
                 <SidebarItem icon={CheckSquare} label="待办" active={view === "todos"} onClick={() => setView("todos")} />
@@ -411,21 +411,21 @@ function SidebarItem({
   );
 }
 
-function AssistantHeader() {
+function AssistantHeader({ onClick }: { onClick?: () => void }) {
   const { persona } = usePersona();
   const name = (persona?.display_name || "").trim() || "主人";
   const avatar = persona?.avatar_url || null;
   const initial = name.charAt(0).toUpperCase();
 
   return (
-    <Link
-      to="/"
-      search={{ view: "settings" } as any}
-      className="mb-5 px-2 group block"
+    <button
+      type="button"
+      onClick={onClick}
+      className="mb-5 px-2 group block w-full text-left transition active:scale-[0.98]"
       title="编辑人设（头像 / 名称）"
     >
       <div className="flex items-center gap-2.5">
-        <div className="relative w-9 h-9 rounded-full overflow-hidden ring-1 ring-white/15 shadow-lg shrink-0">
+        <div className="relative w-9 h-9 rounded-full overflow-hidden ring-1 ring-white/15 shadow-lg shrink-0 group-hover:ring-amber-glow/60 transition">
           {avatar ? (
             <img src={avatar} alt={name} className="w-full h-full object-cover" />
           ) : (
@@ -439,10 +439,10 @@ function AssistantHeader() {
           <div className="font-display text-base text-white truncate group-hover:text-amber-glow transition">
             {name}
           </div>
-          <div className="text-[10px] text-white/40">点击编辑人设</div>
+          <div className="text-[10px] text-white/40 group-hover:text-white/70 transition">点击编辑人设</div>
         </div>
       </div>
-    </Link>
+    </button>
   );
 }
 
