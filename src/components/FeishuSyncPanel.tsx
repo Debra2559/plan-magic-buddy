@@ -212,6 +212,27 @@ export function FeishuSyncPanel() {
   }, [runGetDiag]);
   useEffect(() => { refreshDiag(); }, [refreshDiag]);
 
+  const runPingWebhook = useServerFn(pingFeishuWebhook);
+  const [pinging, setPinging] = useState(false);
+  const [pingResult, setPingResult] = useState<{ ok: boolean; status: number; durationMs: number; error: string | null; at: string } | null>(null);
+  const doPingWebhook = useCallback(async () => {
+    setPinging(true);
+    pushTLRef.current?.("capture", "info", "正在测试 webhook 可达性…");
+    try {
+      const r = await runPingWebhook();
+      setPingResult({ ok: r.ok, status: r.status, durationMs: r.durationMs, error: r.error, at: new Date().toISOString() });
+      pushTLRef.current?.("capture", r.ok ? "ok" : "fail",
+        r.ok ? `Webhook 可达 · ${r.status} · ${r.durationMs}ms` : `Webhook 不可达：${r.error ?? "未知错误"}`);
+      // 重新判断捕获 / 权限 / 明细
+      await Promise.all([refreshCapture(true), refreshPerm(true), refreshDiag()]);
+    } catch (e: any) {
+      setPingResult({ ok: false, status: 0, durationMs: 0, error: e?.message ?? "请求失败", at: new Date().toISOString() });
+      pushTLRef.current?.("capture", "fail", `Webhook 测试失败：${e?.message ?? "请求失败"}`);
+    } finally {
+      setPinging(false);
+    }
+  }, [runPingWebhook, refreshCapture, refreshPerm, refreshDiag]);
+
   const [verify, setVerify] = useState<{ status: "idle" | "verifying" | "ok" | "fail"; msg?: string; at?: string }>({ status: "idle" });
 
   type TLKind = "overwrite" | "verify" | "config" | "sync" | "pull" | "schedule" | "perm" | "capture";
