@@ -3,7 +3,7 @@ import { Sparkles, Wand2, LogOut, Loader2, Camera, Trash2, Upload } from "lucide
 import { usePersona } from "@/lib/persona";
 import { CachedAvatar } from "@/components/CachedAvatar";
 import { useAuth } from "@/lib/auth-context";
-import { generatePlan } from "@/lib/plan.functions";
+import { tryPersonaLine } from "@/lib/persona-demo.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,7 +74,7 @@ export function AiPersonaPanel() {
   const [savingTip, setSavingTip] = useState(false);
   const [tryingTip, setTryingTip] = useState(false);
   const [demoLine, setDemoLine] = useState<string>("");
-  const planFn = useServerFn(generatePlan);
+  const tryFn = useServerFn(tryPersonaLine);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -178,19 +178,18 @@ export function AiPersonaPanel() {
     setTryingTip(true);
     setDemoLine("");
     try {
-      // 通过 generatePlan 调一次 AI，用人设说一句话
-      const r = await planFn({
+      const r = await tryFn({
         data: {
-          idea: `请用你的人设给${local.display_name}说一句早安问候，并自我介绍一下你能帮${local.display_name}做什么。要求：30字以内的summary必须像聊天，不要列日程。items 给 1 条空就行。`,
-          mode: "create",
           personaPrompt: buildLocalPrefix(local),
-        } as any,
+          displayName: local.display_name || "你",
+        },
       });
-      if ("ok" in r && r.ok) {
-        setDemoLine(r.plan.summary || "（AI 没说话）");
+      if (r.ok) {
+        setDemoLine(r.line);
       } else {
-        toast.error((r as any).error ?? "试一句失败");
+        toast.error(r.error);
       }
+
     } catch (e: any) {
       toast.error(e?.message ?? "试一句失败");
     } finally {
