@@ -14,12 +14,12 @@ import { AiNewsRadar } from "@/components/AiNewsRadar";
 const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
 
 const tagColor: Record<string, string> = {
-  工作: "bg-moss/30 text-moss border-moss/40",
-  学习: "bg-amber-glow/25 text-amber-glow border-amber-glow/40",
-  健康: "bg-accent/25 text-accent border-accent/40",
-  生活: "bg-foreground/10 text-foreground/70 border-foreground/20",
-  英语: "bg-amber-glow/25 text-amber-glow border-amber-glow/40",
-  习惯: "bg-moss/30 text-moss border-moss/40",
+  工作: "bg-moss/60 text-white border-moss",
+  学习: "bg-amber-glow/70 text-background border-amber-glow font-medium",
+  健康: "bg-accent/70 text-background border-accent font-medium",
+  生活: "bg-foreground/25 text-foreground border-foreground/40",
+  英语: "bg-amber-glow/70 text-background border-amber-glow font-medium",
+  习惯: "bg-moss/60 text-white border-moss",
 };
 
 const typeIcon = { event: CalIcon, todo: Clock, reminder: Bell } as const;
