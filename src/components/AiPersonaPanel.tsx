@@ -333,8 +333,9 @@ export function AiPersonaPanel() {
               "{demoLine}"
             </div>
           )}
-        </div>
+        <ProfileHistoryPanel />
       </div>
+
 
       <AvatarCropDialog
         open={!!pickedFile}
