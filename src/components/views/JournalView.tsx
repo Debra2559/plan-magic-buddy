@@ -7,6 +7,7 @@ import {
   todayLocal,
   type Mood,
 } from "@/lib/sylva-store";
+import { generateDailyComic } from "@/lib/comic.functions";
 import {
   BookHeart,
   Calendar as CalIcon,
@@ -23,6 +24,11 @@ import {
   ChevronRight,
   NotebookPen,
   Check,
+  Wand2,
+  Loader2,
+  RefreshCw,
+  Download,
+  X as XIcon,
 } from "lucide-react";
 
 const MOODS: Record<Mood, { emoji: string; label: string }> = {
