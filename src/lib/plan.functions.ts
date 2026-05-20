@@ -59,22 +59,31 @@ export const generatePlan = createServerFn({ method: "POST" })
 
 ${data.existing && data.existing.length ? `EXISTING (用户当前已有的规划):\n${JSON.stringify(data.existing, null, 2)}` : ""}`;
 
-    try {
-      const gateway = createLovableAiGatewayProvider(apiKey);
-      const { object } = await generateObject({
-        model: gateway("google/gemini-3-flash-preview"),
-        schema: PlanSchema,
-        system,
-        prompt: userPrompt,
-      });
-      return { ok: true as const, plan: object };
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      // 友好化网关错误
-      if (msg.includes("429")) return { ok: false as const, error: "请求过于频繁, 稍后再试" };
-      if (msg.includes("402")) return { ok: false as const, error: "AI 额度已用完, 请到工作区充值" };
-      return { ok: false as const, error: `AI 规划失败: ${msg}` };
+    const gateway = createLovableAiGatewayProvider(apiKey);
+    const models = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash", "google/gemini-2.5-flash-lite"] as const;
+    let lastMsg = "";
+    for (const m of models) {
+      try {
+        const { object } = await generateObject({
+          model: gateway(m),
+          schema: PlanSchema,
+          system,
+          prompt: userPrompt,
+        });
+        if (!object.items?.length) {
+          lastMsg = "模型返回的 items 为空";
+          continue;
+        }
+        return { ok: true as const, plan: object };
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        lastMsg = msg;
+        if (msg.includes("429")) return { ok: false as const, error: "请求过于频繁, 稍后再试" };
+        if (msg.includes("402")) return { ok: false as const, error: "AI 额度已用完, 请到工作区充值" };
+        // schema 不匹配/格式错误 → 换下一个模型继续重试
+      }
     }
+    return { ok: false as const, error: `AI 规划失败 (已尝试 ${models.length} 个模型): ${lastMsg}` };
   });
 
 // ====================================================================
