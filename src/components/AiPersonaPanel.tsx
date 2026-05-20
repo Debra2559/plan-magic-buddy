@@ -268,8 +268,35 @@ export function AiPersonaPanel() {
           />
         </div>
 
-        <div className="space-y-1">
-          <label className="text-xs text-white/60">人设描述（所有 AI 输出都会按这个口吻）</label>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs text-white/60">人设描述（所有 AI 输出都会按这个口吻）</label>
+            <span className="text-[10px] text-white/40">点击模版一键套用</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {PERSONA_TEMPLATES.map((t) => (
+              <button
+                key={t.name}
+                type="button"
+                onClick={() => {
+                  const next = {
+                    persona_prompt: t.prompt,
+                    humor_level: t.humor_level,
+                    sass_level: t.sass_level,
+                    professional_level: t.professional_level,
+                    verbosity_level: t.verbosity_level,
+                  };
+                  patch(next);
+                  commit(next);
+                  toast.success(`已套用「${t.name}」`);
+                }}
+                title={t.desc}
+                className="px-2.5 py-1 rounded-full text-xs bg-white/5 border border-white/10 text-white/80 hover:border-amber-glow/50 hover:text-amber-glow transition-colors"
+              >
+                {t.emoji} {t.name}
+              </button>
+            ))}
+          </div>
           <textarea
             value={local.persona_prompt}
             onChange={(e) => patch({ persona_prompt: e.target.value })}
@@ -278,6 +305,7 @@ export function AiPersonaPanel() {
             className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white outline-none focus:border-amber-glow/50 resize-none leading-relaxed"
           />
         </div>
+
 
         <div className="grid grid-cols-2 gap-4">
           {([
