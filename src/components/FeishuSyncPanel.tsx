@@ -615,7 +615,7 @@ export function FeishuSyncPanel() {
     setRecapRefreshResult(null);
     try {
       await refreshRecapDoneDates();
-      setRecapRefreshResult({ ok: true, msg: "已从飞书拉取最新的今日小结/日记" });
+      setRecapRefreshResult({ ok: true, msg: "已从飞书拉取最新的今日小结/手帐" });
     } catch (e: any) {
       setRecapRefreshResult({ ok: false, msg: e?.message ?? "刷新失败" });
     } finally {
@@ -1898,7 +1898,7 @@ export function FeishuSyncPanel() {
                 setRecap(next);
                 saveRecap(next);
               }}
-            /> 每天定时提醒填写今日小结 + 日记
+            /> 每天定时提醒填写今日小结 + 手帐
           </label>
           <label className="flex items-center gap-1.5">
             时间
@@ -1954,7 +1954,7 @@ export function FeishuSyncPanel() {
             onClick={refreshTodayRecap}
             disabled={recapRefreshing}
             className="text-[11px] px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 disabled:opacity-50 flex items-center gap-1"
-            title="重新从飞书拉取今日已提交的小结/日记/心情，并刷新日历与待办的完成标记"
+            title="重新从飞书拉取今日已提交的小结/手帐/心情，并刷新日历与待办的完成标记"
           >
             {recapRefreshing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} 刷新今日小结
           </button>
@@ -1970,7 +1970,7 @@ export function FeishuSyncPanel() {
           )}
         </div>
         <div className="mt-3 flex items-center gap-2 flex-wrap">
-          <span className="text-[11px] text-white/60">本地日记已编辑时的回填策略：</span>
+          <span className="text-[11px] text-white/60">本地手帐已编辑时的回填策略：</span>
           <select
             value={recapBackfillStrategy}
             onChange={(e) => setRecapBackfillStrategy(e.target.value as any)}
@@ -1981,13 +1981,13 @@ export function FeishuSyncPanel() {
             <option value="overwrite">用飞书内容覆盖本地</option>
           </select>
           <span className="text-[10px] text-white/40">
-            {recapBackfillStrategy === "overwrite" && "⚠️ 提交后会用飞书的小结/日记/心情覆盖当天本地内容"}
-            {recapBackfillStrategy === "merge" && "提交后会把飞书内容追加到本地日记末尾（去重）"}
-            {recapBackfillStrategy === "fill-empty" && "只在本地日记为空时回填，保护已写内容"}
+            {recapBackfillStrategy === "overwrite" && "⚠️ 提交后会用飞书的小结/手帐/心情覆盖当天本地内容"}
+            {recapBackfillStrategy === "merge" && "提交后会把飞书内容追加到本地手帐末尾（去重）"}
+            {recapBackfillStrategy === "fill-empty" && "只在本地手帐为空时回填，保护已写内容"}
           </span>
         </div>
         <p className="text-[10px] text-white/40 mt-2 leading-relaxed">
-          每天到点会通过飞书发一张卡片，点「去 Sylva 填写」直接跳到「随手记 · 今日小结/日记」。复用上方的接收人配置。
+          每天到点会通过飞书发一张卡片，点「去 Sylva 填写」直接跳到「记录 · 今日小结/手帐」。复用上方的接收人配置。
         </p>
       </div>
 

@@ -507,7 +507,7 @@ function NoteCard({ n, onRemove, onPin }: { n: Note; onRemove: () => void; onPin
   );
 }
 
-/* ---------------- Quick Diary Editor (in 随手记) ---------------- */
+/* ---------------- Quick Diary Editor (in 记录) ---------------- */
 function QuickDiaryEditor({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   const { diary, upsertDiary, enterToSubmit } = useSylva();
   const today = todayStr();
@@ -532,10 +532,10 @@ function QuickDiaryEditor({ open, onToggle }: { open: boolean; onToggle: () => v
       <button
         onClick={onToggle}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/8 text-xs text-white/70 hover:text-white hover:border-white/15 transition"
-        title="编辑今日日记"
+        title="编辑今日手帐"
       >
         <BookHeart className="w-3.5 h-3.5 text-amber-glow" />
-        {open ? "收起今日日记" : "编辑今日日记"}
+        {open ? "收起今日手帐" : "编辑今日手帐"}
         {entry?.content?.trim() && !open && (
           <span className="text-[10px] text-white/40">· 已有 {entry.content.length} 字</span>
         )}
@@ -543,7 +543,7 @@ function QuickDiaryEditor({ open, onToggle }: { open: boolean; onToggle: () => v
       {open && (
         <div className="widget p-4 mt-2">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] tracking-widest text-amber-glow">{today} · 今日日记</span>
+            <span className="text-[10px] tracking-widest text-amber-glow">{today} · 今日手帐</span>
             <span className="text-[10px] text-white/40">{content.length} 字</span>
           </div>
           <textarea
@@ -720,7 +720,7 @@ function DiaryTab({ initialDate }: { initialDate?: string | null }) {
       <p className="text-[10px] tracking-widest text-white/40 mb-2">过往</p>
       <div className="space-y-2">
         {sorted.length === 0 ? (
-          <div className="text-center py-12 text-white/40 text-sm">还没有日记，从今天开始 ✨</div>
+          <div className="text-center py-12 text-white/40 text-sm">还没有记录，从今天开始 ✨</div>
         ) : (
           sorted.map((d) => {
             const m = moodOf(d.mood);

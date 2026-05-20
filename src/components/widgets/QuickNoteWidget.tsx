@@ -8,7 +8,7 @@ export function QuickNoteWidget() {
   return (
     <div className="widget p-5 w-[300px]">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-medium tracking-wider text-foreground/70">随手记</span>
+        <span className="text-xs font-medium tracking-wider text-foreground/70">记录</span>
         <StickyNote className="w-3.5 h-3.5 text-amber-glow" />
       </div>
       <div className="text-sm text-foreground/85 leading-relaxed space-y-2 font-display min-h-[60px]">

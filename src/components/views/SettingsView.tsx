@@ -29,7 +29,7 @@ const simpleSections: Record<string, { rows: SimpleRow[] }> = {
   shortcuts: {
     rows: [
       { label: "唤起 AI 输入", value: "⌘ + ⇧ + Space", action: "改键" },
-      { label: "添加随手记", value: "⌘ + N", action: "改键" },
+      { label: "添加记录", value: "⌘ + N", action: "改键" },
     ],
   },
 };
@@ -203,7 +203,7 @@ const NAV: NavGroup[] = [
 const TITLES: Record<NavKey, { title: string; desc: string }> = {
   general: { title: "通用", desc: "账户、语言、主题等基础偏好" },
   persona: { title: "AI 人格", desc: "调整 AI 的说话风格与语气" },
-  insights: { title: "AI 行为洞察", desc: "AI 根据你的日程、随手记、习惯行为生成的贴心提示" },
+  insights: { title: "AI 行为洞察", desc: "AI 根据你的日程、记录、习惯行为生成的贴心提示" },
   comic: { title: "漫画生成", desc: "选择默认图像模型与画面风格" },
   feishu: { title: "飞书同步", desc: "日历推送、接收人捕获与诊断" },
   webhook: { title: "Webhook 日志", desc: "查看最近的飞书事件回调" },

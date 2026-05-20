@@ -12,7 +12,7 @@ const SLOTS = [
 
 const SCOPES = [
   { key: "schedule", label: "日程行为" },
-  { key: "notes", label: "随手记 / 日记" },
+  { key: "notes", label: "记录 / 手帐" },
   { key: "habits", label: "习惯打卡" },
   { key: "insights", label: "综合洞察" },
 ] as const;
