@@ -71,6 +71,7 @@ function NotesTab() {
   const [mood, setMood] = useState<Mood | undefined>();
   const [tagsRaw, setTagsRaw] = useState("");
   const [query, setQuery] = useState("");
+  const [diaryOpen, setDiaryOpen] = useState(false);
 
   const submit = () => {
     if (!text.trim()) return;
@@ -149,6 +150,8 @@ function NotesTab() {
         </div>
       </div>
 
+      <QuickDiaryEditor open={diaryOpen} onToggle={() => setDiaryOpen((v) => !v)} />
+
       <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-full bg-white/[0.04] border border-white/8">
         <Search className="w-3.5 h-3.5 text-white/40" />
         <input
@@ -203,7 +206,75 @@ function NoteCard({ n, onRemove, onPin }: { n: Note; onRemove: () => void; onPin
   );
 }
 
-/* ---------------- Diary ---------------- */
+/* ---------------- Quick Diary Editor (in 随手记) ---------------- */
+function QuickDiaryEditor({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  const { diary, upsertDiary, enterToSubmit } = useSylva();
+  const today = todayStr();
+  const entry = diary.find((d) => d.date === today);
+  const [content, setContent] = useState(entry?.content ?? "");
+  const [saved, setSaved] = useState(false);
+  useEffect(() => {
+    if (open) setContent(diary.find((d) => d.date === today)?.content ?? "");
+  }, [open, today, diary]);
+
+  const save = () => {
+    upsertDiary(today, { content });
+    if (content.trim().length > 0) {
+      markRecapDone({ data: { date: today } }).catch(() => {});
+    }
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  };
+
+  return (
+    <div className="mb-4">
+      <button
+        onClick={onToggle}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/8 text-xs text-white/70 hover:text-white hover:border-white/15 transition"
+        title="编辑今日日记"
+      >
+        <BookHeart className="w-3.5 h-3.5 text-amber-glow" />
+        {open ? "收起今日日记" : "编辑今日日记"}
+        {entry?.content?.trim() && !open && (
+          <span className="text-[10px] text-white/40">· 已有 {entry.content.length} 字</span>
+        )}
+      </button>
+      {open && (
+        <div className="widget p-4 mt-2">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] tracking-widest text-amber-glow">{today} · 今日日记</span>
+            <span className="text-[10px] text-white/40">{content.length} 字</span>
+          </div>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            onKeyDown={(e) => {
+              if (shouldSubmitOnKey(e, enterToSubmit)) {
+                e.preventDefault();
+                save();
+              }
+            }}
+            rows={6}
+            placeholder="今天发生了什么？"
+            className="w-full bg-transparent outline-none text-sm leading-7 text-white/90 placeholder:text-white/30 resize-none"
+          />
+          <div className="flex items-center justify-end gap-3 mt-2">
+            <EnterHint example={"今天搞定了答辩 PPT ↵（Shift+Enter）\n明天和导师对齐"} />
+            {saved && <span className="text-[10px] text-moss">已保存</span>}
+            <button
+              onClick={save}
+              className="px-4 py-1.5 rounded-full bg-amber-glow text-primary-foreground text-xs font-medium"
+            >
+              保存
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function DiaryTab({ initialDate }: { initialDate?: string | null }) {
   const { diary, upsertDiary, enterToSubmit } = useSylva();
   const today = todayStr();
