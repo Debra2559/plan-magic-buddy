@@ -1,11 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { createHash, createDecipheriv } from 'crypto'
 import { handleHackathonCardAction, handleRecapCardAction, handleRecapSubmit } from '@/lib/feishu.functions'
 
 /**
  * 飞书事件回调入口
  *
  * 处理：
- *  1) url_verification（明文校验）
+ *  1) url_verification（明文 + 加密模式）
  *  2) 卡片按钮回调 card.action.trigger（v2）/ action（v1 老结构）
  *  3) 其它事件先 ACK，等接业务
  */
@@ -15,6 +16,17 @@ const json = (data: unknown, status = 200) =>
     status,
     headers: { 'Content-Type': 'application/json' },
   })
+
+// 飞书 AES-256-CBC 解密：key = SHA256(encrypt_key)，IV = 密文前 16 字节
+function decryptFeishu(encrypt: string, encryptKey: string): any {
+  const key = createHash('sha256').update(encryptKey).digest()
+  const buf = Buffer.from(encrypt, 'base64')
+  const iv = buf.subarray(0, 16)
+  const data = buf.subarray(16)
+  const decipher = createDecipheriv('aes-256-cbc', key, iv)
+  const decrypted = Buffer.concat([decipher.update(data), decipher.final()])
+  return JSON.parse(decrypted.toString('utf8'))
+}
 
 export const Route = createFileRoute('/api/public/feishu/webhook')({
   server: {
@@ -30,15 +42,24 @@ export const Route = createFileRoute('/api/public/feishu/webhook')({
           return json({ error: 'invalid json' }, 400)
         }
 
-        // 1) URL 校验：明文模式
-        if (body?.type === 'url_verification' && body?.challenge) {
-          return json({ challenge: body.challenge })
+        // 加密模式：先解密成明文 body
+        if (body?.encrypt && typeof body.encrypt === 'string') {
+          const encryptKey = process.env.FEISHU_ENCRYPT_KEY
+          if (!encryptKey) {
+            console.error('[feishu/webhook] FEISHU_ENCRYPT_KEY not set')
+            return json({ error: 'encrypt key not configured' }, 500)
+          }
+          try {
+            body = decryptFeishu(body.encrypt, encryptKey)
+          } catch (e: any) {
+            console.error('[feishu/webhook] decrypt failed:', e?.message)
+            return json({ error: 'decrypt failed' }, 400)
+          }
         }
 
-        // 加密模式占位
-        if (body?.encrypt && !body?.type && !body?.header) {
-          console.log('[feishu/webhook] encrypted payload; encrypt key not configured')
-          return json({ ok: true, note: 'encrypt key not configured' })
+        // 1) URL 校验
+        if (body?.type === 'url_verification' && body?.challenge) {
+          return json({ challenge: body.challenge })
         }
 
         // 2) 卡片按钮/表单回调 —— v2 事件结构
