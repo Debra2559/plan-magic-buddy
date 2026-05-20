@@ -82,7 +82,7 @@ export const generateDailyComic = createServerFn({ method: "POST" })
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: process.env.ARK_SEEDREAM_MODEL || "doubao-seedream-3-0-t2i-250415",
+          model: process.env.ARK_SEEDREAM_MODEL || "doubao-seedream-5-0-lite",
           prompt,
           size: "1024x1024",
           response_format: "url",
@@ -94,7 +94,7 @@ export const generateDailyComic = createServerFn({ method: "POST" })
       const t = await res.text();
       if (t.includes("ModelNotOpen")) {
         throw new Error(
-          "Seedream 模型未开通：请到火山方舟控制台 → 模型广场，开通 doubao-seedream-3-0-t2i-250415（或在环境变量 ARK_SEEDREAM_MODEL 指定你已开通的模型）后重试",
+          "Seedream 模型未开通：请到火山方舟控制台 → 模型广场，开通 doubao-seedream-5-0-lite（或在环境变量 ARK_SEEDREAM_MODEL 指定你已开通的模型）后重试",
         );
       }
       throw new Error(`Seedream 失败 [${res.status}]: ${t.slice(0, 200)}`);
