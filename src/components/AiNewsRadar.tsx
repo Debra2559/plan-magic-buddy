@@ -7,7 +7,8 @@ import {
   scanAiNewsNow,
   type AiNewsRow,
 } from "@/lib/ai-news.functions";
-import { Sparkles, X, Bookmark, RefreshCw, Loader2, ExternalLink, Calendar as CalIcon } from "lucide-react";
+import { Sparkles, X, Bookmark, RefreshCw, Loader2, ExternalLink, Calendar as CalIcon, ListPlus, Check } from "lucide-react";
+import { useSylva, todayLocal } from "@/lib/sylva-store";
 
 export function AiNewsRadar() {
   const [items, setItems] = useState<AiNewsRow[]>([]);
@@ -16,6 +17,8 @@ export function AiNewsRadar() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
+  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
+  const { addItems } = useSylva();
 
   const listFn = useServerFn(listPendingAiNews);
   const saveFn = useServerFn(saveAiNews);
@@ -73,6 +76,23 @@ export function AiNewsRadar() {
     } finally {
       setBusyId(null);
     }
+  };
+
+  const onAddTodo = (n: AiNewsRow) => {
+    const title = n.title.length > 24 ? n.title.slice(0, 22) + "…" : n.title;
+    const noteParts: string[] = [];
+    if (n.summary) noteParts.push(n.summary);
+    noteParts.push(`来源: ${n.source} · ${n.url}`);
+    addItems([
+      {
+        type: "todo",
+        title: `看 AI 动态: ${title}`,
+        date: todayLocal(),
+        tag: "学习",
+        note: noteParts.join(" · "),
+      },
+    ]);
+    setAddedIds((s) => new Set(s).add(n.id));
   };
 
   return (
@@ -157,6 +177,18 @@ export function AiNewsRadar() {
                       className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-full text-xs bg-moss text-primary-foreground hover:scale-[1.02] transition disabled:opacity-40"
                     >
                       <Bookmark className="w-3 h-3" /> 收藏
+                    </button>
+                    <button
+                      onClick={() => onAddTodo(n)}
+                      disabled={busyId === n.id || addedIds.has(n.id)}
+                      title="一键转为待办，加入今日规划"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs bg-amber-glow/15 border border-amber-glow/40 text-amber-glow hover:bg-amber-glow/25 transition disabled:opacity-60"
+                    >
+                      {addedIds.has(n.id) ? (
+                        <><Check className="w-3 h-3" /> 已加入</>
+                      ) : (
+                        <><ListPlus className="w-3 h-3" /> 转待办</>
+                      )}
                     </button>
                     <button
                       onClick={() => onDismiss(n.id)}
