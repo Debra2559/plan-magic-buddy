@@ -356,7 +356,9 @@ export const scanHackathonsNow = createServerFn({ method: "GET" }).handler(async
     debug.push({ source: src.name, query: src.query, snippets: snippets.length, extracted: ex.hackathons.length, error });
     for (const h of ex.hackathons) {
       if (!h.url?.startsWith("http")) continue;
-      allFound.push({ source: src.name, item: h });
+      const normalized = normalizeHackathonDates(h);
+      if (!isActionableHackathon(normalized)) continue;
+      allFound.push({ source: src.name, item: normalized });
     }
   }
 
@@ -434,21 +436,23 @@ export const listPendingHackathons = createServerFn({ method: "GET" }).handler(a
     .limit(60);
   if (error) return { ok: false as const, error: error.message, items: [] as HackathonRow[] };
 
-  // 只保留「报名还没结束」的：解析 deadline (兜底用 ends_at / starts_at) 与今天比较
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const parseDate = (s: string | null | undefined): Date | null => {
-    if (!s) return null;
-    const m = s.match(/(\d{4})[-/.年](\d{1,2})[-/.月](\d{1,2})/);
-    if (!m) return null;
-    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-    return isNaN(d.getTime()) ? null : d;
-  };
-  const items = ((data ?? []) as HackathonRow[]).filter((h) => {
-    const ref = parseDate(h.deadline) ?? parseDate(h.ends_at) ?? parseDate(h.starts_at);
-    // 无法解析日期的也保留（避免误删），有日期的必须 >= 今天
-    return ref ? ref.getTime() >= today.getTime() : true;
-  }).slice(0, 30);
+  const staleIds: string[] = [];
+  const items = ((data ?? []) as HackathonRow[])
+    .map((h) => normalizeHackathonDates(h))
+    .filter((h) => {
+      const keep = isActionableHackathon(h);
+      if (!keep) staleIds.push(h.id);
+      return keep;
+    })
+    .slice(0, 30);
+
+  if (staleIds.length > 0) {
+    void supabaseAdmin
+      .from("hackathons")
+      .update({ status: "dismissed", decided_at: new Date().toISOString() })
+      .in("id", staleIds)
+      .then(() => undefined);
+  }
   return { ok: true as const, items };
 });
 
