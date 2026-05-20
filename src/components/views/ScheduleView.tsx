@@ -31,6 +31,11 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
   const [editorDate, setEditorDate] = useState<string | null>(null);
   const [editorAnchor, setEditorAnchor] = useState<{ x: number; y: number } | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
+  type PendingFilter = { kind: "all" } | { kind: "type"; value: string } | { kind: "date"; value: string };
+  const [pendingFilter, setPendingFilter] = useState<PendingFilter>({ kind: "all" });
+  useEffect(() => {
+    if (pendingIds.length === 0 && pendingFilter.kind !== "all") setPendingFilter({ kind: "all" });
+  }, [pendingIds.length, pendingFilter.kind]);
 
 
   const year = cursor.getFullYear();
