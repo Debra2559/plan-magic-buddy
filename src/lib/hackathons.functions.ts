@@ -34,17 +34,20 @@ function fallbackHackathons(source: string, snippets: FirecrawlSearchItem[]): z.
   return snippets
     .filter((s) => s.url?.startsWith("http") && isHackathonSnippet(s))
     .slice(0, 6)
-    .map((s) => ({
-      title: (s.title ?? source).trim().slice(0, 120),
-      url: s.url!,
-      deadline: null,
-      starts_at: null,
-      ends_at: null,
-      location: /online|线上/i.test(`${s.description ?? ""}${s.markdown ?? ""}`) ? "线上" : null,
-      prize: null,
-      summary: (s.description ?? s.markdown ?? "黑客松/创新比赛报名信息").replace(/\s+/g, " ").trim().slice(0, 60),
-      tags: ["黑客松", source].filter(Boolean).slice(0, 5),
-    }));
+    .map((s) => {
+      const text = `${s.title ?? ""}\n${s.description ?? ""}\n${s.markdown ?? ""}`;
+      return {
+        title: (s.title ?? source).trim().slice(0, 120),
+        url: s.url!,
+        deadline: inferDateFromText(text),
+        starts_at: null,
+        ends_at: null,
+        location: /online|线上/i.test(text) ? "线上" : null,
+        prize: null,
+        summary: (s.description ?? s.markdown ?? "黑客松/创新比赛报名信息").replace(/\s+/g, " ").trim().slice(0, 60),
+        tags: ["黑客松", source].filter(Boolean).slice(0, 5),
+      };
+    });
 }
 
 async function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
@@ -101,6 +104,84 @@ const ExtractedSchema = z.object({
     )
     .max(15),
 });
+
+type HackathonDateFields = {
+  title?: string | null;
+  summary?: string | null;
+  deadline: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
+};
+
+function startOfToday(): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function formatDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function toValidDate(year: number, month: number, day: number): Date | null {
+  const d = new Date(year, month - 1, day);
+  if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) return null;
+  return d;
+}
+
+function parseDateLike(s: string | null | undefined): Date | null {
+  if (!s) return null;
+  const full = s.match(/(20\d{2})\s*[-/.年]\s*(\d{1,2})\s*(?:[-/.月])\s*(\d{1,2})/);
+  if (full) return toValidDate(Number(full[1]), Number(full[2]), Number(full[3]));
+  const md = s.match(/(?:^|[^\d])(\d{1,2})\s*月\s*(\d{1,2})\s*(?:日|号)?/);
+  if (md) return toValidDate(new Date().getFullYear(), Number(md[1]), Number(md[2]));
+  return null;
+}
+
+function extractDateCandidates(text: string): Date[] {
+  const dates: Date[] = [];
+  const currentYear = new Date().getFullYear();
+  for (const m of text.matchAll(/(20\d{2})\s*[-/.年]\s*(\d{1,2})\s*(?:[-/.月])\s*(\d{1,2})/g)) {
+    const d = toValidDate(Number(m[1]), Number(m[2]), Number(m[3]));
+    if (d) dates.push(d);
+  }
+  for (const m of text.matchAll(/(?:^|[^\d])(\d{1,2})\s*月\s*(\d{1,2})\s*(?:日|号)?/g)) {
+    const d = toValidDate(currentYear, Number(m[1]), Number(m[2]));
+    if (d) dates.push(d);
+  }
+  return dates;
+}
+
+function inferDateFromText(text: string): string | null {
+  const dates = extractDateCandidates(text);
+  if (dates.length === 0) return null;
+  return formatDate(dates.sort((a, b) => b.getTime() - a.getTime())[0]);
+}
+
+function normalizeHackathonDates<T extends HackathonDateFields>(item: T): T {
+  if (parseDateLike(item.deadline) || parseDateLike(item.ends_at) || parseDateLike(item.starts_at)) return item;
+  const inferred = inferDateFromText(`${item.title ?? ""}\n${item.summary ?? ""}`);
+  return inferred ? ({ ...item, deadline: inferred } as T) : item;
+}
+
+function isActionableHackathon(item: HackathonDateFields): boolean {
+  const today = startOfToday();
+  const normalized = normalizeHackathonDates(item);
+  const deadline = parseDateLike(normalized.deadline);
+  if (deadline) return deadline.getTime() >= today.getTime();
+
+  const timeline = [parseDateLike(normalized.ends_at), parseDateLike(normalized.starts_at)].filter(Boolean) as Date[];
+  if (timeline.length > 0) return Math.max(...timeline.map((d) => d.getTime())) >= today.getTime();
+
+  const candidates = extractDateCandidates(`${item.title ?? ""}\n${item.summary ?? ""}`);
+  if (candidates.length > 0) return Math.max(...candidates.map((d) => d.getTime())) >= today.getTime();
+
+  // 没有任何可解析日期的结果不可行动，避免旧新闻/往届比赛长期占位。
+  return false;
+}
 
 async function extractWithAI(
   source: string,
@@ -281,7 +362,9 @@ export const scanHackathonsNow = createServerFn({ method: "GET" }).handler(async
     debug.push({ source: src.name, query: src.query, snippets: snippets.length, extracted: ex.hackathons.length, error });
     for (const h of ex.hackathons) {
       if (!h.url?.startsWith("http")) continue;
-      allFound.push({ source: src.name, item: h });
+      const normalized = normalizeHackathonDates(h);
+      if (!isActionableHackathon(normalized)) continue;
+      allFound.push({ source: src.name, item: normalized });
     }
   }
 
@@ -359,21 +442,23 @@ export const listPendingHackathons = createServerFn({ method: "GET" }).handler(a
     .limit(60);
   if (error) return { ok: false as const, error: error.message, items: [] as HackathonRow[] };
 
-  // 只保留「报名还没结束」的：解析 deadline (兜底用 ends_at / starts_at) 与今天比较
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const parseDate = (s: string | null | undefined): Date | null => {
-    if (!s) return null;
-    const m = s.match(/(\d{4})[-/.年](\d{1,2})[-/.月](\d{1,2})/);
-    if (!m) return null;
-    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-    return isNaN(d.getTime()) ? null : d;
-  };
-  const items = ((data ?? []) as HackathonRow[]).filter((h) => {
-    const ref = parseDate(h.deadline) ?? parseDate(h.ends_at) ?? parseDate(h.starts_at);
-    // 无法解析日期的也保留（避免误删），有日期的必须 >= 今天
-    return ref ? ref.getTime() >= today.getTime() : true;
-  }).slice(0, 30);
+  const staleIds: string[] = [];
+  const items = ((data ?? []) as HackathonRow[])
+    .map((h) => normalizeHackathonDates(h))
+    .filter((h) => {
+      const keep = isActionableHackathon(h);
+      if (!keep) staleIds.push(h.id);
+      return keep;
+    })
+    .slice(0, 30);
+
+  if (staleIds.length > 0) {
+    void supabaseAdmin
+      .from("hackathons")
+      .update({ status: "dismissed", decided_at: new Date().toISOString() })
+      .in("id", staleIds)
+      .then(() => undefined);
+  }
   return { ok: true as const, items };
 });
 
