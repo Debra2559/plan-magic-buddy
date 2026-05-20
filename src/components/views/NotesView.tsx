@@ -150,6 +150,8 @@ function NotesTab() {
         </div>
       </div>
 
+      <QuickDiaryEditor open={diaryOpen} onToggle={() => setDiaryOpen((v) => !v)} />
+
       <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-full bg-white/[0.04] border border-white/8">
         <Search className="w-3.5 h-3.5 text-white/40" />
         <input
