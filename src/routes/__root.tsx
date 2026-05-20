@@ -140,6 +140,7 @@ function RootComponent() {
             <Outlet />
             <ReminderRunner />
             <Toaster position="top-right" theme="dark" richColors closeButton />
+            <AvatarStatsOverlay />
           </SylvaProvider>
         </PersonaProvider>
       </AuthProvider>
