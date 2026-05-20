@@ -169,7 +169,17 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
             );
           })}
         </div>
+
+        {/* 飞书同步 + 雷达模块 */}
+        <div className="mt-6 space-y-6">
+          <FeishuQuickSyncBar onGoSettings={onGoSettings} />
+          <div className="grid lg:grid-cols-2 gap-6 items-start">
+            <HackathonInbox />
+            <AiNewsRadar />
+          </div>
+        </div>
       </div>
+
 
       {/* Right detail */}
       <aside className="w-72 shrink-0 bg-black/30 border-l border-white/10 p-5 overflow-auto">
