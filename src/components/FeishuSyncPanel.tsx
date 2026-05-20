@@ -327,6 +327,7 @@ export function FeishuSyncPanel() {
           lastSyncAt: s.lastSyncAt ?? prev.lastSyncAt,
           status: s.selectedCalendarId ? "connected" : prev.status,
         }));
+        if (s.pushRules) setPushRules(s.pushRules);
       } catch {}
       try {
         const n = await runGetNotify();
