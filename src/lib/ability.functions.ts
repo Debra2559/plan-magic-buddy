@@ -87,6 +87,63 @@ const AnalysisSchema = z.object({
   tagline: z.string().describe("一句话画像描述"),
 });
 
+// AI 只负责生成定性描述，定量由本地计算确定
+const QualitativeSchema = z.object({
+  personality_summary: z.string().min(4).max(160),
+  strengths: z.array(z.string()).min(1).max(6),
+  growth_areas: z.array(z.string()).min(1).max(6),
+  tagline: z.string().min(4).max(80).describe("一句话画像描述"),
+});
+
+// 维度中文名映射
+const DIM_LABELS: Record<string, string> = {
+  planning: "计划力",
+  focus: "专注力",
+  health: "健康力",
+  creativity: "创造力",
+  social: "社交力",
+  reflection: "反思力",
+  openness: "开放性",
+  conscientiousness: "尽责性",
+  extraversion: "外向性",
+  agreeableness: "宜人性",
+  neuroticism: "神经质",
+};
+
+function computeScores(responses: Record<string, number>) {
+  // 按 dim 基础名汇总（去掉 _inv），反向题先 6-score 反转
+  const buckets: Record<string, number[]> = {};
+  for (const q of ABILITY_QUESTIONS) {
+    const raw = responses[q.id];
+    const score = typeof raw === "number" ? Math.min(5, Math.max(1, raw)) : 3;
+    const isInv = q.dim.endsWith("_inv");
+    const base = isInv ? q.dim.slice(0, -4) : q.dim;
+    const v = isInv ? 6 - score : score;
+    (buckets[base] ??= []).push(v);
+  }
+  const out: Record<string, number> = {};
+  for (const [k, arr] of Object.entries(buckets)) {
+    const avg = arr.reduce((s, x) => s + x, 0) / arr.length; // 1..5
+    out[k] = Math.round(((avg - 1) / 4) * 100); // → 0..100
+  }
+  const abilities = {
+    planning: out.planning ?? 50,
+    focus: out.focus ?? 50,
+    health: out.health ?? 50,
+    creativity: out.creativity ?? 50,
+    social: out.social ?? 50,
+    reflection: out.reflection ?? 50,
+  };
+  const personalityScores = {
+    openness: out.openness ?? 50,
+    conscientiousness: out.conscientiousness ?? 50,
+    extraversion: out.extraversion ?? 50,
+    agreeableness: out.agreeableness ?? 50,
+    neuroticism: out.neuroticism ?? 50,
+  };
+  return { abilities, personalityScores };
+}
+
 const PlanItemSchema = z.object({
   area: z.string(),
   goal: z.string(),
