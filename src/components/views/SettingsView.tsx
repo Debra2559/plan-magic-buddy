@@ -52,7 +52,7 @@ export function SettingsView() {
       <h2 className="font-display text-3xl text-white mb-7">让 Sylva 长成你的样子。</h2>
 
       <div className="space-y-7">
-        {sections.map((s) => {
+        <FeishuSyncPanel />
           const Icon = s.icon;
           return (
             <div key={s.title}>
