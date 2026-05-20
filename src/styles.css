@@ -84,6 +84,50 @@
 
 .dark { color-scheme: dark; }
 
+/* Light mode — paper / 米白 palette */
+html.light {
+  color-scheme: light;
+  --background: oklch(0.97 0.01 90);
+  --foreground: oklch(0.22 0.02 145);
+
+  --card: oklch(0.99 0.008 90);
+  --card-foreground: oklch(0.22 0.02 145);
+
+  --popover: oklch(0.99 0.008 90);
+  --popover-foreground: oklch(0.22 0.02 145);
+
+  --primary: oklch(0.42 0.06 145);
+  --primary-foreground: oklch(0.98 0.005 85);
+
+  --secondary: oklch(0.92 0.015 90);
+  --secondary-foreground: oklch(0.25 0.02 145);
+
+  --muted: oklch(0.93 0.012 90);
+  --muted-foreground: oklch(0.42 0.02 145);
+
+  --accent: oklch(0.62 0.12 65);
+  --accent-foreground: oklch(0.98 0.005 85);
+
+  --destructive: oklch(0.55 0.18 28);
+  --destructive-foreground: oklch(0.98 0.005 85);
+
+  --border: oklch(0.22 0.02 145 / 0.14);
+  --input: oklch(0.22 0.02 145 / 0.18);
+  --ring: oklch(0.42 0.06 145);
+
+  --moss: oklch(0.48 0.09 145);
+  --bark: oklch(0.38 0.04 50);
+  --bone: oklch(0.32 0.02 145);
+  --amber-glow: oklch(0.62 0.14 70);
+
+  --gradient-glow: radial-gradient(120% 80% at 50% 0%, oklch(0.62 0.14 70 / 0.18), transparent 60%);
+  --gradient-widget: linear-gradient(155deg, oklch(0.22 0.02 145 / 0.06), oklch(0.22 0.02 145 / 0.02));
+  --shadow-widget: 0 20px 50px -20px oklch(0.22 0.02 145 / 0.22), 0 0 0 1px oklch(0.22 0.02 145 / 0.06) inset;
+  --shadow-glow: 0 0 40px oklch(0.62 0.14 70 / 0.25);
+}
+
+html.light .widget { border-color: oklch(0.22 0.02 145 / 0.1); }
+
 @layer base {
   * { border-color: var(--color-border); }
   html, body { background-color: var(--color-background); color: var(--color-foreground); }

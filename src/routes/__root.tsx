@@ -16,6 +16,7 @@ import { Toaster } from "sonner";
 import { AvatarStatsOverlay } from "@/components/AvatarStatsOverlay";
 import { AuthProvider } from "@/lib/auth-context";
 import { PersonaProvider } from "@/lib/persona";
+import { ThemeProvider, useTheme, themeBootScript } from "@/lib/theme";
 import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
@@ -108,9 +109,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
       <body>
         {children}
@@ -118,6 +120,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
       </body>
     </html>
   );
+}
+
+function ThemedToaster() {
+  const { theme } = useTheme();
+  return <Toaster position="top-right" theme={theme} richColors closeButton />;
 }
 
 function RootComponent() {
@@ -134,16 +141,18 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <PersonaProvider>
-          <SylvaProvider>
-            <Outlet />
-            <ReminderRunner />
-            <Toaster position="top-right" theme="dark" richColors closeButton />
-            <AvatarStatsOverlay />
-          </SylvaProvider>
-        </PersonaProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <PersonaProvider>
+            <SylvaProvider>
+              <Outlet />
+              <ReminderRunner />
+              <ThemedToaster />
+              <AvatarStatsOverlay />
+            </SylvaProvider>
+          </PersonaProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
