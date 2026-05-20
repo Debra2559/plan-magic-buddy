@@ -28,6 +28,7 @@ import {
   Music,
   Mail,
   Image as ImageIcon,
+  BookHeart,
 } from "lucide-react";
 
 export const Route = createFileRoute("/desktop")({
