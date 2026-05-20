@@ -77,27 +77,27 @@ const PersonalitySchema = z.object({
   extraversion: z.number().min(0).max(100),
   agreeableness: z.number().min(0).max(100),
   neuroticism: z.number().min(0).max(100),
-  summary: z.string().max(280),
+  summary: z.string(),
 });
 const AnalysisSchema = z.object({
   abilities: AbilitiesSchema,
   personality: PersonalitySchema,
-  strengths: z.array(z.string().max(20)).min(1).max(4),
-  growth_areas: z.array(z.string().max(20)).min(1).max(4),
-  tagline: z.string().max(40).describe("一句话画像描述"),
+  strengths: z.array(z.string()).min(1).max(6),
+  growth_areas: z.array(z.string()).min(1).max(6),
+  tagline: z.string().describe("一句话画像描述"),
 });
 
 const PlanItemSchema = z.object({
-  area: z.string().max(20),
-  goal: z.string().max(60),
-  actions: z.array(z.string().max(80)).min(2).max(5),
-  cadence: z.string().max(30).describe("如：每周3次 / 每天15分钟"),
+  area: z.string(),
+  goal: z.string(),
+  actions: z.array(z.string()).min(2).max(6),
+  cadence: z.string().describe("如：每周3次 / 每天15分钟"),
 });
 const PlanSchema = z.object({
-  title: z.string().max(30),
-  tagline: z.string().max(60),
-  focus_areas: z.array(z.string().max(20)).min(1).max(3),
-  items: z.array(PlanItemSchema).min(2).max(5),
+  title: z.string(),
+  tagline: z.string(),
+  focus_areas: z.array(z.string()).min(1).max(4),
+  items: z.array(PlanItemSchema).min(2).max(6),
 });
 
 // ---------- Helpers ----------
