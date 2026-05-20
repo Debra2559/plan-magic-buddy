@@ -8,6 +8,8 @@ import {
   selectFeishuCalendar,
   setFeishuDirection,
   syncToFeishu,
+  pullFromFeishu,
+  recordPulledMappings,
 } from "@/lib/feishu.functions";
 import {
   Check,
@@ -20,6 +22,7 @@ import {
   AlertTriangle,
   Loader2,
   Zap,
+  Download,
 } from "lucide-react";
 
 type Status = "disconnected" | "connecting" | "connected";
@@ -63,7 +66,7 @@ const loadPersisted = (): Persisted => {
 };
 
 export function FeishuSyncPanel() {
-  const { items } = useSylva();
+  const { items, addItems } = useSylva();
   const [state, setState] = useState<Persisted>(loadPersisted);
   const [logs, setLogs] = useState<SyncLog[]>([]);
   const lastItemSignature = useRef<string>("");
@@ -73,6 +76,7 @@ export function FeishuSyncPanel() {
   const [loadingCalendars, setLoadingCalendars] = useState(false);
   const [calendarsError, setCalendarsError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [pulling, setPulling] = useState(false);
 
   const runTest = useServerFn(testFeishuConnection);
   const runList = useServerFn(listFeishuCalendars);
@@ -80,6 +84,8 @@ export function FeishuSyncPanel() {
   const runSelect = useServerFn(selectFeishuCalendar);
   const runSetDir = useServerFn(setFeishuDirection);
   const runSync = useServerFn(syncToFeishu);
+  const runPull = useServerFn(pullFromFeishu);
+  const runRecord = useServerFn(recordPulledMappings);
 
   const doSync = useCallback(
     async (reason: string) => {
@@ -124,6 +130,57 @@ export function FeishuSyncPanel() {
     },
     [items, runSync, state.calendarId]
   );
+
+  const doPull = useCallback(async () => {
+    if (!state.calendarId) return;
+    setPulling(true);
+    try {
+      const r = await runPull();
+      if (!r.ok) {
+        setLogs((prev) => [mkLog("pull", "feishu", `拉取失败: ${r.error}`, "conflict"), ...prev].slice(0, 12));
+        return;
+      }
+      if (r.newItems.length === 0) {
+        setLogs((prev) => [mkLog("pull", "feishu", `无新事件 (共 ${r.total} 条)`, "ok"), ...prev].slice(0, 12));
+        return;
+      }
+      // 用 feishu_event_id 当本地 id，方便和映射表对齐
+      const itemsToAdd = r.newItems.map((it) => ({
+        id: `fs-${it._feishuEventId}`,
+        type: it.type,
+        title: it.title,
+        date: it.date,
+        time: it.time,
+        durationMin: it.durationMin,
+        tag: it.tag,
+        note: it.note,
+      }));
+      addItems(itemsToAdd as any);
+      // 写映射表，防止下次推送时重复
+      await runRecord({
+        data: {
+          calendarId: r.calendarId,
+          records: r.newItems.map((it) => ({
+            localId: `fs-${it._feishuEventId}`,
+            feishuEventId: it._feishuEventId,
+          })),
+        },
+      });
+      // 更新签名，避免触发自动推送
+      lastItemSignature.current = "";
+      const newLogs = itemsToAdd.slice(0, 6).map((it) =>
+        mkLog("create", "feishu", it.title, "ok")
+      );
+      if (r.newItems.length > 6) {
+        newLogs.push(mkLog("pull", "feishu", `… 还有 ${r.newItems.length - 6} 条`, "ok"));
+      }
+      setLogs((prev) => [...newLogs, ...prev].slice(0, 12));
+    } catch (e: any) {
+      setLogs((prev) => [mkLog("pull", "feishu", `拉取异常: ${e?.message ?? e}`, "conflict"), ...prev].slice(0, 12));
+    } finally {
+      setPulling(false);
+    }
+  }, [state.calendarId, runPull, runRecord, addItems]);
 
   const loadCalendars = useCallback(async () => {
     setLoadingCalendars(true);
@@ -300,6 +357,15 @@ export function FeishuSyncPanel() {
                 </div>
               </div>
               <button
+                onClick={doPull}
+                disabled={pulling}
+                className="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 disabled:opacity-50 flex items-center gap-1.5"
+                title="从飞书拉取选中日历的事件到本地"
+              >
+                {pulling ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                拉取
+              </button>
+              <button
                 onClick={syncNow}
                 disabled={syncing}
                 className="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 disabled:opacity-50 flex items-center gap-1.5"
@@ -464,7 +530,7 @@ export function FeishuSyncPanel() {
       <div className="mt-2 flex items-start gap-1.5 text-[11px] text-white/40">
         <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
         <span>
-          已接入真接口：本地新增/修改/删除 1.5 秒后自动推到选中的飞书日历。回流（飞书→Sylva）还需配 Encrypt Key + 订阅事件。
+          已接入真接口：本地新增/修改/删除 1.5 秒后自动推到飞书；点「拉取」把飞书最近 60 天事件抓回本地（实时回流需另配 Encrypt Key + 订阅事件）。
         </span>
       </div>
     </div>

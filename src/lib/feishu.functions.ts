@@ -355,3 +355,142 @@ export const syncToFeishu = createServerFn({ method: 'POST' })
     const errCount = entries.length - okCount
     return { ok: true as const, entries, okCount, errCount }
   })
+
+// ============= 真实拉取（飞书 → Sylva） =============
+
+interface FeishuEvent {
+  event_id: string
+  summary?: string
+  description?: string
+  start_time?: { timestamp?: string; date?: string; timezone?: string }
+  end_time?: { timestamp?: string; date?: string; timezone?: string }
+  status?: string
+}
+
+// 把 Unix 秒（CST）拆成 { date: 'YYYY-MM-DD', time: 'HH:MM' }
+function unixToCST(sec: number): { date: string; time: string } {
+  const d = new Date(sec * 1000)
+  // 转到 +08:00
+  const cst = new Date(d.getTime() + 8 * 3600 * 1000)
+  const y = cst.getUTCFullYear()
+  const m = String(cst.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(cst.getUTCDate()).padStart(2, '0')
+  const hh = String(cst.getUTCHours()).padStart(2, '0')
+  const mm = String(cst.getUTCMinutes()).padStart(2, '0')
+  return { date: `${y}-${m}-${day}`, time: `${hh}:${mm}` }
+}
+
+export const pullFromFeishu = createServerFn({ method: 'POST' }).handler(
+  async () => {
+    const { data: settings } = await supabaseAdmin
+      .from('feishu_settings')
+      .select('selected_calendar_id')
+      .limit(1)
+      .maybeSingle()
+
+    const calendarId = settings?.selected_calendar_id
+    if (!calendarId) {
+      return { ok: false as const, error: '请先选一个飞书日历' }
+    }
+
+    // 拉取「今天 - 7 天」到「今天 + 60 天」窗口
+    const now = Math.floor(Date.now() / 1000)
+    const start = now - 7 * 86400
+    const end = now + 60 * 86400
+
+    const all: FeishuEvent[] = []
+    let pageToken: string | undefined
+    let safety = 0
+    do {
+      const qs = new URLSearchParams({
+        page_size: '100',
+        start_time: String(start),
+        end_time: String(end),
+      })
+      if (pageToken) qs.set('page_token', pageToken)
+      const r = await feishu<{
+        code: number
+        msg: string
+        data?: { items?: FeishuEvent[]; page_token?: string; has_more?: boolean }
+      }>(`/calendar/v4/calendars/${encodeURIComponent(calendarId)}/events?${qs.toString()}`)
+      if (r.code !== 0) {
+        return { ok: false as const, error: `拉取失败 code=${r.code} msg=${r.msg}` }
+      }
+      all.push(...(r.data?.items ?? []))
+      pageToken = r.data?.has_more ? r.data?.page_token : undefined
+      safety++
+    } while (pageToken && safety < 10)
+
+    // 反查已存在映射 —— 这些是 Sylva 已知的事件，跳过
+    const { data: maps } = await supabaseAdmin
+      .from('feishu_event_map')
+      .select('feishu_event_id, local_id')
+      .eq('calendar_id', calendarId)
+
+    const knownFeishuIds = new Set((maps ?? []).map((m) => m.feishu_event_id))
+
+    type NewItem = {
+      type: 'event'
+      title: string
+      date: string
+      time: string
+      durationMin: number
+      tag?: string
+      note?: string
+      _feishuEventId: string
+    }
+
+    const newItems: NewItem[] = []
+    for (const ev of all) {
+      if (!ev.event_id || knownFeishuIds.has(ev.event_id)) continue
+      if (ev.status === 'cancelled') continue
+      const startTs = ev.start_time?.timestamp
+      const endTs = ev.end_time?.timestamp
+      if (!startTs) continue // 全天事件先跳过
+      const startSec = Number(startTs)
+      const endSec = Number(endTs ?? startTs)
+      const { date, time } = unixToCST(startSec)
+      const durationMin = Math.max(5, Math.round((endSec - startSec) / 60)) || 60
+      newItems.push({
+        type: 'event',
+        title: ev.summary || '(无标题)',
+        date,
+        time,
+        durationMin,
+        tag: '飞书',
+        note: ev.description || undefined,
+        _feishuEventId: ev.event_id,
+      })
+    }
+
+    return { ok: true as const, total: all.length, newItems, calendarId }
+  }
+)
+
+// 写入新拉到的事件 → 映射表（local_id 由客户端生成）
+const recordSchema = z.object({
+  calendarId: z.string().min(1),
+  records: z.array(
+    z.object({
+      localId: z.string().min(1),
+      feishuEventId: z.string().min(1),
+    })
+  ).max(500),
+})
+
+export const recordPulledMappings = createServerFn({ method: 'POST' })
+  .inputValidator((input) => recordSchema.parse(input))
+  .handler(async ({ data }) => {
+    if (data.records.length === 0) return { ok: true as const, count: 0 }
+    const rows = data.records.map((r) => ({
+      local_id: r.localId,
+      feishu_event_id: r.feishuEventId,
+      calendar_id: data.calendarId,
+      last_pushed_at: new Date().toISOString(),
+    }))
+    const { error } = await supabaseAdmin
+      .from('feishu_event_map')
+      .upsert(rows, { onConflict: 'local_id' })
+    if (error) throw new Error(error.message)
+    return { ok: true as const, count: rows.length }
+  })
