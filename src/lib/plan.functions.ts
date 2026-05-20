@@ -86,26 +86,39 @@ const ChatMessage = z.object({
   content: z.string(),
 });
 
-const ChatStepSchema = z.discriminatedUnion("kind", [
-  z.object({
-    kind: z.literal("clarify"),
-    question: z.string().describe("一个针对性的中文追问 (一次只问 1-2 个问题, 合并写在一句话里)"),
-    quickReplies: z.array(z.string()).max(4).describe("0-4 个建议的快捷回答按钮"),
-  }),
-  z.object({
-    kind: z.literal("research"),
-    queries: z.array(z.string()).min(1).max(3).describe("需要联网检索的搜索关键词 (中英文皆可)"),
-    reason: z.string().describe("一句话说明为什么需要联网"),
-  }),
-  z.object({
-    kind: z.literal("plan"),
-    summary: z.string().describe("一句中文总结, 不超过 50 字"),
-    items: z.array(PlanItemSchema).min(1).max(30),
-    sources: z.array(z.string()).optional().describe("如果有参考链接, 列在这里"),
-  }),
-]);
+// 注意: Gemini 对 discriminatedUnion 兼容性较差, 这里用扁平 schema + 后置校验。
+const ChatStepRawSchema = z.object({
+  kind: z.enum(["clarify", "research", "plan"]).describe("下一步动作"),
+  question: z.string().optional().describe("kind=clarify 时的中文追问"),
+  quickReplies: z.array(z.string()).max(6).optional().describe("kind=clarify 时的快捷回答按钮 (0-4)"),
+  queries: z.array(z.string()).max(3).optional().describe("kind=research 时的 1-3 条搜索关键词"),
+  reason: z.string().optional().describe("kind=research 时, 一句话说明为什么需要联网"),
+  summary: z.string().optional().describe("kind=plan 时的一句话总结, 不超过 50 字"),
+  items: z.array(PlanItemSchema).max(30).optional().describe("kind=plan 时的拆解事项 1-30 条"),
+  sources: z.array(z.string()).optional().describe("kind=plan 时的参考链接"),
+});
 
-export type ChatStep = z.infer<typeof ChatStepSchema>;
+export type ChatStep =
+  | { kind: "clarify"; question: string; quickReplies: string[] }
+  | { kind: "research"; queries: string[]; reason: string }
+  | { kind: "plan"; summary: string; items: PlanItem[]; sources?: string[] };
+
+function normalizeChatStep(raw: z.infer<typeof ChatStepRawSchema>): ChatStep | null {
+  if (raw.kind === "clarify") {
+    if (!raw.question) return null;
+    return { kind: "clarify", question: raw.question, quickReplies: (raw.quickReplies ?? []).slice(0, 4) };
+  }
+  if (raw.kind === "research") {
+    const qs = (raw.queries ?? []).filter(Boolean);
+    if (!qs.length) return null;
+    return { kind: "research", queries: qs.slice(0, 3), reason: raw.reason ?? "" };
+  }
+  if (raw.kind === "plan") {
+    if (!raw.items?.length) return null;
+    return { kind: "plan", summary: raw.summary ?? "", items: raw.items, sources: raw.sources };
+  }
+  return null;
+}
 
 const ChatPlanInput = z.object({
   messages: z.array(ChatMessage).min(1),
