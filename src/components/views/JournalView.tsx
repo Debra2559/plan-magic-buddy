@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { FreeformCanvas } from "@/components/canvas/FreeformCanvas";
+import { LayoutGrid, Brush } from "lucide-react";
 import {
   useSylva,
   habitStreak,
