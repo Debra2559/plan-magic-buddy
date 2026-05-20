@@ -1352,7 +1352,16 @@ export function FeishuSyncPanel() {
           </button>
           {diagOpen && (
             <div className="px-2.5 pb-2 space-y-2 text-[11px]">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={doPingWebhook}
+                  disabled={pinging}
+                  className="text-[10px] px-2 py-0.5 rounded bg-amber-glow/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-50 flex items-center gap-1"
+                >
+                  {pinging ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                  {pinging ? "测试中…" : "一键重新捕获 / 测试 Webhook"}
+                </button>
                 <button
                   type="button"
                   onClick={refreshDiag}
@@ -1361,7 +1370,12 @@ export function FeishuSyncPanel() {
                 >
                   {diagLoading ? "刷新中…" : "刷新明细"}
                 </button>
-                <span className="text-white/40">仅显示最近 webhook 日志</span>
+                {pingResult && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${pingResult.ok ? "bg-emerald-400/15 text-emerald-300" : "bg-rose-400/15 text-rose-300"}`}>
+                    {pingResult.ok ? `✓ ${pingResult.status} · ${pingResult.durationMs}ms` : `✗ ${pingResult.error ?? "失败"}`}
+                  </span>
+                )}
+                <span className="text-white/40 ml-auto">向自身 webhook 发送 url_verification 并重新判断状态</span>
               </div>
 
               {diag && diag.reasons.length > 0 && (
