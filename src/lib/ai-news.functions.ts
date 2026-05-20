@@ -132,12 +132,15 @@ async function loadSettings(): Promise<AiNewsSettings> {
   if (!data) return DEFAULT_SETTINGS;
   return {
     enabled: data.enabled ?? true,
-    sources: Array.isArray(data.sources) && data.sources.length > 0 ? data.sources : DEFAULT_SOURCES,
+    sources:
+      Array.isArray(data.sources) && data.sources.length > 0
+        ? (data.sources as unknown as AiNewsSettings["sources"])
+        : DEFAULT_SOURCES,
     include_keywords: data.include_keywords ?? [],
     exclude_keywords: data.exclude_keywords ?? [],
     tag_filters: data.tag_filters ?? [],
     scan_interval_hours: data.scan_interval_hours ?? 24,
-    time_window: data.time_window ?? "qdr:w",
+    time_window: (data.time_window ?? "qdr:w") as AiNewsSettings["time_window"],
     per_source_limit: data.per_source_limit ?? 6,
     last_scanned_at: data.last_scanned_at ?? null,
   };
