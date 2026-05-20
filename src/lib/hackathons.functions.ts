@@ -39,6 +39,7 @@ function fallbackHackathons(source: string, snippets: FirecrawlSearchItem[]): z.
       url: s.url!,
       deadline: null,
       starts_at: null,
+      ends_at: null,
       location: /online|线上/i.test(`${s.description ?? ""}${s.markdown ?? ""}`) ? "线上" : null,
       prize: null,
       summary: (s.description ?? s.markdown ?? "黑客松/创新比赛报名信息").replace(/\s+/g, " ").trim().slice(0, 60),
