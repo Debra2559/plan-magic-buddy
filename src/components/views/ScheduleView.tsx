@@ -177,6 +177,7 @@ export function ScheduleView() {
                 key={it.id}
                 item={it}
                 onChange={(patch) => updateItem(it.id, patch)}
+                onToggleDone={() => toggleDone(it.id)}
                 onDelete={() => removeItem(it.id)}
               />
             ))}
