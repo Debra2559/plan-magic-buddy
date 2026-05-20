@@ -52,6 +52,7 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
   const syncFn = useServerFn(syncToFeishu);
   const [syncScope, setSyncScope] = useState<"all" | "draft" | "today" | "week" | "timed">("all");
   const [syncing, setSyncing] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Goal-chat state
   const [chatMessages, setChatMessages] = useState<ChatMsg[]>([]);
