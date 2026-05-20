@@ -65,8 +65,8 @@ function DesktopApp() {
   const [view, setView] = useState<SylvaView>(() => {
     if (typeof window === "undefined") return "ai";
     const v = new URLSearchParams(window.location.search).get("view");
-    const allowed: SylvaView[] = ["ai", "schedule", "todos", "notes", "habits", "settings"];
-    return (allowed as string[]).includes(v ?? "") ? (v as SylvaView) : "ai";
+    const allowed: SylvaView[] = ["schedule", "ai", "todos", "notes", "habits", "settings"];
+    return (allowed as string[]).includes(v ?? "") ? (v as SylvaView) : "schedule";
   });
 
   useEffect(() => {
