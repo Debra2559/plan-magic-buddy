@@ -25,7 +25,7 @@ const tagColor: Record<string, string> = {
 const typeIcon = { event: CalIcon, todo: Clock, reminder: Bell } as const;
 
 export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void; onGoSettings?: () => void } = {}) {
-  const { items, habits, notes, diary, comics, navigateTo, toggleHabitOn, addItems, updateItem, removeItem, toggleDone, isRecapDone, unmarkRecapDone, isRecentlySynced, markRecentlySynced, pendingIds, confirmPending, revertPending } = useSylva();
+  const { items, habits, notes, diary, comics, navigateTo, toggleHabitOn, addItems, updateItem, removeItem, toggleDone, isRecapDone, unmarkRecapDone, isRecentlySynced, markRecentlySynced, pendingIds, confirmPending, revertPending, upsertDiary } = useSylva();
   const [cursor, setCursor] = useState(new Date(2026, 4, 1)); // May 2026
   const [selected, setSelected] = useState("2026-05-19");
   const [editorDate, setEditorDate] = useState<string | null>(null);
@@ -362,7 +362,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
           </section>
         )}
 
-        <DayDiaryCard date={selected} diary={diary} onOpen={() => navigateTo?.("journal")} />
+        <DayDiaryCard date={selected} diary={diary} onOpen={() => navigateTo?.("journal")} onSave={(content) => upsertDiary(selected, { content })} />
 
         <DayNotesCard date={selected} notes={notes} onOpen={() => navigateTo?.("notes")} />
 
@@ -1029,28 +1029,60 @@ function Stat({ label, value }: { label: string; value: number | string }) {
 
 const moodEmoji: Record<string, string> = { great: "😄", good: "🙂", normal: "😐", down: "😕", bad: "😣" };
 
-function DayDiaryCard({ date, diary, onOpen }: { date: string; diary: any[]; onOpen: () => void }) {
+function DayDiaryCard({ date, diary, onOpen, onSave }: { date: string; diary: any[]; onOpen: () => void; onSave: (content: string) => void }) {
   const entry = diary.find((d) => d.date === date);
+  const [draft, setDraft] = useState("");
+  const [composing, setComposing] = useState(false);
+  const submit = () => {
+    const v = draft.trim();
+    if (!v) return;
+    onSave(v);
+    setDraft("");
+  };
   return (
     <section>
       <SectionHeader icon={BookHeart} title="今日记录" />
-      <button
-        onClick={onOpen}
-        className="w-full text-left rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] p-3 transition group"
-      >
-        {entry ? (
-          <>
-            <div className="flex items-center gap-2 text-xs text-white/60 mb-1">
-              {entry.mood && <span className="text-base leading-none">{moodEmoji[entry.mood] ?? "•"}</span>}
-              <span>{entry.mood ? `心情：${entry.mood}` : "已记录"}</span>
-              <span className="ml-auto text-[10px] text-white/30 group-hover:text-amber-glow transition">查看 →</span>
-            </div>
-            <p className="text-xs text-white/75 line-clamp-3 leading-relaxed">{entry.content || "（空内容）"}</p>
-          </>
-        ) : (
-          <div className="text-xs text-white/45 text-center py-2">还没有当日记录 · 点击去写一条</div>
-        )}
-      </button>
+      {entry ? (
+        <button
+          onClick={onOpen}
+          className="w-full text-left rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] p-3 transition group"
+        >
+          <div className="flex items-center gap-2 text-xs text-white/60 mb-1">
+            {entry.mood && <span className="text-base leading-none">{moodEmoji[entry.mood] ?? "•"}</span>}
+            <span>{entry.mood ? `心情：${entry.mood}` : "已记录"}</span>
+            <span className="ml-auto text-[10px] text-white/30 group-hover:text-amber-glow transition">查看 →</span>
+          </div>
+          <p className="text-xs text-white/75 line-clamp-3 leading-relaxed">{entry.content || "（空内容）"}</p>
+        </button>
+      ) : (
+        <div className="rounded-xl border border-white/10 bg-white/[0.03] focus-within:border-amber-glow/40 focus-within:bg-white/[0.05] transition p-2.5">
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onCompositionStart={() => setComposing(true)}
+            onCompositionEnd={() => setComposing(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && !composing) {
+                e.preventDefault();
+                submit();
+              }
+            }}
+            placeholder="写下今天的一条记录…（⌘/Ctrl + Enter 保存）"
+            rows={2}
+            className="w-full bg-transparent text-xs text-white/85 placeholder:text-white/35 outline-none resize-none leading-relaxed"
+          />
+          <div className="flex items-center justify-between mt-1.5">
+            <button onClick={onOpen} className="text-[10px] text-white/40 hover:text-amber-glow transition">展开编辑器 →</button>
+            <button
+              onClick={submit}
+              disabled={!draft.trim()}
+              className="text-[11px] px-2.5 py-1 rounded-md bg-amber-glow/20 text-amber-glow border border-amber-glow/30 hover:bg-amber-glow/30 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              保存
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
