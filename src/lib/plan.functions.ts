@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway";
+import { fetchMemoryBlockForUser } from "./memories.functions";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const PlanItemSchema = z.object({
   type: z.enum(["event", "todo", "reminder"]).describe("event=日程(有时间段), todo=待办, reminder=提醒"),
