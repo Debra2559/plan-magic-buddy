@@ -9,7 +9,7 @@ const PlanItemSchema = z.object({
   date: z.string().describe("YYYY-MM-DD 格式日期, 基于今天 2026-05-19 推算"),
   time: z.string().optional().describe("HH:MM 24h 格式, event 必填, todo/reminder 可选"),
   durationMin: z.number().optional().describe("event 的时长(分钟)"),
-  tag: z.enum(["工作", "学习", "健康", "生活", "英语", "习惯"]).describe("分类标签"),
+  tag: z.string().describe("分类标签, 推荐: 工作/学习/健康/生活/英语/习惯"),
   note: z.string().optional().describe("一句话备注或执行要点"),
 });
 
