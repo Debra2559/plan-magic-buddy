@@ -319,7 +319,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                 onChange={(patch) => updateItem(it.id, patch)}
                 onToggleDone={() => toggleDone(it.id)}
                 onDelete={() => removeItem(it.id)}
-                onConfirm={it.pending ? () => confirmPending([it.id]) : undefined}
+                onConfirm={it.pending ? () => confirmAndFocus([it.id]) : undefined}
                 onRevert={it.pending ? () => revertPending([it.id]) : undefined}
               />
             ))}
