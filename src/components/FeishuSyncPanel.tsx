@@ -242,12 +242,48 @@ export function FeishuSyncPanel() {
         const n = await runGetNotify();
         setNotify(n);
       } catch {}
+      try {
+        const rc = await runGetRecap();
+        setRecap(rc);
+      } catch {}
       loadCalendars();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const saveNotify = async () => {
+    try {
+      await runSetNotify({ data: notify });
+      setNotifySaved(true);
+      setTimeout(() => setNotifySaved(false), 1500);
+    } catch (e: any) {
+      setNotifyResult({ ok: false, msg: e?.message ?? "保存失败" });
+    }
+  };
+
+  const saveRecap = async (next?: { enabled: boolean; hour: number }) => {
+    const payload = next ?? recap;
+    try {
+      await runSetRecap({ data: payload });
+      setRecapSaved(true);
+      setTimeout(() => setRecapSaved(false), 1500);
+    } catch (e: any) {
+      setRecapResult({ ok: false, msg: e?.message ?? "保存失败" });
+    }
+  };
+
+  const sendRecapNow = async () => {
+    setRecapSending(true);
+    setRecapResult(null);
+    try {
+      const r = await runSendRecapNow();
+      setRecapResult(r.ok ? { ok: true, msg: "已发送提醒卡片" } : { ok: false, msg: r.error ?? "发送失败" });
+    } catch (e: any) {
+      setRecapResult({ ok: false, msg: e?.message ?? "发送失败" });
+    } finally {
+      setRecapSending(false);
+    }
+  };
     try {
       await runSetNotify({ data: notify });
       setNotifySaved(true);
