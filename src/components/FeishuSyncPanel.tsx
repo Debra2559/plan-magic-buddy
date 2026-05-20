@@ -20,6 +20,7 @@ import {
   lookupFeishuOpenId,
   listFeishuChats,
   batchLookupFeishuOpenId,
+  getLastCapturedOpenId,
 } from "@/lib/feishu.functions";
 import {
   getFeishuAuthUrl,
