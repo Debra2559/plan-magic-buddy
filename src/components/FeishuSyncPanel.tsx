@@ -155,9 +155,9 @@ export function FeishuSyncPanel() {
     if (!lookup.value.trim()) return;
     setLookup((s) => ({ ...s, loading: true, result: null, copied: false }));
     try {
-      const res = await runLookupOpenId({ data: { type: lookup.type, value: lookup.value.trim() } });
+      const res: any = await runLookupOpenId({ data: { type: lookup.type, value: lookup.value.trim() } });
       if (res.ok) {
-        setLookup((s) => ({ ...s, loading: false, result: { ok: true, msg: "查询成功", openId: res.openId } }));
+        setLookup((s) => ({ ...s, loading: false, result: { ok: true, msg: res.fallback ? `⚠ ${res.note}` : "查询成功", openId: res.openId } }));
       } else {
         setLookup((s) => ({
           ...s,
