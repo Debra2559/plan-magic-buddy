@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { SylvaProvider } from "@/lib/sylva-store";
 import { ReminderRunner } from "@/components/ReminderRunner";
 import { Toaster } from "sonner";
+import { AvatarStatsOverlay } from "@/components/AvatarStatsOverlay";
 import { AuthProvider } from "@/lib/auth-context";
 import { PersonaProvider } from "@/lib/persona";
 import { supabase } from "@/integrations/supabase/client";
@@ -139,6 +140,7 @@ function RootComponent() {
             <Outlet />
             <ReminderRunner />
             <Toaster position="top-right" theme="dark" richColors closeButton />
+            <AvatarStatsOverlay />
           </SylvaProvider>
         </PersonaProvider>
       </AuthProvider>
