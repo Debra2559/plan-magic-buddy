@@ -170,8 +170,10 @@ export function AiPlanner({ onGoSettings, onConfirmed }: { onGoSettings?: () => 
       counts.todo ? `待办 ${counts.todo}` : "",
       counts.reminder ? `提醒 ${counts.reminder}` : "",
     ].filter(Boolean).join(" · ");
-    toast.success(draftMode === "add" ? "已追加到我的规划" : "规划已同步", {
-      description: `${parts || `共 ${draft.items.length} 项`}　可在汇总入口快速跳转`,
+    toast.success(draftMode === "add" ? "已写入待确认，请在日程页确认" : "规划已同步", {
+      description: draftMode === "add"
+        ? `${parts || `共 ${draft.items.length} 项`}　日历里以虚线标记，确认后才会同步`
+        : `${parts || `共 ${draft.items.length} 项`}　可在汇总入口快速跳转`,
       duration: 4000,
     });
     setPreviewOpen(false);
