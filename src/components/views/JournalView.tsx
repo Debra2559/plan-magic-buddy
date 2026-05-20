@@ -360,6 +360,52 @@ function EmptyLine({ text }: { text: string }) {
   return <p className="text-xs text-white/35 italic mb-7 pl-1">— {text} —</p>;
 }
 
+function SuggestionCard({
+  s,
+  onCopyToDiary,
+  onCopyToNote,
+}: {
+  s: Suggestion;
+  onCopyToDiary: () => void;
+  onCopyToNote: () => void;
+}) {
+  const [copied, setCopied] = useState<"diary" | "note" | null>(null);
+  const flash = (kind: "diary" | "note", fn: () => void) => {
+    fn();
+    setCopied(kind);
+    setTimeout(() => setCopied(null), 1400);
+  };
+  return (
+    <div className="group flex items-start gap-3 p-3.5 rounded-xl bg-gradient-to-r from-amber-glow/10 to-transparent border border-amber-glow/20">
+      <div className="w-7 h-7 rounded-full bg-amber-glow/20 flex items-center justify-center shrink-0">
+        <s.Icon className="w-3.5 h-3.5 text-amber-glow" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs tracking-widest text-amber-glow/90 mb-0.5">{s.tag}</p>
+        <p className="text-sm text-white/85 leading-snug">{s.text}</p>
+        <div className="flex items-center gap-1.5 mt-2 opacity-60 group-hover:opacity-100 transition">
+          <button
+            onClick={() => flash("diary", onCopyToDiary)}
+            className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 hover:bg-amber-glow/20 border border-white/10 hover:border-amber-glow/40 text-[10px] text-white/70 hover:text-amber-glow transition"
+            title="追加到今日日记"
+          >
+            {copied === "diary" ? <Check className="w-3 h-3" /> : <BookHeart className="w-3 h-3" />}
+            {copied === "diary" ? "已追加" : "→ 日记"}
+          </button>
+          <button
+            onClick={() => flash("note", onCopyToNote)}
+            className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 hover:bg-amber-glow/20 border border-white/10 hover:border-amber-glow/40 text-[10px] text-white/70 hover:text-amber-glow transition"
+            title="保存为随手记"
+          >
+            {copied === "note" ? <Check className="w-3 h-3" /> : <NotebookPen className="w-3 h-3" />}
+            {copied === "note" ? "已保存" : "→ 随手记"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ---------------- Suggestions ---------------- */
 
 interface Suggestion {
