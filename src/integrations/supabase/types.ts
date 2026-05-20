@@ -620,6 +620,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_profile_history: {
+        Row: {
+          after: Json | null
+          before: Json | null
+          changed_at: string
+          changed_fields: string[]
+          id: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          after?: Json | null
+          before?: Json | null
+          changed_at?: string
+          changed_fields?: string[]
+          id?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          after?: Json | null
+          before?: Json | null
+          changed_at?: string
+          changed_fields?: string[]
+          id?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           avatar_url: string | null
