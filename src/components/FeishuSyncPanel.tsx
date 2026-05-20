@@ -17,6 +17,7 @@ import {
   setDailyRecapConfig,
   sendDailyRecapNow,
   setFeishuPushRules,
+  lookupFeishuOpenId,
 } from "@/lib/feishu.functions";
 import {
   Check,
