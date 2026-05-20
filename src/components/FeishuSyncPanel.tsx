@@ -134,6 +134,9 @@ export function FeishuSyncPanel() {
   const runList = useServerFn(listFeishuCalendars);
   const runGetSettings = useServerFn(getFeishuSettings);
   const runSelect = useServerFn(selectFeishuCalendar);
+  const runShare = useServerFn(shareFeishuCalendarToUser);
+  const [sharing, setSharing] = useState(false);
+  const [shareResult, setShareResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const runSetDir = useServerFn(setFeishuDirection);
   const runSync = useServerFn(syncToFeishu);
   const runPull = useServerFn(pullFromFeishu);
