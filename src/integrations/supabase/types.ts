@@ -239,6 +239,39 @@ export type Database = {
         }
         Relationships: []
       }
+      hackathon_settings: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          last_scan_result: Json | null
+          last_scanned_at: string | null
+          scan_interval_hours: number
+          sources: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_scan_result?: Json | null
+          last_scanned_at?: string | null
+          scan_interval_hours?: number
+          sources?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_scan_result?: Json | null
+          last_scanned_at?: string | null
+          scan_interval_hours?: number
+          sources?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hackathons: {
         Row: {
           deadline: string | null

@@ -15,6 +15,7 @@ import {
   Sparkles, X, Bookmark, RefreshCw, Loader2, ExternalLink, Calendar as CalIcon,
   ListPlus, Check, Settings as SettingsIcon, Wand2, Save,
 } from "lucide-react";
+import { SourcesEditor } from "@/components/SourcesEditor";
 import { useSylva, todayLocal } from "@/lib/sylva-store";
 
 const TIME_WINDOW_LABEL: Record<AiNewsSettings["time_window"], string> = {
@@ -42,10 +43,11 @@ type PromptPanelProps = {
   onSaveDirect: () => void;
   onClose: () => void;
   onToggleEnabled: () => void;
+  onSourcesChange: (next: AiNewsSettings["sources"]) => void;
 };
 
 function SettingsPanel({
-  settings, prompt, onPromptChange, parsing, saving, onParse, onSaveDirect, onClose, onToggleEnabled,
+  settings, prompt, onPromptChange, parsing, saving, onParse, onSaveDirect, onClose, onToggleEnabled, onSourcesChange,
 }: PromptPanelProps) {
   if (!settings) {
     return (
@@ -98,6 +100,14 @@ function SettingsPanel({
           <div><span className="text-foreground/40">标签</span>：{settings.tag_filters.join("、")}</div>
         )}
       </div>
+
+      <SourcesEditor
+        sources={settings.sources.map((s) => ({ name: s.name, query: s.query, enabled: s.enabled }))}
+        onChange={(next) => onSourcesChange(next as AiNewsSettings["sources"])}
+        queryPlaceholder="搜索关键词，例：hacker news AI agent"
+      />
+
+
 
       <div>
         <label className="block text-[11px] text-foreground/60 mb-1.5">
@@ -356,6 +366,7 @@ export function AiNewsRadar() {
           onSaveDirect={onSaveDirect}
           onClose={() => setSettingsOpen(false)}
           onToggleEnabled={onToggleEnabled}
+          onSourcesChange={(next) => settings && setSettings({ ...settings, sources: next })}
         />
       )}
 

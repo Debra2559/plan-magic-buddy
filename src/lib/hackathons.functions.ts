@@ -107,23 +107,104 @@ async function extractWithAI(
 }
 
 // ------- Scan & store -------
-const SOURCES: Array<{ name: string; query: string }> = [
-  { name: "Devpost", query: "devpost hackathon register open" },
-  { name: "Devpost", query: "site:devpost.com hackathon" },
-  { name: "MLH", query: "mlh.io hackathon season" },
-  { name: "DoraHacks", query: "dorahacks hackathon 报名" },
-  { name: "DoraHacks", query: "site:dorahacks.io hackathon" },
-  { name: "ETHGlobal", query: "ethglobal hackathon upcoming" },
-  { name: "小红书", query: "小红书 黑客松 报名" },
-  { name: "稀土掘金", query: "掘金 黑客松 2025 OR 2026" },
-  { name: "微信公众号", query: "黑客松 报名 截止" },
+export interface HackathonSource {
+  name: string;
+  query: string;
+  enabled: boolean;
+}
+export interface HackathonSettings {
+  enabled: boolean;
+  sources: HackathonSource[];
+  scan_interval_hours: number;
+  last_scanned_at: string | null;
+}
+
+const DEFAULT_SOURCES: HackathonSource[] = [
+  { name: "Devpost", query: "devpost hackathon register open", enabled: true },
+  { name: "Devpost", query: "site:devpost.com hackathon", enabled: true },
+  { name: "MLH", query: "mlh.io hackathon season", enabled: true },
+  { name: "DoraHacks", query: "dorahacks hackathon 报名", enabled: true },
+  { name: "DoraHacks", query: "site:dorahacks.io hackathon", enabled: true },
+  { name: "ETHGlobal", query: "ethglobal hackathon upcoming", enabled: true },
+  { name: "小红书", query: "小红书 黑客松 报名", enabled: true },
+  { name: "稀土掘金", query: "掘金 黑客松 2025 OR 2026", enabled: true },
+  { name: "微信公众号", query: "黑客松 报名 截止", enabled: true },
 ];
 
+async function loadSettings(): Promise<HackathonSettings> {
+  const { data } = await supabaseAdmin
+    .from("hackathon_settings" as never)
+    .select("*")
+    .eq("id", "singleton")
+    .maybeSingle();
+  const row = data as unknown as {
+    enabled?: boolean;
+    sources?: unknown;
+    scan_interval_hours?: number;
+    last_scanned_at?: string | null;
+  } | null;
+  if (!row) {
+    return { enabled: true, sources: DEFAULT_SOURCES, scan_interval_hours: 24, last_scanned_at: null };
+  }
+  const raw = row.sources;
+  const sources = Array.isArray(raw) && raw.length > 0
+    ? (raw as HackathonSource[]).filter((s) => s && s.name && s.query)
+    : DEFAULT_SOURCES;
+  return {
+    enabled: row.enabled ?? true,
+    sources,
+    scan_interval_hours: row.scan_interval_hours ?? 24,
+    last_scanned_at: row.last_scanned_at ?? null,
+  };
+}
+
+export const getHackathonSettings = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const settings = await loadSettings();
+    return { ok: true as const, settings };
+  } catch (e) {
+    return { ok: false as const, error: e instanceof Error ? e.message : String(e), settings: null as HackathonSettings | null };
+  }
+});
+
+const SourceSchema = z.object({
+  name: z.string().min(1).max(80),
+  query: z.string().min(1).max(300),
+  enabled: z.boolean(),
+});
+const UpdateHackathonSchema = z.object({
+  enabled: z.boolean().optional(),
+  sources: z.array(SourceSchema).max(40).optional(),
+  scan_interval_hours: z.number().int().min(1).max(168).optional(),
+});
+
+export const updateHackathonSettings = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => UpdateHackathonSchema.parse(d))
+  .handler(async ({ data }) => {
+    const current = await loadSettings();
+    const next = {
+      id: "singleton",
+      enabled: data.enabled ?? current.enabled,
+      sources: data.sources ?? current.sources,
+      scan_interval_hours: data.scan_interval_hours ?? current.scan_interval_hours,
+    };
+    const { error } = await supabaseAdmin
+      .from("hackathon_settings" as never)
+      .upsert(next as never, { onConflict: "id" });
+    if (error) return { ok: false as const, error: error.message };
+    return {
+      ok: true as const,
+      settings: { ...next, last_scanned_at: current.last_scanned_at } as HackathonSettings,
+    };
+  });
+
 export const scanHackathonsNow = createServerFn({ method: "GET" }).handler(async () => {
+  const settings = await loadSettings();
+  const sources = settings.sources.filter((s) => s.enabled);
   const allFound: Array<{ source: string; item: z.infer<typeof ExtractedSchema>["hackathons"][number] }> = [];
   const debug: Array<{ source: string; query: string; snippets: number; extracted: number; error?: string }> = [];
 
-  for (const src of SOURCES) {
+  for (const src of sources) {
     const snippets = await firecrawlSearch(src.query, 8);
     if (snippets.length === 0) {
       debug.push({ source: src.name, query: src.query, snippets: 0, extracted: 0, error: "firecrawl 0 结果" });
