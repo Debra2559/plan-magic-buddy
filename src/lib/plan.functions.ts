@@ -23,9 +23,30 @@ export type Plan = z.infer<typeof PlanSchema>;
 
 const PlanInput = z.object({
   idea: z.string().min(1).max(2000),
-  mode: z.enum(["create", "adjust", "add"]),
+  mode: z.enum(["create", "adjust", "add", "auto"]),
   existing: z.array(PlanItemSchema).optional(),
 });
+
+type EffectiveMode = "create" | "adjust" | "add";
+
+async function detectMode(
+  gateway: ReturnType<typeof createLovableAiGatewayProvider>,
+  idea: string,
+  hasExisting: boolean,
+): Promise<EffectiveMode> {
+  if (!hasExisting) return "create";
+  try {
+    const { object } = await generateObject({
+      model: gateway("google/gemini-2.5-flash-lite"),
+      schema: z.object({ mode: z.enum(["create", "adjust", "add"]) }),
+      system: "判断用户意图。create=从零生成全新规划; adjust=重新平衡/调整现有规划; add=往现有规划追加新事项。只输出 JSON。",
+      prompt: `用户已有规划。用户输入: "${idea}"\n请判断意图。`,
+    });
+    return object.mode;
+  } catch {
+    return idea.match(/重排|调整|换|重新|平衡/) ? "adjust" : idea.match(/加|追加|再来|另外/) ? "add" : "create";
+  }
+}
 
 export const generatePlan = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => PlanInput.parse(input))
