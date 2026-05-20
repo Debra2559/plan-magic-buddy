@@ -89,6 +89,10 @@ function DesktopApp() {
 
   useEffect(() => {
     registerNavigate((nextView, opts) => {
+      if (nextView === "settings") {
+        openSettings();
+        return;
+      }
       setView(nextView as SylvaView);
       setAppOpen(true);
       setActiveDock("sylva");
