@@ -28,6 +28,7 @@ import {
   Loader2,
   RefreshCw,
   Download,
+  Share2,
   X as XIcon,
 } from "lucide-react";
 
