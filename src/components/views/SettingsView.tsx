@@ -295,6 +295,13 @@ export function SettingsView() {
       case "reminders": return <RowList rows={simpleSections.reminders.rows} />;
       case "appearance": return (
         <div className="space-y-4">
+          <div className="widget p-4 flex items-center justify-between">
+            <div>
+              <div className="text-sm text-white/90">主题模式</div>
+              <div className="text-xs text-white/50 mt-0.5">切换亮色 / 暗色外观</div>
+            </div>
+            <ThemeToggle />
+          </div>
           <RowList rows={simpleSections.appearance.rows} />
           <div>
             <div className="text-[10px] uppercase tracking-widest text-white/35 mb-2 px-1 flex items-center gap-1.5">
