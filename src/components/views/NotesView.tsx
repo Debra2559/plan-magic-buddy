@@ -455,6 +455,26 @@ function NoteCard({ n, onRemove, onPin }: { n: Note; onRemove: () => void; onPin
               ))}
             </div>
           )}
+          {n.videos && n.videos.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {n.videos.map((src, i) => (
+                <video
+                  key={i}
+                  src={src}
+                  controls
+                  preload="metadata"
+                  className="max-h-48 rounded-lg border border-white/10 bg-black"
+                />
+              ))}
+            </div>
+          )}
+          {n.audios && n.audios.length > 0 && (
+            <div className="flex flex-col gap-1.5 mt-2">
+              {n.audios.map((src, i) => (
+                <audio key={i} src={src} controls className="h-8 max-w-full" />
+              ))}
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-2 mt-2">
             <span className="text-[10px] text-white/40 tracking-wider">{fmt(n.createdAt)}</span>
             {m && <span className="text-[10px]" title={m.label}>{m.emoji}</span>}
