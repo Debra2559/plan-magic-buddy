@@ -286,8 +286,9 @@ function LoginPage() {
             disabled={busy || (mode === "signup" && (pwdCheck.status === "weak" || pwdCheck.status === "pwned" || pwdCheck.status === "checking" || pwd !== pwd2 || !pwd2))}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-amber-glow text-primary-foreground text-sm font-medium hover:brightness-110 disabled:opacity-50 transition"
           >
-            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
             {mode === "signin" ? "登录" : "注册"}
+            {!busy && <ArrowRight className="w-4 h-4" />}
           </button>
         </form>
 
