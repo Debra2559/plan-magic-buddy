@@ -1,20 +1,24 @@
 import { Pin } from "lucide-react";
 import { useSylva } from "@/lib/sylva-store";
+import { useHydrated } from "@tanstack/react-router";
 
 const weekdays = ["一", "二", "三", "四", "五", "六", "日"];
 
 export function CalendarWidget() {
   const { items } = useSylva();
+  const hydrated = useHydrated();
   // May 2026: 1st is Friday → Mon-first offset 4
   const startOffset = 4;
   const daysInMonth = 31;
   const totalCells = 35;
 
-  const itemsByDay = items.reduce<Record<number, typeof items>>((acc, it) => {
-    const [y, m, d] = it.date.split("-").map(Number);
-    if (y === 2026 && m === 5) (acc[d] ||= []).push(it);
-    return acc;
-  }, {});
+  const itemsByDay = hydrated
+    ? items.reduce<Record<number, typeof items>>((acc, it) => {
+        const [y, m, d] = it.date.split("-").map(Number);
+        if (y === 2026 && m === 5) (acc[d] ||= []).push(it);
+        return acc;
+      }, {})
+    : {};
 
   return (
     <div className="widget p-5 w-[420px]">
