@@ -34,23 +34,47 @@ export type AiInsight = {
 
 // ---------- Helpers ----------
 
-function currentSlot(d = new Date()): "morning" | "noon" | "evening" {
-  const h = d.getUTCHours() + 8; // CN time, rough
-  const hour = ((h % 24) + 24) % 24;
+const DEFAULT_TZ = "Asia/Shanghai";
+
+function tzParts(d: Date, tz: string): { year: string; month: string; day: string; hour: number } {
+  try {
+    const fmt = new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      hour12: false,
+    });
+    const parts = Object.fromEntries(fmt.formatToParts(d).map((p) => [p.type, p.value]));
+    return {
+      year: parts.year,
+      month: parts.month,
+      day: parts.day,
+      hour: Number(parts.hour) % 24,
+    };
+  } catch {
+    // Fallback to Asia/Shanghai if invalid tz
+    return tzParts(d, DEFAULT_TZ);
+  }
+}
+
+function currentSlot(d = new Date(), tz: string = DEFAULT_TZ): "morning" | "noon" | "evening" {
+  const { hour } = tzParts(d, tz);
   if (hour < 11) return "morning";
   if (hour < 17) return "noon";
   return "evening";
 }
 
-function todayStr(d = new Date()): string {
-  const cn = new Date(d.getTime() + 8 * 3600_000);
-  return cn.toISOString().slice(0, 10);
+function todayStr(d = new Date(), tz: string = DEFAULT_TZ): string {
+  const { year, month, day } = tzParts(d, tz);
+  return `${year}-${month}-${day}`;
 }
 
-function daysAgo(n: number): string {
-  const d = new Date(Date.now() - n * 86400_000);
-  return todayStr(d);
+function daysAgo(n: number, tz: string = DEFAULT_TZ): string {
+  return todayStr(new Date(Date.now() - n * 86400_000), tz);
 }
+
 
 async function gatherUserContext(userId: string, lookbackDays: number) {
   const since = daysAgo(lookbackDays);
