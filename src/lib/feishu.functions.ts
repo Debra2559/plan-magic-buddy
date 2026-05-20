@@ -779,7 +779,7 @@ function dailyRecapCard(dateLabel: string, opts?: { missed?: boolean }) {
                 tag: 'button',
                 text: { tag: 'plain_text', content: '去 Sylva 填写 ✍️' },
                 type: 'default',
-                url: `https://id-preview--01545937-4efd-4487-a500-8dd999f2e87d.lovable.app/desktop?view=notes&tab=${missed ? 'diary' : 'summary'}&date=${encodeURIComponent(dateLabel)}`,
+                url: `https://id-preview--01545937-4efd-4487-a500-8dd999f2e87d.lovable.app/desktop?view=notes&tab=diary&date=${encodeURIComponent(dateLabel)}`,
               },
             ],
           },
