@@ -111,7 +111,7 @@ export function FeishuSyncPanel() {
   const [notifySending, setNotifySending] = useState(false);
   const [notifyResult, setNotifyResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
-  const [recap, setRecap] = useState<{ enabled: boolean; hour: number }>({ enabled: false, hour: 21 });
+  const [recap, setRecap] = useState<{ enabled: boolean; hour: number; timezone: string }>({ enabled: false, hour: 21, timezone: "Asia/Shanghai" });
   const [recapSaved, setRecapSaved] = useState(false);
   const [recapSending, setRecapSending] = useState(false);
   const [recapResult, setRecapResult] = useState<{ ok: boolean; msg: string } | null>(null);
