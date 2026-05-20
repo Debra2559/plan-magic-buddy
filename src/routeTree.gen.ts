@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as DesktopRouteImport } from './routes/desktop'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicHooksScanHackathonsRouteImport } from './routes/api/public/hooks/scan-hackathons'
+import { Route as ApiPublicHooksDailyRecapRouteImport } from './routes/api/public/hooks/daily-recap'
 import { Route as ApiPublicFeishuWebhookRouteImport } from './routes/api/public/feishu/webhook'
 
 const DesktopRoute = DesktopRouteImport.update({
@@ -30,6 +31,12 @@ const ApiPublicHooksScanHackathonsRoute =
     path: '/api/public/hooks/scan-hackathons',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksDailyRecapRoute =
+  ApiPublicHooksDailyRecapRouteImport.update({
+    id: '/api/public/hooks/daily-recap',
+    path: '/api/public/hooks/daily-recap',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicFeishuWebhookRoute = ApiPublicFeishuWebhookRouteImport.update({
   id: '/api/public/feishu/webhook',
   path: '/api/public/feishu/webhook',
@@ -40,12 +47,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/desktop': typeof DesktopRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
+  '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
   '/api/public/hooks/scan-hackathons': typeof ApiPublicHooksScanHackathonsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/desktop': typeof DesktopRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
+  '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
   '/api/public/hooks/scan-hackathons': typeof ApiPublicHooksScanHackathonsRoute
 }
 export interface FileRoutesById {
@@ -53,6 +62,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/desktop': typeof DesktopRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
+  '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
   '/api/public/hooks/scan-hackathons': typeof ApiPublicHooksScanHackathonsRoute
 }
 export interface FileRouteTypes {
@@ -61,18 +71,21 @@ export interface FileRouteTypes {
     | '/'
     | '/desktop'
     | '/api/public/feishu/webhook'
+    | '/api/public/hooks/daily-recap'
     | '/api/public/hooks/scan-hackathons'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/desktop'
     | '/api/public/feishu/webhook'
+    | '/api/public/hooks/daily-recap'
     | '/api/public/hooks/scan-hackathons'
   id:
     | '__root__'
     | '/'
     | '/desktop'
     | '/api/public/feishu/webhook'
+    | '/api/public/hooks/daily-recap'
     | '/api/public/hooks/scan-hackathons'
   fileRoutesById: FileRoutesById
 }
@@ -80,6 +93,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DesktopRoute: typeof DesktopRoute
   ApiPublicFeishuWebhookRoute: typeof ApiPublicFeishuWebhookRoute
+  ApiPublicHooksDailyRecapRoute: typeof ApiPublicHooksDailyRecapRoute
   ApiPublicHooksScanHackathonsRoute: typeof ApiPublicHooksScanHackathonsRoute
 }
 
@@ -106,6 +120,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksScanHackathonsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/daily-recap': {
+      id: '/api/public/hooks/daily-recap'
+      path: '/api/public/hooks/daily-recap'
+      fullPath: '/api/public/hooks/daily-recap'
+      preLoaderRoute: typeof ApiPublicHooksDailyRecapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/feishu/webhook': {
       id: '/api/public/feishu/webhook'
       path: '/api/public/feishu/webhook'
@@ -120,6 +141,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DesktopRoute: DesktopRoute,
   ApiPublicFeishuWebhookRoute: ApiPublicFeishuWebhookRoute,
+  ApiPublicHooksDailyRecapRoute: ApiPublicHooksDailyRecapRoute,
   ApiPublicHooksScanHackathonsRoute: ApiPublicHooksScanHackathonsRoute,
 }
 export const routeTree = rootRouteImport

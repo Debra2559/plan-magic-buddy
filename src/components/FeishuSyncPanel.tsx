@@ -13,6 +13,9 @@ import {
   getFeishuNotifyConfig,
   setFeishuNotifyConfig,
   testHackathonNotify,
+  getDailyRecapConfig,
+  setDailyRecapConfig,
+  sendDailyRecapNow,
 } from "@/lib/feishu.functions";
 import {
   Check,
@@ -94,6 +97,9 @@ export function FeishuSyncPanel() {
   const runGetNotify = useServerFn(getFeishuNotifyConfig);
   const runSetNotify = useServerFn(setFeishuNotifyConfig);
   const runTestNotify = useServerFn(testHackathonNotify);
+  const runGetRecap = useServerFn(getDailyRecapConfig);
+  const runSetRecap = useServerFn(setDailyRecapConfig);
+  const runSendRecapNow = useServerFn(sendDailyRecapNow);
 
   const [notify, setNotify] = useState<{
     receiveId: string;
@@ -104,6 +110,11 @@ export function FeishuSyncPanel() {
   const [notifySaved, setNotifySaved] = useState(false);
   const [notifySending, setNotifySending] = useState(false);
   const [notifyResult, setNotifyResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  const [recap, setRecap] = useState<{ enabled: boolean; hour: number }>({ enabled: false, hour: 21 });
+  const [recapSaved, setRecapSaved] = useState(false);
+  const [recapSending, setRecapSending] = useState(false);
+  const [recapResult, setRecapResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
   const doSync = useCallback(
     async (reason: string) => {
@@ -231,6 +242,10 @@ export function FeishuSyncPanel() {
         const n = await runGetNotify();
         setNotify(n);
       } catch {}
+      try {
+        const rc = await runGetRecap();
+        setRecap(rc);
+      } catch {}
       loadCalendars();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -245,6 +260,31 @@ export function FeishuSyncPanel() {
       setNotifyResult({ ok: false, msg: e?.message ?? "保存失败" });
     }
   };
+
+  const saveRecap = async (next?: { enabled: boolean; hour: number }) => {
+    const payload = next ?? recap;
+    try {
+      await runSetRecap({ data: payload });
+      setRecapSaved(true);
+      setTimeout(() => setRecapSaved(false), 1500);
+    } catch (e: any) {
+      setRecapResult({ ok: false, msg: e?.message ?? "保存失败" });
+    }
+  };
+
+  const sendRecapNow = async () => {
+    setRecapSending(true);
+    setRecapResult(null);
+    try {
+      const r = await runSendRecapNow();
+      setRecapResult(r.ok ? { ok: true, msg: "已发送提醒卡片" } : { ok: false, msg: r.error ?? "发送失败" });
+    } catch (e: any) {
+      setRecapResult({ ok: false, msg: e?.message ?? "发送失败" });
+    } finally {
+      setRecapSending(false);
+    }
+  };
+
 
   const sendTestNotify = async () => {
     setNotifySending(true);
@@ -627,6 +667,69 @@ export function FeishuSyncPanel() {
           飞书后台需为应用开启 <code>im:message</code> 权限，并把「事件订阅 · 卡片回调」指向 <code>/api/public/feishu/webhook</code>。点击卡片「参加」会自动加入选中日历的日程。
         </p>
       </div>
+
+      {/* 每日小结提醒 */}
+      <div className="widget mt-3 px-4 py-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Bell className="w-3.5 h-3.5 text-indigo-300" />
+          <h4 className="text-sm text-white/90">每日小结提醒</h4>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 mb-2 text-[11px] text-white/70">
+          <label className="flex items-center gap-1.5">
+            <input
+              type="checkbox"
+              checked={recap.enabled}
+              onChange={(e) => {
+                const next = { ...recap, enabled: e.target.checked };
+                setRecap(next);
+                saveRecap(next);
+              }}
+            /> 每天定时提醒填写今日小结 + 日记
+          </label>
+          <label className="flex items-center gap-1.5">
+            时间
+            <select
+              value={recap.hour}
+              onChange={(e) => {
+                const next = { ...recap, hour: Number(e.target.value) };
+                setRecap(next);
+                saveRecap(next);
+              }}
+              className="bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs text-white/80 outline-none"
+            >
+              {Array.from({ length: 24 }, (_, h) => (
+                <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>
+              ))}
+            </select>
+            <span className="text-white/40">UTC+8</span>
+          </label>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => saveRecap()}
+            className="text-[11px] px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10"
+          >
+            {recapSaved ? "已保存 ✓" : "保存"}
+          </button>
+          <button
+            onClick={sendRecapNow}
+            disabled={recapSending || !notify.receiveId}
+            className="text-[11px] px-3 py-1 rounded-full bg-indigo-400/90 text-primary-foreground font-medium hover:brightness-110 disabled:opacity-50 flex items-center gap-1"
+          >
+            {recapSending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} 立即发送一次
+          </button>
+          {recapResult && (
+            <span className={`text-[11px] ${recapResult.ok ? "text-emerald-300" : "text-rose-300"}`}>
+              {recapResult.ok ? "✓ " : "✗ "}{recapResult.msg}
+            </span>
+          )}
+        </div>
+        <p className="text-[10px] text-white/40 mt-2 leading-relaxed">
+          每天到点会通过飞书发一张卡片，点「去 Sylva 填写」直接跳到「随手记 · 今日小结/日记」。复用上方的接收人配置。
+        </p>
+      </div>
+
+
 
 
       <div className="mt-2 flex items-start gap-1.5 text-[11px] text-white/40">
