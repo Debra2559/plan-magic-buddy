@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSylva, type Mood, type Note, habitStreak, habitDaysSinceLast, isHabitDoneOn } from "@/lib/sylva-store";
-import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, NotebookPen, Sparkles, CheckCircle2, Circle, Flame, AlertTriangle, RotateCcw, Filter, X as XIcon } from "lucide-react";
+import { useSylva, type Mood, type Note } from "@/lib/sylva-store";
+import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, NotebookPen, Filter, X as XIcon } from "lucide-react";
 import { markRecapDone, getDailyRecap } from "@/lib/feishu.functions";
 import { EnterHint } from "@/components/EnterHint";
 import { shouldSubmitOnKey } from "@/lib/keybinds";
