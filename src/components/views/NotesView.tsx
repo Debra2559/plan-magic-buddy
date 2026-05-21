@@ -70,6 +70,7 @@ export function NotesView() {
       <TabBtn active={tab === "log"} onClick={() => setTab("log")} icon={<ListChecks className="w-3.5 h-3.5" />}>事件</TabBtn>
       <TabBtn active={tab === "reflection"} onClick={() => setTab("reflection")} icon={<Sparkles className="w-3.5 h-3.5" />}>感受 &amp; 思考</TabBtn>
       <TabBtn active={tab === "handbook"} onClick={() => setTab("handbook")} icon={<BookHeart className="w-3.5 h-3.5" />}>手帐</TabBtn>
+      <TabBtn active={tab === "review"} onClick={() => setTab("review")} icon={<BookOpen className="w-3.5 h-3.5" />}>回看 · 导出 PDF</TabBtn>
     </div>
   );
 
