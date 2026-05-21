@@ -669,7 +669,7 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => addToSchedule(p)}
+                  onClick={() => openPreview(p)}
                   className="border-amber-glow/40 text-amber-glow hover:bg-amber-glow/10 hover:text-amber-glow"
                 >
                   <CalendarPlus className="w-3.5 h-3.5 mr-1.5" />
