@@ -41,7 +41,7 @@ export function AbilityView() {
   });
 
   if (isLoading) {
-    return <div className="p-8 text-muted-foreground">加载中…</div>;
+    return <AbilityLoading />;
   }
 
   const hasProfile = !!data?.profile?.initial_done;
