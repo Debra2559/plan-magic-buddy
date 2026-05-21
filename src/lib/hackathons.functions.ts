@@ -644,3 +644,99 @@ export const acceptHackathon = createServerFn({ method: "POST" })
 
     return { ok: true as const, items, hackathon: row as HackathonRow };
   });
+
+// ============================================================
+// 🤖 AI 监控来源规划师 Agent
+// 给一个主题 (例: 徒步 / 马拉松 / 飞盘 / Web3 黑客松),
+// AI 自动判断: 该挑哪些来源 / 用什么搜索关键词 / 多久扫一次。
+// ============================================================
+const PlanSourcesInputSchema = z.object({
+  topic: z.string().min(1).max(80),
+  notes: z.string().max(500).optional(), // 用户的额外偏好补充
+});
+
+const PlannedSourceSchema = z.object({
+  name: z.string().min(1).max(60).describe("数据源中文简称, 例: 中国马拉松官网 / 小红书 徒步话题"),
+  query: z.string().min(1).max(280).describe("可直接喂给搜索引擎的查询, 善用 site: 操作符"),
+  rationale: z.string().max(160).describe("一句话: 为什么选这个源, 它的更新质量怎么样"),
+  enabled: z.boolean().default(true),
+});
+
+const SourcePlanSchema = z.object({
+  topic: z.string(),
+  summary: z.string().describe("100-200 字: 这个主题在网上的信息生态长什么样, 用户该期待什么"),
+  update_rhythm: z.string().describe("一句话: 这类内容一般多久会有值得关注的新动态"),
+  suggested_interval_hours: z.number().int().min(1).max(168).describe("建议扫描频率, 单位小时 (24/48/72/168)"),
+  sources: z.array(PlannedSourceSchema).min(3).max(12),
+  tips: z.array(z.string()).max(6).describe("3-6 条给用户的小贴士: 怎么用更高效, 该注意什么"),
+});
+
+export const planMonitoringSources = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => PlanSourcesInputSchema.parse(d))
+  .handler(async ({ data }) => {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) return { ok: false as const, error: "LOVABLE_API_KEY 未配置", plan: null };
+
+    // —— 1) 探路: 让 Firecrawl 用几个朴素 query 把主题在中文/英文圈的样子拉一下,
+    //         给 AI 当现实参考, 避免凭空臆造来源。
+    const probeQueries = [
+      `${data.topic} 报名 平台 官方 推荐`,
+      `${data.topic} 资讯 社区 site:zhihu.com OR site:xiaohongshu.com`,
+      `${data.topic} 赛事 OR 活动 最新 2025 OR 2026`,
+      `best ${data.topic} community platform site:reddit.com OR site:medium.com`,
+    ];
+    const probeResults = await Promise.all(
+      probeQueries.map((q) => withTimeout(firecrawlSearch(q, 5, "month"), 12_000, [] as FirecrawlSearchItem[])),
+    );
+    const snippets = probeResults.flat().slice(0, 20);
+    const corpus = snippets.length
+      ? snippets
+          .map(
+            (s, i) =>
+              `[${i + 1}] ${s.title ?? ""} | ${s.url ?? ""}\n${(s.description ?? s.markdown ?? "").replace(/\s+/g, " ").slice(0, 320)}`,
+          )
+          .join("\n\n")
+      : "(本次探路没有抓到搜索结果, 完全靠你的先验知识规划)";
+
+    const gateway = createLovableAiGatewayProvider(apiKey);
+    const models = ["google/gemini-2.5-pro", "google/gemini-2.5-flash"] as const;
+    let lastErr = "";
+    for (const m of models) {
+      try {
+        const { object } = await generateObject({
+          model: gateway(m),
+          schema: SourcePlanSchema,
+          system: `你是一位「主题监控来源规划师」。用户告诉你一个想长期追踪的主题 (例: 徒步 / 马拉松 / 飞盘 / 户外露营 / AI Agent 论文 / Web3 黑客松 / 独立开发产品),
+你要像做调研一样回答三个问题:
+
+1) 该挑哪些数据源? 优先级:
+   - 该主题的官方/权威平台 (例: 中国马拉松 → 中国田协 / 中国马拉松官网)
+   - 该主题在国内的头部社区/聚合 (小红书话题 / 知乎专栏 / 微信公众号 / 垂直 App 站点)
+   - 该主题在国外的头部社区 (Reddit subreddit / Medium tag / 官网博客)
+   - 国内/国外都要覆盖, 但优先国内可访问的源
+   - 不要全都塞同一个平台, 至少 4 种不同类型的源
+
+2) 每个源用什么搜索关键词? 必须可以直接喂给搜索引擎:
+   - 善用 site: 操作符锁定平台 (例: site:xiaohongshu.com 徒步 路线 推荐)
+   - 加上「报名 / 最新 / 2025 OR 2026 / 攻略 / 测评」之类的时间/意图限定词
+   - 不要太长, 6-15 个有效 token 最佳
+
+3) 监控节奏? 根据这类内容更新有多频繁选择:
+   - 24h: 资讯/快讯/赛事报名 (黑客松, 马拉松报名)
+   - 72h: 攻略/经验/产品评测 (徒步路线, 装备测评)
+   - 168h (一周): 深度长文/季度榜单 (年度路书)
+   解释为什么。
+
+参考资料 (本次探路的真实搜索片段, 仅供参考, 你可以无视并依赖自己的先验知识):
+${corpus}
+
+输出严格遵守 JSON schema, 不要客套话。`,
+          prompt: `主题:「${data.topic}」${data.notes ? `\n用户补充偏好: ${data.notes}` : ""}\n\n请规划一套 6-10 条监控来源, 并给出建议扫描频率与小贴士。`,
+        });
+        return { ok: true as const, plan: object };
+      } catch (err) {
+        lastErr = err instanceof Error ? err.message : String(err);
+      }
+    }
+    return { ok: false as const, error: lastErr, plan: null };
+  });
