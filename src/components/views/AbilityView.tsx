@@ -384,50 +384,124 @@ function addDaysISO(iso: string, delta: number): string {
   return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
 }
 
-// 把一份成长计划展开成未来 7 天的日程项
-function planToScheduleItems(plan: { content?: any[]; title?: string }): PlanItem[] {
+// 兼容新旧两种 content 结构
+function planContent(plan: any): {
+  diagnosis?: string;
+  weekly_hours?: number;
+  horizon_days?: number;
+  review_questions?: string[];
+  items: any[];
+} {
+  const c = plan?.content;
+  if (Array.isArray(c)) return { items: c, horizon_days: 7 };
+  if (c && Array.isArray(c.items)) {
+    return {
+      diagnosis: c.diagnosis,
+      weekly_hours: c.weekly_hours,
+      horizon_days: c.horizon_days ?? 28,
+      review_questions: c.review_questions,
+      items: c.items,
+    };
+  }
+  return { items: [] };
+}
+
+// 解析 "周一/三/五 07:00" / "工作日 12:30" / "每天 22:30" 等
+const WEEKDAY_MAP: Record<string, number> = {
+  日: 0, 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6,
+};
+function parseWhen(when: string): { weekdays: number[]; time?: string } {
+  const w = when || "";
+  const timeMatch = w.match(/(\d{1,2})[:：](\d{2})/);
+  const time = timeMatch ? `${timeMatch[1].padStart(2, "0")}:${timeMatch[2]}` : undefined;
+  let weekdays: number[] = [];
+  if (/每天|daily/i.test(w)) weekdays = [0, 1, 2, 3, 4, 5, 6];
+  else if (/工作日|weekday/i.test(w)) weekdays = [1, 2, 3, 4, 5];
+  else if (/周末|weekend/i.test(w)) weekdays = [0, 6];
+  else {
+    const re = /周\s*([一二三四五六日])/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(w))) weekdays.push(WEEKDAY_MAP[m[1]]);
+    // 处理 "周一/三/五" 这种简写
+    const compact = w.match(/周\s*([一二三四五六日](?:[\/、]\s*[一二三四五六日])+)/);
+    if (compact) {
+      compact[1].split(/[\/、]\s*/).forEach((c) => {
+        const d = WEEKDAY_MAP[c];
+        if (typeof d === "number" && !weekdays.includes(d)) weekdays.push(d);
+      });
+    }
+  }
+  if (weekdays.length === 0) weekdays = [1, 3, 5]; // 兜底
+  return { weekdays: Array.from(new Set(weekdays)), time };
+}
+
+function planToScheduleItems(plan: any): PlanItem[] {
+  const { items, horizon_days, review_questions } = planContent(plan);
+  const horizon = horizon_days ?? 28;
   const today = todayLocal();
+  const [yy, mm, dd] = today.split("-").map(Number);
+  const startDow = new Date(yy, mm - 1, dd).getDay();
   const out: PlanItem[] = [];
-  const items = Array.isArray(plan.content) ? plan.content : [];
 
   for (const it of items) {
     const area = String(it?.area ?? "成长");
     const tag = areaToTag(area);
-    const actions: string[] = Array.isArray(it?.actions) ? it.actions.slice(0, 4) : [];
-    const cadence = String(it?.cadence ?? "");
-    // 每周几次: weekly=2 次 (周二/周五), 否则默认每天
-    const weekly = /每周|周\s*\d|weekly/i.test(cadence) && !/每天|daily/i.test(cadence);
-    const dayOffsets = weekly ? [1, 4] : [0, 1, 2, 3, 4, 5, 6];
+    const actions: any[] = Array.isArray(it?.actions) ? it.actions : [];
 
-    for (const offset of dayOffsets) {
-      const date = addDaysISO(today, offset);
-      // 主动作作为 todo, 备注里附其余动作 + 目标
-      const main = actions[0] ?? it?.goal ?? area;
-      const rest = actions.slice(1);
+    for (const a of actions) {
+      // 新格式：action 是对象；旧格式：字符串
+      if (typeof a === "string") {
+        for (let off = 0; off < 7; off++) {
+          out.push({ type: "todo", title: `${area}: ${a}`.slice(0, 40), date: addDaysISO(today, off), tag, note: it?.goal });
+        }
+        continue;
+      }
+      const title = `${area}: ${a.title ?? "动作"}`.slice(0, 40);
+      const { weekdays, time } = parseWhen(String(a.when ?? ""));
+      const duration = Number(a.durationMin) || 25;
+      for (let off = 0; off < horizon; off++) {
+        const dow = (startDow + off) % 7;
+        if (!weekdays.includes(dow)) continue;
+        const date = addDaysISO(today, off);
+        if (time) {
+          out.push({ type: "event", title, date, time, durationMin: duration, tag, note: a.note });
+        } else {
+          out.push({ type: "todo", title, date, tag, note: a.note });
+        }
+      }
+    }
+
+    // 里程碑作为提醒
+    const milestones: any[] = Array.isArray(it?.milestones) ? it.milestones : [];
+    for (const ms of milestones) {
+      const week = Number(ms?.week) || 1;
+      const offset = Math.min(horizon - 1, week * 7 - 1);
       out.push({
-        type: "todo",
-        title: `${area}: ${main}`.slice(0, 40),
-        date,
+        type: "reminder",
+        title: `里程碑·${area} W${week}`,
+        date: addDaysISO(today, offset),
+        time: "20:30",
         tag,
-        note: [it?.goal, ...rest].filter(Boolean).join(" · ").slice(0, 200) || undefined,
+        note: String(ms?.target ?? "").slice(0, 200),
       });
     }
   }
 
-  // 周末加一条复盘提醒
-  const sundayOffset = (() => {
-    const [y, m, d] = today.split("-").map(Number);
-    const dow = new Date(y, m - 1, d).getDay(); // 0=Sun
-    return (7 - dow) % 7 || 7;
-  })();
-  out.push({
-    type: "reminder",
-    title: `复盘本周成长计划`,
-    date: addDaysISO(today, sundayOffset),
-    time: "20:00",
-    tag: "生活",
-    note: plan.title ? `回顾「${plan.title}」` : undefined,
-  });
+  // 每周复盘
+  const reviewNote = (review_questions ?? []).slice(0, 3).join(" / ");
+  const weeks = Math.max(1, Math.ceil(horizon / 7));
+  for (let w = 1; w <= weeks; w++) {
+    const sundayOffset = (7 - startDow) % 7 || 7;
+    const date = addDaysISO(today, sundayOffset + (w - 1) * 7);
+    out.push({
+      type: "reminder",
+      title: `W${w} 周复盘`,
+      date,
+      time: "21:00",
+      tag: "生活",
+      note: reviewNote || "回顾本周节奏 + 调整下周难度",
+    });
+  }
 
   return out;
 }
@@ -436,8 +510,12 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
   const generate = useServerFn(generateMyAbilityPlan);
   const { addItemsPending } = useSylva();
   const qc = useQueryClient();
+  const [intent, setIntent] = useState("");
+  const [weeklyHours, setWeeklyHours] = useState(6);
+  const [horizonDays, setHorizonDays] = useState(28);
+
   const mut = useMutation({
-    mutationFn: () => generate(),
+    mutationFn: () => generate({ data: { intent: intent.trim() || undefined, weeklyHours, horizonDays } }),
     onSuccess: () => {
       toast.success("已生成新计划");
       qc.invalidateQueries({ queryKey: ["ability-profile"] });
@@ -453,70 +531,157 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
       return;
     }
     const ids = addItemsPending(items);
-    toast.success(`已加入 ${ids.length} 条到未来 7 天日程`, {
+    toast.success(`已加入 ${ids.length} 条到未来 ${planContent(p).horizon_days ?? 28} 天日程`, {
       description: "前往「日程」查看并确认",
     });
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between rounded-xl border border-border bg-foreground/5 p-4">
+      <div className="rounded-xl border border-border bg-foreground/5 p-4 space-y-3">
         <div>
-          <div className="text-sm font-medium">基于画像 + 近期行为生成成长计划</div>
-          <div className="text-muted-foreground text-xs">每次生成会归档上一份，保留历史可查阅</div>
+          <div className="text-sm font-medium">告诉我你这轮想聚焦什么</div>
+          <div className="text-muted-foreground text-xs mt-0.5">越具体越精准：考试 / 项目截止 / 想改善的状态 / 限制条件</div>
         </div>
-        <Button onClick={() => mut.mutate()} disabled={mut.isPending} className="bg-amber-glow text-primary-foreground hover:bg-amber-glow/90">
-          <Sparkles className={`w-4 h-4 mr-2 ${mut.isPending ? "animate-pulse" : ""}`} /> {mut.isPending ? "生成中…" : "生成新计划"}
-        </Button>
+        <textarea
+          value={intent}
+          onChange={(e) => setIntent(e.target.value.slice(0, 500))}
+          placeholder="例：6 月底前完成产品 v1 发布，平时晚上和周末有时间，最近睡眠很差想同步改善"
+          className="w-full min-h-[72px] resize-y rounded-lg bg-background/60 border border-border p-3 text-sm outline-none focus:border-amber-glow/60"
+        />
+        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+          <label className="flex items-center gap-1.5">
+            周投入
+            <select
+              value={weeklyHours}
+              onChange={(e) => setWeeklyHours(Number(e.target.value))}
+              className="bg-background/60 border border-border rounded px-2 py-1 text-foreground"
+            >
+              {[3, 5, 6, 8, 10, 12, 15].map((h) => <option key={h} value={h}>{h} 小时</option>)}
+            </select>
+          </label>
+          <label className="flex items-center gap-1.5">
+            周期
+            <select
+              value={horizonDays}
+              onChange={(e) => setHorizonDays(Number(e.target.value))}
+              className="bg-background/60 border border-border rounded px-2 py-1 text-foreground"
+            >
+              {[14, 21, 28, 42].map((d) => <option key={d} value={d}>{d} 天</option>)}
+            </select>
+          </label>
+          <div className="ml-auto">
+            <Button onClick={() => mut.mutate()} disabled={mut.isPending} className="bg-amber-glow text-primary-foreground hover:bg-amber-glow/90">
+              <Sparkles className={`w-4 h-4 mr-2 ${mut.isPending ? "animate-pulse" : ""}`} /> {mut.isPending ? "深度规划中…" : "生成深度计划"}
+            </Button>
+          </div>
+        </div>
       </div>
 
       {plans.length === 0 && (
-        <div className="rounded-xl border border-border bg-foreground/5 p-8 text-center text-muted-foreground text-sm">还没有计划，点上面按钮生成第一份吧。</div>
+        <div className="rounded-xl border border-border bg-foreground/5 p-8 text-center text-muted-foreground text-sm">还没有计划，告诉我你想聚焦什么，然后生成第一份。</div>
       )}
 
-      {plans.map((p) => (
-        <div key={p.id} className={`rounded-xl border p-5 ${p.status === "active" ? "border-amber-glow/30 bg-amber-glow/5" : "border-border bg-foreground/5"}`}>
-          <div className="flex items-start justify-between mb-1 gap-3">
-            <div className="min-w-0">
-              <div className="font-display text-lg">{p.title}</div>
-              <div className="text-muted-foreground text-sm">{p.tagline}</div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => addToSchedule(p)}
-                className="border-amber-glow/40 text-amber-glow hover:bg-amber-glow/10 hover:text-amber-glow"
-              >
-                <CalendarPlus className="w-3.5 h-3.5 mr-1.5" />
-                一键加入日程
-              </Button>
-              <span className={`text-xs px-2 py-0.5 rounded ${p.status === "active" ? "bg-amber-glow text-primary-foreground" : "bg-foreground/10 text-muted-foreground"}`}>
-                {p.status === "active" ? "进行中" : "已归档"}
-              </span>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-1 mt-2 mb-3">
-            {(p.focus_areas ?? []).map((a: string) => (
-              <span key={a} className="text-xs px-2 py-0.5 rounded bg-foreground/10 text-foreground/75">{a}</span>
-            ))}
-          </div>
-          <div className="space-y-3">
-            {(p.content ?? []).map((item: any, idx: number) => (
-              <div key={idx} className="rounded-lg bg-background/50 border border-border p-3">
-                <div className="text-sm font-medium text-amber-glow">{item.area}</div>
-                <div className="text-sm text-foreground/85 mt-0.5">{item.goal}</div>
-                <ul className="mt-2 space-y-1">
-                  {(item.actions ?? []).map((a: string, i: number) => (
-                    <li key={i} className="text-xs text-foreground/75 flex gap-2"><span className="text-amber-glow">·</span>{a}</li>
-                  ))}
-                </ul>
-                <div className="text-[11px] text-muted-foreground/70 mt-2">节奏：{item.cadence}</div>
+      {plans.map((p) => {
+        const c = planContent(p);
+        return (
+          <div key={p.id} className={`rounded-xl border p-5 ${p.status === "active" ? "border-amber-glow/30 bg-amber-glow/5" : "border-border bg-foreground/5"}`}>
+            <div className="flex items-start justify-between mb-1 gap-3">
+              <div className="min-w-0">
+                <div className="font-display text-lg">{p.title}</div>
+                <div className="text-muted-foreground text-sm">{p.tagline}</div>
               </div>
-            ))}
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => addToSchedule(p)}
+                  className="border-amber-glow/40 text-amber-glow hover:bg-amber-glow/10 hover:text-amber-glow"
+                >
+                  <CalendarPlus className="w-3.5 h-3.5 mr-1.5" />
+                  一键加入日程
+                </Button>
+                <span className={`text-xs px-2 py-0.5 rounded ${p.status === "active" ? "bg-amber-glow text-primary-foreground" : "bg-foreground/10 text-muted-foreground"}`}>
+                  {p.status === "active" ? "进行中" : "已归档"}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-1 mt-2 mb-3">
+              {(p.focus_areas ?? []).map((a: string) => (
+                <span key={a} className="text-xs px-2 py-0.5 rounded bg-foreground/10 text-foreground/75">{a}</span>
+              ))}
+              {c.weekly_hours && <span className="text-xs px-2 py-0.5 rounded bg-foreground/10 text-foreground/75">{c.weekly_hours}h/周</span>}
+              {c.horizon_days && <span className="text-xs px-2 py-0.5 rounded bg-foreground/10 text-foreground/75">{c.horizon_days} 天</span>}
+            </div>
+
+            {c.diagnosis && (
+              <div className="rounded-lg bg-background/50 border border-border p-3 mb-3">
+                <div className="text-[11px] uppercase tracking-wide text-amber-glow/80 mb-1">诊断</div>
+                <div className="text-sm text-foreground/85 leading-relaxed">{c.diagnosis}</div>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {c.items.map((item: any, idx: number) => (
+                <div key={idx} className="rounded-lg bg-background/50 border border-border p-3 space-y-2">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <div className="text-sm font-medium text-amber-glow">{item.area}</div>
+                    {item.kpi && <div className="text-[11px] text-muted-foreground shrink-0">KPI · {item.kpi}</div>}
+                  </div>
+                  {item.why && <div className="text-xs text-foreground/65 italic">{item.why}</div>}
+                  <div className="text-sm text-foreground/85">{item.goal}</div>
+                  <ul className="space-y-1">
+                    {(item.actions ?? []).map((a: any, i: number) => (
+                      <li key={i} className="text-xs text-foreground/80 flex gap-2">
+                        <span className="text-amber-glow">·</span>
+                        {typeof a === "string" ? a : (
+                          <span>
+                            <span className="text-foreground/90">{a.title}</span>
+                            {a.when && <span className="text-muted-foreground"> — {a.when}</span>}
+                            {a.durationMin && <span className="text-muted-foreground"> · {a.durationMin}min</span>}
+                            {a.note && <span className="text-foreground/55"> · {a.note}</span>}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                  {Array.isArray(item.milestones) && item.milestones.length > 0 && (
+                    <div className="pt-1 border-t border-border/60">
+                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground/80 mb-1">里程碑</div>
+                      <ul className="space-y-0.5">
+                        {item.milestones.map((ms: any, i: number) => (
+                          <li key={i} className="text-xs text-foreground/75">W{ms.week} · {ms.target}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {Array.isArray(item.pitfalls) && item.pitfalls.length > 0 && (
+                    <div className="pt-1 border-t border-border/60">
+                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground/80 mb-1">避坑</div>
+                      <ul className="space-y-0.5">
+                        {item.pitfalls.map((pf: string, i: number) => (
+                          <li key={i} className="text-xs text-foreground/70">⚠ {pf}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {item.cadence && <div className="text-[11px] text-muted-foreground/70">节奏：{item.cadence}</div>}
+                </div>
+              ))}
+            </div>
+
+            {Array.isArray(c.review_questions) && c.review_questions.length > 0 && (
+              <div className="mt-3 rounded-lg bg-background/40 border border-border/60 p-3">
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground/80 mb-1">每周复盘问自己</div>
+                <ul className="space-y-0.5">
+                  {c.review_questions.map((q, i) => <li key={i} className="text-xs text-foreground/75">· {q}</li>)}
+                </ul>
+              </div>
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
