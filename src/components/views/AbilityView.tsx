@@ -11,8 +11,10 @@ import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
 } from "recharts";
 import { Button } from "@/components/ui/button";
-import { Sparkles, RefreshCw, Brain, Target, ClipboardList } from "lucide-react";
+import { Sparkles, RefreshCw, Brain, Target, ClipboardList, CalendarPlus } from "lucide-react";
 import { toast } from "sonner";
+import { useSylva, todayLocal } from "@/lib/sylva-store";
+import type { PlanItem } from "@/lib/plan.functions";
 
 const ABILITY_LABELS: Record<string, string> = {
   planning: "计划力",
