@@ -2097,6 +2097,30 @@ export async function sendFeishuText(params: {
 }
 
 /**
+ * 给指定飞书消息添加表情回应（emoji reaction）
+ * emojiType 参考飞书开放平台 emoji 列表，常用：SMILE / OK / THUMBSUP / HEART / OnIt
+ */
+export async function addFeishuReaction(params: {
+  messageId: string
+  emojiType?: string
+}): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const emojiType = params.emojiType ?? 'OnIt'
+    const r = await feishu<{ code: number; msg: string }>(
+      `/im/v1/messages/${encodeURIComponent(params.messageId)}/reactions`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ reaction_type: { emoji_type: emojiType } }),
+      },
+    )
+    if (r.code !== 0) return { ok: false, error: `code=${r.code} msg=${r.msg}` }
+    return { ok: true }
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? '添加表情失败' }
+  }
+}
+
+/**
  * 调用 Lovable AI Gateway 生成回复
  */
 async function callLovableAI(params: {
