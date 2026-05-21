@@ -604,7 +604,7 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
               onChange={(e) => setWeeklyHours(Number(e.target.value))}
               className="bg-background/60 border border-border rounded px-2 py-1 text-foreground"
             >
-              {[3, 5, 6, 8, 10, 12, 15].map((h) => <option key={h} value={h}>{h} 小时</option>)}
+              {[2, 3, 4, 5, 6, 8, 10, 12, 15, 18, 20, 25, 30, 40].map((h) => <option key={h} value={h}>{h} 小时</option>)}
             </select>
           </label>
           <label className="flex items-center gap-1.5">
@@ -614,7 +614,7 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
               onChange={(e) => setHorizonDays(Number(e.target.value))}
               className="bg-background/60 border border-border rounded px-2 py-1 text-foreground"
             >
-              {[14, 21, 28, 42].map((d) => <option key={d} value={d}>{d} 天</option>)}
+              {[7, 14, 21, 28, 42, 56, 70, 90, 120, 180, 270, 365].map((d) => <option key={d} value={d}>{d} 天</option>)}
             </select>
           </label>
           <div className="ml-auto flex items-center gap-2">
