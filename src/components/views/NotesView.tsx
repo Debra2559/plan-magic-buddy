@@ -2,15 +2,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { NotesCanvas } from "@/components/NotesCanvas";
 import { LayoutGrid, Brush } from "lucide-react";
 import { useSylva, type Mood, type Note, type NoteKind } from "@/lib/sylva-store";
-import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, NotebookPen, Filter, X as XIcon, Sparkles, ListChecks } from "lucide-react";
+import { Plus, Trash2, StickyNote, Search, Pin, PinOff, BookHeart, NotebookPen, Filter, X as XIcon, Sparkles, ListChecks, BookOpen } from "lucide-react";
 import { markRecapDone, getDailyRecap } from "@/lib/feishu.functions";
 import { EnterHint } from "@/components/EnterHint";
 import { shouldSubmitOnKey } from "@/lib/keybinds";
 import { ImageAttacher, extractImagesFromEvent, fileToCompressedDataURL } from "@/components/ImageAttacher";
 import { MediaAttacher } from "@/components/MediaAttacher";
 import { JournalView } from "@/components/views/JournalView";
+import { JournalOverview } from "@/components/views/JournalOverview";
 
-type Tab = "log" | "reflection" | "handbook";
+type Tab = "log" | "reflection" | "handbook" | "review";
 
 const MOODS: { value: Mood; emoji: string; label: string }[] = [
   { value: "great", emoji: "😄", label: "很棒" },
@@ -69,6 +70,7 @@ export function NotesView() {
       <TabBtn active={tab === "log"} onClick={() => setTab("log")} icon={<ListChecks className="w-3.5 h-3.5" />}>事件</TabBtn>
       <TabBtn active={tab === "reflection"} onClick={() => setTab("reflection")} icon={<Sparkles className="w-3.5 h-3.5" />}>感受 &amp; 思考</TabBtn>
       <TabBtn active={tab === "handbook"} onClick={() => setTab("handbook")} icon={<BookHeart className="w-3.5 h-3.5" />}>手帐</TabBtn>
+      <TabBtn active={tab === "review"} onClick={() => setTab("review")} icon={<BookOpen className="w-3.5 h-3.5" />}>回看 · 导出 PDF</TabBtn>
     </div>
   );
 
@@ -93,6 +95,26 @@ export function NotesView() {
     );
   }
 
+  if (tab === "review") {
+    return (
+      <div className="h-full flex flex-col">
+        <div className="px-7 pt-5 pb-2">
+          <div className="flex items-start justify-between gap-3 mb-5">
+            <div>
+              <p className="text-[10px] tracking-widest text-amber-glow mb-1">每日记录</p>
+              <h2 className="font-display text-3xl text-foreground">回看 · 多天预览 + 一键导出 PDF</h2>
+            </div>
+          </div>
+          {HeaderTabs}
+        </div>
+        <div className="flex-1 overflow-hidden">
+          <JournalOverview />
+        </div>
+      </div>
+    );
+  }
+
+
   return (
     <div className="p-7 overflow-auto h-full max-w-3xl mx-auto">
       <div className="flex items-start justify-between mb-5 gap-3">
@@ -107,7 +129,7 @@ export function NotesView() {
 
       <div className="mb-6">{HeaderTabs}</div>
 
-      <NotesTab kind={tab} />
+      <NotesTab kind={tab as NoteKind} />
     </div>
   );
 }
