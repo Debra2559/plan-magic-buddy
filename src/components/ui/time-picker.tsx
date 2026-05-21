@@ -123,8 +123,8 @@ export function TimePicker({
         ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`group inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-md bg-white/5 border border-white/10 hover:border-amber-glow/40 hover:bg-amber-glow/[0.06] transition ${padded} font-mono tabular-nums ${
-          value ? "text-amber-glow/95" : "text-white/40"
+        className={`group inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-md bg-foreground/5 border border-border hover:border-amber-glow/40 hover:bg-amber-glow/[0.06] transition ${padded} font-mono tabular-nums ${
+          value ? "text-amber-glow" : "text-muted-foreground"
         } focus:outline-none focus:border-amber-glow/50`}
         title="选择时间"
       >
@@ -138,7 +138,7 @@ export function TimePicker({
               e.stopPropagation();
               onChange("");
             }}
-            className="ml-0.5 opacity-0 group-hover:opacity-70 hover:!opacity-100 hover:text-white transition"
+            className="ml-0.5 opacity-0 group-hover:opacity-70 hover:!opacity-100 hover:text-foreground transition"
             title="清除"
           >
             <X className="w-3 h-3" />
