@@ -392,6 +392,8 @@ function planContent(plan: any): {
   horizon_days?: number;
   review_questions?: string[];
   items: any[];
+  report?: any;
+  research_meta?: any;
 } {
   const c = plan?.content;
   if (Array.isArray(c)) return { items: c, horizon_days: 7 };
@@ -402,6 +404,8 @@ function planContent(plan: any): {
       horizon_days: c.horizon_days ?? 28,
       review_questions: c.review_questions,
       items: c.items,
+      report: c.report,
+      research_meta: c.research_meta,
     };
   }
   return { items: [] };
