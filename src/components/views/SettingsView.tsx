@@ -167,7 +167,7 @@ function DateFlashPanel() {
   );
 }
 
-type NavKey = "general" | "persona" | "insights" | "comic" | "feishu" | "webhook" | "reminders" | "appearance" | "shortcuts" | "about";
+type NavKey = "general" | "persona" | "insights" | "comic" | "feishu" | "webhook" | "reminders" | "appearance" | "floating" | "shortcuts" | "about";
 type NavGroup = { label: string; items: { key: NavKey; title: string; icon: typeof User; subtitle?: string }[] };
 
 const NAV: NavGroup[] = [
