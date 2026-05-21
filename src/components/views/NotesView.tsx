@@ -129,7 +129,7 @@ export function NotesView() {
 
       <div className="mb-6">{HeaderTabs}</div>
 
-      <NotesTab kind={tab} />
+      <NotesTab kind={tab as NoteKind} />
     </div>
   );
 }
