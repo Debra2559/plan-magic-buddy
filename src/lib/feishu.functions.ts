@@ -2105,7 +2105,7 @@ export async function addFeishuReaction(params: {
   emojiType?: string
 }): Promise<{ ok: boolean; error?: string }> {
   try {
-    const emojiType = params.emojiType ?? 'OnIt'
+    const emojiType = params.emojiType ?? 'SMILE'
     const r = await feishu<{ code: number; msg: string }>(
       `/im/v1/messages/${encodeURIComponent(params.messageId)}/reactions`,
       {
