@@ -286,8 +286,20 @@ export const Route = createFileRoute('/api/public/feishu/webhook')({
 
           // 先给用户消息加个表情回应，表示「收到啦」
           if (message.message_id) {
-            addFeishuReaction({ messageId: message.message_id, emojiType: 'OnIt' }).catch(() => {})
+            addFeishuReaction({ messageId: message.message_id, emojiType: 'SMILE' })
+              .then((rr) => {
+                log({
+                  step: 'reaction',
+                  level: rr.ok ? 'info' : 'warn',
+                  event_type: eventType,
+                  message: rr.ok ? `reacted SMILE on ${String(message.message_id).slice(0, 14)}…` : `reaction failed: ${rr.error}`,
+                })
+              })
+              .catch((e: any) => {
+                log({ step: 'reaction', level: 'error', event_type: eventType, error: e?.message })
+              })
           }
+
 
           // 调用 Lovable AI 并回复
           const aiStart = Date.now()
