@@ -284,6 +284,11 @@ export const Route = createFileRoute('/api/public/feishu/webhook')({
             return json({ ok: true })
           }
 
+          // 先给用户消息加个表情回应，表示「收到啦」
+          if (message.message_id) {
+            addFeishuReaction({ messageId: message.message_id, emojiType: 'OnIt' }).catch(() => {})
+          }
+
           // 调用 Lovable AI 并回复
           const aiStart = Date.now()
           const result = await aiReplyToFeishuChat({
