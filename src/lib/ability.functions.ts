@@ -221,7 +221,13 @@ function cleanFocusArea(text: unknown) {
     .trim();
 }
 
-function buildFallbackAbilityPlan(profile: any, activity: any): AbilityPlanDraft {
+function buildFallbackAbilityPlan(
+  profile: any,
+  activity: any,
+  intent: string,
+  weeklyHours: number,
+  horizonDays: number,
+): AbilityPlanDraft {
   const abilities = (profile?.abilities ?? {}) as Record<string, number>;
   const lowScoreAreas = Object.entries(abilities)
     .sort((a, b) => a[1] - b[1])
@@ -229,7 +235,7 @@ function buildFallbackAbilityPlan(profile: any, activity: any): AbilityPlanDraft
   const profileGrowthAreas = Array.isArray(profile?.growth_areas)
     ? profile.growth_areas.map(cleanFocusArea).filter(Boolean)
     : [];
-  const focus_areas = Array.from(new Set([...profileGrowthAreas, ...lowScoreAreas])).slice(0, 3);
+  const focus_areas = Array.from(new Set([...profileGrowthAreas, ...lowScoreAreas])).slice(0, 2);
   const areas = focus_areas.length > 0 ? focus_areas : ["计划力", "专注力"];
   const completion = typeof activity?.completion_rate === "number" ? activity.completion_rate : null;
   const tagline = completion === null
@@ -238,36 +244,93 @@ function buildFallbackAbilityPlan(profile: any, activity: any): AbilityPlanDraft
       ? "保持当前完成节奏，把优势沉淀成可复用习惯。"
       : "用更小的动作降低启动成本，先让计划跑起来。";
 
-  const actionMap: Record<string, string[]> = {
-    计划力: ["每天开始前写下 3 件最重要的事", "把超过 30 分钟的任务拆成下一步动作", "每晚用 5 分钟复盘明天第一件事"],
-    专注力: ["每天安排 1 段 25 分钟免打扰专注块", "开始前关闭无关通知和页面", "把临时想法先记到收集箱，结束后再处理"],
-    健康力: ["每天固定一个 10 分钟活动窗口", "睡前 30 分钟减少屏幕和刺激信息", "久坐 60 分钟后起身走动 3 分钟"],
-    创造力: ["每周记录 3 个新点子或新工具", "把一个旧任务尝试换一种做法", "每周做一次 20 分钟跨领域素材收集"],
-    社交力: ["每周主动联系 1 位朋友或同事", "重要沟通前先写下想表达的 3 个点", "对收到的帮助及时反馈和感谢"],
-    反思力: ["每天记录一个有效动作和一个卡点", "每周复盘一次高耗能事件的原因", "把失败经验改写成下一次的具体规则"],
+  const presets: Record<string, { actions: { title: string; when: string; durationMin: number; note?: string }[]; kpi: string; pitfalls: string[] }> = {
+    计划力: {
+      actions: [
+        { title: "每天 3 件最重要的事", when: "每天 08:30", durationMin: 10, note: "写在固定位置，序号 1/2/3" },
+        { title: "晚间 5 分钟次日规划", when: "每天 22:00", durationMin: 5 },
+        { title: "周日周计划", when: "周日 20:00", durationMin: 25 },
+      ],
+      kpi: "连续 14 天每天产出 3 件 MIT 并完成 ≥ 2 件",
+      pitfalls: ["计划过多 → 单日上限 3 件", "只列不做 → 每条标注下一步动作"],
+    },
+    专注力: {
+      actions: [
+        { title: "深度专注块 25 分钟", when: "工作日 10:00", durationMin: 25, note: "手机离开桌面" },
+        { title: "深度专注块 25 分钟", when: "工作日 15:00", durationMin: 25 },
+        { title: "干扰记录复盘", when: "每天 21:30", durationMin: 5 },
+      ],
+      kpi: "工作日每天完成 ≥ 2 个 25 分钟专注块",
+      pitfalls: ["边做边刷消息 → 番茄期间消息免打扰", "起步太长 → 先从 1 个 25min 起"],
+    },
+    健康力: {
+      actions: [
+        { title: "晨间拉伸", when: "每天 07:30", durationMin: 10 },
+        { title: "午后散步", when: "每天 12:30", durationMin: 15 },
+        { title: "22:30 关屏", when: "每天 22:30", durationMin: 5, note: "手机放卧室外" },
+      ],
+      kpi: "每周 ≥ 5 天 22:30 前关屏 + 每天 ≥ 6000 步",
+      pitfalls: ["周末节奏崩 → 周末保留最小动作", "晚上加练 → 移到早晨"],
+    },
+    创造力: {
+      actions: [
+        { title: "灵感卡片 3 张", when: "每天 21:00", durationMin: 15 },
+        { title: "跨领域素材收集", when: "周三 20:00", durationMin: 30 },
+      ],
+      kpi: "每周产出 ≥ 15 张灵感卡 + 1 篇跨界笔记",
+      pitfalls: ["输入过载不输出 → 每天必输出 1 句话"],
+    },
+    社交力: {
+      actions: [
+        { title: "主动联系 1 位老朋友", when: "周二 20:30", durationMin: 15 },
+        { title: "沟通前写下 3 个要点", when: "每天 09:00", durationMin: 5 },
+      ],
+      kpi: "每周主动发起 ≥ 2 次有效对话",
+      pitfalls: ["想太多不发 → 限时 3 分钟必发出"],
+    },
+    反思力: {
+      actions: [
+        { title: "睡前 3 行日记", when: "每天 22:45", durationMin: 5, note: "做了什么 / 卡在哪 / 明天第一步" },
+        { title: "周复盘", when: "周日 21:00", durationMin: 20 },
+      ],
+      kpi: "每周完成 7 次日记 + 1 次复盘",
+      pitfalls: ["写太长断更 → 每条 ≤ 1 句"],
+    },
   };
 
-  const items = areas.map((area) => ({
-    area,
-    goal: `在未来 7 天稳定提升${area}，先形成可持续的小循环。`,
-    actions: actionMap[area] ?? ["每天选择一个最小动作完成", "完成后记录一句反馈", "周末根据实际情况调整难度"],
-    cadence: area === "健康力" ? "每天10分钟" : "每周3-5次，每次15-25分钟",
-  }));
-
-  while (items.length < 2) {
-    items.push({
-      area: "稳定执行",
-      goal: "降低计划启动成本，让成长计划持续发生。",
-      actions: ["每天只承诺一个最小可完成动作", "完成后立即打勾或记录一句反馈", "连续两天中断时主动降级任务难度"],
-      cadence: "每天5分钟",
-    });
-  }
+  const items = areas.slice(0, 2).map((area) => {
+    const p = presets[area] ?? presets["计划力"];
+    return {
+      area,
+      why: `当前${area}评分 ${abilities[Object.entries(DIM_LABELS).find(([, v]) => v === area)?.[0] ?? ""] ?? "—"}，近期完成率 ${completion ?? "暂无"}%`,
+      goal: `${horizonDays} 天后在${area}上建立稳定的小循环，达成 KPI`,
+      kpi: p.kpi,
+      actions: p.actions.slice(0, 3),
+      milestones: [
+        { week: 1, target: `跑通最小动作，完成率 ≥ 50%` },
+        { week: 2, target: `完成率 ≥ 70%，并完成 1 次复盘` },
+        { week: Math.max(3, Math.ceil(horizonDays / 7)), target: p.kpi },
+      ],
+      pitfalls: p.pitfalls,
+      cadence: area === "健康力" ? "每天 10-15 分钟" : "每周 3-5 次，每次 15-25 分钟",
+    };
+  });
 
   return {
     title: `${todayStr()} 成长计划`,
     tagline,
-    focus_areas: areas.slice(0, 4),
-    items: items.slice(0, 6),
+    diagnosis: intent
+      ? `你想：${intent}。结合画像短板（${areas.join("、")}）与近 14 天完成率 ${completion ?? "—"}%，先用 ${weeklyHours} 小时/周的轻量负荷起步。`
+      : `结合画像短板（${areas.join("、")}）与近 14 天完成率 ${completion ?? "—"}%，本轮以稳定执行为先，先求"在做"再求"做好"。`,
+    focus_areas: areas,
+    weekly_hours: weeklyHours,
+    horizon_days: horizonDays,
+    items,
+    review_questions: [
+      "本周哪个动作让我感觉最值得？",
+      "卡点出现在执行链路的哪一步？",
+      "下周需要把哪一条降级或升级？",
+    ],
   };
 }
 
