@@ -323,6 +323,7 @@ export function SettingsView() {
           </div>
         </div>
       );
+      case "floating": return <FloatingBallPanel />;
       case "shortcuts": return <RowList rows={simpleSections.shortcuts.rows} />;
       case "about":
         return (
