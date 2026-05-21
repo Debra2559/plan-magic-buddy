@@ -12,6 +12,7 @@ import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
 } from "recharts";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Sparkles, RefreshCw, Brain, Target, ClipboardList, CalendarPlus, Telescope, ExternalLink, Clock, Lightbulb, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useSylva, todayLocal } from "@/lib/sylva-store";
