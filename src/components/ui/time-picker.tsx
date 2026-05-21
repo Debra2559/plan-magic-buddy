@@ -96,6 +96,14 @@ export function TimePicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  // 打开时若没有值，先用「当前小时:00」初始化，避免高亮行与顶部 --:-- 不一致带来的困惑
+  useEffect(() => {
+    if (!open || value) return;
+    const now = new Date();
+    onChange(`${String(now.getHours()).padStart(2, "0")}:00`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   // 值变化时触发一次高亮闪烁（不动滚动位置）
   const [flashKey, setFlashKey] = useState(0);
   useEffect(() => {
