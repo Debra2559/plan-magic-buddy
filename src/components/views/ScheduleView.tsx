@@ -1082,7 +1082,7 @@ function DayDiaryCard({ date, diary, onOpen, onSave }: { date: string; diary: an
             }}
             placeholder="写下今天的一条记录…（⌘/Ctrl + Enter 保存）"
             rows={2}
-            className="w-full bg-transparent text-xs text-white/85 placeholder:text-muted-foreground/70 outline-none resize-none leading-relaxed"
+            className="w-full bg-transparent text-xs text-foreground placeholder:text-muted-foreground/70 outline-none resize-none leading-relaxed"
           />
           <div className="flex items-center justify-between mt-1.5">
             <button onClick={onOpen} className="text-[10px] text-muted-foreground/70 hover:text-amber-glow transition">展开编辑器 →</button>
