@@ -376,9 +376,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
           </section>
         )}
 
-        <DayDiaryCard date={selected} diary={diary} onOpen={() => navigateTo?.("journal")} onSave={(content) => upsertDiary(selected, { content })} />
-
-        <DayNotesCard date={selected} notes={notes} onOpen={() => navigateTo?.("notes")} />
+        <DayNotesCard date={selected} notes={notes} onAdd={(text) => addNote(text)} onOpen={() => navigateTo?.("notes")} />
 
         <DayComicCard date={selected} comics={comics} onOpen={() => navigateTo?.("journal")} />
       </aside>
