@@ -41,6 +41,9 @@ export function FloatingBall() {
     setViewport({ width: window.innerWidth, height: window.innerHeight });
     setPos(loadPos());
     setMounted(true);
+    const onUpdate = () => setPos(loadPos());
+    window.addEventListener("floating-ball:update", onUpdate);
+    return () => window.removeEventListener("floating-ball:update", onUpdate);
   }, []);
 
   useEffect(() => {
@@ -242,12 +245,37 @@ function BallAction({
   );
 }
 
-/** 工具函数：从外部（例如设置页）重新启用悬浮球 */
-export function enableFloatingBall() {
+/** 工具函数：从外部（例如设置页）启用/隐藏悬浮球 */
+export function setFloatingBallEnabled(enabled: boolean) {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const cur = raw ? JSON.parse(raw) : {};
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...cur, enabled: true }));
-    window.location.reload();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...cur, enabled }));
+    window.dispatchEvent(new Event("floating-ball:update"));
   } catch {}
+}
+
+export function enableFloatingBall() {
+  setFloatingBallEnabled(true);
+}
+
+/** 重置悬浮球到右侧中部 */
+export function resetFloatingBallPosition() {
+  try {
+    const x = Math.max(16, window.innerWidth - 64);
+    const y = Math.max(80, window.innerHeight / 2 - 28);
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const cur = raw ? JSON.parse(raw) : {};
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...cur, x, y, enabled: true }));
+    window.dispatchEvent(new Event("floating-ball:update"));
+  } catch {}
+}
+
+export function getFloatingBallEnabled(): boolean {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return true;
+    const v = JSON.parse(raw);
+    return v.enabled !== false;
+  } catch { return true; }
 }

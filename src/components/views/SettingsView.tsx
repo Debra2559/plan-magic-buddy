@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bell, Cloud, Palette, Keyboard, User, Info, Sparkles, Bot, Webhook, ChevronRight, ChevronDown, LogOut, Lightbulb, Wand2 } from "lucide-react";
+import { Bell, Cloud, Palette, Keyboard, User, Info, Sparkles, Bot, Webhook, ChevronRight, ChevronDown, LogOut, Lightbulb, Wand2, MousePointerClick } from "lucide-react";
+import { FloatingBallPanel } from "@/components/FloatingBallPanel";
 import { ComicSettingsPanel } from "@/components/ComicSettingsPanel";
 import { InsightsSettingsPanel } from "@/components/InsightsSettingsPanel";
 import { FeishuSyncPanel } from "@/components/FeishuSyncPanel";
@@ -166,7 +167,7 @@ function DateFlashPanel() {
   );
 }
 
-type NavKey = "general" | "persona" | "insights" | "comic" | "feishu" | "webhook" | "reminders" | "appearance" | "shortcuts" | "about";
+type NavKey = "general" | "persona" | "insights" | "comic" | "feishu" | "webhook" | "reminders" | "appearance" | "floating" | "shortcuts" | "about";
 type NavGroup = { label: string; items: { key: NavKey; title: string; icon: typeof User; subtitle?: string }[] };
 
 const NAV: NavGroup[] = [
@@ -190,6 +191,7 @@ const NAV: NavGroup[] = [
     label: "外观与体验",
     items: [
       { key: "appearance", title: "外观", icon: Palette },
+      { key: "floating", title: "悬浮球", icon: MousePointerClick },
       { key: "reminders", title: "提醒", icon: Bell },
       { key: "shortcuts", title: "快捷键", icon: Keyboard },
     ],
@@ -211,6 +213,7 @@ const TITLES: Record<NavKey, { title: string; desc: string }> = {
   webhook: { title: "Webhook 日志", desc: "查看最近的飞书事件回调" },
   reminders: { title: "提醒", desc: "桌面通知与每日总结" },
   appearance: { title: "外观", desc: "壁纸、字体、主题与手帐日期高亮" },
+  floating: { title: "悬浮球", desc: "桌面 AI 快捷入口的显示与位置" },
   shortcuts: { title: "快捷键", desc: "常用操作的键盘绑定" },
   about: { title: "关于", desc: "版本与项目信息" },
 };
@@ -320,6 +323,7 @@ export function SettingsView() {
           </div>
         </div>
       );
+      case "floating": return <FloatingBallPanel />;
       case "shortcuts": return <RowList rows={simpleSections.shortcuts.rows} />;
       case "about":
         return (
