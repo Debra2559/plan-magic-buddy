@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { Sparkles, X, RefreshCw, Bell, Lightbulb, AlertTriangle, Heart, TrendingUp, Clock } from "lucide-react";
 import { listMyInsights, generateMyInsightsNow, dismissInsight, type AiInsight } from "@/lib/insights.functions";
 
@@ -27,7 +28,21 @@ export function InsightsBell() {
 
   const generateMut = useMutation({
     mutationFn: () => generate({ data: { slot: "auto" } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["my-insights"] }),
+    onSuccess: (r: any) => {
+      qc.invalidateQueries({ queryKey: ["my-insights"] });
+      if (r?.ok === false) {
+        const reason = String(r.reason ?? "");
+        if (reason === "no_api_key") toast.error("AI 密钥未配置", { description: "请在 Lovable Cloud 中开启 AI 网关" });
+        else if (reason === "disabled") toast("洞察功能已关闭", { description: "可在「洞察设置」中开启" });
+        else if (reason.startsWith("ai_error")) toast.error("AI 生成失败", { description: reason.replace(/^ai_error:/, "") || "稍后再试" });
+        else toast.error("生成失败", { description: reason || "稍后再试" });
+      } else if (r?.ok && (r.count ?? 0) === 0) {
+        toast("本时段暂无可洞察的内容", { description: "再多记录一些日程 / 随手记后试试" });
+      } else if (r?.ok && r.count > 0) {
+        toast.success(`已生成 ${r.count} 条新洞察`);
+      }
+    },
+    onError: (e: any) => toast.error("调用失败", { description: e?.message ?? "网络异常" }),
   });
   const dismissMut = useMutation({
     mutationFn: (id: string) => dismiss({ data: { id } }),
