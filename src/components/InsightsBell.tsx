@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { Sparkles, X, RefreshCw, Bell, Lightbulb, AlertTriangle, Heart, TrendingUp, Clock } from "lucide-react";
 import { listMyInsights, generateMyInsightsNow, dismissInsight, type AiInsight } from "@/lib/insights.functions";
 
