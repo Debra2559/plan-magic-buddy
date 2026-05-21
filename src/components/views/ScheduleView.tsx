@@ -338,6 +338,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
               ))}
             </div>
           )}
+          <QuickAdd date={selected} onAdd={(item) => addItems([item])} />
         </section>
 
         {habits.length > 0 && (
@@ -380,8 +381,6 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
         <DayNotesCard date={selected} notes={notes} onOpen={() => navigateTo?.("notes")} />
 
         <DayComicCard date={selected} comics={comics} onOpen={() => navigateTo?.("journal")} />
-
-        <QuickAdd date={selected} onAdd={(item) => addItems([item])} />
       </aside>
 
 
