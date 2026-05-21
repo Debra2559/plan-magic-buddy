@@ -11,7 +11,7 @@ import { MediaAttacher } from "@/components/MediaAttacher";
 import { JournalView } from "@/components/views/JournalView";
 import { JournalOverview } from "@/components/views/JournalOverview";
 
-type Tab = "log" | "reflection" | "handbook";
+type Tab = "log" | "reflection" | "handbook" | "review";
 
 const MOODS: { value: Mood; emoji: string; label: string }[] = [
   { value: "great", emoji: "😄", label: "很棒" },
