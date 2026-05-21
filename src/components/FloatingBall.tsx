@@ -41,6 +41,9 @@ export function FloatingBall() {
     setViewport({ width: window.innerWidth, height: window.innerHeight });
     setPos(loadPos());
     setMounted(true);
+    const onUpdate = () => setPos(loadPos());
+    window.addEventListener("floating-ball:update", onUpdate);
+    return () => window.removeEventListener("floating-ball:update", onUpdate);
   }, []);
 
   useEffect(() => {
