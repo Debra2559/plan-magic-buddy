@@ -95,6 +95,26 @@ export function NotesView() {
     );
   }
 
+  if (tab === "review") {
+    return (
+      <div className="h-full flex flex-col">
+        <div className="px-7 pt-5 pb-2">
+          <div className="flex items-start justify-between gap-3 mb-5">
+            <div>
+              <p className="text-[10px] tracking-widest text-amber-glow mb-1">每日记录</p>
+              <h2 className="font-display text-3xl text-foreground">回看 · 多天预览 + 一键导出 PDF</h2>
+            </div>
+          </div>
+          {HeaderTabs}
+        </div>
+        <div className="flex-1 overflow-hidden">
+          <JournalOverview />
+        </div>
+      </div>
+    );
+  }
+
+
   return (
     <div className="p-7 overflow-auto h-full max-w-3xl mx-auto">
       <div className="flex items-start justify-between mb-5 gap-3">
