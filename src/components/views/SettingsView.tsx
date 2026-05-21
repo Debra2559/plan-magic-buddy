@@ -213,6 +213,7 @@ const TITLES: Record<NavKey, { title: string; desc: string }> = {
   webhook: { title: "Webhook 日志", desc: "查看最近的飞书事件回调" },
   reminders: { title: "提醒", desc: "桌面通知与每日总结" },
   appearance: { title: "外观", desc: "壁纸、字体、主题与手帐日期高亮" },
+  floating: { title: "悬浮球", desc: "桌面 AI 快捷入口的显示与位置" },
   shortcuts: { title: "快捷键", desc: "常用操作的键盘绑定" },
   about: { title: "关于", desc: "版本与项目信息" },
 };
