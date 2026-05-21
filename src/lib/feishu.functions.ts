@@ -1712,35 +1712,41 @@ export async function handleHackathonCardAction(payload: {
   id: string
   action: 'accept' | 'dismiss'
 }): Promise<{ toast: { type: 'success' | 'info' | 'error'; content: string } }> {
-  const { data: row, error } = await supabaseAdmin
-    .from('hackathons')
-    .select('*')
-    .eq('id', payload.id)
-    .maybeSingle()
+  // 并行：拉取比赛 + 拉取日历设置（accept 时才需要）
+  const [{ data: row, error }, settingsRes] = await Promise.all([
+    supabaseAdmin.from('hackathons').select('*').eq('id', payload.id).maybeSingle(),
+    payload.action === 'accept'
+      ? supabaseAdmin
+          .from('feishu_settings')
+          .select('selected_calendar_id')
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null } as any),
+  ])
+
   if (error || !row) {
     return { toast: { type: 'error', content: '未找到该比赛' } }
   }
 
   if (payload.action === 'dismiss') {
-    await supabaseAdmin
+    // 非阻塞写库，立即 ACK
+    void supabaseAdmin
       .from('hackathons')
       .update({ status: 'dismissed', decided_at: new Date().toISOString() })
       .eq('id', payload.id)
+      .then(() => {})
     return { toast: { type: 'info', content: '已忽略' } }
   }
 
-  // accept：标记 + 写入飞书日历
-  await supabaseAdmin
+  // ---- accept ----
+  // 立即标记状态（不阻塞响应）
+  void supabaseAdmin
     .from('hackathons')
     .update({ status: 'accepted', decided_at: new Date().toISOString() })
     .eq('id', payload.id)
+    .then(() => {})
 
-  const { data: settings } = await supabaseAdmin
-    .from('feishu_settings')
-    .select('selected_calendar_id')
-    .limit(1)
-    .maybeSingle()
-  const calendarId = (settings as any)?.selected_calendar_id
+  const calendarId = (settingsRes as any)?.data?.selected_calendar_id
   if (!calendarId) {
     return { toast: { type: 'success', content: '已标记参加，但未选择日历' } }
   }
@@ -1775,29 +1781,48 @@ export async function handleHackathonCardAction(payload: {
     })
   }
 
-  let pushed = 0
-  for (const e of evs) {
-    const start = toUnixSeconds(e.date, e.time)
-    const body = {
-      summary: e.summary,
-      description: e.description,
-      start_time: { timestamp: String(start), timezone: TZ },
-      end_time: { timestamp: String(start + e.durationMin * 60), timezone: TZ },
-    }
-    try {
-      const r = await feishu<{ code: number; msg: string }>(
-        `/calendar/v4/calendars/${encodeURIComponent(calendarId)}/events`,
-        { method: 'POST', body: JSON.stringify(body) },
-      )
-      if (r.code === 0) pushed += 1
-    } catch {
-      /* ignore */
-    }
+  if (evs.length === 0) {
+    return { toast: { type: 'success', content: '已确认参加（未识别到时间）' } }
   }
 
-  // 推一张「已加入日程」的回执卡片
+  // 并行推送所有日历事件，并加 2.2s 超时兜底，避免飞书 200340
+  const pushPromise = Promise.all(
+    evs.map(async (e) => {
+      const start = toUnixSeconds(e.date, e.time)
+      const body = {
+        summary: e.summary,
+        description: e.description,
+        start_time: { timestamp: String(start), timezone: TZ },
+        end_time: { timestamp: String(start + e.durationMin * 60), timezone: TZ },
+      }
+      try {
+        const r = await feishu<{ code: number; msg: string }>(
+          `/calendar/v4/calendars/${encodeURIComponent(calendarId)}/events`,
+          { method: 'POST', body: JSON.stringify(body) },
+        )
+        return r.code === 0 ? 1 : 0
+      } catch {
+        return 0
+      }
+    }),
+  ).then((arr) => arr.reduce<number>((a, b) => a + b, 0))
+
+  const timeoutPromise = new Promise<'timeout'>((resolve) =>
+    setTimeout(() => resolve('timeout'), 2200),
+  )
+
+  const result = await Promise.race([pushPromise, timeoutPromise])
+
+  // 后台回执卡片，不阻塞 ACK
   void notifyHackathonAccepted(row as any).catch(() => {})
 
+  if (result === 'timeout') {
+    // 让推送在后台继续（fetch 已发出）
+    void pushPromise.catch(() => {})
+    return { toast: { type: 'success', content: '已确认参加，日程正在后台加入…' } }
+  }
+
+  const pushed = result as number
   return {
     toast: {
       type: 'success',
