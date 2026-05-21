@@ -177,6 +177,38 @@ const PlanSchema = z.object({
 });
 type AbilityPlanDraft = z.infer<typeof PlanSchema>;
 
+// 深度研究报告 schema
+const TimelineSlotSchema = z.object({
+  time: z.string().describe("具体时段, 如 06:30 或 06:30-07:00"),
+  activity: z.string().describe("做什么，简洁动作名，不超过 20 字"),
+  rationale: z.string().describe("为什么这个时段做这件事 (引用人体节律/达人共识/科学依据)，不超过 50 字"),
+});
+const PracticeSchema = z.object({
+  title: z.string().describe("最佳实践的标题，不超过 18 字"),
+  detail: z.string().describe("具体怎么做 + 为什么有效，1-2 句"),
+  source_hint: z.string().optional().describe("来源平台或博主, 如「小红书@xxx」"),
+});
+const SourceRefSchema = z.object({
+  platform: z.string().describe("平台名，如 小红书/抖音/知乎/B站/官方/博客"),
+  title: z.string(),
+  url: z.string(),
+  takeaway: z.string().describe("这条资料的核心要点，不超过 60 字"),
+});
+const ResearchReportSchema = z.object({
+  scope: z.string().describe("一句话说明本次研究覆盖的目标与边界"),
+  consensus: z.array(z.string()).min(2).max(6).describe("跨多个来源的共识结论, 每条 ≤ 40 字"),
+  daily_timeline: z.array(TimelineSlotSchema).min(4).max(14).describe("典型一日时间轴 (晨/上/午/下/晚/夜), 按时间升序"),
+  best_practices: z.array(PracticeSchema).min(3).max(8),
+  common_mistakes: z.array(z.string()).min(2).max(6).describe("大家最容易踩的坑, 每条 ≤ 40 字"),
+  beginner_path: z.array(z.string()).min(3).max(7).describe("从 0 起步的推荐路径, 每条 ≤ 30 字"),
+  sources: z.array(SourceRefSchema).min(2).max(10).describe("参考来源, 优先小红书/抖音/知乎/B站等真人分享"),
+});
+const DeepPlanSchema = z.object({
+  report: ResearchReportSchema,
+  plan: PlanSchema,
+});
+type DeepPlanDraft = z.infer<typeof DeepPlanSchema>;
+
 // ---------- Helpers ----------
 function todayStr(d = new Date()): string {
   const cn = new Date(d.getTime() + 8 * 3600_000);
