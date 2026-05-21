@@ -150,13 +150,13 @@ export function TimePicker({
         <div
           ref={popRef}
           style={{ position: "fixed", left: pos.left, top: pos.top, zIndex: 1000 }}
-          className="w-[180px] rounded-xl border border-white/15 bg-zinc-950/95 backdrop-blur-md shadow-2xl shadow-black/60 overflow-hidden"
+          className="w-[180px] rounded-xl border border-border bg-popover/95 text-popover-foreground backdrop-blur-md shadow-2xl shadow-black/30 overflow-hidden"
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between px-3 py-2 border-b border-white/15">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-border">
             <span className="text-[10px] tracking-widest text-amber-glow uppercase font-semibold">时间</span>
-            <span className="font-mono text-sm text-white tabular-nums">
-              {hh || "--"}<span className="text-white/70 mx-0.5">:</span>{mm || "--"}
+            <span className="font-mono text-sm text-foreground tabular-nums">
+              {hh || "--"}<span className="text-muted-foreground mx-0.5">:</span>{mm || "--"}
             </span>
           </div>
           <div className="relative flex h-44">
@@ -168,7 +168,7 @@ export function TimePicker({
               flashKey={flashKey}
               onPick={(v) => select(v, mm || "00")}
             />
-            <div className="w-px bg-white/8" />
+            <div className="w-px bg-border" />
             <Column
               innerRef={minColRef}
               items={MINUTES}
@@ -177,7 +177,7 @@ export function TimePicker({
               onPick={(v) => select(hh || String(new Date().getHours()).padStart(2, "0"), v)}
             />
           </div>
-          <div className="flex items-center justify-between px-2 py-1.5 border-t border-white/8 bg-black/30">
+          <div className="flex items-center justify-between px-2 py-1.5 border-t border-border bg-foreground/5">
             <button
               type="button"
               onClick={() => {
@@ -187,7 +187,7 @@ export function TimePicker({
                 );
                 onChange(`${String(now.getHours()).padStart(2, "0")}:${closestMin}`);
               }}
-              className="px-2 py-0.5 text-[11px] rounded text-white/80 hover:text-amber-glow hover:bg-white/10"
+              className="px-2 py-0.5 text-[11px] rounded text-foreground/80 hover:text-amber-glow hover:bg-foreground/10"
             >
               现在
             </button>
