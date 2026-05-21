@@ -302,6 +302,7 @@ export function SettingsView() {
     switch (active) {
       case "general": return <AccountPanel />;
       case "persona": return <AiPersonaPanel />;
+      case "memory": return <MemoryPanel />;
       case "insights": return <InsightsSettingsPanel />;
       case "comic": return <ComicSettingsPanel />;
       case "feishu": return <FeishuSyncPanel />;
