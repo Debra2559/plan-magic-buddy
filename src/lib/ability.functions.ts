@@ -4,6 +4,7 @@ import { generateObject } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createLovableAiGatewayProvider } from "./ai-gateway";
+import { fetchMemoryBlockForUser } from "./memories.functions";
 
 // ---------- Static questionnaire ----------
 // 30 题李克特量表（1=非常不符合, 5=非常符合）。每个能力维度 3 题（含 1 题反向计分 _inv）；
