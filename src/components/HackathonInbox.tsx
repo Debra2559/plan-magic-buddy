@@ -230,11 +230,127 @@ export function HackathonInbox() {
                 <span className="text-foreground/50">小时一次</span>
               </div>
 
+              {/* —— 🤖 AI 主题来源规划 Agent —— */}
+              <div className="rounded-xl border border-amber-glow/20 bg-amber-glow/5 p-3 space-y-2">
+                <div className="flex items-center gap-1.5 text-[11px] text-amber-glow">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span className="tracking-wider">AI 监控规划师</span>
+                  <span className="text-foreground/40 ml-1">告诉我主题，我自动调研来源、关键词和扫描频率</span>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <input
+                    value={topic}
+                    onChange={(e) => setTopic(e.target.value)}
+                    placeholder="新主题，例如：徒步 / 马拉松 / 飞盘 / AI Agent 论文"
+                    className="bg-background/40 border border-foreground/15 rounded px-2 py-1.5 text-[12px] text-foreground placeholder:text-foreground/30 focus:border-amber-glow/50 focus:outline-none"
+                  />
+                  <input
+                    value={topicNotes}
+                    onChange={(e) => setTopicNotes(e.target.value)}
+                    placeholder="可选: 你的偏好补充, 例如「优先国内, 关注成都周边」"
+                    className="bg-background/40 border border-foreground/10 rounded px-2 py-1 text-[11px] text-foreground placeholder:text-foreground/25 focus:border-amber-glow/40 focus:outline-none"
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!topic.trim()) return;
+                      setPlanning(true);
+                      setPlanError(null);
+                      setPlan(null);
+                      try {
+                        const r = await planSourcesFn({ data: { topic: topic.trim(), notes: topicNotes.trim() || undefined } });
+                        if (r.ok && r.plan) {
+                          setPlan(r.plan as SourcePlan);
+                          // 默认全选
+                          const sel: Record<number, boolean> = {};
+                          r.plan.sources.forEach((_, i) => { sel[i] = true; });
+                          setPlanSelected(sel);
+                        } else {
+                          setPlanError(r.ok ? "AI 未返回有效计划" : r.error);
+                        }
+                      } catch (e) {
+                        setPlanError(e instanceof Error ? e.message : String(e));
+                      } finally {
+                        setPlanning(false);
+                      }
+                    }}
+                    disabled={planning || !topic.trim()}
+                    className="self-start flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] bg-amber-glow/20 border border-amber-glow/40 text-amber-glow hover:bg-amber-glow/30 transition disabled:opacity-40"
+                  >
+                    {planning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                    {planning ? "AI 调研中, 约 10-20 秒…" : "让 AI 规划这个主题"}
+                  </button>
+                </div>
+                {planError && (
+                  <div className="text-[11px] text-destructive">{planError}</div>
+                )}
+                {plan && settings && (
+                  <div className="space-y-2 pt-1 border-t border-amber-glow/15">
+                    <div className="text-[11px] text-foreground/75 leading-relaxed">
+                      <span className="text-amber-glow">{plan.topic} · </span>{plan.summary}
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-foreground/70">
+                      <Clock className="w-3 h-3 text-amber-glow" />
+                      <span>建议每 <b className="text-amber-glow">{plan.suggested_interval_hours}h</b> 扫一次 · {plan.update_rhythm}</span>
+                      <button
+                        onClick={() => setSettings({ ...settings, scan_interval_hours: plan.suggested_interval_hours })}
+                        className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-amber-glow/15 border border-amber-glow/30 text-amber-glow hover:bg-amber-glow/25"
+                      >
+                        应用频率
+                      </button>
+                    </div>
+                    <div className="space-y-1 max-h-[200px] overflow-auto pr-1">
+                      {plan.sources.map((s, i) => (
+                        <label
+                          key={i}
+                          className="flex items-start gap-2 p-1.5 rounded-lg bg-background/30 border border-foreground/10 cursor-pointer hover:border-amber-glow/30 transition"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={planSelected[i] ?? true}
+                            onChange={(e) => setPlanSelected({ ...planSelected, [i]: e.target.checked })}
+                            className="mt-0.5 accent-amber-glow"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[12px] text-foreground font-medium">{s.name}</div>
+                            <div className="text-[10px] text-foreground/50 font-mono break-all">{s.query}</div>
+                            <div className="text-[10px] text-foreground/55 italic">{s.rationale}</div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                    {plan.tips.length > 0 && (
+                      <div className="text-[10px] text-foreground/55 space-y-0.5">
+                        {plan.tips.map((t, i) => <div key={i}>· {t}</div>)}
+                      </div>
+                    )}
+                    <button
+                      onClick={() => {
+                        const picked = plan.sources
+                          .filter((_, i) => planSelected[i] ?? true)
+                          .map((s) => ({ name: s.name, query: s.query, enabled: s.enabled !== false }));
+                        if (picked.length === 0) return;
+                        // 去重 (按 query)
+                        const existing = new Set(settings.sources.map((x) => x.query));
+                        const additions = picked.filter((s) => !existing.has(s.query));
+                        setSettings({ ...settings, sources: [...settings.sources, ...additions] });
+                        setPlan(null);
+                        setTopic("");
+                        setTopicNotes("");
+                      }}
+                      className="w-full flex items-center justify-center gap-1 px-3 py-1.5 rounded-full text-[11px] bg-amber-glow text-background hover:scale-[1.01] transition"
+                    >
+                      <Plus className="w-3 h-3" /> 一键加入选中来源
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <SourcesEditor
                 sources={settings.sources}
                 onChange={(next) => setSettings({ ...settings, sources: next })}
                 queryPlaceholder="搜索关键词，例：site:devpost.com hackathon"
               />
+
 
               <div className="flex items-center justify-end gap-2 pt-1">
                 <button
