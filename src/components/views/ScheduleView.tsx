@@ -399,7 +399,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
       )}
 
       <Dialog open={aiOpen} onOpenChange={setAiOpen}>
-        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-auto bg-zinc-950/95 backdrop-blur-xl border-border">
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-auto bg-background/95 backdrop-blur-xl border-border">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-amber-glow">
               <Sparkles className="w-4 h-4" /> AI 新增规划
