@@ -750,3 +750,104 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
     </div>
   );
 }
+
+function ResearchReportCard({ report, meta }: { report: any; meta?: any }) {
+  const [open, setOpen] = useState(true);
+  const sources: any[] = Array.isArray(report?.sources) ? report.sources : [];
+  const timeline: any[] = Array.isArray(report?.daily_timeline) ? report.daily_timeline : [];
+  const consensus: string[] = Array.isArray(report?.consensus) ? report.consensus : [];
+  const best: any[] = Array.isArray(report?.best_practices) ? report.best_practices : [];
+  const mistakes: string[] = Array.isArray(report?.common_mistakes) ? report.common_mistakes : [];
+  const beginner: string[] = Array.isArray(report?.beginner_path) ? report.beginner_path : [];
+
+  return (
+    <div className="rounded-lg border border-amber-glow/30 bg-gradient-to-br from-amber-glow/10 to-background/40 p-3 mb-3">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between gap-2 text-left">
+        <div className="flex items-center gap-2">
+          <Telescope className="w-4 h-4 text-amber-glow" />
+          <span className="text-sm font-medium text-amber-glow">深度研究报告</span>
+          {meta?.source_count != null && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-glow/15 text-amber-glow/80">综合 {meta.source_count} 源</span>
+          )}
+        </div>
+        <span className="text-[11px] text-muted-foreground">{open ? "收起" : "展开"}</span>
+      </button>
+      {open && (
+        <div className="mt-3 space-y-3">
+          {report.scope && <div className="text-xs text-foreground/75 italic">{report.scope}</div>}
+          {consensus.length > 0 && (
+            <div>
+              <div className="text-[11px] uppercase tracking-wide text-amber-glow/80 mb-1 flex items-center gap-1"><Lightbulb className="w-3 h-3" /> 跨源共识</div>
+              <ul className="grid sm:grid-cols-2 gap-x-3 gap-y-1">
+                {consensus.map((c, i) => <li key={i} className="text-xs text-foreground/80">· {c}</li>)}
+              </ul>
+            </div>
+          )}
+          {timeline.length > 0 && (
+            <div>
+              <div className="text-[11px] uppercase tracking-wide text-amber-glow/80 mb-1.5 flex items-center gap-1"><Clock className="w-3 h-3" /> 一日典型时间轴</div>
+              <div className="space-y-1">
+                {timeline.map((t, i) => (
+                  <div key={i} className="grid grid-cols-[64px_1fr] gap-2 text-xs">
+                    <div className="text-amber-glow/90 font-mono">{t.time}</div>
+                    <div>
+                      <span className="text-foreground/90">{t.activity}</span>
+                      {t.rationale && <span className="text-foreground/55"> — {t.rationale}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {best.length > 0 && (
+            <div>
+              <div className="text-[11px] uppercase tracking-wide text-amber-glow/80 mb-1">最佳实践</div>
+              <ul className="space-y-1">
+                {best.map((b, i) => (
+                  <li key={i} className="text-xs text-foreground/80">
+                    <span className="text-foreground/95 font-medium">{b.title}</span>
+                    {b.detail && <span className="text-foreground/65"> · {b.detail}</span>}
+                    {b.source_hint && <span className="text-amber-glow/70"> · {b.source_hint}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {beginner.length > 0 && (
+            <div>
+              <div className="text-[11px] uppercase tracking-wide text-amber-glow/80 mb-1">0 起步路径</div>
+              <ol className="space-y-0.5 list-decimal list-inside">
+                {beginner.map((s, i) => <li key={i} className="text-xs text-foreground/80">{s}</li>)}
+              </ol>
+            </div>
+          )}
+          {mistakes.length > 0 && (
+            <div>
+              <div className="text-[11px] uppercase tracking-wide text-amber-glow/80 mb-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> 常见踩坑</div>
+              <ul className="space-y-0.5">
+                {mistakes.map((m, i) => <li key={i} className="text-xs text-foreground/75">⚠ {m}</li>)}
+              </ul>
+            </div>
+          )}
+          {sources.length > 0 && (
+            <div>
+              <div className="text-[11px] uppercase tracking-wide text-amber-glow/80 mb-1">参考来源</div>
+              <ul className="space-y-1">
+                {sources.map((s, i) => (
+                  <li key={i} className="text-xs">
+                    <a href={s.url} target="_blank" rel="noreferrer" className="text-foreground/85 hover:text-amber-glow inline-flex items-start gap-1 group">
+                      <span className="text-amber-glow/70 shrink-0">[{s.platform}]</span>
+                      <span className="underline decoration-dotted decoration-foreground/30 group-hover:decoration-amber-glow">{s.title}</span>
+                      <ExternalLink className="w-3 h-3 mt-0.5 text-muted-foreground/60 group-hover:text-amber-glow shrink-0" />
+                    </a>
+                    {s.takeaway && <div className="text-foreground/55 pl-4">{s.takeaway}</div>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
