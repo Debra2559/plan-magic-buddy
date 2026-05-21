@@ -684,6 +684,9 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
               </div>
             )}
 
+            {c.report && <ResearchReportCard report={c.report} meta={c.research_meta} />}
+
+
             <div className="space-y-3">
               {c.items.map((item: any, idx: number) => (
                 <div key={idx} className="rounded-lg bg-background/50 border border-border p-3 space-y-2">
