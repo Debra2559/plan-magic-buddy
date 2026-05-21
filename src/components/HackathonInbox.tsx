@@ -7,15 +7,26 @@ import {
   scanHackathonsNow,
   getHackathonSettings,
   updateHackathonSettings,
+  planMonitoringSources,
   type HackathonRow,
   type HackathonSettings,
 } from "@/lib/hackathons.functions";
 import { useSylva } from "@/lib/sylva-store";
 import {
   Trophy, X, Check, RefreshCw, Loader2, ExternalLink, MapPin, Calendar as CalIcon, Gift,
-  Settings as SettingsIcon, Save,
+  Settings as SettingsIcon, Save, Sparkles, Plus, Clock,
 } from "lucide-react";
 import { SourcesEditor } from "@/components/SourcesEditor";
+
+type PlannedSource = { name: string; query: string; rationale: string; enabled: boolean };
+type SourcePlan = {
+  topic: string;
+  summary: string;
+  update_rhythm: string;
+  suggested_interval_hours: number;
+  sources: PlannedSource[];
+  tips: string[];
+};
 
 export function HackathonInbox() {
   const { addItems } = useSylva();
