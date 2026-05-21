@@ -64,9 +64,11 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Pro
   }
 }
 
-async function firecrawlSearch(query: string, limit = 8): Promise<FirecrawlSearchItem[]> {
+async function firecrawlSearch(query: string, limit = 10, recency: "month" | "week" | "none" = "month"): Promise<FirecrawlSearchItem[]> {
   const apiKey = process.env.FIRECRAWL_API_KEY;
   if (!apiKey) return [];
+  const tbsMap = { month: "qdr:m", week: "qdr:w", none: undefined } as const;
+  const tbs = tbsMap[recency];
   try {
     const res = await fetch("https://api.firecrawl.dev/v2/search", {
       method: "POST",
@@ -74,7 +76,12 @@ async function firecrawlSearch(query: string, limit = 8): Promise<FirecrawlSearc
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({ query, limit, scrapeOptions: { formats: ["markdown"] } }),
+      body: JSON.stringify({
+        query,
+        limit,
+        ...(tbs ? { tbs } : {}),
+        scrapeOptions: { formats: ["markdown"], onlyMainContent: true },
+      }),
     });
     if (!res.ok) return [];
     const data = (await res.json()) as { data?: { web?: FirecrawlSearchItem[] } | FirecrawlSearchItem[] };
@@ -83,6 +90,28 @@ async function firecrawlSearch(query: string, limit = 8): Promise<FirecrawlSearc
     return raw?.web ?? [];
   } catch {
     return [];
+  }
+}
+
+// 对单个候选 URL 做深度抓取, 拿到完整正文用于精准提取报名截止时间
+async function firecrawlScrape(url: string): Promise<FirecrawlSearchItem | null> {
+  const apiKey = process.env.FIRECRAWL_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const res = await fetch("https://api.firecrawl.dev/v2/scrape", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({ url, formats: ["markdown"], onlyMainContent: true, waitFor: 1500 }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      data?: { markdown?: string; metadata?: { title?: string; description?: string } };
+    };
+    const d = data?.data;
+    if (!d) return null;
+    return { url, title: d.metadata?.title, description: d.metadata?.description, markdown: d.markdown };
+  } catch {
+    return null;
   }
 }
 
