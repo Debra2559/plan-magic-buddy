@@ -11,8 +11,10 @@ import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
 } from "recharts";
 import { Button } from "@/components/ui/button";
-import { Sparkles, RefreshCw, Brain, Target, ClipboardList } from "lucide-react";
+import { Sparkles, RefreshCw, Brain, Target, ClipboardList, CalendarPlus } from "lucide-react";
 import { toast } from "sonner";
+import { useSylva, todayLocal } from "@/lib/sylva-store";
+import type { PlanItem } from "@/lib/plan.functions";
 
 const ABILITY_LABELS: Record<string, string> = {
   planning: "计划力",
@@ -365,8 +367,74 @@ function AssessmentPanel({ questions, onDone }: { questions: readonly any[]; onD
   );
 }
 
+function areaToTag(area: string): PlanItem["tag"] {
+  const a = area || "";
+  if (/健|身|运动|睡|饮|休/.test(a)) return "健康";
+  if (/学|读|英语|english/i.test(a)) return "学习";
+  if (/反思|复盘|记录|手帐|日记/.test(a)) return "生活";
+  if (/社|朋友|交往/.test(a)) return "生活";
+  if (/计划|专注|工作|项目|效率/.test(a)) return "工作";
+  return "习惯";
+}
+
+function addDaysISO(iso: string, delta: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + delta);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+}
+
+// 把一份成长计划展开成未来 7 天的日程项
+function planToScheduleItems(plan: { content?: any[]; title?: string }): PlanItem[] {
+  const today = todayLocal();
+  const out: PlanItem[] = [];
+  const items = Array.isArray(plan.content) ? plan.content : [];
+
+  for (const it of items) {
+    const area = String(it?.area ?? "成长");
+    const tag = areaToTag(area);
+    const actions: string[] = Array.isArray(it?.actions) ? it.actions.slice(0, 4) : [];
+    const cadence = String(it?.cadence ?? "");
+    // 每周几次: weekly=2 次 (周二/周五), 否则默认每天
+    const weekly = /每周|周\s*\d|weekly/i.test(cadence) && !/每天|daily/i.test(cadence);
+    const dayOffsets = weekly ? [1, 4] : [0, 1, 2, 3, 4, 5, 6];
+
+    for (const offset of dayOffsets) {
+      const date = addDaysISO(today, offset);
+      // 主动作作为 todo, 备注里附其余动作 + 目标
+      const main = actions[0] ?? it?.goal ?? area;
+      const rest = actions.slice(1);
+      out.push({
+        type: "todo",
+        title: `${area}: ${main}`.slice(0, 40),
+        date,
+        tag,
+        note: [it?.goal, ...rest].filter(Boolean).join(" · ").slice(0, 200) || undefined,
+      });
+    }
+  }
+
+  // 周末加一条复盘提醒
+  const sundayOffset = (() => {
+    const [y, m, d] = today.split("-").map(Number);
+    const dow = new Date(y, m - 1, d).getDay(); // 0=Sun
+    return (7 - dow) % 7 || 7;
+  })();
+  out.push({
+    type: "reminder",
+    title: `复盘本周成长计划`,
+    date: addDaysISO(today, sundayOffset),
+    time: "20:00",
+    tag: "生活",
+    note: plan.title ? `回顾「${plan.title}」` : undefined,
+  });
+
+  return out;
+}
+
 function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }) {
   const generate = useServerFn(generateMyAbilityPlan);
+  const { addItemsPending } = useSylva();
   const qc = useQueryClient();
   const mut = useMutation({
     mutationFn: () => generate(),
@@ -377,6 +445,18 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
     },
     onError: (e: any) => toast.error(e?.message ?? "生成失败"),
   });
+
+  const addToSchedule = (p: any) => {
+    const items = planToScheduleItems(p);
+    if (items.length === 0) {
+      toast.error("这份计划没有可加入的动作");
+      return;
+    }
+    const ids = addItemsPending(items);
+    toast.success(`已加入 ${ids.length} 条到未来 7 天日程`, {
+      description: "前往「日程」查看并确认",
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -396,14 +476,25 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
 
       {plans.map((p) => (
         <div key={p.id} className={`rounded-xl border p-5 ${p.status === "active" ? "border-amber-glow/30 bg-amber-glow/5" : "border-border bg-foreground/5"}`}>
-          <div className="flex items-start justify-between mb-1">
-            <div>
+          <div className="flex items-start justify-between mb-1 gap-3">
+            <div className="min-w-0">
               <div className="font-display text-lg">{p.title}</div>
               <div className="text-muted-foreground text-sm">{p.tagline}</div>
             </div>
-            <span className={`text-xs px-2 py-0.5 rounded ${p.status === "active" ? "bg-amber-glow text-primary-foreground" : "bg-foreground/10 text-muted-foreground"}`}>
-              {p.status === "active" ? "进行中" : "已归档"}
-            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => addToSchedule(p)}
+                className="border-amber-glow/40 text-amber-glow hover:bg-amber-glow/10 hover:text-amber-glow"
+              >
+                <CalendarPlus className="w-3.5 h-3.5 mr-1.5" />
+                一键加入日程
+              </Button>
+              <span className={`text-xs px-2 py-0.5 rounded ${p.status === "active" ? "bg-amber-glow text-primary-foreground" : "bg-foreground/10 text-muted-foreground"}`}>
+                {p.status === "active" ? "进行中" : "已归档"}
+              </span>
+            </div>
           </div>
           <div className="flex flex-wrap gap-1 mt-2 mb-3">
             {(p.focus_areas ?? []).map((a: string) => (
