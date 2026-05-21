@@ -579,19 +579,10 @@ function JournalNoteCard({ n }: { n: ReturnType<typeof useSylva>["notes"][number
 
 function SuggestionCard({
   s,
-  onCopyToDiary,
-  onCopyToNote,
 }: {
   s: Suggestion;
-  onCopyToDiary: () => void;
-  onCopyToNote: () => void;
+  onCopyToDiary?: () => void;
 }) {
-  const [copied, setCopied] = useState<"diary" | "note" | null>(null);
-  const flash = (kind: "diary" | "note", fn: () => void) => {
-    fn();
-    setCopied(kind);
-    setTimeout(() => setCopied(null), 1400);
-  };
   return (
     <div className="group flex items-start gap-3 p-3.5 rounded-xl bg-gradient-to-r from-amber-glow/10 to-transparent border border-amber-glow/20">
       <div className="w-7 h-7 rounded-full bg-amber-glow/20 flex items-center justify-center shrink-0">
