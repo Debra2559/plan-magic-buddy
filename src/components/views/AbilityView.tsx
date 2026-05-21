@@ -759,6 +759,41 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
           </div>
         );
       })}
+
+      <Dialog open={!!previewItems} onOpenChange={(o) => !o && setPreviewItems(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>预览将加入日程的安排</DialogTitle>
+            <DialogDescription>
+              共 {previewItems?.length ?? 0} 条 · 覆盖未来 {previewHorizon} 天。确认后将一次性写入「日程」，你可以再去逐条调整或删除。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
+            {previewItems?.map((it, i) => (
+              <div key={i} className="rounded-md border border-border bg-foreground/5 p-2.5 text-sm flex items-start gap-2">
+                <span className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0 mt-0.5 ${
+                  it.type === "event" ? "bg-amber-glow/20 text-amber-glow" :
+                  it.type === "todo" ? "bg-foreground/15 text-foreground/80" :
+                  "bg-foreground/10 text-muted-foreground"
+                }`}>{it.type}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium text-foreground truncate">{it.title}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {it.date}{it.time ? ` · ${it.time}` : ""}{it.durationMin ? ` · ${it.durationMin}min` : ""}{it.tag ? ` · ${it.tag}` : ""}
+                  </div>
+                  {it.note && <div className="text-xs text-foreground/65 mt-0.5">{it.note}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewItems(null)}>取消</Button>
+            <Button onClick={confirmAdd} className="bg-amber-glow text-primary-foreground hover:bg-amber-glow/90">
+              <CalendarPlus className="w-4 h-4 mr-1.5" />确认加入 {previewItems?.length ?? 0} 条
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
