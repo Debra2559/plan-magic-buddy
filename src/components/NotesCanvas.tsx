@@ -194,7 +194,7 @@ export function NotesCanvas() {
                 {n.tags && n.tags.length > 0 && (
                   <div className="px-3 pb-2 flex flex-wrap gap-1">
                     {n.tags.map((t) => (
-                      <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/8 text-muted-foreground">
+                      <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-glow/15 text-amber-glow">
                         #{t}
                       </span>
                     ))}
