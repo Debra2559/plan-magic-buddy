@@ -1805,7 +1805,7 @@ export async function handleHackathonCardAction(payload: {
         return 0
       }
     }),
-  ).then((arr) => arr.reduce((a, b) => a + b, 0))
+  ).then((arr) => arr.reduce<number>((a, b) => a + b, 0))
 
   const timeoutPromise = new Promise<'timeout'>((resolve) =>
     setTimeout(() => resolve('timeout'), 2200),
