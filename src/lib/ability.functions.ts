@@ -177,6 +177,38 @@ const PlanSchema = z.object({
 });
 type AbilityPlanDraft = z.infer<typeof PlanSchema>;
 
+// 深度研究报告 schema
+const TimelineSlotSchema = z.object({
+  time: z.string().describe("具体时段, 如 06:30 或 06:30-07:00"),
+  activity: z.string().describe("做什么，简洁动作名，不超过 20 字"),
+  rationale: z.string().describe("为什么这个时段做这件事 (引用人体节律/达人共识/科学依据)，不超过 50 字"),
+});
+const PracticeSchema = z.object({
+  title: z.string().describe("最佳实践的标题，不超过 18 字"),
+  detail: z.string().describe("具体怎么做 + 为什么有效，1-2 句"),
+  source_hint: z.string().optional().describe("来源平台或博主, 如「小红书@xxx」"),
+});
+const SourceRefSchema = z.object({
+  platform: z.string().describe("平台名，如 小红书/抖音/知乎/B站/官方/博客"),
+  title: z.string(),
+  url: z.string(),
+  takeaway: z.string().describe("这条资料的核心要点，不超过 60 字"),
+});
+const ResearchReportSchema = z.object({
+  scope: z.string().describe("一句话说明本次研究覆盖的目标与边界"),
+  consensus: z.array(z.string()).min(2).max(6).describe("跨多个来源的共识结论, 每条 ≤ 40 字"),
+  daily_timeline: z.array(TimelineSlotSchema).min(4).max(14).describe("典型一日时间轴 (晨/上/午/下/晚/夜), 按时间升序"),
+  best_practices: z.array(PracticeSchema).min(3).max(8),
+  common_mistakes: z.array(z.string()).min(2).max(6).describe("大家最容易踩的坑, 每条 ≤ 40 字"),
+  beginner_path: z.array(z.string()).min(3).max(7).describe("从 0 起步的推荐路径, 每条 ≤ 30 字"),
+  sources: z.array(SourceRefSchema).min(2).max(10).describe("参考来源, 优先小红书/抖音/知乎/B站等真人分享"),
+});
+const DeepPlanSchema = z.object({
+  report: ResearchReportSchema,
+  plan: PlanSchema,
+});
+type DeepPlanDraft = z.infer<typeof DeepPlanSchema>;
+
 // ---------- Helpers ----------
 function todayStr(d = new Date()): string {
   const cn = new Date(d.getTime() + 8 * 3600_000);
@@ -551,4 +583,192 @@ export const recomputeAbilityFromActivity = createServerFn({ method: "POST" })
     });
 
     return { ok: true, summary: object.delta_summary, abilities: object.abilities, personality: object.personality };
+  });
+
+// ====================================================================
+// 深度研究模式 (Agent): 联网爬小红书/抖音/知乎/B站, 综合出研究报告 + 计划
+// ====================================================================
+
+async function firecrawlSearch(query: string, limit = 5): Promise<Array<{ url: string; title: string; snippet: string }>> {
+  const apiKey = process.env.FIRECRAWL_API_KEY;
+  if (!apiKey) return [];
+  try {
+    const res = await fetch("https://api.firecrawl.dev/v2/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({ query, limit, scrapeOptions: { formats: ["markdown"] } }),
+    });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { data?: { web?: any[] } | any[] };
+    const raw = data?.data;
+    const list = Array.isArray(raw) ? raw : raw?.web ?? [];
+    return list.slice(0, limit).map((r: any) => ({
+      url: String(r?.url ?? ""),
+      title: String(r?.title ?? ""),
+      snippet: String(r?.markdown ?? r?.description ?? "").slice(0, 800),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+const QueriesSchema = z.object({
+  queries: z.array(z.object({
+    platform: z.enum(["小红书", "抖音", "知乎", "B站", "全网"]),
+    query: z.string(),
+  })).min(4).max(8),
+});
+
+async function planResearchQueries(
+  gateway: ReturnType<typeof createLovableAiGatewayProvider>,
+  intent: string,
+  focusHints: string[],
+): Promise<Array<{ platform: string; query: string }>> {
+  const fallback = [
+    { platform: "小红书", query: `site:xiaohongshu.com ${intent} 每日时间表` },
+    { platform: "小红书", query: `site:xiaohongshu.com ${intent} 作息 分享` },
+    { platform: "抖音", query: `site:douyin.com ${intent} 一天` },
+    { platform: "知乎", query: `site:zhihu.com ${intent} 怎么坚持 时间安排` },
+    { platform: "B站", query: `site:bilibili.com ${intent} vlog 一天` },
+    { platform: "全网", query: `${intent} daily routine schedule best practice` },
+  ];
+  try {
+    const { object } = await generateObject({
+      model: gateway("google/gemini-2.5-flash-lite"),
+      schema: QueriesSchema,
+      system: `你是研究规划员。请为下面这个用户目标设计 5-7 条搜索词，覆盖 小红书/抖音/知乎/B站/全网。
+- 小红书/抖音/B站 用真人分享口吻的关键词 ("一天" "vlog" "作息" "时间表" "踩坑")
+- 知乎/全网 用更系统的方法论关键词 ("如何" "经验" "best practice")
+- 每条 query 加 site:domain 前缀对应平台 (xiaohongshu.com / douyin.com / zhihu.com / bilibili.com)`,
+      prompt: `用户目标: ${intent}\n用户的成长方向标签: ${focusHints.join(", ") || "(无)"}`,
+    });
+    return object.queries;
+  } catch {
+    return fallback;
+  }
+}
+
+const ResearchInput = z.object({
+  intent: z.string().min(2).max(500),
+  weeklyHours: z.number().min(1).max(40).optional(),
+  horizonDays: z.number().int().min(7).max(56).optional(),
+});
+
+export const researchAbilityPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => ResearchInput.parse(input))
+  .handler(async ({ context, data }) => {
+    const { userId } = context as any;
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("AI 网关未配置");
+    const fcKey = process.env.FIRECRAWL_API_KEY;
+
+    const { data: profile } = await supabaseAdmin.from("user_ability_profiles").select("*").eq("user_id", userId).maybeSingle();
+    const intent = data.intent.trim();
+    const weeklyHours = data.weeklyHours ?? 6;
+    const horizonDays = data.horizonDays ?? 28;
+
+    const gateway = createLovableAiGatewayProvider(apiKey);
+    const focusHints: string[] = Array.isArray(profile?.growth_areas)
+      ? profile!.growth_areas.map(cleanFocusArea).filter(Boolean)
+      : [];
+
+    // Step 1: 规划搜索词
+    const queries = await planResearchQueries(gateway, intent, focusHints);
+
+    // Step 2: 并行联网搜索
+    let researchCorpus = "";
+    let allSources: Array<{ platform: string; url: string; title: string; snippet: string }> = [];
+    if (fcKey) {
+      const results = await Promise.all(queries.map(async (q) => {
+        const items = await firecrawlSearch(q.query, 4);
+        return items.map((it) => ({ platform: q.platform, ...it }));
+      }));
+      allSources = results.flat().filter((r) => r.url);
+      researchCorpus = allSources
+        .map((s, i) => `[${i + 1}] (${s.platform}) ${s.title}\n${s.url}\n${s.snippet}`)
+        .join("\n\n---\n\n")
+        .slice(0, 18000);
+    }
+
+    // Step 3: 综合出研究报告 + 计划
+    const activity = await gatherActivity(userId, 14);
+    const system = `你是「资深个人成长教练 + 行为设计师 + 调研分析师」三合一。
+任务：基于用户意图、画像、近 14 天行为，以及联网搜索得到的真人分享语料，输出 (1) 一份扎实的研究报告 (2) 一份高度可执行的 ${horizonDays} 天计划。
+
+研究报告 (report) 硬性要求：
+- consensus 必须是跨多个来源都出现的共识，不要堆砌单一来源观点
+- daily_timeline 必须按时间升序，覆盖晨/上午/午/下午/晚/夜，每条要写 rationale (引用人体节律/达人共识/科学原理)
+- best_practices 要带可操作动作 + 来源平台
+- common_mistakes 要写真人最容易踩的坑，不是泛泛而谈
+- sources 至少 3 条来自小红书/抖音/知乎/B站，每条 takeaway 要总结这条资料的独特价值
+
+计划 (plan) 硬性要求：
+- diagnosis 引用具体数字
+- focus_areas 最多 2 个
+- 每个 action 必须有真实可排期的 when 和 durationMin
+- 时间安排必须呼应 daily_timeline (不要计划 22:00 起床这种与共识冲突的事)
+- 总投入 ≈ ${weeklyHours} 小时/周
+- milestones 按周递进
+- 标题不带 emoji`;
+
+    const userCtx = {
+      intent,
+      weekly_hours_budget: weeklyHours,
+      horizon_days: horizonDays,
+      profile: profile ? {
+        abilities: profile.abilities,
+        personality: profile.personality,
+        strengths: profile.strengths,
+        growth_areas: profile.growth_areas,
+      } : null,
+      recent_14d: activity,
+      research_corpus: researchCorpus || "(未获取到联网语料，请基于常识和已知方法论给出)",
+      research_queries: queries,
+    };
+
+    const models = ["google/gemini-2.5-pro", "openai/gpt-5-mini", "google/gemini-2.5-flash"] as const;
+    let deep: DeepPlanDraft | null = null;
+    let lastErr = "";
+    for (const m of models) {
+      try {
+        const { object } = await generateObject({
+          model: gateway(m),
+          schema: DeepPlanSchema,
+          system,
+          prompt: `请输出 JSON (report + plan)。\n\n上下文：\n${JSON.stringify(userCtx, null, 2)}`,
+        });
+        deep = object;
+        break;
+      } catch (e) {
+        lastErr = e instanceof Error ? e.message : String(e);
+      }
+    }
+    if (!deep) throw new Error(`深度研究失败: ${lastErr || "未知错误"}`);
+
+    // Step 4: 持久化, 把 report 一并塞进 content
+    await supabaseAdmin.from("ability_plans").update({ status: "archived" }).eq("user_id", userId).eq("status", "active");
+    const { data: inserted, error } = await supabaseAdmin.from("ability_plans").insert({
+      user_id: userId,
+      title: deep.plan.title,
+      tagline: deep.plan.tagline,
+      focus_areas: deep.plan.focus_areas,
+      content: {
+        diagnosis: deep.plan.diagnosis,
+        weekly_hours: deep.plan.weekly_hours,
+        horizon_days: deep.plan.horizon_days,
+        review_questions: deep.plan.review_questions,
+        items: deep.plan.items,
+        report: deep.report,
+        research_meta: {
+          queries,
+          source_count: allSources.length,
+          generated_at: new Date().toISOString(),
+        },
+      } as any,
+      status: "active",
+    }).select("*").single();
+    if (error) throw new Error(error.message);
+
+    return { ok: true, plan: inserted, report: deep.report, queries, source_count: allSources.length };
   });

@@ -6,12 +6,13 @@ import {
   submitAbilityAssessment,
   generateMyAbilityPlan,
   recomputeAbilityFromActivity,
+  researchAbilityPlan,
 } from "@/lib/ability.functions";
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
 } from "recharts";
 import { Button } from "@/components/ui/button";
-import { Sparkles, RefreshCw, Brain, Target, ClipboardList, CalendarPlus } from "lucide-react";
+import { Sparkles, RefreshCw, Brain, Target, ClipboardList, CalendarPlus, Telescope, ExternalLink, Clock, Lightbulb, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useSylva, todayLocal } from "@/lib/sylva-store";
 import type { PlanItem } from "@/lib/plan.functions";
@@ -391,6 +392,8 @@ function planContent(plan: any): {
   horizon_days?: number;
   review_questions?: string[];
   items: any[];
+  report?: any;
+  research_meta?: any;
 } {
   const c = plan?.content;
   if (Array.isArray(c)) return { items: c, horizon_days: 7 };
@@ -401,6 +404,8 @@ function planContent(plan: any): {
       horizon_days: c.horizon_days ?? 28,
       review_questions: c.review_questions,
       items: c.items,
+      report: c.report,
+      research_meta: c.research_meta,
     };
   }
   return { items: [] };
@@ -508,11 +513,23 @@ function planToScheduleItems(plan: any): PlanItem[] {
 
 function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }) {
   const generate = useServerFn(generateMyAbilityPlan);
+  const research = useServerFn(researchAbilityPlan);
   const { addItemsPending } = useSylva();
   const qc = useQueryClient();
   const [intent, setIntent] = useState("");
   const [weeklyHours, setWeeklyHours] = useState(6);
   const [horizonDays, setHorizonDays] = useState(28);
+
+  // 阶段提示动画
+  const RESEARCH_PHASES = [
+    "正在拆解你的目标 → 设计搜索词…",
+    "搜小红书：达人们的真实作息…",
+    "搜抖音：一日 vlog 与时间表…",
+    "搜知乎 / B 站：方法论与避坑指南…",
+    "综合分析：提取共识与典型时间轴…",
+    "对齐你的画像 + 行为数据，生成专属计划…",
+  ];
+  const [phaseIdx, setPhaseIdx] = useState(0);
 
   const mut = useMutation({
     mutationFn: () => generate({ data: { intent: intent.trim() || undefined, weeklyHours, horizonDays } }),
@@ -523,6 +540,22 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
     },
     onError: (e: any) => toast.error(e?.message ?? "生成失败"),
   });
+
+  const deepMut = useMutation({
+    mutationFn: () => research({ data: { intent: intent.trim(), weeklyHours, horizonDays } }),
+    onSuccess: (r: any) => {
+      toast.success(`深度研究完成 · 综合了 ${r?.source_count ?? 0} 个来源`);
+      qc.invalidateQueries({ queryKey: ["ability-profile"] });
+      onRefresh();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "深度研究失败"),
+  });
+
+  useEffect(() => {
+    if (!deepMut.isPending) { setPhaseIdx(0); return; }
+    const t = setInterval(() => setPhaseIdx((i) => Math.min(i + 1, RESEARCH_PHASES.length - 1)), 2400);
+    return () => clearInterval(t);
+  }, [deepMut.isPending]);
 
   const addToSchedule = (p: any) => {
     const items = planToScheduleItems(p);
@@ -535,6 +568,8 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
       description: "前往「日程」查看并确认",
     });
   };
+
+  const busy = mut.isPending || deepMut.isPending;
 
   return (
     <div className="space-y-4">
@@ -570,13 +605,40 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
               {[14, 21, 28, 42].map((d) => <option key={d} value={d}>{d} 天</option>)}
             </select>
           </label>
-          <div className="ml-auto">
-            <Button onClick={() => mut.mutate()} disabled={mut.isPending} className="bg-amber-glow text-primary-foreground hover:bg-amber-glow/90">
-              <Sparkles className={`w-4 h-4 mr-2 ${mut.isPending ? "animate-pulse" : ""}`} /> {mut.isPending ? "深度规划中…" : "生成深度计划"}
+          <div className="ml-auto flex items-center gap-2">
+            <Button
+              onClick={() => mut.mutate()}
+              disabled={busy}
+              variant="outline"
+              className="border-border bg-foreground/5 hover:bg-foreground/10"
+            >
+              <Sparkles className={`w-4 h-4 mr-2 ${mut.isPending ? "animate-pulse" : ""}`} /> {mut.isPending ? "规划中…" : "快速生成"}
+            </Button>
+            <Button
+              onClick={() => {
+                if (!intent.trim()) { toast.error("深度研究需要你先描述目标"); return; }
+                deepMut.mutate();
+              }}
+              disabled={busy}
+              className="bg-amber-glow text-primary-foreground hover:bg-amber-glow/90"
+              title="联网调研小红书 / 抖音 / 知乎 / B站，综合出研究报告 + 计划"
+            >
+              <Telescope className={`w-4 h-4 mr-2 ${deepMut.isPending ? "animate-pulse" : ""}`} />
+              {deepMut.isPending ? "深度研究中…" : "深度研究 + 计划"}
             </Button>
           </div>
         </div>
+        {deepMut.isPending && (
+          <div className="rounded-lg border border-amber-glow/30 bg-amber-glow/5 p-3 flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-amber-glow animate-pulse shrink-0" />
+            <div className="text-xs text-foreground/80 leading-relaxed">
+              <div className="font-medium text-amber-glow mb-0.5">Agent 工作中</div>
+              <div>{RESEARCH_PHASES[phaseIdx]}</div>
+            </div>
+          </div>
+        )}
       </div>
+
 
       {plans.length === 0 && (
         <div className="rounded-xl border border-border bg-foreground/5 p-8 text-center text-muted-foreground text-sm">还没有计划，告诉我你想聚焦什么，然后生成第一份。</div>
@@ -621,6 +683,9 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
                 <div className="text-sm text-foreground/85 leading-relaxed">{c.diagnosis}</div>
               </div>
             )}
+
+            {c.report && <ResearchReportCard report={c.report} meta={c.research_meta} />}
+
 
             <div className="space-y-3">
               {c.items.map((item: any, idx: number) => (
@@ -682,6 +747,107 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function ResearchReportCard({ report, meta }: { report: any; meta?: any }) {
+  const [open, setOpen] = useState(true);
+  const sources: any[] = Array.isArray(report?.sources) ? report.sources : [];
+  const timeline: any[] = Array.isArray(report?.daily_timeline) ? report.daily_timeline : [];
+  const consensus: string[] = Array.isArray(report?.consensus) ? report.consensus : [];
+  const best: any[] = Array.isArray(report?.best_practices) ? report.best_practices : [];
+  const mistakes: string[] = Array.isArray(report?.common_mistakes) ? report.common_mistakes : [];
+  const beginner: string[] = Array.isArray(report?.beginner_path) ? report.beginner_path : [];
+
+  return (
+    <div className="rounded-lg border border-amber-glow/30 bg-gradient-to-br from-amber-glow/10 to-background/40 p-3 mb-3">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between gap-2 text-left">
+        <div className="flex items-center gap-2">
+          <Telescope className="w-4 h-4 text-amber-glow" />
+          <span className="text-sm font-medium text-amber-glow">深度研究报告</span>
+          {meta?.source_count != null && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-glow/15 text-amber-glow/80">综合 {meta.source_count} 源</span>
+          )}
+        </div>
+        <span className="text-[11px] text-muted-foreground">{open ? "收起" : "展开"}</span>
+      </button>
+      {open && (
+        <div className="mt-3 space-y-3">
+          {report.scope && <div className="text-xs text-foreground/75 italic">{report.scope}</div>}
+          {consensus.length > 0 && (
+            <div>
+              <div className="text-[11px] uppercase tracking-wide text-amber-glow/80 mb-1 flex items-center gap-1"><Lightbulb className="w-3 h-3" /> 跨源共识</div>
+              <ul className="grid sm:grid-cols-2 gap-x-3 gap-y-1">
+                {consensus.map((c, i) => <li key={i} className="text-xs text-foreground/80">· {c}</li>)}
+              </ul>
+            </div>
+          )}
+          {timeline.length > 0 && (
+            <div>
+              <div className="text-[11px] uppercase tracking-wide text-amber-glow/80 mb-1.5 flex items-center gap-1"><Clock className="w-3 h-3" /> 一日典型时间轴</div>
+              <div className="space-y-1">
+                {timeline.map((t, i) => (
+                  <div key={i} className="grid grid-cols-[64px_1fr] gap-2 text-xs">
+                    <div className="text-amber-glow/90 font-mono">{t.time}</div>
+                    <div>
+                      <span className="text-foreground/90">{t.activity}</span>
+                      {t.rationale && <span className="text-foreground/55"> — {t.rationale}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {best.length > 0 && (
+            <div>
+              <div className="text-[11px] uppercase tracking-wide text-amber-glow/80 mb-1">最佳实践</div>
+              <ul className="space-y-1">
+                {best.map((b, i) => (
+                  <li key={i} className="text-xs text-foreground/80">
+                    <span className="text-foreground/95 font-medium">{b.title}</span>
+                    {b.detail && <span className="text-foreground/65"> · {b.detail}</span>}
+                    {b.source_hint && <span className="text-amber-glow/70"> · {b.source_hint}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {beginner.length > 0 && (
+            <div>
+              <div className="text-[11px] uppercase tracking-wide text-amber-glow/80 mb-1">0 起步路径</div>
+              <ol className="space-y-0.5 list-decimal list-inside">
+                {beginner.map((s, i) => <li key={i} className="text-xs text-foreground/80">{s}</li>)}
+              </ol>
+            </div>
+          )}
+          {mistakes.length > 0 && (
+            <div>
+              <div className="text-[11px] uppercase tracking-wide text-amber-glow/80 mb-1 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> 常见踩坑</div>
+              <ul className="space-y-0.5">
+                {mistakes.map((m, i) => <li key={i} className="text-xs text-foreground/75">⚠ {m}</li>)}
+              </ul>
+            </div>
+          )}
+          {sources.length > 0 && (
+            <div>
+              <div className="text-[11px] uppercase tracking-wide text-amber-glow/80 mb-1">参考来源</div>
+              <ul className="space-y-1">
+                {sources.map((s, i) => (
+                  <li key={i} className="text-xs">
+                    <a href={s.url} target="_blank" rel="noreferrer" className="text-foreground/85 hover:text-amber-glow inline-flex items-start gap-1 group">
+                      <span className="text-amber-glow/70 shrink-0">[{s.platform}]</span>
+                      <span className="underline decoration-dotted decoration-foreground/30 group-hover:decoration-amber-glow">{s.title}</span>
+                      <ExternalLink className="w-3 h-3 mt-0.5 text-muted-foreground/60 group-hover:text-amber-glow shrink-0" />
+                    </a>
+                    {s.takeaway && <div className="text-foreground/55 pl-4">{s.takeaway}</div>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
