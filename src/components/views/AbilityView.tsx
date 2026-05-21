@@ -513,11 +513,23 @@ function planToScheduleItems(plan: any): PlanItem[] {
 
 function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }) {
   const generate = useServerFn(generateMyAbilityPlan);
+  const research = useServerFn(researchAbilityPlan);
   const { addItemsPending } = useSylva();
   const qc = useQueryClient();
   const [intent, setIntent] = useState("");
   const [weeklyHours, setWeeklyHours] = useState(6);
   const [horizonDays, setHorizonDays] = useState(28);
+
+  // 阶段提示动画
+  const RESEARCH_PHASES = [
+    "正在拆解你的目标 → 设计搜索词…",
+    "搜小红书：达人们的真实作息…",
+    "搜抖音：一日 vlog 与时间表…",
+    "搜知乎 / B 站：方法论与避坑指南…",
+    "综合分析：提取共识与典型时间轴…",
+    "对齐你的画像 + 行为数据，生成专属计划…",
+  ];
+  const [phaseIdx, setPhaseIdx] = useState(0);
 
   const mut = useMutation({
     mutationFn: () => generate({ data: { intent: intent.trim() || undefined, weeklyHours, horizonDays } }),
@@ -528,6 +540,22 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
     },
     onError: (e: any) => toast.error(e?.message ?? "生成失败"),
   });
+
+  const deepMut = useMutation({
+    mutationFn: () => research({ data: { intent: intent.trim(), weeklyHours, horizonDays } }),
+    onSuccess: (r: any) => {
+      toast.success(`深度研究完成 · 综合了 ${r?.source_count ?? 0} 个来源`);
+      qc.invalidateQueries({ queryKey: ["ability-profile"] });
+      onRefresh();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "深度研究失败"),
+  });
+
+  useEffect(() => {
+    if (!deepMut.isPending) { setPhaseIdx(0); return; }
+    const t = setInterval(() => setPhaseIdx((i) => Math.min(i + 1, RESEARCH_PHASES.length - 1)), 2400);
+    return () => clearInterval(t);
+  }, [deepMut.isPending]);
 
   const addToSchedule = (p: any) => {
     const items = planToScheduleItems(p);
@@ -540,6 +568,8 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
       description: "前往「日程」查看并确认",
     });
   };
+
+  const busy = mut.isPending || deepMut.isPending;
 
   return (
     <div className="space-y-4">
@@ -575,13 +605,40 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
               {[14, 21, 28, 42].map((d) => <option key={d} value={d}>{d} 天</option>)}
             </select>
           </label>
-          <div className="ml-auto">
-            <Button onClick={() => mut.mutate()} disabled={mut.isPending} className="bg-amber-glow text-primary-foreground hover:bg-amber-glow/90">
-              <Sparkles className={`w-4 h-4 mr-2 ${mut.isPending ? "animate-pulse" : ""}`} /> {mut.isPending ? "深度规划中…" : "生成深度计划"}
+          <div className="ml-auto flex items-center gap-2">
+            <Button
+              onClick={() => mut.mutate()}
+              disabled={busy}
+              variant="outline"
+              className="border-border bg-foreground/5 hover:bg-foreground/10"
+            >
+              <Sparkles className={`w-4 h-4 mr-2 ${mut.isPending ? "animate-pulse" : ""}`} /> {mut.isPending ? "规划中…" : "快速生成"}
+            </Button>
+            <Button
+              onClick={() => {
+                if (!intent.trim()) { toast.error("深度研究需要你先描述目标"); return; }
+                deepMut.mutate();
+              }}
+              disabled={busy}
+              className="bg-amber-glow text-primary-foreground hover:bg-amber-glow/90"
+              title="联网调研小红书 / 抖音 / 知乎 / B站，综合出研究报告 + 计划"
+            >
+              <Telescope className={`w-4 h-4 mr-2 ${deepMut.isPending ? "animate-pulse" : ""}`} />
+              {deepMut.isPending ? "深度研究中…" : "深度研究 + 计划"}
             </Button>
           </div>
         </div>
+        {deepMut.isPending && (
+          <div className="rounded-lg border border-amber-glow/30 bg-amber-glow/5 p-3 flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-amber-glow animate-pulse shrink-0" />
+            <div className="text-xs text-foreground/80 leading-relaxed">
+              <div className="font-medium text-amber-glow mb-0.5">Agent 工作中</div>
+              <div>{RESEARCH_PHASES[phaseIdx]}</div>
+            </div>
+          </div>
+        )}
       </div>
+
 
       {plans.length === 0 && (
         <div className="rounded-xl border border-border bg-foreground/5 p-8 text-center text-muted-foreground text-sm">还没有计划，告诉我你想聚焦什么，然后生成第一份。</div>
