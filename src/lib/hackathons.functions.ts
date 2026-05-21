@@ -375,21 +375,29 @@ export const updateHackathonSettings = createServerFn({ method: "POST" })
 
 export const scanHackathonsNow = createServerFn({ method: "GET" }).handler(async () => {
   const settings = await loadSettings();
-  const sources = settings.sources.filter((s) => s.enabled).slice(0, 5);
+  // 之前为了控制成本只跑前 5 个, 现在国内国外都要覆盖, 放宽到 14 个 (一次扫描预算可控)
+  const sources = settings.sources.filter((s) => s.enabled).slice(0, 14);
   const allFound: Array<{ source: string; item: z.infer<typeof ExtractedSchema>["hackathons"][number] }> = [];
-  const debug: Array<{ source: string; query: string; snippets: number; extracted: number; error?: string }> = [];
+  const debug: Array<{ source: string; query: string; snippets: number; extracted: number; deepScraped?: number; error?: string }> = [];
 
-  for (const src of sources) {
-    const snippets = await firecrawlSearch(src.query, 6);
+  // 并发跑搜索, 单源失败不影响别的源
+  const perSource = await Promise.all(
+    sources.map(async (src) => {
+      const snippets = await firecrawlSearch(src.query, 10, "month");
+      return { src, snippets };
+    }),
+  );
+
+  let deepScrapeBudget = 8; // 整次扫描最多 8 次深度抓取, 避免烧 Firecrawl 额度
+
+  for (const { src, snippets } of perSource) {
     if (snippets.length === 0) {
       debug.push({ source: src.name, query: src.query, snippets: 0, extracted: 0, error: "firecrawl 0 结果" });
       continue;
     }
-    // 总是优先用 AI 提取(能从 markdown 里抠出真实的报名截止/比赛开始/比赛结束时间)
-    // AI 失败/超时, 才退回只有标题/链接的关键词兜底
     const aiResult = await withTimeout(
       extractWithAI(src.name, snippets),
-      20_000,
+      22_000,
       { data: { hackathons: [] }, error: "AI 提取超时" },
     );
     let ex = aiResult.data;
@@ -401,7 +409,35 @@ export const scanHackathonsNow = createServerFn({ method: "GET" }).handler(async
         error = error ?? "AI 0 条, 用关键词兜底";
       }
     }
-    debug.push({ source: src.name, query: src.query, snippets: snippets.length, extracted: ex.hackathons.length, error });
+
+    // 深度抓取兜底: 对那些 AI 没提取到任何日期的候选, 直接 scrape 详情页再让 AI 看一遍
+    let deepScraped = 0;
+    const needsDeep = ex.hackathons.filter(
+      (h) => h.url?.startsWith("http") && !h.deadline && !h.starts_at && !h.ends_at,
+    );
+    for (const h of needsDeep) {
+      if (deepScrapeBudget <= 0) break;
+      deepScrapeBudget -= 1;
+      deepScraped += 1;
+      const page = await firecrawlScrape(h.url);
+      if (!page?.markdown) continue;
+      const reExtract = await withTimeout(
+        extractWithAI(src.name, [page]),
+        15_000,
+        { data: { hackathons: [] }, error: "深度提取超时" },
+      );
+      const better = reExtract.data.hackathons.find((x) => x.url === h.url) ?? reExtract.data.hackathons[0];
+      if (better) {
+        h.deadline = h.deadline ?? better.deadline;
+        h.starts_at = h.starts_at ?? better.starts_at;
+        h.ends_at = h.ends_at ?? better.ends_at;
+        h.location = h.location ?? better.location;
+        h.prize = h.prize ?? better.prize;
+        if (!h.summary || h.summary.length < 10) h.summary = better.summary;
+      }
+    }
+
+    debug.push({ source: src.name, query: src.query, snippets: snippets.length, extracted: ex.hackathons.length, deepScraped, error });
     for (const h of ex.hackathons) {
       if (!h.url?.startsWith("http")) continue;
       const normalized = normalizeHackathonDates(h);
