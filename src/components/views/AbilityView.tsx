@@ -87,6 +87,114 @@ function TabBtn({ active, onClick, icon, children }: { active: boolean; onClick:
   );
 }
 
+function AbilityLoading() {
+  const tips = [
+    "正在唤醒你的能力雷达…",
+    "AI 正在翻阅你的最近行为…",
+    "正在为你的画像配色…",
+    "把答辩、英语、健身揉进维度里…",
+  ];
+  const [tip, setTip] = useState(tips[0]);
+  useEffect(() => {
+    let i = 0;
+    const t = setInterval(() => { i = (i + 1) % tips.length; setTip(tips[i]); }, 1800);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="h-full overflow-hidden bg-background text-foreground">
+      <div className="max-w-5xl mx-auto p-6 space-y-6">
+        {/* 头部骨架 */}
+        <header>
+          <h1 className="font-display text-3xl flex items-center gap-2">
+            <Brain className="w-7 h-7 text-amber-glow animate-pulse" /> 个人能力
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">{tip}</p>
+        </header>
+
+        {/* 中央可视化 */}
+        <div className="relative widget widget-glow p-8 flex flex-col items-center justify-center min-h-[340px] overflow-hidden">
+          {/* 旋转的轨道 */}
+          <div className="relative w-44 h-44">
+            <div className="absolute inset-0 rounded-full border border-amber-glow/20" />
+            <div className="absolute inset-3 rounded-full border border-amber-glow/15" />
+            <div className="absolute inset-6 rounded-full border border-amber-glow/10" />
+            {/* 旋转光环 */}
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: "conic-gradient(from 0deg, transparent 0%, oklch(0.66 0.14 55 / 0.55) 25%, transparent 55%)",
+                maskImage: "radial-gradient(circle, transparent 60%, black 62%, black 100%)",
+                WebkitMaskImage: "radial-gradient(circle, transparent 60%, black 62%, black 100%)",
+                animation: "spin 2.6s linear infinite",
+              }}
+            />
+            {/* 轨道上的粒子 */}
+            {[0, 1, 2, 3, 4].map((i) => (
+              <span
+                key={i}
+                className="absolute top-1/2 left-1/2 w-1.5 h-1.5 -ml-0.5 -mt-0.5 rounded-full bg-amber-glow"
+                style={{
+                  transformOrigin: "0 0",
+                  animation: `ability-orbit 3.4s linear infinite`,
+                  animationDelay: `${-i * 0.68}s`,
+                  boxShadow: "0 0 8px oklch(0.66 0.14 55 / 0.8)",
+                }}
+              />
+            ))}
+            {/* 中心 brain */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-glow/25 to-moss/20 flex items-center justify-center backdrop-blur-sm border border-amber-glow/30">
+                <Brain className="w-7 h-7 text-amber-glow animate-pulse" />
+              </div>
+            </div>
+          </div>
+
+          {/* 进度条 */}
+          <div className="mt-8 w-56 h-1 rounded-full bg-foreground/10 overflow-hidden">
+            <div
+              className="h-full w-1/3 rounded-full bg-gradient-to-r from-amber-glow via-orange-400 to-moss"
+              style={{ animation: "ability-progress 1.6s ease-in-out infinite" }}
+            />
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground tracking-wider">{tip}</p>
+        </div>
+
+        {/* 下方维度骨架 */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="widget p-3 space-y-2"
+              style={{ animation: "ability-pulse 1.6s ease-in-out infinite", animationDelay: `${i * 0.12}s` }}
+            >
+              <div className="h-3 w-1/2 rounded-full bg-foreground/10" />
+              <div className="h-2 w-full rounded-full bg-foreground/5 overflow-hidden">
+                <div className="h-full w-1/3 bg-amber-glow/40 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes ability-orbit {
+          from { transform: rotate(0deg) translateX(86px) rotate(0deg); }
+          to   { transform: rotate(360deg) translateX(86px) rotate(-360deg); }
+        }
+        @keyframes ability-progress {
+          0%   { transform: translateX(-110%); width: 30%; }
+          50%  { width: 55%; }
+          100% { transform: translateX(220%); width: 30%; }
+        }
+        @keyframes ability-pulse {
+          0%, 100% { opacity: 0.55; }
+          50%      { opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 function EmptyState({ onStart }: { onStart: () => void }) {
   return (
     <div className="rounded-xl border border-border bg-foreground/5 p-10 text-center">
