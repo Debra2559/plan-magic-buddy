@@ -4,6 +4,7 @@ import { generateObject } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createLovableAiGatewayProvider } from "./ai-gateway";
+import { fetchMemoryBlockForUser } from "./memories.functions";
 
 // ---------- Static questionnaire ----------
 // 30 题李克特量表（1=非常不符合, 5=非常符合）。每个能力维度 3 题（含 1 题反向计分 _inv）；
@@ -144,17 +145,35 @@ function computeScores(responses: Record<string, number>) {
   return { abilities, personalityScores };
 }
 
+const PlanActionSchema = z.object({
+  title: z.string().describe("简洁动作名，不超过 20 字"),
+  when: z.string().describe("具体时段，如 '周一/三/五 07:00' 或 '每天 22:30' 或 '工作日午休 12:30'"),
+  durationMin: z.number().int().min(5).max(180).describe("单次执行时长（分钟）"),
+  note: z.string().optional().describe("执行要点或起步技巧，一句话"),
+});
+const PlanMilestoneSchema = z.object({
+  week: z.number().int().min(1).max(8).describe("第几周（1=本周）"),
+  target: z.string().describe("该周末应达到的可衡量结果"),
+});
 const PlanItemSchema = z.object({
-  area: z.string(),
-  goal: z.string(),
-  actions: z.array(z.string()).min(2).max(6),
-  cadence: z.string().describe("如：每周3次 / 每天15分钟"),
+  area: z.string().describe("聚焦领域中文名，如：计划力/专注力/健康力"),
+  why: z.string().describe("基于用户数据的简短诊断，引用具体数字或行为，不超过 60 字"),
+  goal: z.string().describe("horizon 结束时的具体可衡量目标，避免空泛"),
+  kpi: z.string().describe("如何判断目标达成的量化指标，例如：连续 14 天 22:30 前关屏"),
+  actions: z.array(PlanActionSchema).min(2).max(5),
+  milestones: z.array(PlanMilestoneSchema).min(1).max(4),
+  pitfalls: z.array(z.string()).min(1).max(3).describe("用户最可能踩的坑及对策，每条不超过 30 字"),
+  cadence: z.string().describe("一句话节奏，向后兼容用，如：每周3次/每天15分钟"),
 });
 const PlanSchema = z.object({
   title: z.string(),
-  tagline: z.string(),
-  focus_areas: z.array(z.string()).min(1).max(4),
-  items: z.array(PlanItemSchema).min(2).max(6),
+  tagline: z.string().describe("一句教练口吻的主张，不超过 30 字"),
+  diagnosis: z.string().describe("结合画像 + 行为数据 + 用户意图的整体诊断，2-4 句，先说事实再给方向"),
+  focus_areas: z.array(z.string()).min(1).max(3),
+  weekly_hours: z.number().min(1).max(40).describe("整份计划每周总投入小时数"),
+  horizon_days: z.number().int().min(7).max(56),
+  items: z.array(PlanItemSchema).min(1).max(3),
+  review_questions: z.array(z.string()).min(2).max(5).describe("每周复盘要问自己的问题"),
 });
 type AbilityPlanDraft = z.infer<typeof PlanSchema>;
 
@@ -203,7 +222,13 @@ function cleanFocusArea(text: unknown) {
     .trim();
 }
 
-function buildFallbackAbilityPlan(profile: any, activity: any): AbilityPlanDraft {
+function buildFallbackAbilityPlan(
+  profile: any,
+  activity: any,
+  intent: string,
+  weeklyHours: number,
+  horizonDays: number,
+): AbilityPlanDraft {
   const abilities = (profile?.abilities ?? {}) as Record<string, number>;
   const lowScoreAreas = Object.entries(abilities)
     .sort((a, b) => a[1] - b[1])
@@ -211,7 +236,7 @@ function buildFallbackAbilityPlan(profile: any, activity: any): AbilityPlanDraft
   const profileGrowthAreas = Array.isArray(profile?.growth_areas)
     ? profile.growth_areas.map(cleanFocusArea).filter(Boolean)
     : [];
-  const focus_areas = Array.from(new Set([...profileGrowthAreas, ...lowScoreAreas])).slice(0, 3);
+  const focus_areas = Array.from(new Set([...profileGrowthAreas, ...lowScoreAreas])).slice(0, 2);
   const areas = focus_areas.length > 0 ? focus_areas : ["计划力", "专注力"];
   const completion = typeof activity?.completion_rate === "number" ? activity.completion_rate : null;
   const tagline = completion === null
@@ -220,36 +245,93 @@ function buildFallbackAbilityPlan(profile: any, activity: any): AbilityPlanDraft
       ? "保持当前完成节奏，把优势沉淀成可复用习惯。"
       : "用更小的动作降低启动成本，先让计划跑起来。";
 
-  const actionMap: Record<string, string[]> = {
-    计划力: ["每天开始前写下 3 件最重要的事", "把超过 30 分钟的任务拆成下一步动作", "每晚用 5 分钟复盘明天第一件事"],
-    专注力: ["每天安排 1 段 25 分钟免打扰专注块", "开始前关闭无关通知和页面", "把临时想法先记到收集箱，结束后再处理"],
-    健康力: ["每天固定一个 10 分钟活动窗口", "睡前 30 分钟减少屏幕和刺激信息", "久坐 60 分钟后起身走动 3 分钟"],
-    创造力: ["每周记录 3 个新点子或新工具", "把一个旧任务尝试换一种做法", "每周做一次 20 分钟跨领域素材收集"],
-    社交力: ["每周主动联系 1 位朋友或同事", "重要沟通前先写下想表达的 3 个点", "对收到的帮助及时反馈和感谢"],
-    反思力: ["每天记录一个有效动作和一个卡点", "每周复盘一次高耗能事件的原因", "把失败经验改写成下一次的具体规则"],
+  const presets: Record<string, { actions: { title: string; when: string; durationMin: number; note?: string }[]; kpi: string; pitfalls: string[] }> = {
+    计划力: {
+      actions: [
+        { title: "每天 3 件最重要的事", when: "每天 08:30", durationMin: 10, note: "写在固定位置，序号 1/2/3" },
+        { title: "晚间 5 分钟次日规划", when: "每天 22:00", durationMin: 5 },
+        { title: "周日周计划", when: "周日 20:00", durationMin: 25 },
+      ],
+      kpi: "连续 14 天每天产出 3 件 MIT 并完成 ≥ 2 件",
+      pitfalls: ["计划过多 → 单日上限 3 件", "只列不做 → 每条标注下一步动作"],
+    },
+    专注力: {
+      actions: [
+        { title: "深度专注块 25 分钟", when: "工作日 10:00", durationMin: 25, note: "手机离开桌面" },
+        { title: "深度专注块 25 分钟", when: "工作日 15:00", durationMin: 25 },
+        { title: "干扰记录复盘", when: "每天 21:30", durationMin: 5 },
+      ],
+      kpi: "工作日每天完成 ≥ 2 个 25 分钟专注块",
+      pitfalls: ["边做边刷消息 → 番茄期间消息免打扰", "起步太长 → 先从 1 个 25min 起"],
+    },
+    健康力: {
+      actions: [
+        { title: "晨间拉伸", when: "每天 07:30", durationMin: 10 },
+        { title: "午后散步", when: "每天 12:30", durationMin: 15 },
+        { title: "22:30 关屏", when: "每天 22:30", durationMin: 5, note: "手机放卧室外" },
+      ],
+      kpi: "每周 ≥ 5 天 22:30 前关屏 + 每天 ≥ 6000 步",
+      pitfalls: ["周末节奏崩 → 周末保留最小动作", "晚上加练 → 移到早晨"],
+    },
+    创造力: {
+      actions: [
+        { title: "灵感卡片 3 张", when: "每天 21:00", durationMin: 15 },
+        { title: "跨领域素材收集", when: "周三 20:00", durationMin: 30 },
+      ],
+      kpi: "每周产出 ≥ 15 张灵感卡 + 1 篇跨界笔记",
+      pitfalls: ["输入过载不输出 → 每天必输出 1 句话"],
+    },
+    社交力: {
+      actions: [
+        { title: "主动联系 1 位老朋友", when: "周二 20:30", durationMin: 15 },
+        { title: "沟通前写下 3 个要点", when: "每天 09:00", durationMin: 5 },
+      ],
+      kpi: "每周主动发起 ≥ 2 次有效对话",
+      pitfalls: ["想太多不发 → 限时 3 分钟必发出"],
+    },
+    反思力: {
+      actions: [
+        { title: "睡前 3 行日记", when: "每天 22:45", durationMin: 5, note: "做了什么 / 卡在哪 / 明天第一步" },
+        { title: "周复盘", when: "周日 21:00", durationMin: 20 },
+      ],
+      kpi: "每周完成 7 次日记 + 1 次复盘",
+      pitfalls: ["写太长断更 → 每条 ≤ 1 句"],
+    },
   };
 
-  const items = areas.map((area) => ({
-    area,
-    goal: `在未来 7 天稳定提升${area}，先形成可持续的小循环。`,
-    actions: actionMap[area] ?? ["每天选择一个最小动作完成", "完成后记录一句反馈", "周末根据实际情况调整难度"],
-    cadence: area === "健康力" ? "每天10分钟" : "每周3-5次，每次15-25分钟",
-  }));
-
-  while (items.length < 2) {
-    items.push({
-      area: "稳定执行",
-      goal: "降低计划启动成本，让成长计划持续发生。",
-      actions: ["每天只承诺一个最小可完成动作", "完成后立即打勾或记录一句反馈", "连续两天中断时主动降级任务难度"],
-      cadence: "每天5分钟",
-    });
-  }
+  const items = areas.slice(0, 2).map((area) => {
+    const p = presets[area] ?? presets["计划力"];
+    return {
+      area,
+      why: `当前${area}评分 ${abilities[Object.entries(DIM_LABELS).find(([, v]) => v === area)?.[0] ?? ""] ?? "—"}，近期完成率 ${completion ?? "暂无"}%`,
+      goal: `${horizonDays} 天后在${area}上建立稳定的小循环，达成 KPI`,
+      kpi: p.kpi,
+      actions: p.actions.slice(0, 3),
+      milestones: [
+        { week: 1, target: `跑通最小动作，完成率 ≥ 50%` },
+        { week: 2, target: `完成率 ≥ 70%，并完成 1 次复盘` },
+        { week: Math.max(3, Math.ceil(horizonDays / 7)), target: p.kpi },
+      ],
+      pitfalls: p.pitfalls,
+      cadence: area === "健康力" ? "每天 10-15 分钟" : "每周 3-5 次，每次 15-25 分钟",
+    };
+  });
 
   return {
     title: `${todayStr()} 成长计划`,
     tagline,
-    focus_areas: areas.slice(0, 4),
-    items: items.slice(0, 6),
+    diagnosis: intent
+      ? `你想：${intent}。结合画像短板（${areas.join("、")}）与近 14 天完成率 ${completion ?? "—"}%，先用 ${weeklyHours} 小时/周的轻量负荷起步。`
+      : `结合画像短板（${areas.join("、")}）与近 14 天完成率 ${completion ?? "—"}%，本轮以稳定执行为先，先求"在做"再求"做好"。`,
+    focus_areas: areas,
+    weekly_hours: weeklyHours,
+    horizon_days: horizonDays,
+    items,
+    review_questions: [
+      "本周哪个动作让我感觉最值得？",
+      "卡点出现在执行链路的哪一步？",
+      "下周需要把哪一条降级或升级？",
+    ],
   };
 }
 
@@ -335,33 +417,79 @@ export const submitAbilityAssessment = createServerFn({ method: "POST" })
     return { ok: true, result };
   });
 
+const GeneratePlanInput = z.object({
+  intent: z.string().max(500).optional().describe("用户本轮想要聚焦的目标或处境"),
+  weeklyHours: z.number().min(1).max(40).optional(),
+  horizonDays: z.number().int().min(7).max(56).optional(),
+}).default({});
+
 export const generateMyAbilityPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input: unknown) => GeneratePlanInput.parse(input ?? {}))
+  .handler(async ({ context, data }) => {
     const { userId } = context as any;
     const { data: profile } = await supabaseAdmin.from("user_ability_profiles").select("*").eq("user_id", userId).maybeSingle();
     if (!profile) throw new Error("请先完成能力测评");
 
+    const intent = (data.intent ?? "").trim();
+    const weeklyHours = data.weeklyHours ?? 6;
+    const horizonDays = data.horizonDays ?? 28;
+
     const activity = await gatherActivity(userId, 14);
-    let planDraft = buildFallbackAbilityPlan(profile, activity);
+    const memoryBlock = await fetchMemoryBlockForUser(userId).catch(() => "");
+
+    let planDraft = buildFallbackAbilityPlan(profile, activity, intent, weeklyHours, horizonDays);
     const apiKey = process.env.LOVABLE_API_KEY;
 
     if (apiKey) {
-      try {
-        const gateway = createLovableAiGatewayProvider(apiKey);
-        const { object } = await generateObject({
-          model: gateway("google/gemini-2.5-flash"),
-          schema: PlanSchema,
-          system: `你是一位个人成长教练。基于用户的能力画像与最近 14 天的真实行为数据，制定一份「可执行、具体、轻量」的成长计划。聚焦 1-3 个成长领域；每个领域给 2-5 条具体动作；动作要符合用户当前能力水平（不要太激进）；明确节奏（每天/每周几次）。必须严格按 schema 输出。`,
-          prompt: `用户画像：\n${JSON.stringify({ abilities: profile.abilities, personality: profile.personality, strengths: profile.strengths, growth_areas: profile.growth_areas, tagline: profile.tagline }, null, 0)}\n\n最近 14 天行为数据：\n${JSON.stringify(activity, null, 0)}`,
-        });
-        planDraft = object;
-      } catch (error) {
-        console.error("Ability plan AI generation failed, using fallback", error);
+      const gateway = createLovableAiGatewayProvider(apiKey);
+      const system = `你是一位资深个人成长教练 + 行为设计师。
+任务：基于「用户画像 + 近 14 天真实行为 + 长期记忆 + 本轮意图」，输出一份高度个性化、可执行、可衡量的 ${horizonDays} 天成长计划，每周投入约 ${weeklyHours} 小时。
+
+硬性要求：
+1. **diagnosis** 必须引用具体数字或行为（如完成率、习惯打卡天数、最近情绪、画像分数），先描述事实再给方向，禁止空话。
+2. **focus_areas 最多 2 个**（少而精胜过铺开）；针对用户当前能力水平，不要太激进。
+3. 每个 area 的 **why** 必须解释"为什么选这个领域"——引用画像分数/行为数据/用户意图至少一项。
+4. 每个 area 的 **goal** 必须是 ${horizonDays} 天后的具体结果，**kpi** 必须可量化（带数字 + 时间窗口）。
+5. **actions** 每条都必须有真实可排期的 when（如"周一/三/五 07:00"或"工作日 22:30"），避免"有空就做"。
+6. **milestones** 按周递进，第 1 周低门槛先跑通，最后一周对齐 KPI。
+7. **pitfalls** 必须针对该用户可能的失败模式（结合行为数据/人格分数），并给出对策。
+8. **总投入** ≈ weeklyHours，不要堆动作；如果用户完成率低则进一步降级。
+9. **review_questions** 是用户每周复盘要问自己的问题，2-4 条。
+10. 标题不带 emoji；语言简洁直接，像教练而不是 AI。`;
+
+      const userCtx = {
+        intent: intent || "(用户未填写本轮意图，请基于画像与行为给出最有杠杆的方向)",
+        weekly_hours_budget: weeklyHours,
+        horizon_days: horizonDays,
+        profile: {
+          abilities: profile.abilities,
+          personality: profile.personality,
+          strengths: profile.strengths,
+          growth_areas: profile.growth_areas,
+          tagline: profile.tagline,
+        },
+        recent_14d: activity,
+        long_term_memory: memoryBlock || "(无)",
+      };
+
+      const models = ["google/gemini-2.5-pro", "openai/gpt-5-mini", "google/gemini-2.5-flash"] as const;
+      for (const m of models) {
+        try {
+          const { object } = await generateObject({
+            model: gateway(m),
+            schema: PlanSchema,
+            system,
+            prompt: `请基于以下上下文输出 ${horizonDays} 天个性化成长计划：\n\n${JSON.stringify(userCtx, null, 2)}`,
+          });
+          planDraft = object;
+          break;
+        } catch (error) {
+          console.error(`[generateMyAbilityPlan] model ${m} failed`, error);
+        }
       }
     }
 
-    // archive previous active plans
     await supabaseAdmin.from("ability_plans").update({ status: "archived" }).eq("user_id", userId).eq("status", "active");
 
     const { data: inserted, error } = await supabaseAdmin.from("ability_plans").insert({
@@ -369,7 +497,13 @@ export const generateMyAbilityPlan = createServerFn({ method: "POST" })
       title: planDraft.title,
       tagline: planDraft.tagline,
       focus_areas: planDraft.focus_areas,
-      content: planDraft.items as any,
+      content: {
+        diagnosis: planDraft.diagnosis,
+        weekly_hours: planDraft.weekly_hours,
+        horizon_days: planDraft.horizon_days,
+        review_questions: planDraft.review_questions,
+        items: planDraft.items,
+      } as any,
       status: "active",
     }).select("*").single();
     if (error) throw new Error(error.message);
