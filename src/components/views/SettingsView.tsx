@@ -191,6 +191,7 @@ const NAV: NavGroup[] = [
     label: "外观与体验",
     items: [
       { key: "appearance", title: "外观", icon: Palette },
+      { key: "floating", title: "悬浮球", icon: MousePointerClick },
       { key: "reminders", title: "提醒", icon: Bell },
       { key: "shortcuts", title: "快捷键", icon: Keyboard },
     ],
