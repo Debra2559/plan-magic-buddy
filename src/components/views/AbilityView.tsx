@@ -6,12 +6,13 @@ import {
   submitAbilityAssessment,
   generateMyAbilityPlan,
   recomputeAbilityFromActivity,
+  researchAbilityPlan,
 } from "@/lib/ability.functions";
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
 } from "recharts";
 import { Button } from "@/components/ui/button";
-import { Sparkles, RefreshCw, Brain, Target, ClipboardList, CalendarPlus } from "lucide-react";
+import { Sparkles, RefreshCw, Brain, Target, ClipboardList, CalendarPlus, Telescope, ExternalLink, Clock, Lightbulb, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useSylva, todayLocal } from "@/lib/sylva-store";
 import type { PlanItem } from "@/lib/plan.functions";
