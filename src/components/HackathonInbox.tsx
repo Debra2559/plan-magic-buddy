@@ -47,6 +47,15 @@ export function HackathonInbox() {
   const scanFn = useServerFn(scanHackathonsNow);
   const getSettingsFn = useServerFn(getHackathonSettings);
   const updateSettingsFn = useServerFn(updateHackathonSettings);
+  const planSourcesFn = useServerFn(planMonitoringSources);
+
+  // —— AI 主题来源规划 Agent 状态 ——
+  const [topic, setTopic] = useState("");
+  const [topicNotes, setTopicNotes] = useState("");
+  const [planning, setPlanning] = useState(false);
+  const [plan, setPlan] = useState<SourcePlan | null>(null);
+  const [planError, setPlanError] = useState<string | null>(null);
+  const [planSelected, setPlanSelected] = useState<Record<number, boolean>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
