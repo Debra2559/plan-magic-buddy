@@ -163,9 +163,9 @@ export function NotesCanvas() {
                 onPointerDown={(e) => onPointerDown(n.id, e)}
                 className={`absolute select-none rounded-2xl border shadow-lg transition-shadow ${
                   isDragging
-                    ? "border-amber-glow/60 shadow-amber-glow/20 cursor-grabbing z-20"
-                    : "border-border hover:border-border cursor-grab z-10"
-                } ${n.pinned ? "bg-amber-glow/[0.08]" : "bg-background/60 backdrop-blur-sm"}`}
+                    ? "border-amber-glow/60 shadow-amber-glow/30 cursor-grabbing z-20"
+                    : "border-border/80 hover:border-amber-glow/40 cursor-grab z-10"
+                } ${n.pinned ? "bg-amber-glow/20 border-amber-glow/40" : "bg-card backdrop-blur-sm"}`}
                 style={{
                   left: p.x,
                   top: p.y,
@@ -174,7 +174,7 @@ export function NotesCanvas() {
               >
                 <div className="p-3 flex items-start gap-2">
                   {mood && <span className="text-base shrink-0">{mood}</span>}
-                  <p className="text-xs text-white/85 whitespace-pre-wrap break-words flex-1 leading-relaxed">
+                  <p className="text-xs text-foreground whitespace-pre-wrap break-words flex-1 leading-relaxed">
                     {n.text || "（空便签）"}
                   </p>
                 </div>
