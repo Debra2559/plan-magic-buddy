@@ -472,9 +472,6 @@ export function JournalView({ embedded = false }: { embedded?: boolean } = {}) {
                       const merged = prev ? `${prev}\n\n${line}` : line;
                       upsertDiary(date, { content: merged });
                     }}
-                    onCopyToNote={() => {
-                      addNote(s.text, { tags: ["未来的我", s.tag] });
-                    }}
                   />
                 ))}
               </div>
