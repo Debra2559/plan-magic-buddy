@@ -416,33 +416,79 @@ export const submitAbilityAssessment = createServerFn({ method: "POST" })
     return { ok: true, result };
   });
 
+const GeneratePlanInput = z.object({
+  intent: z.string().max(500).optional().describe("用户本轮想要聚焦的目标或处境"),
+  weeklyHours: z.number().min(1).max(40).optional(),
+  horizonDays: z.number().int().min(7).max(56).optional(),
+}).default({});
+
 export const generateMyAbilityPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input: unknown) => GeneratePlanInput.parse(input ?? {}))
+  .handler(async ({ context, data }) => {
     const { userId } = context as any;
     const { data: profile } = await supabaseAdmin.from("user_ability_profiles").select("*").eq("user_id", userId).maybeSingle();
     if (!profile) throw new Error("请先完成能力测评");
 
+    const intent = (data.intent ?? "").trim();
+    const weeklyHours = data.weeklyHours ?? 6;
+    const horizonDays = data.horizonDays ?? 28;
+
     const activity = await gatherActivity(userId, 14);
-    let planDraft = buildFallbackAbilityPlan(profile, activity);
+    const memoryBlock = await fetchMemoryBlockForUser(userId).catch(() => "");
+
+    let planDraft = buildFallbackAbilityPlan(profile, activity, intent, weeklyHours, horizonDays);
     const apiKey = process.env.LOVABLE_API_KEY;
 
     if (apiKey) {
-      try {
-        const gateway = createLovableAiGatewayProvider(apiKey);
-        const { object } = await generateObject({
-          model: gateway("google/gemini-2.5-flash"),
-          schema: PlanSchema,
-          system: `你是一位个人成长教练。基于用户的能力画像与最近 14 天的真实行为数据，制定一份「可执行、具体、轻量」的成长计划。聚焦 1-3 个成长领域；每个领域给 2-5 条具体动作；动作要符合用户当前能力水平（不要太激进）；明确节奏（每天/每周几次）。必须严格按 schema 输出。`,
-          prompt: `用户画像：\n${JSON.stringify({ abilities: profile.abilities, personality: profile.personality, strengths: profile.strengths, growth_areas: profile.growth_areas, tagline: profile.tagline }, null, 0)}\n\n最近 14 天行为数据：\n${JSON.stringify(activity, null, 0)}`,
-        });
-        planDraft = object;
-      } catch (error) {
-        console.error("Ability plan AI generation failed, using fallback", error);
+      const gateway = createLovableAiGatewayProvider(apiKey);
+      const system = `你是一位资深个人成长教练 + 行为设计师。
+任务：基于「用户画像 + 近 14 天真实行为 + 长期记忆 + 本轮意图」，输出一份高度个性化、可执行、可衡量的 ${horizonDays} 天成长计划，每周投入约 ${weeklyHours} 小时。
+
+硬性要求：
+1. **diagnosis** 必须引用具体数字或行为（如完成率、习惯打卡天数、最近情绪、画像分数），先描述事实再给方向，禁止空话。
+2. **focus_areas 最多 2 个**（少而精胜过铺开）；针对用户当前能力水平，不要太激进。
+3. 每个 area 的 **why** 必须解释"为什么选这个领域"——引用画像分数/行为数据/用户意图至少一项。
+4. 每个 area 的 **goal** 必须是 ${horizonDays} 天后的具体结果，**kpi** 必须可量化（带数字 + 时间窗口）。
+5. **actions** 每条都必须有真实可排期的 when（如"周一/三/五 07:00"或"工作日 22:30"），避免"有空就做"。
+6. **milestones** 按周递进，第 1 周低门槛先跑通，最后一周对齐 KPI。
+7. **pitfalls** 必须针对该用户可能的失败模式（结合行为数据/人格分数），并给出对策。
+8. **总投入** ≈ weeklyHours，不要堆动作；如果用户完成率低则进一步降级。
+9. **review_questions** 是用户每周复盘要问自己的问题，2-4 条。
+10. 标题不带 emoji；语言简洁直接，像教练而不是 AI。`;
+
+      const userCtx = {
+        intent: intent || "(用户未填写本轮意图，请基于画像与行为给出最有杠杆的方向)",
+        weekly_hours_budget: weeklyHours,
+        horizon_days: horizonDays,
+        profile: {
+          abilities: profile.abilities,
+          personality: profile.personality,
+          strengths: profile.strengths,
+          growth_areas: profile.growth_areas,
+          tagline: profile.tagline,
+        },
+        recent_14d: activity,
+        long_term_memory: memoryBlock || "(无)",
+      };
+
+      const models = ["google/gemini-2.5-pro", "openai/gpt-5-mini", "google/gemini-2.5-flash"] as const;
+      for (const m of models) {
+        try {
+          const { object } = await generateObject({
+            model: gateway(m),
+            schema: PlanSchema,
+            system,
+            prompt: `请基于以下上下文输出 ${horizonDays} 天个性化成长计划：\n\n${JSON.stringify(userCtx, null, 2)}`,
+          });
+          planDraft = object;
+          break;
+        } catch (error) {
+          console.error(`[generateMyAbilityPlan] model ${m} failed`, error);
+        }
       }
     }
 
-    // archive previous active plans
     await supabaseAdmin.from("ability_plans").update({ status: "archived" }).eq("user_id", userId).eq("status", "active");
 
     const { data: inserted, error } = await supabaseAdmin.from("ability_plans").insert({
@@ -450,7 +496,13 @@ export const generateMyAbilityPlan = createServerFn({ method: "POST" })
       title: planDraft.title,
       tagline: planDraft.tagline,
       focus_areas: planDraft.focus_areas,
-      content: planDraft.items as any,
+      content: {
+        diagnosis: planDraft.diagnosis,
+        weekly_hours: planDraft.weekly_hours,
+        horizon_days: planDraft.horizon_days,
+        review_questions: planDraft.review_questions,
+        items: planDraft.items,
+      } as any,
       status: "active",
     }).select("*").single();
     if (error) throw new Error(error.message);
