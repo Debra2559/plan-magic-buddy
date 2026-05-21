@@ -64,9 +64,11 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Pro
   }
 }
 
-async function firecrawlSearch(query: string, limit = 8): Promise<FirecrawlSearchItem[]> {
+async function firecrawlSearch(query: string, limit = 10, recency: "month" | "week" | "none" = "month"): Promise<FirecrawlSearchItem[]> {
   const apiKey = process.env.FIRECRAWL_API_KEY;
   if (!apiKey) return [];
+  const tbsMap = { month: "qdr:m", week: "qdr:w", none: undefined } as const;
+  const tbs = tbsMap[recency];
   try {
     const res = await fetch("https://api.firecrawl.dev/v2/search", {
       method: "POST",
@@ -74,7 +76,12 @@ async function firecrawlSearch(query: string, limit = 8): Promise<FirecrawlSearc
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({ query, limit, scrapeOptions: { formats: ["markdown"] } }),
+      body: JSON.stringify({
+        query,
+        limit,
+        ...(tbs ? { tbs } : {}),
+        scrapeOptions: { formats: ["markdown"], onlyMainContent: true },
+      }),
     });
     if (!res.ok) return [];
     const data = (await res.json()) as { data?: { web?: FirecrawlSearchItem[] } | FirecrawlSearchItem[] };
@@ -83,6 +90,28 @@ async function firecrawlSearch(query: string, limit = 8): Promise<FirecrawlSearc
     return raw?.web ?? [];
   } catch {
     return [];
+  }
+}
+
+// 对单个候选 URL 做深度抓取, 拿到完整正文用于精准提取报名截止时间
+async function firecrawlScrape(url: string): Promise<FirecrawlSearchItem | null> {
+  const apiKey = process.env.FIRECRAWL_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const res = await fetch("https://api.firecrawl.dev/v2/scrape", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({ url, formats: ["markdown"], onlyMainContent: true, waitFor: 1500 }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      data?: { markdown?: string; metadata?: { title?: string; description?: string } };
+    };
+    const d = data?.data;
+    if (!d) return null;
+    return { url, title: d.metadata?.title, description: d.metadata?.description, markdown: d.markdown };
+  } catch {
+    return null;
   }
 }
 
@@ -253,16 +282,29 @@ export interface HackathonSettings {
 }
 
 const DEFAULT_SOURCES: HackathonSource[] = [
-  { name: "Devpost", query: "devpost hackathon register open", enabled: true },
-  { name: "Devpost", query: "site:devpost.com hackathon", enabled: true },
-  { name: "MLH", query: "mlh.io hackathon season", enabled: true },
-  { name: "DoraHacks", query: "dorahacks hackathon 报名", enabled: true },
-  { name: "DoraHacks", query: "site:dorahacks.io hackathon", enabled: true },
-  { name: "ETHGlobal", query: "ethglobal hackathon upcoming", enabled: true },
-  { name: "小红书", query: "小红书 黑客松 报名", enabled: true },
-  { name: "稀土掘金", query: "掘金 黑客松 2025 OR 2026", enabled: true },
-  { name: "微信公众号", query: "黑客松 报名 截止", enabled: true },
+  // —— 国际平台 ——
+  { name: "Devpost", query: "site:devpost.com hackathon 2025 OR 2026 register", enabled: true },
+  { name: "MLH", query: "site:mlh.io hackathon season 2026", enabled: true },
+  { name: "DoraHacks", query: "site:dorahacks.io hackathon ongoing", enabled: true },
+  { name: "ETHGlobal", query: "site:ethglobal.com events hackathon", enabled: true },
+  { name: "Devfolio", query: "site:devfolio.co hackathon", enabled: true },
+  // —— 国内大厂 ——
+  { name: "美团", query: "美团 黑客松 报名 2025 OR 2026", enabled: true },
+  { name: "字节跳动", query: "字节跳动 OR ByteDance 黑客松 报名", enabled: true },
+  { name: "腾讯", query: "腾讯 犀牛鸟 OR 黑客松 报名 2025 OR 2026", enabled: true },
+  { name: "阿里", query: "阿里巴巴 OR 阿里云 天池 OR 黑客松 报名", enabled: true },
+  { name: "华为", query: "华为 软件精英挑战赛 OR 开发者大赛 报名", enabled: true },
+  { name: "百度", query: "百度 黑客松 OR 飞桨 大赛 报名", enabled: true },
+  { name: "网易", query: "网易 黑客松 报名 2025 OR 2026", enabled: true },
+  { name: "小红书", query: "小红书 REDtech OR 黑客松 报名", enabled: true },
+  { name: "京东", query: "京东 黑客松 OR 开发者大赛 报名", enabled: true },
+  // —— 中文社区聚合 ——
+  { name: "稀土掘金", query: "site:juejin.cn 黑客松 报名 2025 OR 2026", enabled: true },
+  { name: "InfoQ", query: "site:infoq.cn 黑客松 报名", enabled: true },
+  { name: "AIGC 社区", query: "AIGC 黑客松 OR AI Agent 黑客松 报名", enabled: true },
+  { name: "微信公众号", query: "黑客松 报名截止 2025 OR 2026", enabled: true },
 ];
+
 
 async function loadSettings(): Promise<HackathonSettings> {
   const { data } = await supabaseAdmin
@@ -333,21 +375,29 @@ export const updateHackathonSettings = createServerFn({ method: "POST" })
 
 export const scanHackathonsNow = createServerFn({ method: "GET" }).handler(async () => {
   const settings = await loadSettings();
-  const sources = settings.sources.filter((s) => s.enabled).slice(0, 5);
+  // 之前为了控制成本只跑前 5 个, 现在国内国外都要覆盖, 放宽到 14 个 (一次扫描预算可控)
+  const sources = settings.sources.filter((s) => s.enabled).slice(0, 14);
   const allFound: Array<{ source: string; item: z.infer<typeof ExtractedSchema>["hackathons"][number] }> = [];
-  const debug: Array<{ source: string; query: string; snippets: number; extracted: number; error?: string }> = [];
+  const debug: Array<{ source: string; query: string; snippets: number; extracted: number; deepScraped?: number; error?: string }> = [];
 
-  for (const src of sources) {
-    const snippets = await firecrawlSearch(src.query, 6);
+  // 并发跑搜索, 单源失败不影响别的源
+  const perSource = await Promise.all(
+    sources.map(async (src) => {
+      const snippets = await firecrawlSearch(src.query, 10, "month");
+      return { src, snippets };
+    }),
+  );
+
+  let deepScrapeBudget = 8; // 整次扫描最多 8 次深度抓取, 避免烧 Firecrawl 额度
+
+  for (const { src, snippets } of perSource) {
     if (snippets.length === 0) {
       debug.push({ source: src.name, query: src.query, snippets: 0, extracted: 0, error: "firecrawl 0 结果" });
       continue;
     }
-    // 总是优先用 AI 提取(能从 markdown 里抠出真实的报名截止/比赛开始/比赛结束时间)
-    // AI 失败/超时, 才退回只有标题/链接的关键词兜底
     const aiResult = await withTimeout(
       extractWithAI(src.name, snippets),
-      20_000,
+      22_000,
       { data: { hackathons: [] }, error: "AI 提取超时" },
     );
     let ex = aiResult.data;
@@ -359,7 +409,35 @@ export const scanHackathonsNow = createServerFn({ method: "GET" }).handler(async
         error = error ?? "AI 0 条, 用关键词兜底";
       }
     }
-    debug.push({ source: src.name, query: src.query, snippets: snippets.length, extracted: ex.hackathons.length, error });
+
+    // 深度抓取兜底: 对那些 AI 没提取到任何日期的候选, 直接 scrape 详情页再让 AI 看一遍
+    let deepScraped = 0;
+    const needsDeep = ex.hackathons.filter(
+      (h) => h.url?.startsWith("http") && !h.deadline && !h.starts_at && !h.ends_at,
+    );
+    for (const h of needsDeep) {
+      if (deepScrapeBudget <= 0) break;
+      deepScrapeBudget -= 1;
+      deepScraped += 1;
+      const page = await firecrawlScrape(h.url);
+      if (!page?.markdown) continue;
+      const reExtract = await withTimeout(
+        extractWithAI(src.name, [page]),
+        15_000,
+        { data: { hackathons: [] }, error: "深度提取超时" },
+      );
+      const better = reExtract.data.hackathons.find((x) => x.url === h.url) ?? reExtract.data.hackathons[0];
+      if (better) {
+        h.deadline = h.deadline ?? better.deadline;
+        h.starts_at = h.starts_at ?? better.starts_at;
+        h.ends_at = h.ends_at ?? better.ends_at;
+        h.location = h.location ?? better.location;
+        h.prize = h.prize ?? better.prize;
+        if (!h.summary || h.summary.length < 10) h.summary = better.summary;
+      }
+    }
+
+    debug.push({ source: src.name, query: src.query, snippets: snippets.length, extracted: ex.hackathons.length, deepScraped, error });
     for (const h of ex.hackathons) {
       if (!h.url?.startsWith("http")) continue;
       const normalized = normalizeHackathonDates(h);
