@@ -282,16 +282,29 @@ export interface HackathonSettings {
 }
 
 const DEFAULT_SOURCES: HackathonSource[] = [
-  { name: "Devpost", query: "devpost hackathon register open", enabled: true },
-  { name: "Devpost", query: "site:devpost.com hackathon", enabled: true },
-  { name: "MLH", query: "mlh.io hackathon season", enabled: true },
-  { name: "DoraHacks", query: "dorahacks hackathon 报名", enabled: true },
-  { name: "DoraHacks", query: "site:dorahacks.io hackathon", enabled: true },
-  { name: "ETHGlobal", query: "ethglobal hackathon upcoming", enabled: true },
-  { name: "小红书", query: "小红书 黑客松 报名", enabled: true },
-  { name: "稀土掘金", query: "掘金 黑客松 2025 OR 2026", enabled: true },
-  { name: "微信公众号", query: "黑客松 报名 截止", enabled: true },
+  // —— 国际平台 ——
+  { name: "Devpost", query: "site:devpost.com hackathon 2025 OR 2026 register", enabled: true },
+  { name: "MLH", query: "site:mlh.io hackathon season 2026", enabled: true },
+  { name: "DoraHacks", query: "site:dorahacks.io hackathon ongoing", enabled: true },
+  { name: "ETHGlobal", query: "site:ethglobal.com events hackathon", enabled: true },
+  { name: "Devfolio", query: "site:devfolio.co hackathon", enabled: true },
+  // —— 国内大厂 ——
+  { name: "美团", query: "美团 黑客松 报名 2025 OR 2026", enabled: true },
+  { name: "字节跳动", query: "字节跳动 OR ByteDance 黑客松 报名", enabled: true },
+  { name: "腾讯", query: "腾讯 犀牛鸟 OR 黑客松 报名 2025 OR 2026", enabled: true },
+  { name: "阿里", query: "阿里巴巴 OR 阿里云 天池 OR 黑客松 报名", enabled: true },
+  { name: "华为", query: "华为 软件精英挑战赛 OR 开发者大赛 报名", enabled: true },
+  { name: "百度", query: "百度 黑客松 OR 飞桨 大赛 报名", enabled: true },
+  { name: "网易", query: "网易 黑客松 报名 2025 OR 2026", enabled: true },
+  { name: "小红书", query: "小红书 REDtech OR 黑客松 报名", enabled: true },
+  { name: "京东", query: "京东 黑客松 OR 开发者大赛 报名", enabled: true },
+  // —— 中文社区聚合 ——
+  { name: "稀土掘金", query: "site:juejin.cn 黑客松 报名 2025 OR 2026", enabled: true },
+  { name: "InfoQ", query: "site:infoq.cn 黑客松 报名", enabled: true },
+  { name: "AIGC 社区", query: "AIGC 黑客松 OR AI Agent 黑客松 报名", enabled: true },
+  { name: "微信公众号", query: "黑客松 报名截止 2025 OR 2026", enabled: true },
 ];
+
 
 async function loadSettings(): Promise<HackathonSettings> {
   const { data } = await supabaseAdmin
