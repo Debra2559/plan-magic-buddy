@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, X, Shield, Check, Pencil } from "lucide-react";
+import { Plus, X, Shield, Check, Pencil, ChevronDown } from "lucide-react";
 
 const TABOO_TEMPLATES: { group: string; items: string[] }[] = [
   {
@@ -170,57 +170,102 @@ export function TaboosEditor({
         </button>
       </div>
 
-      {/* 常用模板 */}
+      {/* 常用模板（折叠） */}
       <div className="space-y-2 pt-1">
-        <div className="text-[11px] text-muted-foreground">从常用模板挑选 · 点击即添加</div>
-        <div className="space-y-2">
+        <div className="text-[11px] text-muted-foreground">从常用模板挑选 · 点击展开分组</div>
+        <div className="space-y-1.5">
           {TABOO_TEMPLATES.map((g) => {
             const allSelected = g.items.every((it) => taboos.includes(it));
+            const selectedCount = g.items.filter((it) => taboos.includes(it)).length;
             return (
-              <div key={g.group} className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-foreground/70">{g.group}</span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      allSelected
-                        ? set(taboos.filter((t) => !g.items.includes(t)))
-                        : set([...taboos, ...g.items])
-                    }
-                    className="text-[10px] text-amber-glow/80 hover:text-amber-glow"
-                  >
-                    {allSelected ? "全部移除" : "全部添加"}
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {g.items.map((it) => {
-                    const active = taboos.includes(it);
-                    return (
-                      <button
-                        key={it}
-                        type="button"
-                        onClick={() =>
-                          active
-                            ? set(taboos.filter((t) => t !== it))
-                            : set([...taboos, it])
-                        }
-                        className={`px-2 py-0.5 rounded-full text-[11px] border transition ${
-                          active
-                            ? "bg-rose-400/15 border-rose-400/40 text-rose-200/90 line-through decoration-rose-300/50"
-                            : "bg-foreground/5 border-border text-foreground/70 hover:border-amber-glow/40 hover:text-amber-glow"
-                        }`}
-                        title={active ? "再次点击移除" : "点击添加为禁忌"}
-                      >
-                        {active ? "✓ " : "+ "}{it}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <TaboosGroup
+                key={g.group}
+                group={g.group}
+                items={g.items}
+                taboos={taboos}
+                allSelected={allSelected}
+                selectedCount={selectedCount}
+                onToggleAll={() =>
+                  allSelected
+                    ? set(taboos.filter((t) => !g.items.includes(t)))
+                    : set([...taboos, ...g.items])
+                }
+                onToggleItem={(it) =>
+                  taboos.includes(it)
+                    ? set(taboos.filter((t) => t !== it))
+                    : set([...taboos, it])
+                }
+              />
             );
           })}
         </div>
       </div>
+    </div>
+  );
+}
+
+function TaboosGroup({
+  group,
+  items,
+  taboos,
+  allSelected,
+  selectedCount,
+  onToggleAll,
+  onToggleItem,
+}: {
+  group: string;
+  items: string[];
+  taboos: string[];
+  allSelected: boolean;
+  selectedCount: number;
+  onToggleAll: () => void;
+  onToggleItem: (it: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-lg border border-border bg-foreground/[0.03] overflow-hidden">
+      <div className="flex items-center justify-between px-2.5 py-1.5">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex items-center gap-1.5 text-[11px] text-foreground/80 hover:text-foreground"
+        >
+          <ChevronDown className={`w-3 h-3 transition-transform ${open ? "" : "-rotate-90"}`} />
+          <span>{group}</span>
+          <span className="text-[10px] text-muted-foreground">
+            {selectedCount > 0 ? `${selectedCount}/${items.length}` : items.length}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={onToggleAll}
+          className="text-[10px] text-amber-glow/80 hover:text-amber-glow"
+        >
+          {allSelected ? "全部移除" : "全部添加"}
+        </button>
+      </div>
+      {open && (
+        <div className="flex flex-wrap gap-1 px-2.5 pb-2 pt-0.5 border-t border-border/60">
+          {items.map((it) => {
+            const active = taboos.includes(it);
+            return (
+              <button
+                key={it}
+                type="button"
+                onClick={() => onToggleItem(it)}
+                className={`px-2 py-0.5 rounded-full text-[11px] border transition ${
+                  active
+                    ? "bg-rose-400/15 border-rose-400/40 text-rose-200/90 line-through decoration-rose-300/50"
+                    : "bg-foreground/5 border-border text-foreground/70 hover:border-amber-glow/40 hover:text-amber-glow"
+                }`}
+                title={active ? "再次点击移除" : "点击添加为禁忌"}
+              >
+                {active ? "✓ " : "+ "}{it}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
