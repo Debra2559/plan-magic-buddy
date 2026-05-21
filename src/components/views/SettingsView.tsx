@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bell, Cloud, Palette, Keyboard, User, Info, Sparkles, Bot, Webhook, ChevronRight, ChevronDown, LogOut, Lightbulb, Wand2, MousePointerClick } from "lucide-react";
+import { Bell, Cloud, Palette, Keyboard, User, Info, Sparkles, Bot, Webhook, ChevronRight, ChevronDown, LogOut, Lightbulb, Wand2, MousePointerClick, Brain } from "lucide-react";
+import { MemoryPanel } from "@/components/MemoryPanel";
 import { FloatingBallPanel } from "@/components/FloatingBallPanel";
 import { ComicSettingsPanel } from "@/components/ComicSettingsPanel";
 import { InsightsSettingsPanel } from "@/components/InsightsSettingsPanel";
