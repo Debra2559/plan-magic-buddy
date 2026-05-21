@@ -85,16 +85,12 @@ export function FloatingBall() {
   const onPointerUp = () => {
     if (!dragging) return;
     setDragging(false);
-    // 贴边吸附
-    setPos((p) => {
-      const w = window.innerWidth;
-      const snapLeft = p.x + 28 < w / 2;
-      return {
-        ...p,
-        x: snapLeft ? 12 : w - 64,
-        y: Math.min(Math.max(12, p.y), window.innerHeight - 64),
-      };
-    });
+    // 自由停放：仅做边界保护，不再贴边吸附
+    setPos((p) => ({
+      ...p,
+      x: Math.min(Math.max(8, p.x), window.innerWidth - 56),
+      y: Math.min(Math.max(8, p.y), window.innerHeight - 56),
+    }));
     if (!movedRef.current) setOpen((o) => !o);
   };
 
