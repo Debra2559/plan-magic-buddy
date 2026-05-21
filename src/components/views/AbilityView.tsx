@@ -558,17 +558,28 @@ function PlanPanel({ plans, onRefresh }: { plans: any[]; onRefresh: () => void }
     return () => clearInterval(t);
   }, [deepMut.isPending]);
 
-  const addToSchedule = (p: any) => {
+  const [previewItems, setPreviewItems] = useState<PlanItem[] | null>(null);
+  const [previewHorizon, setPreviewHorizon] = useState<number>(28);
+
+  const openPreview = (p: any) => {
     const items = planToScheduleItems(p);
     if (items.length === 0) {
       toast.error("这份计划没有可加入的动作");
       return;
     }
-    const ids = addItemsPending(items);
-    toast.success(`已加入 ${ids.length} 条到未来 ${planContent(p).horizon_days ?? 28} 天日程`, {
+    setPreviewItems(items);
+    setPreviewHorizon(planContent(p).horizon_days ?? 28);
+  };
+
+  const confirmAdd = () => {
+    if (!previewItems) return;
+    const ids = addItemsPending(previewItems);
+    toast.success(`已加入 ${ids.length} 条到未来 ${previewHorizon} 天日程`, {
       description: "前往「日程」查看并确认",
     });
+    setPreviewItems(null);
   };
+
 
   const busy = mut.isPending || deepMut.isPending;
 
