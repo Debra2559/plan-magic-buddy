@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, X, Shield, Check, Pencil } from "lucide-react";
+import { Plus, X, Shield, Check, Pencil, ChevronDown } from "lucide-react";
 
 const TABOO_TEMPLATES: { group: string; items: string[] }[] = [
   {
