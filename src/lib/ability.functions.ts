@@ -144,17 +144,35 @@ function computeScores(responses: Record<string, number>) {
   return { abilities, personalityScores };
 }
 
+const PlanActionSchema = z.object({
+  title: z.string().describe("简洁动作名，不超过 20 字"),
+  when: z.string().describe("具体时段，如 '周一/三/五 07:00' 或 '每天 22:30' 或 '工作日午休 12:30'"),
+  durationMin: z.number().int().min(5).max(180).describe("单次执行时长（分钟）"),
+  note: z.string().optional().describe("执行要点或起步技巧，一句话"),
+});
+const PlanMilestoneSchema = z.object({
+  week: z.number().int().min(1).max(8).describe("第几周（1=本周）"),
+  target: z.string().describe("该周末应达到的可衡量结果"),
+});
 const PlanItemSchema = z.object({
-  area: z.string(),
-  goal: z.string(),
-  actions: z.array(z.string()).min(2).max(6),
-  cadence: z.string().describe("如：每周3次 / 每天15分钟"),
+  area: z.string().describe("聚焦领域中文名，如：计划力/专注力/健康力"),
+  why: z.string().describe("基于用户数据的简短诊断，引用具体数字或行为，不超过 60 字"),
+  goal: z.string().describe("horizon 结束时的具体可衡量目标，避免空泛"),
+  kpi: z.string().describe("如何判断目标达成的量化指标，例如：连续 14 天 22:30 前关屏"),
+  actions: z.array(PlanActionSchema).min(2).max(5),
+  milestones: z.array(PlanMilestoneSchema).min(1).max(4),
+  pitfalls: z.array(z.string()).min(1).max(3).describe("用户最可能踩的坑及对策，每条不超过 30 字"),
+  cadence: z.string().describe("一句话节奏，向后兼容用，如：每周3次/每天15分钟"),
 });
 const PlanSchema = z.object({
   title: z.string(),
-  tagline: z.string(),
-  focus_areas: z.array(z.string()).min(1).max(4),
-  items: z.array(PlanItemSchema).min(2).max(6),
+  tagline: z.string().describe("一句教练口吻的主张，不超过 30 字"),
+  diagnosis: z.string().describe("结合画像 + 行为数据 + 用户意图的整体诊断，2-4 句，先说事实再给方向"),
+  focus_areas: z.array(z.string()).min(1).max(3),
+  weekly_hours: z.number().min(1).max(40).describe("整份计划每周总投入小时数"),
+  horizon_days: z.number().int().min(7).max(56),
+  items: z.array(PlanItemSchema).min(1).max(3),
+  review_questions: z.array(z.string()).min(2).max(5).describe("每周复盘要问自己的问题"),
 });
 type AbilityPlanDraft = z.infer<typeof PlanSchema>;
 
