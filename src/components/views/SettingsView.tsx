@@ -168,7 +168,7 @@ function DateFlashPanel() {
   );
 }
 
-type NavKey = "general" | "persona" | "insights" | "comic" | "feishu" | "webhook" | "reminders" | "appearance" | "floating" | "shortcuts" | "about";
+type NavKey = "general" | "persona" | "memory" | "insights" | "comic" | "feishu" | "webhook" | "reminders" | "appearance" | "floating" | "shortcuts" | "about";
 type NavGroup = { label: string; items: { key: NavKey; title: string; icon: typeof User; subtitle?: string }[] };
 
 const NAV: NavGroup[] = [
@@ -177,6 +177,7 @@ const NAV: NavGroup[] = [
     items: [
       { key: "general", title: "通用", icon: User },
       { key: "persona", title: "AI 人格", icon: Bot },
+      { key: "memory", title: "长期记忆", icon: Brain },
       { key: "insights", title: "AI 行为洞察", icon: Lightbulb },
       { key: "comic", title: "漫画生成", icon: Wand2 },
     ],
@@ -208,6 +209,7 @@ const NAV: NavGroup[] = [
 const TITLES: Record<NavKey, { title: string; desc: string }> = {
   general: { title: "通用", desc: "账户、语言、主题等基础偏好" },
   persona: { title: "AI 人格", desc: "调整 AI 的说话风格与语气" },
+  memory: { title: "长期记忆", desc: "AI 关于你的长期记忆 — 会自动注入到规划、洞察和飞书机器人" },
   insights: { title: "AI 行为洞察", desc: "AI 根据你的日程、记录、习惯行为生成的贴心提示" },
   comic: { title: "漫画生成", desc: "选择默认图像模型与画面风格" },
   feishu: { title: "飞书同步", desc: "日历推送、接收人捕获与诊断" },
