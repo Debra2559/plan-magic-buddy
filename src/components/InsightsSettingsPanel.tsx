@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { getMyInsightsSettings, updateMyInsightsSettings, generateMyInsightsNow } from "@/lib/insights.functions";
 import { Sparkles, RefreshCw, Globe, Bell, Lightbulb, TrendingUp, Heart, AlertTriangle } from "lucide-react";
@@ -61,7 +62,17 @@ export function InsightsSettingsPanel() {
   });
   const generateMut = useMutation({
     mutationFn: () => generate({ data: { slot: "auto" } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["my-insights"] }),
+    onSuccess: (r: any) => {
+      qc.invalidateQueries({ queryKey: ["my-insights"] });
+      qc.invalidateQueries({ queryKey: ["insights-settings"] });
+      if (r?.ok && r?.count > 0) toast.success(`已生成 ${r.count} 条提示`, { description: "点右上角铃铛查看" });
+      else if (r?.ok) toast("本时段暂无可洞察的内容", { description: "再多记录一些日程 / 随手记后试试" });
+      else if (r?.reason === "no_api_key") toast.error("AI 密钥未配置");
+      else if (r?.reason === "disabled") toast.error("洞察功能已关闭", { description: "请先打开顶部开关" });
+      else if (typeof r?.reason === "string" && r.reason.startsWith("ai_error")) toast.error("AI 生成失败", { description: r.reason.replace(/^ai_error:/, "") });
+      else toast.error("生成失败", { description: r?.reason || "未知错误" });
+    },
+    onError: (e: any) => toast.error("调用失败", { description: e?.message ?? "网络异常" }),
   });
 
   if (!local) return <div className="text-muted-foreground text-sm">加载中…</div>;
