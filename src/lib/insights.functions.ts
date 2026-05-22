@@ -12,13 +12,13 @@ import { sendCardToFeishu } from "./feishu.functions";
 const InsightSchema = z.object({
   kind: z.enum(["reminder", "suggestion", "pattern", "encouragement", "warning"])
     .describe("reminder=待办提醒, suggestion=优化建议, pattern=行为洞察, encouragement=鼓励, warning=风险提示"),
-  title: z.string().max(40).describe("简洁中文标题，≤20字"),
-  content: z.string().max(200).describe("一两句中文建议，亲切自然，不要套话"),
-  priority: z.number().int().min(1).max(5).describe("1=低 5=高"),
+  title: z.string().describe("简洁中文标题，建议20字以内"),
+  content: z.string().describe("一两句中文建议，亲切自然，不要套话"),
+  priority: z.number().int().describe("1=低 5=高"),
 });
 
 const InsightsBatch = z.object({
-  insights: z.array(InsightSchema).min(1).max(5),
+  insights: z.array(InsightSchema),
 });
 
 export type AiInsight = {
@@ -189,19 +189,38 @@ ${JSON.stringify(ctx.habits, null, 0)}
   const gateway = createLovableAiGatewayProvider(apiKey);
 
   let insights: z.infer<typeof InsightSchema>[] = [];
-  try {
-    const { object } = await generateObject({
-      model: gateway("google/gemini-3-flash-preview"),
-      schema: InsightsBatch,
-      system,
-      prompt,
-    });
-    insights = object.insights;
-  } catch (e: any) {
-    const msg = e?.message ?? "unknown";
-    console.error(`[insights] generateObject failed for user=${userId}:`, msg);
-    return { ok: false as const, reason: `ai_error:${msg}` };
+  const models = ["google/gemini-2.5-flash", "google/gemini-3-flash-preview", "openai/gpt-5-mini"];
+  let lastErr = "";
+  for (const m of models) {
+    try {
+      const { object } = await generateObject({
+        model: gateway(m),
+        schema: InsightsBatch,
+        system,
+        prompt,
+      });
+      insights = object.insights ?? [];
+      lastErr = "";
+      break;
+    } catch (e: any) {
+      lastErr = e?.message ?? "unknown";
+      console.error(`[insights] generateObject failed model=${m} user=${userId}:`, lastErr);
+    }
   }
+  if (lastErr && !insights.length) {
+    return { ok: false as const, reason: `ai_error:${lastErr}` };
+  }
+
+  // Sanitize / clamp
+  insights = insights
+    .filter((i) => i && i.title && i.content)
+    .slice(0, 5)
+    .map((i) => ({
+      kind: i.kind,
+      title: String(i.title).slice(0, 40),
+      content: String(i.content).slice(0, 200),
+      priority: Math.max(1, Math.min(5, Number(i.priority) || 3)),
+    }));
 
   if (!insights.length) return { ok: true as const, count: 0 };
 
