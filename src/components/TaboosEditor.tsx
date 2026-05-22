@@ -173,33 +173,43 @@ export function TaboosEditor({
 
       {/* 常用模板（折叠） */}
       <div className="space-y-2 pt-1">
-        <div className="text-[11px] text-muted-foreground">从常用模板挑选 · 点击展开分组</div>
-        <div className="space-y-1.5">
-          {TABOO_TEMPLATES.map((g) => {
-            const allSelected = g.items.every((it) => taboos.includes(it));
-            const selectedCount = g.items.filter((it) => taboos.includes(it)).length;
-            return (
-              <TaboosGroup
-                key={g.group}
-                group={g.group}
-                items={g.items}
-                taboos={taboos}
-                allSelected={allSelected}
-                selectedCount={selectedCount}
-                onToggleAll={() =>
-                  allSelected
-                    ? set(taboos.filter((t) => !g.items.includes(t)))
-                    : set([...taboos, ...g.items])
-                }
-                onToggleItem={(it) =>
-                  taboos.includes(it)
-                    ? set(taboos.filter((t) => t !== it))
-                    : set([...taboos, it])
-                }
-              />
-            );
-          })}
-        </div>
+        <button
+          type="button"
+          onClick={() => setTemplatesOpen((v) => !v)}
+          className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition"
+        >
+          <ChevronDown className={`w-3 h-3 transition-transform ${templatesOpen ? "" : "-rotate-90"}`} />
+          从常用模板挑选
+          <span className="text-foreground/40">· {TABOO_TEMPLATES.length} 组</span>
+        </button>
+        {templatesOpen && (
+          <div className="space-y-1.5">
+            {TABOO_TEMPLATES.map((g) => {
+              const allSelected = g.items.every((it) => taboos.includes(it));
+              const selectedCount = g.items.filter((it) => taboos.includes(it)).length;
+              return (
+                <TaboosGroup
+                  key={g.group}
+                  group={g.group}
+                  items={g.items}
+                  taboos={taboos}
+                  allSelected={allSelected}
+                  selectedCount={selectedCount}
+                  onToggleAll={() =>
+                    allSelected
+                      ? set(taboos.filter((t) => !g.items.includes(t)))
+                      : set([...taboos, ...g.items])
+                  }
+                  onToggleItem={(it) =>
+                    taboos.includes(it)
+                      ? set(taboos.filter((t) => t !== it))
+                      : set([...taboos, it])
+                  }
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
