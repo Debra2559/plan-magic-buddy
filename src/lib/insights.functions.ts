@@ -376,9 +376,15 @@ export async function runScheduledInsights(): Promise<{ processed: number; gener
     try {
       const r = await generateForUser(u.user_id, userSlot);
       if (r.ok && (r as any).count > 0) generated++;
-      else if (!r.ok) errors++;
-    } catch {
+      else if (!r.ok) {
+        errors++;
+        console.error(`[insights] user=${u.user_id} slot=${userSlot} failed:`, (r as any).reason);
+      } else {
+        console.log(`[insights] user=${u.user_id} slot=${userSlot} returned 0 insights`);
+      }
+    } catch (e) {
       errors++;
+      console.error(`[insights] user=${u.user_id} slot=${userSlot} threw:`, e);
     }
 
   }
