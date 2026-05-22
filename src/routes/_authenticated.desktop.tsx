@@ -62,7 +62,7 @@ interface WinPos {
   y: number;
 }
 
-type SylvaView = "ai" | "schedule" | "todos" | "notes" | "habits" | "journal" | "ability" | "settings";
+type SylvaView = "ai" | "schedule" | "todos" | "notes" | "habits" | "journal" | "ability" | "monitor" | "settings";
 
 function DesktopApp() {
   const [now, setNow] = useState<Date | null>(null);
