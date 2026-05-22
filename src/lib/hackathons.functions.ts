@@ -686,20 +686,20 @@ export const planMonitoringSources = createServerFn({ method: "POST" })
       `best ${data.topic} community platform site:reddit.com OR site:medium.com`,
     ];
     const probeResults = await Promise.all(
-      probeQueries.map((q) => withTimeout(firecrawlSearch(q, 5, "month"), 12_000, [] as FirecrawlSearchItem[])),
+      probeQueries.slice(0, 2).map((q) => withTimeout(firecrawlSearch(q, 4, "month"), 5_000, [] as FirecrawlSearchItem[])),
     );
-    const snippets = probeResults.flat().slice(0, 20);
+    const snippets = probeResults.flat().slice(0, 12);
     const corpus = snippets.length
       ? snippets
           .map(
             (s, i) =>
-              `[${i + 1}] ${s.title ?? ""} | ${s.url ?? ""}\n${(s.description ?? s.markdown ?? "").replace(/\s+/g, " ").slice(0, 320)}`,
+              `[${i + 1}] ${s.title ?? ""} | ${s.url ?? ""}\n${(s.description ?? s.markdown ?? "").replace(/\s+/g, " ").slice(0, 220)}`,
           )
           .join("\n\n")
       : "(本次探路没有抓到搜索结果, 完全靠你的先验知识规划)";
 
     const gateway = createLovableAiGatewayProvider(apiKey);
-    const models = ["google/gemini-2.5-pro", "google/gemini-2.5-flash"] as const;
+    const models = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash", "google/gemini-2.5-flash-lite"] as const;
     let lastErr = "";
     for (const m of models) {
       try {
