@@ -189,19 +189,38 @@ ${JSON.stringify(ctx.habits, null, 0)}
   const gateway = createLovableAiGatewayProvider(apiKey);
 
   let insights: z.infer<typeof InsightSchema>[] = [];
-  try {
-    const { object } = await generateObject({
-      model: gateway("google/gemini-3-flash-preview"),
-      schema: InsightsBatch,
-      system,
-      prompt,
-    });
-    insights = object.insights;
-  } catch (e: any) {
-    const msg = e?.message ?? "unknown";
-    console.error(`[insights] generateObject failed for user=${userId}:`, msg);
-    return { ok: false as const, reason: `ai_error:${msg}` };
+  const models = ["google/gemini-2.5-flash", "google/gemini-3-flash-preview", "openai/gpt-5-mini"];
+  let lastErr = "";
+  for (const m of models) {
+    try {
+      const { object } = await generateObject({
+        model: gateway(m),
+        schema: InsightsBatch,
+        system,
+        prompt,
+      });
+      insights = object.insights ?? [];
+      lastErr = "";
+      break;
+    } catch (e: any) {
+      lastErr = e?.message ?? "unknown";
+      console.error(`[insights] generateObject failed model=${m} user=${userId}:`, lastErr);
+    }
   }
+  if (lastErr && !insights.length) {
+    return { ok: false as const, reason: `ai_error:${lastErr}` };
+  }
+
+  // Sanitize / clamp
+  insights = insights
+    .filter((i) => i && i.title && i.content)
+    .slice(0, 5)
+    .map((i) => ({
+      kind: i.kind,
+      title: String(i.title).slice(0, 40),
+      content: String(i.content).slice(0, 200),
+      priority: Math.max(1, Math.min(5, Number(i.priority) || 3)),
+    }));
 
   if (!insights.length) return { ok: true as const, count: 0 };
 
