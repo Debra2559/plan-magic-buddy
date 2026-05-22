@@ -79,6 +79,34 @@ export function InsightsSettingsPanel() {
 
   return (
     <div className="space-y-4">
+      {/* 介绍：AI 提醒到底会推什么 */}
+      <div className="widget p-4">
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <Sparkles className="w-3.5 h-3.5 text-amber-glow" />
+          <span className="text-sm font-medium text-foreground">AI 提醒会推什么</span>
+        </div>
+        <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+          AI 会在你设定的时段，结合你的日程、记录、习惯和回看天数，生成 1–5 条个性化提示。<b className="text-foreground/80">不是定时闹钟</b>，而是「看了你最近的状态后想对你说的话」。点右上角铃铛查看。
+        </p>
+        <div className="space-y-1.5">
+          {EXAMPLES.map((e) => {
+            const Icon = e.icon;
+            return (
+              <div key={e.label} className="flex items-start gap-2 text-[11px] p-2 rounded-lg bg-foreground/[0.04] border border-border/60">
+                <Icon className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${e.tone}`} />
+                <div className="min-w-0">
+                  <span className={`font-medium ${e.tone}`}>{e.label}</span>
+                  <span className="text-muted-foreground"> · {e.example}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-[10px] text-muted-foreground/70 mt-2.5">
+          想立刻看到效果？拉到底点「立即生成」一组试试。
+        </p>
+      </div>
+
       {/* 开关 */}
       <div className="widget p-4 flex items-center justify-between">
         <div>
