@@ -157,7 +157,7 @@ export function HackathonInbox() {
       <div className="flex items-center justify-between mb-3">
         <button onClick={() => setCollapsed((c) => !c)} className="flex items-center gap-2 text-left">
           <Trophy className="w-4 h-4 text-amber-glow" />
-          <span className="text-xs tracking-wider text-amber-glow">黑客松雷达</span>
+          <span className="text-xs tracking-wider text-amber-glow">活动·赛事雷达</span>
           {items.length > 0 && (
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-glow/20 text-amber-glow">
               {items.length} 个待决定
@@ -188,7 +188,7 @@ export function HackathonInbox() {
         <div className="mb-4 p-4 rounded-xl bg-foreground/5 border border-amber-glow/30 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs tracking-wider text-amber-glow flex items-center gap-1.5">
-              <SettingsIcon className="w-3.5 h-3.5" /> 黑客松雷达设置
+              <SettingsIcon className="w-3.5 h-3.5" /> 活动·赛事雷达设置
             </span>
             <button onClick={() => setSettingsOpen(false)} className="text-foreground/50 hover:text-foreground transition">
               <X className="w-4 h-4" />
@@ -391,7 +391,7 @@ export function HackathonInbox() {
             </div>
           ) : items.length === 0 ? (
             <div className="py-4 text-center text-xs text-muted-foreground">
-              暂时没有新的黑客松。点「扫描」可立即去找。
+              暂时没有新发现。点「扫描」立即去找。
             </div>
           ) : (
             <div className="space-y-2 max-h-[400px] overflow-auto pr-1">
