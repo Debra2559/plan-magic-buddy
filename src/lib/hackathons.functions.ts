@@ -666,8 +666,8 @@ const SourcePlanSchema = z.object({
   topic: z.string(),
   summary: z.string().describe("100-200 字: 这个主题在网上的信息生态长什么样, 用户该期待什么"),
   update_rhythm: z.string().describe("一句话: 这类内容一般多久会有值得关注的新动态"),
-  suggested_interval_hours: z.number().int().min(1).max(168).describe("建议扫描频率, 单位小时 (24/48/72/168)"),
-  sources: z.array(PlannedSourceSchema).min(3).max(12),
+  suggested_interval_hours: z.coerce.number().int().min(1).max(168).describe("建议扫描频率, 单位小时 (24/48/72/168)"),
+  sources: z.array(PlannedSourceSchema).min(1).max(12),
   tips: z.array(z.string()).max(6).describe("3-6 条给用户的小贴士: 怎么用更高效, 该注意什么"),
 });
 
@@ -738,5 +738,21 @@ ${corpus}
         lastErr = err instanceof Error ? err.message : String(err);
       }
     }
-    return { ok: false as const, error: lastErr, plan: null };
+    const topic = data.topic.trim();
+    const fallbackPlan: z.infer<typeof SourcePlanSchema> = {
+      topic,
+      summary: `已为「${topic}」生成基础监控来源。AI 结构化输出暂时不可用，因此先采用覆盖官方信息、社区讨论、攻略经验和最新动态的通用搜索组合。`,
+      update_rhythm: "建议每 72 小时扫描一次；如果是报名、赛事或强时效信息，可手动调到 24 小时。",
+      suggested_interval_hours: 72,
+      sources: [
+        { name: `${topic} 官方/报名`, query: `${topic} 官方 报名 最新 2025 OR 2026`, rationale: "优先捕捉权威公告、报名入口和最新活动。", enabled: true },
+        { name: `${topic} 小红书`, query: `site:xiaohongshu.com ${topic} 攻略 推荐 最新`, rationale: "适合发现真实体验、路线推荐和近期讨论。", enabled: true },
+        { name: `${topic} 知乎`, query: `site:zhihu.com ${topic} 攻略 经验 推荐`, rationale: "适合收集长回答、避坑经验和系统化建议。", enabled: true },
+        { name: `${topic} 微信/资讯`, query: `${topic} 最新 活动 攻略 公众号`, rationale: "补充中文资讯、活动预告和本地服务信息。", enabled: true },
+        { name: `${topic} 社区动态`, query: `${topic} 讨论 社群 活动 最新`, rationale: "用于发现分散在社区里的短期机会和口碑变化。", enabled: true },
+      ],
+      tips: ["先用基础来源跑一轮，再删除噪声较多的来源。", "如果想追报名/活动，把扫描频率调到 24 小时。", "可在关键词里加入城市、年份或平台名来提高命中率。"],
+    };
+    console.warn(`[monitor-plan] AI schema failed, using fallback plan. Last error: ${lastErr}`);
+    return { ok: true as const, plan: fallbackPlan };
   });
