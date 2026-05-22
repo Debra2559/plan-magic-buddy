@@ -235,10 +235,31 @@ const PromptParseSchema = z.object({
   include_keywords: z.array(z.string().trim().min(1).max(40)).max(30),
   exclude_keywords: z.array(z.string().trim().min(1).max(40)).max(30),
   tag_filters: z.array(z.string().trim().min(1).max(30)).max(30),
-  scan_interval_hours: z.number().int().min(1).max(168),
+  scan_interval_hours: z.coerce.number().int().min(1).max(168),
   time_window: z.enum(["qdr:h", "qdr:d", "qdr:w", "qdr:m", "qdr:y"]),
-  per_source_limit: z.number().int().min(1).max(20),
+  per_source_limit: z.coerce.number().int().min(1).max(20),
 });
+
+function buildFallbackAiNewsSettings(prompt: string, current: z.infer<typeof SettingsSchema>): z.infer<typeof PromptParseSchema> {
+  const topic = prompt.trim().replace(/\s+/g, " ").slice(0, 80);
+  const baseSource = {
+    name: topic.length > 18 ? `${topic.slice(0, 18)}…` : topic || "AI 动态",
+    query: `${topic || "AI 大模型"} latest OR 发布 OR 进展 OR report`,
+    enabled: true,
+  };
+
+  return {
+    ...current,
+    enabled: true,
+    sources: [baseSource, ...current.sources].filter((s, i, arr) => arr.findIndex((x) => x.query === s.query) === i).slice(0, 20),
+    include_keywords: current.include_keywords,
+    exclude_keywords: current.exclude_keywords,
+    tag_filters: current.tag_filters,
+    scan_interval_hours: current.scan_interval_hours || 24,
+    time_window: current.time_window || "qdr:w",
+    per_source_limit: current.per_source_limit || 6,
+  };
+}
 
 export const parseRadarPrompt = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ prompt: z.string().min(2).max(4000) }).parse(d))
@@ -264,7 +285,9 @@ export const parseRadarPrompt = createServerFn({ method: "POST" })
       });
       return { ok: true as const, settings: object };
     } catch (e) {
-      return { ok: false as const, error: e instanceof Error ? e.message : String(e) };
+      const error = e instanceof Error ? e.message : String(e);
+      console.warn(`[ai-news-parse] AI schema failed, using fallback settings. Error: ${error}`);
+      return { ok: true as const, settings: buildFallbackAiNewsSettings(data.prompt, current) };
     }
   });
 
