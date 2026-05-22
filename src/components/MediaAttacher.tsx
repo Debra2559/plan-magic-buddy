@@ -16,7 +16,8 @@ function mmssShort(s: number) {
   return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
-function AudioPill({ src }: { src: string }) {
+function AudioPill({ src: rawSrc }: { src: string }) {
+  const src = useSignedMediaUrl(rawSrc);
   const ref = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [cur, setCur] = useState(0);
