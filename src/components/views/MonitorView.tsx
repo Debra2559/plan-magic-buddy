@@ -111,40 +111,22 @@ export function MonitorView() {
           一键新建监控
           <span className="text-foreground/40 ml-1 tracking-normal">告诉我想关注什么，AI 自动规划来源和节奏</span>
         </div>
-        <div className="flex gap-2 mb-2">
-          <button
-            onClick={() => setTarget("hackathon")}
-            className={`flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full border transition ${
-              target === "hackathon"
-                ? "bg-amber-glow/15 border-amber-glow/40 text-amber-glow"
-                : "bg-foreground/5 border-foreground/10 text-foreground/55 hover:text-foreground"
-            }`}
-          >
-            <Trophy className="w-3 h-3" /> 黑客松雷达
-          </button>
-          <button
-            onClick={() => setTarget("ai-news")}
-            className={`flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full border transition ${
-              target === "ai-news"
-                ? "bg-amber-glow/15 border-amber-glow/40 text-amber-glow"
-                : "bg-foreground/5 border-foreground/10 text-foreground/55 hover:text-foreground"
-            }`}
-          >
-            <Newspaper className="w-3 h-3" /> AI 动态雷达
-          </button>
+        <div className="flex items-center gap-2 mb-2 text-[10.5px] text-foreground/45">
+          <span className="flex items-center gap-1"><Trophy className="w-3 h-3" /> 比赛/赛事</span>
+          <span className="opacity-40">·</span>
+          <span className="flex items-center gap-1"><Newspaper className="w-3 h-3" /> AI/资讯动态</span>
+          <span className="opacity-40">·</span>
+          <span>AI 自动判断该建哪种雷达</span>
         </div>
         <div className="flex gap-2">
           <input
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void onCreate(); } }}
-            placeholder={
-              target === "hackathon"
-                ? "新主题，例如：徒步 / 飞盘 / AI Agent 比赛"
-                : "想关注什么？例如：开源大模型发布、Agent 框架进展，每 6 小时扫一次"
-            }
+            placeholder="想关注什么？例如：徒步 / AI Agent 比赛 / 开源大模型发布"
             className="flex-1 bg-background/40 border border-foreground/15 rounded-md px-3 py-2 text-[12px] text-foreground placeholder:text-foreground/30 focus:border-amber-glow/60 focus:outline-none"
           />
+
           <button
             onClick={onCreate}
             disabled={busy || !topic.trim()}
