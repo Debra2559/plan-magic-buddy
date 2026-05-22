@@ -354,41 +354,48 @@ export const updateMyInsightsSettings = createServerFn({ method: "POST" })
 
 // ---------- Cron (called from public hook) ----------
 
-export async function runScheduledInsights(): Promise<{ processed: number; generated: number; errors: number }> {
-  // Find all users with enabled settings, then compute slot/today in each user's own timezone
+export async function runScheduledInsights(): Promise<{ processed: number; generated: number; errors: number; details: Array<{ user_id: string; slot?: string; status: "skipped" | "ok" | "empty" | "error"; reason?: string }> }> {
+  const details: Array<{ user_id: string; slot?: string; status: "skipped" | "ok" | "empty" | "error"; reason?: string }> = [];
   const { data: users, error } = await supabaseAdmin
     .from("ai_insights_settings")
     .select("user_id, slots, enabled, last_generated_at, last_slot, timezone");
-  if (error) return { processed: 0, generated: 0, errors: 1 };
+  if (error) return { processed: 0, generated: 0, errors: 1, details: [{ user_id: "-", status: "error", reason: error.message }] };
 
   const now = new Date();
   let processed = 0;
   let generated = 0;
   let errors = 0;
   for (const u of users ?? []) {
-    if (!u.enabled) continue;
+    if (!u.enabled) { details.push({ user_id: u.user_id, status: "skipped", reason: "disabled" }); continue; }
     const tz = (u as any).timezone || DEFAULT_TZ;
     const userSlot = currentSlot(now, tz);
     const userToday = todayStr(now, tz);
     const slots: string[] = u.slots ?? [];
-    if (!slots.includes(userSlot)) continue;
-    // Skip if already generated this slot today (in user's tz)
-    if (u.last_slot === userSlot && u.last_generated_at && (u.last_generated_at as string).slice(0, 10) === userToday) continue;
+    if (!slots.includes(userSlot)) { details.push({ user_id: u.user_id, slot: userSlot, status: "skipped", reason: "slot_off" }); continue; }
+    if (u.last_slot === userSlot && u.last_generated_at && (u.last_generated_at as string).slice(0, 10) === userToday) {
+      details.push({ user_id: u.user_id, slot: userSlot, status: "skipped", reason: "already_generated" });
+      continue;
+    }
     processed++;
     try {
       const r = await generateForUser(u.user_id, userSlot);
-      if (r.ok && (r as any).count > 0) generated++;
-      else if (!r.ok) {
+      if (r.ok && (r as any).count > 0) {
+        generated++;
+        details.push({ user_id: u.user_id, slot: userSlot, status: "ok" });
+      } else if (!r.ok) {
         errors++;
+        details.push({ user_id: u.user_id, slot: userSlot, status: "error", reason: (r as any).reason });
         console.error(`[insights] user=${u.user_id} slot=${userSlot} failed:`, (r as any).reason);
       } else {
+        details.push({ user_id: u.user_id, slot: userSlot, status: "empty" });
         console.log(`[insights] user=${u.user_id} slot=${userSlot} returned 0 insights`);
       }
     } catch (e) {
       errors++;
+      const msg = e instanceof Error ? e.message : String(e);
+      details.push({ user_id: u.user_id, slot: userSlot, status: "error", reason: msg });
       console.error(`[insights] user=${u.user_id} slot=${userSlot} threw:`, e);
     }
-
   }
-  return { processed, generated, errors };
+  return { processed, generated, errors, details };
 }
