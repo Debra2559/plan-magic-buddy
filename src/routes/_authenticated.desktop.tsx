@@ -208,6 +208,7 @@ function DesktopApp() {
                 {view === "habits" && <HabitsView />}
                 {view === "journal" && <JournalView />}
                 {view === "ability" && <AbilityView />}
+                {view === "monitor" && <MonitorView />}
               </div>
             </div>
           </AppWindow>
