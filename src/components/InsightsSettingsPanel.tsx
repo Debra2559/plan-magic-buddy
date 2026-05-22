@@ -2,7 +2,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useEffect } from "react";
 import { getMyInsightsSettings, updateMyInsightsSettings, generateMyInsightsNow } from "@/lib/insights.functions";
-import { Sparkles, RefreshCw, Globe } from "lucide-react";
+import { Sparkles, RefreshCw, Globe, Bell, Lightbulb, TrendingUp, Heart, AlertTriangle } from "lucide-react";
+
+const EXAMPLES = [
+  { icon: Bell, tone: "text-amber-glow", label: "待办提醒", example: "「14:00 的设计评审还没准备纲要，建议先列 3 个要点。」" },
+  { icon: Lightbulb, tone: "text-sky-300", label: "优化建议", example: "「这周连续 4 天 23 点后睡，明早把 9 点的会挪一挪？」" },
+  { icon: TrendingUp, tone: "text-violet-300", label: "行为洞察", example: "「最近 3 天「阅读」习惯都在通勤时打卡，看来这个时段最稳。」" },
+  { icon: Heart, tone: "text-rose-300", label: "鼓励", example: "「连续 5 天完成运动打卡，状态肉眼可见地稳了。」" },
+  { icon: AlertTriangle, tone: "text-orange-400", label: "风险提示", example: "「今晚 3 个日程叠在一起，建议挪掉其中一个。」" },
+] as const;
 
 const SLOTS = [
   { key: "morning", label: "早晨", hint: "≤ 11:00" },
