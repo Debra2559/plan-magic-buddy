@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSylva } from "@/lib/sylva-store";
-import { CheckCircle2, Circle, Trash2, Filter } from "lucide-react";
+import { CheckCircle2, Circle, Trash2, Filter, Calendar, Clock, Tag, FileText } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 const tagColor: Record<string, string> = {
   工作: "text-moss",
@@ -12,7 +13,17 @@ const tagColor: Record<string, string> = {
 };
 
 export function TodosView({ initialFilter = "all", filterKey }: { initialFilter?: "all" | "todo" | "reminder" | "event"; filterKey?: string } = {}) {
-  const { items, toggleDone, removeItem, isRecentlySynced } = useSylva();
+  const { items, toggleDone, removeItem, updateItem, isRecentlySynced } = useSylva();
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const detailItem = detailId ? items.find((i) => i.id === detailId) ?? null : null;
+  const [draftNote, setDraftNote] = useState("");
+  const [draftTitle, setDraftTitle] = useState("");
+  useEffect(() => {
+    if (detailItem) {
+      setDraftNote(detailItem.note ?? "");
+      setDraftTitle(detailItem.title);
+    }
+  }, [detailId]);
   const [filter, setFilter] = useState<"all" | "todo" | "reminder" | "event">(initialFilter);
   useEffect(() => { setFilter(initialFilter); }, [initialFilter, filterKey]);
   const [tagFilter, setTagFilter] = useState<string>("all");
@@ -93,28 +104,30 @@ export function TodosView({ initialFilter = "all", filterKey }: { initialFilter?
                 {list.map((it) => (
                   <div
                     key={it.id}
-                    className={`group flex items-center gap-3 p-3 rounded-xl bg-foreground/[0.04] border transition ${
+                    onClick={() => setDetailId(it.id)}
+                    className={`group flex items-center gap-3 p-3 rounded-xl bg-foreground/[0.04] border transition cursor-pointer ${
                       isRecentlySynced(it.id)
                         ? "border-amber-glow/60 bg-amber-glow/10 ring-1 ring-amber-glow/40 animate-pulse-glow"
                         : "border-white/[0.07] hover:border-border"
                     }`}
                   >
-                    <button onClick={() => toggleDone(it.id)} className="shrink-0">
+                    <button onClick={(e) => { e.stopPropagation(); toggleDone(it.id); }} className="shrink-0">
                       {it.done ? (
                         <CheckCircle2 className="w-4 h-4 text-moss" />
                       ) : (
                         <Circle className="w-4 h-4 text-muted-foreground/60 hover:text-muted-foreground" />
                       )}
                     </button>
-                    <span className={`flex-1 text-sm ${it.done ? "text-muted-foreground/70 line-through" : "text-foreground"}`}>
+                    <span className={`flex-1 min-w-0 text-sm truncate ${it.done ? "text-muted-foreground/70 line-through" : "text-foreground"}`}>
                       {it.title}
                     </span>
+                    {it.note && <FileText className="w-3 h-3 text-muted-foreground/60 shrink-0" />}
                     {it.time && <span className="text-xs font-mono text-muted-foreground">{it.time}</span>}
                     <span className={`text-[10px] tracking-wider ${tagColor[it.tag] ?? "text-muted-foreground"}`}>
                       {it.tag}
                     </span>
                     <button
-                      onClick={() => removeItem(it.id)}
+                      onClick={(e) => { e.stopPropagation(); removeItem(it.id); }}
                       className="opacity-0 group-hover:opacity-100 text-muted-foreground/60 hover:text-destructive p-1 transition"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -126,6 +139,79 @@ export function TodosView({ initialFilter = "all", filterKey }: { initialFilter?
           ))}
         </div>
       )}
+
+      <Dialog open={!!detailItem} onOpenChange={(o) => !o && setDetailId(null)}>
+        <DialogContent className="max-w-md">
+          <DialogTitle className="sr-only">事项详情</DialogTitle>
+          {detailItem && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-[10px] tracking-widest text-amber-glow mb-1.5">事项详情</p>
+                <input
+                  value={draftTitle}
+                  onChange={(e) => setDraftTitle(e.target.value)}
+                  onBlur={() => {
+                    const t = draftTitle.trim();
+                    if (t && t !== detailItem.title) updateItem(detailItem.id, { title: t });
+                    else setDraftTitle(detailItem.title);
+                  }}
+                  className="w-full bg-transparent border-none text-xl font-display text-foreground focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>{formatDate(detailItem.date)}</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span className="font-mono">{detailItem.time ?? "未指定"}</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Tag className="w-3.5 h-3.5" />
+                  <span className={tagColor[detailItem.tag] ?? ""}>{detailItem.tag}</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <span className="text-[10px] uppercase tracking-wider">{detailItem.type}</span>
+                  {detailItem.done && <span className="text-moss text-[10px]">· 已完成</span>}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] tracking-widest text-muted-foreground/80 mb-1.5 block">备注</label>
+                <textarea
+                  value={draftNote}
+                  onChange={(e) => setDraftNote(e.target.value)}
+                  onBlur={() => {
+                    if (draftNote !== (detailItem.note ?? "")) {
+                      updateItem(detailItem.id, { note: draftNote || undefined });
+                    }
+                  }}
+                  placeholder="加点备注，例如链接、上下文、要点……"
+                  rows={4}
+                  className="w-full bg-foreground/5 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-amber-glow/50 resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-border">
+                <button
+                  onClick={() => toggleDone(detailItem.id)}
+                  className="text-xs px-3 py-1.5 rounded-full border border-border text-foreground hover:bg-foreground/5"
+                >
+                  {detailItem.done ? "标记未完成" : "标记完成"}
+                </button>
+                <button
+                  onClick={() => { removeItem(detailItem.id); setDetailId(null); }}
+                  className="text-xs px-3 py-1.5 rounded-full border border-destructive/40 text-destructive hover:bg-destructive/10 flex items-center gap-1.5"
+                >
+                  <Trash2 className="w-3 h-3" /> 删除
+                </button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
