@@ -13,7 +13,17 @@ const tagColor: Record<string, string> = {
 };
 
 export function TodosView({ initialFilter = "all", filterKey }: { initialFilter?: "all" | "todo" | "reminder" | "event"; filterKey?: string } = {}) {
-  const { items, toggleDone, removeItem, isRecentlySynced } = useSylva();
+  const { items, toggleDone, removeItem, updateItem, isRecentlySynced } = useSylva();
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const detailItem = detailId ? items.find((i) => i.id === detailId) ?? null : null;
+  const [draftNote, setDraftNote] = useState("");
+  const [draftTitle, setDraftTitle] = useState("");
+  useEffect(() => {
+    if (detailItem) {
+      setDraftNote(detailItem.note ?? "");
+      setDraftTitle(detailItem.title);
+    }
+  }, [detailId]);
   const [filter, setFilter] = useState<"all" | "todo" | "reminder" | "event">(initialFilter);
   useEffect(() => { setFilter(initialFilter); }, [initialFilter, filterKey]);
   const [tagFilter, setTagFilter] = useState<string>("all");
