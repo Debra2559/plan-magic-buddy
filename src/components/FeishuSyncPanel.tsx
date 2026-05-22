@@ -2031,6 +2031,120 @@ export function FeishuSyncPanel() {
         </p>
       </div>
 
+      {/* ============ 接入指南 ============ */}
+      <details className="mt-4 rounded-xl border border-border bg-foreground/[0.02] overflow-hidden group">
+        <summary className="cursor-pointer select-none px-3.5 py-2.5 flex items-center gap-2 text-sm font-medium text-foreground/85 hover:bg-foreground/[0.04] [&::-webkit-details-marker]:hidden">
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-indigo-400/15 text-indigo-300 text-[11px] transition-transform group-open:rotate-90">›</span>
+          飞书日程同步 · 接入指南
+          <span className="ml-auto text-[10px] text-muted-foreground/60">展开查看权限 / 步骤 / 常见问题</span>
+        </summary>
+        <div className="px-4 pb-4 pt-1 space-y-4 text-[12px] leading-relaxed text-foreground/80">
+          {/* —— 权限要求 —— */}
+          <section className="space-y-1.5">
+            <h4 className="text-[12px] font-semibold text-foreground/90 flex items-center gap-1.5">
+              <span className="inline-block w-1 h-3 rounded-sm bg-indigo-400/80" /> 一、权限要求
+            </h4>
+            <p className="text-muted-foreground/85">
+              在 <a className="text-indigo-300 hover:underline" href="https://open.feishu.cn/app" target="_blank" rel="noreferrer">飞书开放平台</a> 创建「企业自建应用」后，在「权限管理」中开启以下权限：
+            </p>
+            <ul className="ml-4 list-disc space-y-1 marker:text-indigo-300/60">
+              <li><code className="px-1 py-0.5 rounded bg-foreground/5 text-amber-200">calendar:calendar</code> · 获取与管理日历及日程（必需）</li>
+              <li><code className="px-1 py-0.5 rounded bg-foreground/5 text-amber-200">im:message</code> · 以应用身份发消息（用于待办 / 黑客松 / 每日小结提醒）</li>
+              <li><code className="px-1 py-0.5 rounded bg-foreground/5 text-amber-200">im:message.group_at_msg</code> · 群里 @机器人后接收消息（可选，开 AI 聊天用）</li>
+              <li><code className="px-1 py-0.5 rounded bg-foreground/5 text-amber-200">contact:user.base:readonly</code> + <code className="px-1 py-0.5 rounded bg-foreground/5 text-amber-200">search:user.id:readonly</code> · 按姓名/工号查 open_id（可选）</li>
+              <li><code className="px-1 py-0.5 rounded bg-foreground/5 text-amber-200">im:resource</code> · 表情回应（可选，机器人对消息回 👍）</li>
+            </ul>
+            <p className="text-[11px] text-muted-foreground/70">权限改动后需在「版本管理」重新发布应用，管理员审核通过才会生效。</p>
+          </section>
+
+          {/* —— 配置步骤 —— */}
+          <section className="space-y-1.5">
+            <h4 className="text-[12px] font-semibold text-foreground/90 flex items-center gap-1.5">
+              <span className="inline-block w-1 h-3 rounded-sm bg-emerald-400/80" /> 二、配置步骤
+            </h4>
+            <ol className="ml-4 list-decimal space-y-1.5 marker:text-emerald-300/70">
+              <li>
+                <span className="font-medium text-foreground/90">填入 App 凭证</span>
+                <div className="text-muted-foreground/80">把开放平台「凭证与基础信息」里的 <code className="px-1 rounded bg-foreground/5">App ID</code> / <code className="px-1 rounded bg-foreground/5">App Secret</code> 写到 Sylva 后端密钥：<code className="px-1 rounded bg-foreground/5">FEISHU_APP_ID</code>、<code className="px-1 rounded bg-foreground/5">FEISHU_APP_SECRET</code>。</div>
+              </li>
+              <li>
+                <span className="font-medium text-foreground/90">配置事件订阅 Webhook</span>
+                <div className="text-muted-foreground/80">「事件与回调 → 加密策略」中可只设 <code className="px-1 rounded bg-foreground/5">Verification Token</code>（写到 <code className="px-1 rounded bg-foreground/5">FEISHU_VERIFICATION_TOKEN</code>），若启用加密则同时填 <code className="px-1 rounded bg-foreground/5">Encrypt Key</code> → <code className="px-1 rounded bg-foreground/5">FEISHU_ENCRYPT_KEY</code>。</div>
+                <div className="text-muted-foreground/80">「事件订阅」的请求网址填：<code className="px-1 rounded bg-foreground/5 break-all">{typeof window !== "undefined" ? `${window.location.origin}/api/public/feishu/webhook` : "https://你的域名/api/public/feishu/webhook"}</code></div>
+                <div className="text-muted-foreground/80">订阅事件：<code className="px-1 rounded bg-foreground/5">im.message.receive_v1</code>、<code className="px-1 rounded bg-foreground/5">card.action.trigger</code>。</div>
+              </li>
+              <li>
+                <span className="font-medium text-foreground/90">配置 OAuth 回调</span>
+                <div className="text-muted-foreground/80">「安全设置 → 重定向 URL」加入：<code className="px-1 rounded bg-foreground/5 break-all">{typeof window !== "undefined" ? `${window.location.origin}/api/public/feishu/oauth/callback` : "https://你的域名/api/public/feishu/oauth/callback"}</code>，用于按姓名/工号搜索同事的 open_id。</div>
+              </li>
+              <li>
+                <span className="font-medium text-foreground/90">连接 & 选日历</span>
+                <div className="text-muted-foreground/80">在本面板顶部点「测试连接」，再「拉取我的日历」并选一个作为同步目标。建议新建一个名为「Sylva」的日历，避免污染主日历。</div>
+              </li>
+              <li>
+                <span className="font-medium text-foreground/90">设置同步方向 & 提醒</span>
+                <div className="text-muted-foreground/80">选择「双向」或「仅推送」；在「通知接收人」给机器人发一句话即可自动捕获 open_id，之后黑客松卡片、每日小结都会推到这里。</div>
+              </li>
+            </ol>
+          </section>
+
+          {/* —— 常见问题 —— */}
+          <section className="space-y-2">
+            <h4 className="text-[12px] font-semibold text-foreground/90 flex items-center gap-1.5">
+              <span className="inline-block w-1 h-3 rounded-sm bg-rose-400/80" /> 三、常见问题
+            </h4>
+            <div className="space-y-2">
+              {[
+                {
+                  q: "事件订阅 URL 校验一直失败？",
+                  a: "检查 Verification Token 是否与 FEISHU_VERIFICATION_TOKEN 完全一致；如果开了加密策略，必须同步填 FEISHU_ENCRYPT_KEY。校验请求会出现在「事件 Webhook 日志」中，可对照排查。",
+                },
+                {
+                  q: "「测试连接」报 99991663 / token invalid？",
+                  a: "App ID 或 App Secret 填错、或应用没发版。重新核对凭证并在开放平台「版本管理」点击发布；权限审核通过后再试。",
+                },
+                {
+                  q: "推送日程报「无权限访问该日历」？",
+                  a: "应用对所选日历没有写权限。最稳妥的做法是新建一个共享给应用的日历，或在「日历设置 → 共享」中把应用 / 自己加为「可管理日程」。",
+                },
+                {
+                  q: "拉取回来的事件少 / 时间不对？",
+                  a: "默认只拉最近 60 天；时间偏差通常是时区问题——确认每日小结 / 用户的时区设置与飞书帐号一致。",
+                },
+                {
+                  q: "黑客松 / 每日小结卡片没收到？",
+                  a: "先在「通知接收人」处给机器人私聊一句话触发 open_id 捕获，再点「立即发送一次」；若仍失败，检查「事件 Webhook 日志」中 send 步骤的 error 字段。",
+                },
+                {
+                  q: "群里 @机器人没回复？",
+                  a: "需要 im.message.receive_v1 事件订阅 + im:message.group_at_msg 权限；私聊则只需要 im:message。同时确认应用已被拉入该群。",
+                },
+                {
+                  q: "如何按同事姓名 / 工号查 open_id？",
+                  a: "点本面板的「授权我的飞书帐号」走一次 OAuth（需要 contact / search 权限），之后即可在「批量查找 open_id」中按姓名或工号检索。",
+                },
+              ].map((item, i) => (
+                <details key={i} className="rounded-lg border border-border/70 bg-background/40">
+                  <summary className="cursor-pointer select-none px-3 py-2 text-[12px] text-foreground/85 hover:bg-foreground/[0.04] [&::-webkit-details-marker]:hidden flex items-start gap-2">
+                    <span className="text-rose-300/80 mt-px">Q.</span>
+                    <span className="flex-1">{item.q}</span>
+                  </summary>
+                  <div className="px-3 pb-2.5 pt-0 text-[11.5px] text-muted-foreground/85 pl-7 leading-relaxed">
+                    {item.a}
+                  </div>
+                </details>
+              ))}
+            </div>
+          </section>
+
+          <p className="text-[10.5px] text-muted-foreground/60 pt-1 border-t border-border/50">
+            提示：所有配置改动都在「事件 Webhook 日志」里有完整请求轨迹，调试时优先看这张表。
+          </p>
+        </div>
+      </details>
+
+
+
 
 
 
