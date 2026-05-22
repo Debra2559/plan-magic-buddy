@@ -10,6 +10,16 @@ import { ImageAttacher, extractImagesFromEvent, fileToCompressedDataURL } from "
 import { MediaAttacher } from "@/components/MediaAttacher";
 import { JournalView } from "@/components/views/JournalView";
 import { JournalOverview } from "@/components/views/JournalOverview";
+import { useSignedMediaUrl } from "@/lib/signed-media";
+
+function NoteVideo({ src }: { src: string }) {
+  const url = useSignedMediaUrl(src);
+  return <video src={url} controls preload="metadata" className="max-h-48 rounded-lg border border-border bg-black" />;
+}
+function NoteAudio({ src }: { src: string }) {
+  const url = useSignedMediaUrl(src);
+  return <audio src={url} controls className="h-8 max-w-full" />;
+}
 
 type Tab = "log" | "reflection" | "handbook" | "review";
 
