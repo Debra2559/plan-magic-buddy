@@ -328,7 +328,20 @@ export function SylvaProvider({ children }: { children: ReactNode }) {
 
   const addItems = (newOnes: PlanItem[]): string[] => {
     const withIds = newOnes.map((i) => ({ ...i, id: (i as any).id ?? nextId() }));
-    setItems((prev) => [...prev, ...withIds]);
+    setItems((prev) => {
+      const seenIds = new Set(prev.map((p) => p.id));
+      const seenSig = new Set(
+        prev.map((p) => `${p.title}|${p.date}|${p.time ?? ""}|${p.type}`),
+      );
+      const fresh = withIds.filter((i) => {
+        if (seenIds.has(i.id)) return false;
+        const sig = `${i.title}|${i.date}|${i.time ?? ""}|${i.type}`;
+        if (seenSig.has(sig)) return false;
+        seenSig.add(sig);
+        return true;
+      });
+      return fresh.length ? [...prev, ...fresh] : prev;
+    });
     void remote.upsertItems(withIds as DoneItem[]);
     return withIds.map((i) => i.id);
   };
