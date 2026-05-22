@@ -57,6 +57,37 @@
 
 > 以下均为真实使用截图。
 
+### Mac 桌面组件 & iPhone 锁屏组件
+
+![桌面与锁屏组件总览](docs/screenshots/widgets-bento.jpg)
+
+把 **日历 / 今日待办 / 速记 / 习惯打卡** 一组组件钉在 macOS 桌面，再把当日日程 + AI 提示 + 提醒清单做成 iPhone 锁屏组件——一眼可见、单手可改，规划不再需要打开 App。
+
+<table>
+  <tr>
+    <td width="55%" align="center">
+      <img src="docs/screenshots/mac-widgets.jpg" alt="macOS 桌面组件" />
+      <br/><sub><b>macOS 桌面组件</b> · 日历 / 今日 / 速记 / 习惯</sub>
+    </td>
+    <td width="45%" align="center">
+      <img src="docs/screenshots/iphone-widget.jpg" alt="iPhone 锁屏 / 桌面组件" />
+      <br/><sub><b>iPhone 组件</b> · 当日节奏 + AI 建议 + 提醒</sub>
+    </td>
+  </tr>
+</table>
+
+### 日历 · 待办 · 提醒动效
+
+![日历 / 待办 / 提醒 动效巡览](docs/screenshots/widgets-tour.gif)
+
+四帧短循环依次展示：月历的事件色块 → 今日待办与年度进度 → iPhone 提醒列表 → 习惯打卡矩阵。
+
+<p align="center">
+  <img src="docs/screenshots/iphone-reminder.gif" alt="iPhone 提醒上下滚动" width="320" />
+</p>
+
+iPhone 组件的提醒滚动动效——AI 建议钉在顶部，剩下的事项按时间顺序排好。
+
 ### AI 规划 · 黑客松 / AI 动态雷达
 
 ![AI 规划主界面](docs/screenshots/hero.jpg)
