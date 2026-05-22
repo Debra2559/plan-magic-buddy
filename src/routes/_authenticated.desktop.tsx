@@ -79,7 +79,7 @@ function DesktopApp() {
   const [view, setView] = useState<SylvaView>(() => {
     if (typeof window === "undefined") return "ai";
     const v = new URLSearchParams(window.location.search).get("view");
-    const allowed: SylvaView[] = ["schedule", "ai", "todos", "notes", "habits", "settings"];
+    const allowed: SylvaView[] = ["schedule", "ai", "todos", "notes", "habits", "ability", "monitor", "settings"];
     return (allowed as string[]).includes(v ?? "") ? (v as SylvaView) : "schedule";
   });
   const [todosFilter, setTodosFilter] = useState<"todo" | "reminder" | "event" | "all">("all");
