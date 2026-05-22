@@ -36,6 +36,7 @@ export function TaboosEditor({
   const [draft, setDraft] = useState("");
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editingDraft, setEditingDraft] = useState("");
+  const [templatesOpen, setTemplatesOpen] = useState(false);
 
   const taboos = value ?? [];
   const set = (next: string[]) => {
