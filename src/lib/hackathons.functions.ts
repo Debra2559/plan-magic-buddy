@@ -756,3 +756,41 @@ ${corpus}
     console.warn(`[monitor-plan] AI schema failed, using fallback plan. Last error: ${lastErr}`);
     return { ok: true as const, plan: fallbackPlan };
   });
+
+// ============================================================
+// 🧭 自动判断: 用户输入的主题该建「黑客松雷达」还是「AI 动态雷达」
+// ============================================================
+const ClassifySchema = z.object({
+  kind: z.enum(["hackathon", "ai-news"]),
+  reason: z.string().max(80),
+});
+
+export const classifyMonitorTopic = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ prompt: z.string().min(1).max(4000) }).parse(d))
+  .handler(async ({ data }) => {
+    const text = data.prompt.toLowerCase();
+    if (/黑客松|hackathon|大赛|比赛|赛事|报名|马拉松|徒步|飞盘|户外|露营|展会/.test(text)) {
+      return { ok: true as const, kind: "hackathon" as const, reason: "命中赛事/活动关键词" };
+    }
+    if (/资讯|动态|新闻|news|发布|paper|论文|趋势|追踪|订阅|博客|周报|radar|雷达|模型|llm|agent/.test(text)) {
+      return { ok: true as const, kind: "ai-news" as const, reason: "命中资讯/动态关键词" };
+    }
+
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) return { ok: true as const, kind: "ai-news" as const, reason: "默认按资讯雷达处理" };
+    try {
+      const gateway = createLovableAiGatewayProvider(apiKey);
+      const { object } = await generateObject({
+        model: gateway("google/gemini-2.5-flash-lite"),
+        schema: ClassifySchema,
+        system: `判断用户描述属于哪类监控:
+- "hackathon": 比赛/赛事/活动报名 (黑客松、马拉松、徒步、展会等), 关心 deadline 与报名入口
+- "ai-news": 资讯/动态/新发布 (AI 模型、行业新闻、产品更新、论文、趋势), 关心『有什么新的』
+只输出 JSON。`,
+        prompt: data.prompt,
+      });
+      return { ok: true as const, kind: object.kind, reason: object.reason };
+    } catch {
+      return { ok: true as const, kind: "ai-news" as const, reason: "AI 不可用, 默认资讯雷达" };
+    }
+  });
