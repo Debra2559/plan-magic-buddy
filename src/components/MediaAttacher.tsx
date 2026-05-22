@@ -2,6 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Mic, Square, ImagePlus, Trash2, Loader2, Play, Pause, X } from "lucide-react";
 import { fileToCompressedDataURL } from "@/components/ImageAttacher";
+import { useSignedMediaUrl } from "@/lib/signed-media";
+
+function SignedVideo({ src, ...rest }: React.VideoHTMLAttributes<HTMLVideoElement> & { src: string }) {
+  const url = useSignedMediaUrl(src);
+  return <video {...rest} src={url} />;
+}
 
 function mmssShort(s: number) {
   if (!isFinite(s) || s < 0) s = 0;
@@ -10,7 +16,8 @@ function mmssShort(s: number) {
   return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
-function AudioPill({ src }: { src: string }) {
+function AudioPill({ src: rawSrc }: { src: string }) {
+  const src = useSignedMediaUrl(rawSrc);
   const ref = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [cur, setCur] = useState(0);
@@ -92,8 +99,8 @@ async function uploadToBucket(file: Blob, ext: string): Promise<string> {
     upsert: false,
   });
   if (error) throw new Error(error.message);
-  const { data } = supabase.storage.from("note-media").getPublicUrl(path);
-  return data.publicUrl;
+  // Store the storage path. Rendering code resolves it via signed URLs.
+  return path;
 }
 
 export function MediaAttacher({ videos, audios, images = [], onChange, maxVideos = 2, maxAudios = 4, maxImages = 6 }: Props) {
@@ -274,7 +281,7 @@ export function MediaAttacher({ videos, audios, images = [], onChange, maxVideos
           ))}
           {videos.map((src, i) => (
             <div key={`v-${i}`} className="relative group">
-              <video
+              <SignedVideo
                 src={src}
                 controls
                 preload="metadata"
