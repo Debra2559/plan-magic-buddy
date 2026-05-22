@@ -191,14 +191,16 @@ ${JSON.stringify(ctx.habits, null, 0)}
   let insights: z.infer<typeof InsightSchema>[] = [];
   try {
     const { object } = await generateObject({
-      model: gateway("google/gemini-2.5-flash"),
+      model: gateway("google/gemini-3-flash-preview"),
       schema: InsightsBatch,
       system,
       prompt,
     });
     insights = object.insights;
   } catch (e: any) {
-    return { ok: false as const, reason: `ai_error:${e?.message ?? "unknown"}` };
+    const msg = e?.message ?? "unknown";
+    console.error(`[insights] generateObject failed for user=${userId}:`, msg);
+    return { ok: false as const, reason: `ai_error:${msg}` };
   }
 
   if (!insights.length) return { ok: true as const, count: 0 };
