@@ -19,11 +19,11 @@ type Target = "hackathon" | "ai-news";
 
 export function MonitorView() {
   const [topic, setTopic] = useState("");
-  const [target, setTarget] = useState<Target>("hackathon");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const classifyFn = useServerFn(classifyMonitorTopic);
   const planFn = useServerFn(planMonitoringSources);
   const getHackFn = useServerFn(getHackathonSettings);
   const updHackFn = useServerFn(updateHackathonSettings);
@@ -38,6 +38,8 @@ export function MonitorView() {
     setError(null);
     setSuccess(null);
     try {
+      const cls = await classifyFn({ data: { prompt: t } });
+      const target: Target = cls.ok ? cls.kind : "ai-news";
       if (target === "hackathon") {
         const planR = await planFn({ data: { topic: t } });
         if (!planR.ok || !planR.plan) {
@@ -54,7 +56,7 @@ export function MonitorView() {
           .filter((s) => !existing.has(s.query))
           .map((s) => ({ name: s.name, query: s.query, enabled: s.enabled !== false }));
         if (additions.length === 0) {
-          setSuccess("AI 调研完成，但来源都已存在。");
+          setSuccess("🏆 识别为黑客松/赛事类 · 来源都已存在");
           return;
         }
         const r = await updHackFn({
@@ -64,7 +66,7 @@ export function MonitorView() {
           },
         });
         if (!r.ok) { setError(r.error); return; }
-        setSuccess(`已加入 ${additions.length} 个黑客松来源，扫描节奏：每 ${planR.plan.suggested_interval_hours}h`);
+        setSuccess(`🏆 已识别为黑客松雷达 · 新增 ${additions.length} 个来源 · 每 ${planR.plan.suggested_interval_hours}h 扫一次`);
         setTopic("");
       } else {
         const r = await parsePromptFn({ data: { prompt: t } });
@@ -85,7 +87,7 @@ export function MonitorView() {
           },
         });
         if (!save.ok) { setError(save.error); return; }
-        setSuccess(`已更新 AI 动态雷达：${merged.sources.length} 个来源 · 每 ${merged.scan_interval_hours}h`);
+        setSuccess(`📰 已识别为 AI 动态雷达 · ${merged.sources.length} 个来源 · 每 ${merged.scan_interval_hours}h 扫一次`);
         setTopic("");
       }
     } catch (e) {
