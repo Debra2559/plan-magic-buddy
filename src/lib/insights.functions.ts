@@ -244,16 +244,77 @@ ${JSON.stringify(ctx.habits, null, 0)}
   // Optional feishu push
   if (settings.push_feishu) {
     try {
+      const KIND_EMOJI: Record<string, string> = {
+        reminder: "⏰",
+        suggestion: "💡",
+        pattern: "📈",
+        encouragement: "💖",
+        warning: "⚠️",
+      };
+      const KIND_LABEL: Record<string, string> = {
+        reminder: "提醒",
+        suggestion: "建议",
+        pattern: "洞察",
+        encouragement: "鼓励",
+        warning: "注意",
+      };
+      const KIND_COLOR: Record<string, string> = {
+        reminder: "orange",
+        suggestion: "wathet",
+        pattern: "green",
+        encouragement: "carmine",
+        warning: "red",
+      };
+      const slotEmoji = slot === "morning" ? "🌅" : slot === "noon" ? "☀️" : "🌙";
+      const headerTemplate = slot === "morning" ? "blue" : slot === "noon" ? "turquoise" : "indigo";
+      const sorted = [...insights].sort((a, b) => (b.priority || 0) - (a.priority || 0));
+
+      const itemElements = sorted.flatMap((i, idx) => {
+        const emoji = KIND_EMOJI[i.kind] ?? "✨";
+        const label = KIND_LABEL[i.kind] ?? "提示";
+        const color = KIND_COLOR[i.kind] ?? "grey";
+        const stars = "●".repeat(Math.max(1, Math.min(5, i.priority || 3)));
+        const titleLine = `${emoji} <font color='${color}'>**${i.title}**</font>　\`${label}\` <font color='grey'>${stars}</font>`;
+        const body = `<font color='default'>${i.content}</font>`;
+        const block = {
+          tag: "div",
+          text: { tag: "lark_md", content: `${titleLine}\n${body}` },
+        };
+        return idx < sorted.length - 1 ? [block, { tag: "hr" }] : [block];
+      });
+
       const card = {
-        config: { wide_screen_mode: true },
+        config: { wide_screen_mode: true, enable_forward: true },
         header: {
-          template: "blue",
-          title: { tag: "plain_text", content: `✨ ${slotName}提示 · ${ctx.today}` },
+          template: headerTemplate,
+          title: {
+            tag: "plain_text",
+            content: `${slotEmoji} ${slotName}提示 · ${ctx.today}`,
+          },
         },
-        elements: insights.flatMap((i) => [
-          { tag: "div", text: { tag: "lark_md", content: `**${i.title}**\n${i.content}` } },
+        elements: [
+          {
+            tag: "note",
+            elements: [
+              {
+                tag: "lark_md",
+                content: `给 **${displayName}** 的 ${sorted.length} 条贴心提示，按重要度排序`,
+              },
+            ],
+          },
           { tag: "hr" },
-        ]).slice(0, -1),
+          ...itemElements,
+          { tag: "hr" },
+          {
+            tag: "note",
+            elements: [
+              {
+                tag: "lark_md",
+                content: `🌲 Sylva · 在 App 内查看完整洞察 · 不想接收可在「洞察设置」中关闭`,
+              },
+            ],
+          },
+        ],
       };
       const r = await sendCardToFeishu(card);
       if (r.ok) {
