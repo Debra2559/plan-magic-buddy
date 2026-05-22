@@ -42,6 +42,7 @@ import {
   BookHeart,
   Shield,
   Brain,
+  Radar,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/desktop")({
