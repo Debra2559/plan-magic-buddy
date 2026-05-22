@@ -280,11 +280,6 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
           })}
         </div>
 
-        {/* 雷达模块（飞书已自动同步带时间的事项） */}
-        <div className="mt-6 grid lg:grid-cols-2 gap-6 items-start">
-          <HackathonInbox />
-          <AiNewsRadar />
-        </div>
       </div>
 
 
