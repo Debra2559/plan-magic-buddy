@@ -12,13 +12,13 @@ import { sendCardToFeishu } from "./feishu.functions";
 const InsightSchema = z.object({
   kind: z.enum(["reminder", "suggestion", "pattern", "encouragement", "warning"])
     .describe("reminder=待办提醒, suggestion=优化建议, pattern=行为洞察, encouragement=鼓励, warning=风险提示"),
-  title: z.string().max(40).describe("简洁中文标题，≤20字"),
-  content: z.string().max(200).describe("一两句中文建议，亲切自然，不要套话"),
-  priority: z.number().int().min(1).max(5).describe("1=低 5=高"),
+  title: z.string().describe("简洁中文标题，建议20字以内"),
+  content: z.string().describe("一两句中文建议，亲切自然，不要套话"),
+  priority: z.number().int().describe("1=低 5=高"),
 });
 
 const InsightsBatch = z.object({
-  insights: z.array(InsightSchema).min(1).max(5),
+  insights: z.array(InsightSchema),
 });
 
 export type AiInsight = {
