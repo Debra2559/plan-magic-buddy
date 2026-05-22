@@ -6,8 +6,6 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AiPlanner } from "@/components/AiPlanner";
 
-import { HackathonInbox } from "@/components/HackathonInbox";
-import { AiNewsRadar } from "@/components/AiNewsRadar";
 
 
 
@@ -280,11 +278,6 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
           })}
         </div>
 
-        {/* 雷达模块（飞书已自动同步带时间的事项） */}
-        <div className="mt-6 grid lg:grid-cols-2 gap-6 items-start">
-          <HackathonInbox />
-          <AiNewsRadar />
-        </div>
       </div>
 
 
@@ -600,7 +593,7 @@ function EditableRow({
   };
 
   return (
-    <div className={`group flex items-center gap-1.5 px-2 py-1.5 rounded-md border transition ${done ? "bg-moss/10 border-moss/25" : "bg-foreground/5 border-border hover:border-border"}`}>
+    <div className={`group flex items-center gap-1.5 px-2 py-1.5 rounded-md border transition min-w-0 ${done ? "bg-moss/10 border-moss/25" : "bg-foreground/5 border-border hover:border-border"}`}>
       <DoneCheckbox done={done} onToggle={onToggleDone} size="sm" />
       {editing ? (
         <>
@@ -618,7 +611,7 @@ function EditableRow({
               if (e.key === "Escape") { setTitle(item.title); setTime(item.time ?? ""); setEditing(false); }
             }}
             title="Enter 保存 · Esc 取消"
-            className="flex-1 bg-background/50 border border-border rounded px-1.5 py-0.5 text-xs text-foreground focus:outline-none"
+            className="flex-1 min-w-0 bg-background/50 border border-border rounded px-1.5 py-0.5 text-xs text-foreground focus:outline-none"
           />
         </>
       ) : (
@@ -630,10 +623,10 @@ function EditableRow({
           />
           <button
             onClick={() => setEditing(true)}
-            className="flex-1 flex items-center gap-1.5 text-left"
+            className="flex-1 min-w-0 flex items-center gap-1.5 text-left"
             title="点击编辑标题"
           >
-            <span className={`text-xs truncate ${done ? "text-muted-foreground/70 line-through" : "text-foreground"}`}>{item.title}</span>
+            <span className={`text-xs truncate block w-full ${done ? "text-muted-foreground/70 line-through" : "text-foreground"}`}>{item.title}</span>
           </button>
         </>
 

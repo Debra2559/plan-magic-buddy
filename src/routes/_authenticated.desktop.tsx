@@ -16,6 +16,7 @@ import { NotesView } from "@/components/views/NotesView";
 import { HabitsView } from "@/components/views/HabitsView";
 import { JournalView } from "@/components/views/JournalView";
 import { AbilityView } from "@/components/views/AbilityView";
+import { MonitorView } from "@/components/views/MonitorView";
 import { SettingsView } from "@/components/views/SettingsView";
 import { SyncSummaryModal } from "@/components/SyncSummaryModal";
 import { OnboardingHint } from "@/components/OnboardingHint";
@@ -41,6 +42,7 @@ import {
   BookHeart,
   Shield,
   Brain,
+  Radar,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/desktop")({
@@ -60,7 +62,7 @@ interface WinPos {
   y: number;
 }
 
-type SylvaView = "ai" | "schedule" | "todos" | "notes" | "habits" | "journal" | "ability" | "settings";
+type SylvaView = "ai" | "schedule" | "todos" | "notes" | "habits" | "journal" | "ability" | "monitor" | "settings";
 
 function DesktopApp() {
   const [now, setNow] = useState<Date | null>(null);
@@ -77,7 +79,7 @@ function DesktopApp() {
   const [view, setView] = useState<SylvaView>(() => {
     if (typeof window === "undefined") return "ai";
     const v = new URLSearchParams(window.location.search).get("view");
-    const allowed: SylvaView[] = ["schedule", "ai", "todos", "notes", "habits", "settings"];
+    const allowed: SylvaView[] = ["schedule", "ai", "todos", "notes", "habits", "ability", "monitor", "settings"];
     return (allowed as string[]).includes(v ?? "") ? (v as SylvaView) : "schedule";
   });
   const [todosFilter, setTodosFilter] = useState<"todo" | "reminder" | "event" | "all">("all");
@@ -191,6 +193,7 @@ function DesktopApp() {
                 <SidebarItem icon={BookHeart} label="记录" active={view === "notes" || view === "journal"} onClick={() => setView("notes")} />
                 <SidebarItem icon={Sparkles} label="习惯" active={view === "habits"} onClick={() => setView("habits")} />
                 <SidebarItem icon={Brain} label="能力" active={view === "ability"} onClick={() => setView("ability")} />
+                <SidebarItem icon={Radar} label="监控" active={view === "monitor"} onClick={() => setView("monitor")} />
                 <div className="mt-auto pt-4 border-t border-border/70">
                   <SidebarItem icon={Settings} label="设置" active={false} onClick={openSettings} muted />
                 </div>
@@ -205,6 +208,7 @@ function DesktopApp() {
                 {view === "habits" && <HabitsView />}
                 {view === "journal" && <JournalView />}
                 {view === "ability" && <AbilityView />}
+                {view === "monitor" && <MonitorView />}
               </div>
             </div>
           </AppWindow>
