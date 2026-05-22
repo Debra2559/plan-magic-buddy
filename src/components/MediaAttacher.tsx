@@ -2,6 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Mic, Square, ImagePlus, Trash2, Loader2, Play, Pause, X } from "lucide-react";
 import { fileToCompressedDataURL } from "@/components/ImageAttacher";
+import { useSignedMediaUrl } from "@/lib/signed-media";
+
+function SignedVideo({ src, ...rest }: React.VideoHTMLAttributes<HTMLVideoElement> & { src: string }) {
+  const url = useSignedMediaUrl(src);
+  return <video {...rest} src={url} />;
+}
 
 function mmssShort(s: number) {
   if (!isFinite(s) || s < 0) s = 0;
