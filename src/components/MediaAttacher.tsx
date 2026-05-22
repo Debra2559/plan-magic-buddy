@@ -99,8 +99,8 @@ async function uploadToBucket(file: Blob, ext: string): Promise<string> {
     upsert: false,
   });
   if (error) throw new Error(error.message);
-  const { data } = supabase.storage.from("note-media").getPublicUrl(path);
-  return data.publicUrl;
+  // Store the storage path. Rendering code resolves it via signed URLs.
+  return path;
 }
 
 export function MediaAttacher({ videos, audios, images = [], onChange, maxVideos = 2, maxAudios = 4, maxImages = 6 }: Props) {
