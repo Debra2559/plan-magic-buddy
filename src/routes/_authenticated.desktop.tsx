@@ -16,6 +16,7 @@ import { NotesView } from "@/components/views/NotesView";
 import { HabitsView } from "@/components/views/HabitsView";
 import { JournalView } from "@/components/views/JournalView";
 import { AbilityView } from "@/components/views/AbilityView";
+import { MonitorView } from "@/components/views/MonitorView";
 import { SettingsView } from "@/components/views/SettingsView";
 import { SyncSummaryModal } from "@/components/SyncSummaryModal";
 import { OnboardingHint } from "@/components/OnboardingHint";
