@@ -193,6 +193,7 @@ function DesktopApp() {
                 <SidebarItem icon={BookHeart} label="记录" active={view === "notes" || view === "journal"} onClick={() => setView("notes")} />
                 <SidebarItem icon={Sparkles} label="习惯" active={view === "habits"} onClick={() => setView("habits")} />
                 <SidebarItem icon={Brain} label="能力" active={view === "ability"} onClick={() => setView("ability")} />
+                <SidebarItem icon={Radar} label="监控" active={view === "monitor"} onClick={() => setView("monitor")} />
                 <div className="mt-auto pt-4 border-t border-border/70">
                   <SidebarItem icon={Settings} label="设置" active={false} onClick={openSettings} muted />
                 </div>
