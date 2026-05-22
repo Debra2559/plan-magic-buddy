@@ -794,3 +794,170 @@ export const classifyMonitorTopic = createServerFn({ method: "POST" })
       return { ok: true as const, kind: "ai-news" as const, reason: "AI 不可用, 默认资讯雷达" };
     }
   });
+
+// ============================================================
+// 🧠 监控创建向导 —— 第一步：AI 分析主题 + 反问澄清
+// ============================================================
+const AnalyzeSchema = z.object({
+  kind: z.enum(["activity", "ai-news"]).describe("activity=活动/赛事/户外/比赛/线下事件; ai-news=资讯/动态/新闻/新发布"),
+  topic_summary: z.string().max(120).describe("一句话复述用户想关注什么"),
+  thinking: z.array(z.string().max(140)).min(3).max(6).describe("AI 的推理步骤, 像内心 OS, 例: 『这看起来是户外活动类...』『目标人群可能是新手...』『推荐覆盖小红书/官方/社区...』"),
+  questions: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(30).describe("英文短 id, 如 location, level, source_pref"),
+        label: z.string().max(40).describe("问题中文标题"),
+        hint: z.string().max(80).describe("一行补充说明"),
+        suggestions: z.array(z.string().max(20)).min(2).max(5).describe("3-4 个快捷选项, 用户可点选也可自填"),
+      }),
+    )
+    .min(2)
+    .max(3)
+    .describe("2-3 个澄清问题: 地点范围 / 熟练度 / 偏好来源类型 / 频率, 按主题挑最有用的"),
+});
+
+export const analyzeMonitorTopic = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ prompt: z.string().min(1).max(4000) }).parse(d))
+  .handler(async ({ data }) => {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    const fallback = {
+      kind: "activity" as const,
+      topic_summary: data.prompt.trim().slice(0, 100),
+      thinking: [
+        `先复述一下: 用户想监控「${data.prompt.trim().slice(0, 60)}」`,
+        "AI 暂时不可用, 我用通用模板继续",
+        "默认按『活动/赛事』走, 覆盖官方 + 社区 + 攻略三类来源",
+      ],
+      questions: [
+        { id: "location", label: "地理范围", hint: "本地? 国内? 全球?", suggestions: ["北京周边", "全国", "海外", "不限"] },
+        { id: "level", label: "你的熟练度", hint: "决定我筛选内容深度", suggestions: ["新手入门", "有经验", "进阶玩家"] },
+        { id: "source_pref", label: "偏好来源类型", hint: "想多看哪种?", suggestions: ["官方公告", "真人体验", "攻略干货", "社区讨论"] },
+      ],
+    };
+    if (!apiKey) return { ok: true as const, ...fallback };
+
+    const gateway = createLovableAiGatewayProvider(apiKey);
+    const models = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash"] as const;
+    let lastErr = "";
+    for (const m of models) {
+      try {
+        const { object } = await generateObject({
+          model: gateway(m),
+          schema: AnalyzeSchema,
+          system: `你是「监控配置师」。用户说想长期追踪某个主题, 你要做两件事:
+
+1) 在 thinking 里写下你的真实思考过程 (3-5 条短句, 像内心 OS), 包括:
+   - 这属于「活动/赛事」还是「资讯动态」? 为什么?
+   - 这类主题在哪些平台最活跃?
+   - 用户没说清楚但你需要知道的关键信息是什么?
+
+2) 在 questions 里反问 2-3 个最有价值的澄清问题, 帮你之后规划出真正贴合的来源。
+   - 优先问: 地理范围 / 熟练度或目标 / 偏好的内容类型 / 想覆盖的细分方向
+   - 不要问可以推断的事
+   - 每个问题给 3-4 个快捷选项 (用户可以直接点选)
+
+判断标准:
+- "activity": 比赛/赛事/户外/线下活动/报名/聚会 (黑客松、马拉松、徒步、飞盘、展会、音乐节...)
+- "ai-news": 资讯/新发布/趋势追踪 (AI 模型、产品更新、论文、行业新闻...)
+
+只输出 JSON。`,
+          prompt: `用户描述:「${data.prompt}」`,
+        });
+        return { ok: true as const, ...object };
+      } catch (err) {
+        lastErr = err instanceof Error ? err.message : String(err);
+      }
+    }
+    console.warn(`[analyze-monitor] AI failed, using fallback. Error: ${lastErr}`);
+    return { ok: true as const, ...fallback };
+  });
+
+// ============================================================
+// 🧠 监控创建向导 —— 第二步: 基于回答生成最终方案 (含思考过程)
+// ============================================================
+const FinalPlanSchema = z.object({
+  thinking: z.array(z.string().max(160)).min(3).max(6).describe("基于用户回答的思考步骤: 该选什么平台/为什么/频率多少"),
+  name: z.string().max(40).describe("这条监控的简短名字, 例: 北京周边徒步雷达"),
+  interval_hours: z.coerce.number().int().min(1).max(168).describe("扫描频率小时, 24/48/72/168"),
+  sources: z
+    .array(
+      z.object({
+        name: z.string().max(40),
+        query: z.string().max(280),
+        rationale: z.string().max(120).describe("一句话: 为什么选它"),
+      }),
+    )
+    .min(4)
+    .max(10),
+  tips: z.array(z.string().max(120)).max(4),
+});
+
+export const finalizeMonitorPlan = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        prompt: z.string().min(1).max(4000),
+        kind: z.enum(["activity", "ai-news"]),
+        answers: z.record(z.string(), z.string().max(200)),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    const answersText = Object.entries(data.answers)
+      .filter(([, v]) => v.trim())
+      .map(([k, v]) => `- ${k}: ${v}`)
+      .join("\n") || "(用户跳过了澄清)";
+
+    const buildFallback = () => {
+      const topic = data.prompt.trim().slice(0, 40);
+      const loc = data.answers.location?.trim();
+      const locPrefix = loc && loc !== "不限" ? `${loc} ` : "";
+      return {
+        thinking: [
+          `把「${topic}」拆成可搜索的关键词`,
+          `用户填的偏好: ${answersText.replace(/\n/g, " · ")}`,
+          "AI 结构化输出不可用, 用模板覆盖官方/社区/攻略/讨论四类",
+        ],
+        name: `${locPrefix}${topic} 雷达`.trim().slice(0, 40),
+        interval_hours: 72,
+        sources: [
+          { name: "官方/平台", query: `${locPrefix}${topic} 官方 报名 最新 2025 OR 2026`, rationale: "权威公告与报名入口" },
+          { name: "小红书 体验", query: `site:xiaohongshu.com ${locPrefix}${topic} 推荐 攻略`, rationale: "真人体验与近期推荐" },
+          { name: "知乎 攻略", query: `site:zhihu.com ${locPrefix}${topic} 攻略 经验`, rationale: "长回答 / 避坑经验" },
+          { name: "社区动态", query: `${locPrefix}${topic} 活动 最新 公众号`, rationale: "微信 / 资讯补充" },
+        ],
+        tips: ["先跑一轮再删噪声", "想追时效就把频率调到 24h"],
+      };
+    };
+
+    if (!apiKey) return { ok: true as const, ...buildFallback() };
+    const gateway = createLovableAiGatewayProvider(apiKey);
+    const models = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash"] as const;
+    let lastErr = "";
+    for (const m of models) {
+      try {
+        const { object } = await generateObject({
+          model: gateway(m),
+          schema: FinalPlanSchema,
+          system: `你是「监控来源规划师」。根据用户的主题 + 澄清回答, 生成最终的扫描方案。
+
+要求:
+- thinking: 3-5 条短句, 写下你怎么挑来源、为什么这个频率
+- sources: 4-8 条, 必须按用户回答定制 (地理范围要进 query, 熟练度决定关键词倾向)
+- 至少覆盖: 官方/权威 + 真实体验 (小红书) + 系统化攻略 (知乎/微信) + 社区/讨论
+- 善用 site: 操作符
+- interval_hours: 24=报名时效类; 72=攻略测评类; 168=深度长文
+
+类别: ${data.kind === "activity" ? "活动/赛事" : "AI/资讯动态"}
+只输出 JSON。`,
+          prompt: `主题:「${data.prompt}」\n\n用户澄清回答:\n${answersText}\n\n请输出最终方案。`,
+        });
+        return { ok: true as const, ...object };
+      } catch (err) {
+        lastErr = err instanceof Error ? err.message : String(err);
+      }
+    }
+    console.warn(`[finalize-monitor] AI failed, fallback. Error: ${lastErr}`);
+    return { ok: true as const, ...buildFallback() };
+  });
