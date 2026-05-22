@@ -281,7 +281,7 @@ export function MediaAttacher({ videos, audios, images = [], onChange, maxVideos
           ))}
           {videos.map((src, i) => (
             <div key={`v-${i}`} className="relative group">
-              <video
+              <SignedVideo
                 src={src}
                 controls
                 preload="metadata"
