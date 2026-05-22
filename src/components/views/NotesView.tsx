@@ -503,20 +503,14 @@ function NoteCard({ n, onRemove, onPin }: { n: Note; onRemove: () => void; onPin
           {n.videos && n.videos.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
               {n.videos.map((src, i) => (
-                <video
-                  key={i}
-                  src={src}
-                  controls
-                  preload="metadata"
-                  className="max-h-48 rounded-lg border border-border bg-black"
-                />
+                <NoteVideo key={i} src={src} />
               ))}
             </div>
           )}
           {n.audios && n.audios.length > 0 && (
             <div className="flex flex-col gap-1.5 mt-2">
               {n.audios.map((src, i) => (
-                <audio key={i} src={src} controls className="h-8 max-w-full" />
+                <NoteAudio key={i} src={src} />
               ))}
             </div>
           )}
