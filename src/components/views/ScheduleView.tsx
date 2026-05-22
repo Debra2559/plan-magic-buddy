@@ -6,8 +6,6 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AiPlanner } from "@/components/AiPlanner";
 
-import { HackathonInbox } from "@/components/HackathonInbox";
-import { AiNewsRadar } from "@/components/AiNewsRadar";
 
 
 
