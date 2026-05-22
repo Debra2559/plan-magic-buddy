@@ -7,6 +7,7 @@ import {
   planMonitoringSources,
   getHackathonSettings,
   updateHackathonSettings,
+  classifyMonitorTopic,
 } from "@/lib/hackathons.functions";
 import {
   parseRadarPrompt,
@@ -18,11 +19,11 @@ type Target = "hackathon" | "ai-news";
 
 export function MonitorView() {
   const [topic, setTopic] = useState("");
-  const [target, setTarget] = useState<Target>("hackathon");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const classifyFn = useServerFn(classifyMonitorTopic);
   const planFn = useServerFn(planMonitoringSources);
   const getHackFn = useServerFn(getHackathonSettings);
   const updHackFn = useServerFn(updateHackathonSettings);
@@ -37,6 +38,8 @@ export function MonitorView() {
     setError(null);
     setSuccess(null);
     try {
+      const cls = await classifyFn({ data: { prompt: t } });
+      const target: Target = cls.ok ? cls.kind : "ai-news";
       if (target === "hackathon") {
         const planR = await planFn({ data: { topic: t } });
         if (!planR.ok || !planR.plan) {
@@ -53,7 +56,7 @@ export function MonitorView() {
           .filter((s) => !existing.has(s.query))
           .map((s) => ({ name: s.name, query: s.query, enabled: s.enabled !== false }));
         if (additions.length === 0) {
-          setSuccess("AI 调研完成，但来源都已存在。");
+          setSuccess("🏆 识别为黑客松/赛事类 · 来源都已存在");
           return;
         }
         const r = await updHackFn({
@@ -63,7 +66,7 @@ export function MonitorView() {
           },
         });
         if (!r.ok) { setError(r.error); return; }
-        setSuccess(`已加入 ${additions.length} 个黑客松来源，扫描节奏：每 ${planR.plan.suggested_interval_hours}h`);
+        setSuccess(`🏆 已识别为黑客松雷达 · 新增 ${additions.length} 个来源 · 每 ${planR.plan.suggested_interval_hours}h 扫一次`);
         setTopic("");
       } else {
         const r = await parsePromptFn({ data: { prompt: t } });
@@ -84,7 +87,7 @@ export function MonitorView() {
           },
         });
         if (!save.ok) { setError(save.error); return; }
-        setSuccess(`已更新 AI 动态雷达：${merged.sources.length} 个来源 · 每 ${merged.scan_interval_hours}h`);
+        setSuccess(`📰 已识别为 AI 动态雷达 · ${merged.sources.length} 个来源 · 每 ${merged.scan_interval_hours}h 扫一次`);
         setTopic("");
       }
     } catch (e) {
@@ -108,40 +111,22 @@ export function MonitorView() {
           一键新建监控
           <span className="text-foreground/40 ml-1 tracking-normal">告诉我想关注什么，AI 自动规划来源和节奏</span>
         </div>
-        <div className="flex gap-2 mb-2">
-          <button
-            onClick={() => setTarget("hackathon")}
-            className={`flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full border transition ${
-              target === "hackathon"
-                ? "bg-amber-glow/15 border-amber-glow/40 text-amber-glow"
-                : "bg-foreground/5 border-foreground/10 text-foreground/55 hover:text-foreground"
-            }`}
-          >
-            <Trophy className="w-3 h-3" /> 黑客松雷达
-          </button>
-          <button
-            onClick={() => setTarget("ai-news")}
-            className={`flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full border transition ${
-              target === "ai-news"
-                ? "bg-amber-glow/15 border-amber-glow/40 text-amber-glow"
-                : "bg-foreground/5 border-foreground/10 text-foreground/55 hover:text-foreground"
-            }`}
-          >
-            <Newspaper className="w-3 h-3" /> AI 动态雷达
-          </button>
+        <div className="flex items-center gap-2 mb-2 text-[10.5px] text-foreground/45">
+          <span className="flex items-center gap-1"><Trophy className="w-3 h-3" /> 比赛/赛事</span>
+          <span className="opacity-40">·</span>
+          <span className="flex items-center gap-1"><Newspaper className="w-3 h-3" /> AI/资讯动态</span>
+          <span className="opacity-40">·</span>
+          <span>AI 自动判断该建哪种雷达</span>
         </div>
         <div className="flex gap-2">
           <input
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void onCreate(); } }}
-            placeholder={
-              target === "hackathon"
-                ? "新主题，例如：徒步 / 飞盘 / AI Agent 比赛"
-                : "想关注什么？例如：开源大模型发布、Agent 框架进展，每 6 小时扫一次"
-            }
+            placeholder="想关注什么？例如：徒步 / AI Agent 比赛 / 开源大模型发布"
             className="flex-1 bg-background/40 border border-foreground/15 rounded-md px-3 py-2 text-[12px] text-foreground placeholder:text-foreground/30 focus:border-amber-glow/60 focus:outline-none"
           />
+
           <button
             onClick={onCreate}
             disabled={busy || !topic.trim()}
