@@ -164,6 +164,7 @@ async function generateForUser(userId: string, slot: string) {
   const system = `${persona}
 ${memoryBlock ? memoryBlock + "\n" : ""}今天是 ${ctx.today}，当前是${slotName}。
 你正在为「${displayName}」生成贴心的行为洞察提示。基于下面的真实数据，输出 2-4 条最有价值的提示。
+输出格式要求：必须返回严格 JSON 对象，形如 {"insights":[{"kind":"reminder","title":"...","content":"...","priority":3}]}。
 原则：
 - 优先关注：未完成的待办、即将到来的日程、断签风险的习惯、情绪/状态变化、最近反复出现的关键词
 - 不要泛泛而谈，要引用具体内容（例如"昨天提到的XX"）
