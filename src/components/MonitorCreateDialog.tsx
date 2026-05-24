@@ -6,8 +6,9 @@ import {
   finalizeMonitorPlan,
   getHackathonSettings,
   updateHackathonSettings,
+  scanHackathonsNow,
 } from "@/lib/hackathons.functions";
-import { getAiNewsSettings, updateAiNewsSettings } from "@/lib/ai-news.functions";
+import { getAiNewsSettings, updateAiNewsSettings, scanAiNewsNow } from "@/lib/ai-news.functions";
 
 type Kind = "activity" | "ai-news";
 
@@ -48,6 +49,8 @@ export function MonitorCreateDialog({ open, initialPrompt, onClose, onSaved }: P
   const updHack = useServerFn(updateHackathonSettings);
   const getAi = useServerFn(getAiNewsSettings);
   const updAi = useServerFn(updateAiNewsSettings);
+  const scanHack = useServerFn(scanHackathonsNow);
+  const scanAi = useServerFn(scanAiNewsNow);
 
   const [stage, setStage] = useState<Stage>("analyze");
   const [error, setError] = useState<string | null>(null);
@@ -149,7 +152,12 @@ export function MonitorCreateDialog({ open, initialPrompt, onClose, onSaved }: P
           },
         });
         if (!r.ok) { setError(r.error); setStage("plan"); return; }
-        onSaved(`🏔️ ${plan.name} · 新增 ${additions.length} 个来源 · 每 ${plan.interval_hours}h 扫一次`);
+        onSaved(`🏔️ ${plan.name} · 新增 ${additions.length} 个来源 · 正在扫描…`);
+        // Trigger an immediate scan so the new sources show up right away
+        scanHack().then(() => {
+          window.dispatchEvent(new Event("monitor:refresh"));
+          onSaved(`🏔️ ${plan.name} · 已扫描完成，下方「活动·赛事雷达」已更新`);
+        }).catch(() => {/* silent */});
       } else {
         const cur = await getAi();
         if (!cur.ok) { setError("加载设置失败"); setStage("plan"); return; }
@@ -170,7 +178,11 @@ export function MonitorCreateDialog({ open, initialPrompt, onClose, onSaved }: P
           },
         });
         if (!r.ok) { setError(r.error); setStage("plan"); return; }
-        onSaved(`📰 ${plan.name} · 新增 ${additions.length} 个来源 · 每 ${plan.interval_hours}h 扫一次`);
+        onSaved(`📰 ${plan.name} · 新增 ${additions.length} 个来源 · 正在扫描…`);
+        scanAi().then(() => {
+          window.dispatchEvent(new Event("monitor:refresh"));
+          onSaved(`📰 ${plan.name} · 已扫描完成，下方「AI 动态雷达」已更新`);
+        }).catch(() => {/* silent */});
       }
       setStage("done");
       setTimeout(onClose, 600);

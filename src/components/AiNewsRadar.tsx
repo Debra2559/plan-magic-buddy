@@ -202,6 +202,11 @@ export function AiNewsRadar() {
   }, [listFn]);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const h = () => { void load(); };
+    window.addEventListener("monitor:refresh", h);
+    return () => window.removeEventListener("monitor:refresh", h);
+  }, [load]);
 
   const onScan = async () => {
     setScanning(true);
