@@ -246,19 +246,28 @@ export function MonitorCreateDialog({ open, initialPrompt, onClose, onSaved }: P
           {stage === "questions" && (
             <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="text-[11px] text-foreground/55">
-                先回答 {questions.length} 个小问题，AI 会把答案揉进搜索关键词里。可以跳过。
+                先回答 {questions.length} 个小问题，可多选；AI 会把答案揉进搜索关键词里。可以跳过。
               </div>
-              {questions.map((q) => (
+              {questions.map((q) => {
+                const raw = answers[q.id] ?? "";
+                const selected = raw.split(",").map((s) => s.trim()).filter(Boolean);
+                const toggle = (s: string) => {
+                  const next = selected.includes(s)
+                    ? selected.filter((x) => x !== s)
+                    : [...selected, s];
+                  setAnswers((a) => ({ ...a, [q.id]: next.join(", ") }));
+                };
+                return (
                 <div key={q.id} className="rounded-xl bg-foreground/[0.03] border border-foreground/10 p-3">
                   <div className="text-[12px] text-foreground mb-0.5">{q.label}</div>
-                  <div className="text-[10.5px] text-foreground/45 mb-2">{q.hint}</div>
+                  <div className="text-[10.5px] text-foreground/45 mb-2">{q.hint} · 可多选</div>
                   <div className="flex flex-wrap gap-1.5 mb-2">
                     {q.suggestions.map((s) => {
-                      const active = answers[q.id] === s;
+                      const active = selected.includes(s);
                       return (
                         <button
                           key={s}
-                          onClick={() => setAnswers((a) => ({ ...a, [q.id]: a[q.id] === s ? "" : s }))}
+                          onClick={() => toggle(s)}
                           className={`text-[11px] px-2 py-1 rounded-full border transition ${
                             active
                               ? "bg-amber-glow/20 border-amber-glow/50 text-amber-glow"
@@ -271,13 +280,14 @@ export function MonitorCreateDialog({ open, initialPrompt, onClose, onSaved }: P
                     })}
                   </div>
                   <input
-                    value={answers[q.id] ?? ""}
+                    value={raw}
                     onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))}
-                    placeholder="或者自己写一句…"
+                    placeholder="或者自己写，用逗号分隔多个…"
                     className="w-full bg-background/40 border border-foreground/10 rounded-md px-2.5 py-1.5 text-[11.5px] text-foreground placeholder:text-foreground/30 focus:border-amber-glow/50 focus:outline-none"
                   />
                 </div>
-              ))}
+                );
+              })}
               <div className="flex justify-between items-center pt-1">
                 <button
                   onClick={() => void runAnalyze(prompt)}
