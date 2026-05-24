@@ -72,6 +72,11 @@ export function HackathonInbox() {
   }, [listFn]);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const h = () => { void load(); };
+    window.addEventListener("monitor:refresh", h);
+    return () => window.removeEventListener("monitor:refresh", h);
+  }, [load]);
 
   const openSettings = async () => {
     setSettingsOpen(true);
