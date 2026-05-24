@@ -1712,6 +1712,16 @@ export async function handleHackathonCardAction(payload: {
   id: string
   action: 'accept' | 'dismiss'
 }): Promise<{ toast: { type: 'success' | 'info' | 'error'; content: string } }> {
+  // 测试卡片：固定 id，不查库直接回执
+  if (payload.id === '00000000-0000-0000-0000-000000000000') {
+    return {
+      toast: {
+        type: payload.action === 'accept' ? 'success' : 'info',
+        content: payload.action === 'accept' ? '测试卡片：已确认参加 ✅' : '测试卡片：已忽略',
+      },
+    }
+  }
+
   // 并行：拉取比赛 + 拉取日历设置（accept 时才需要）
   const [{ data: row, error }, settingsRes] = await Promise.all([
     supabaseAdmin.from('hackathons').select('*').eq('id', payload.id).maybeSingle(),
@@ -1727,6 +1737,7 @@ export async function handleHackathonCardAction(payload: {
   if (error || !row) {
     return { toast: { type: 'error', content: '未找到该比赛' } }
   }
+
 
   if (payload.action === 'dismiss') {
     // 非阻塞写库，立即 ACK
