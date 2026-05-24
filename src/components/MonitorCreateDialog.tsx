@@ -180,7 +180,8 @@ export function MonitorCreateDialog({ open, initialPrompt, onClose, onSaved }: P
         if (!r.ok) { setError(r.error); setStage("plan"); return; }
         onSaved(`📰 ${plan.name} · 新增 ${additions.length} 个来源 · 正在扫描…`);
         scanAi().then(() => {
-          onSaved(`📰 ${plan.name} · 已扫描完成，去「AI 动态雷达」看看`);
+          window.dispatchEvent(new Event("monitor:refresh"));
+          onSaved(`📰 ${plan.name} · 已扫描完成，下方「AI 动态雷达」已更新`);
         }).catch(() => {/* silent */});
       }
       setStage("done");
