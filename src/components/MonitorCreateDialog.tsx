@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { X, Sparkles, Loader2, Brain, ChevronRight, Check, Calendar, Trophy, Newspaper, RefreshCw } from "lucide-react";
+import { X, Sparkles, Loader2, Brain, ChevronRight, Check, Calendar, Trophy, Newspaper, RefreshCw, Trash2, Plus, Pencil } from "lucide-react";
 import {
   analyzeMonitorTopic,
   finalizeMonitorPlan,
