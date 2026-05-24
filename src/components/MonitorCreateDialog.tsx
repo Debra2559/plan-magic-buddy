@@ -155,7 +155,8 @@ export function MonitorCreateDialog({ open, initialPrompt, onClose, onSaved }: P
         onSaved(`🏔️ ${plan.name} · 新增 ${additions.length} 个来源 · 正在扫描…`);
         // Trigger an immediate scan so the new sources show up right away
         scanHack().then(() => {
-          onSaved(`🏔️ ${plan.name} · 已扫描完成，去「活动·赛事雷达」看看`);
+          window.dispatchEvent(new Event("monitor:refresh"));
+          onSaved(`🏔️ ${plan.name} · 已扫描完成，下方「活动·赛事雷达」已更新`);
         }).catch(() => {/* silent */});
       } else {
         const cur = await getAi();
