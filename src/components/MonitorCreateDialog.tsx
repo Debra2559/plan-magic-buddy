@@ -6,8 +6,9 @@ import {
   finalizeMonitorPlan,
   getHackathonSettings,
   updateHackathonSettings,
+  scanHackathonsNow,
 } from "@/lib/hackathons.functions";
-import { getAiNewsSettings, updateAiNewsSettings } from "@/lib/ai-news.functions";
+import { getAiNewsSettings, updateAiNewsSettings, scanAiNewsNow } from "@/lib/ai-news.functions";
 
 type Kind = "activity" | "ai-news";
 
