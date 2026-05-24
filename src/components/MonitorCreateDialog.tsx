@@ -49,6 +49,8 @@ export function MonitorCreateDialog({ open, initialPrompt, onClose, onSaved }: P
   const updHack = useServerFn(updateHackathonSettings);
   const getAi = useServerFn(getAiNewsSettings);
   const updAi = useServerFn(updateAiNewsSettings);
+  const scanHack = useServerFn(scanHackathonsNow);
+  const scanAi = useServerFn(scanAiNewsNow);
 
   const [stage, setStage] = useState<Stage>("analyze");
   const [error, setError] = useState<string | null>(null);
