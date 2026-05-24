@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { X, Sparkles, Loader2, Brain, ChevronRight, Check, Calendar, Trophy, Newspaper, RefreshCw } from "lucide-react";
+import { X, Sparkles, Loader2, Brain, ChevronRight, Check, Calendar, Trophy, Newspaper, RefreshCw, Trash2, Plus, Pencil } from "lucide-react";
 import {
   analyzeMonitorTopic,
   finalizeMonitorPlan,
@@ -331,26 +331,74 @@ export function MonitorCreateDialog({ open, initialPrompt, onClose, onSaved }: P
               </div>
 
               <div className="rounded-xl bg-foreground/[0.03] border border-foreground/10 p-3.5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-[13px] font-medium text-foreground">{plan.name}</div>
-                    <div className="text-[10.5px] text-foreground/50 mt-0.5 flex items-center gap-1">
-                      <KindIcon className="w-3 h-3" /> {kindLabel}
-                      <span className="mx-1 opacity-40">·</span>
-                      <Calendar className="w-3 h-3" /> 每 {plan.interval_hours}h 扫一次
-                    </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <Pencil className="w-3 h-3 text-foreground/40" />
+                    <input
+                      value={plan.name}
+                      onChange={(e) => setPlan({ ...plan, name: e.target.value })}
+                      className="flex-1 bg-transparent border-b border-foreground/10 focus:border-amber-glow/60 outline-none text-[13px] font-medium text-foreground py-0.5"
+                    />
+                  </div>
+                  <div className="text-[10.5px] text-foreground/50 flex items-center gap-1.5 flex-wrap">
+                    <KindIcon className="w-3 h-3" /> {kindLabel}
+                    <span className="opacity-40">·</span>
+                    <Calendar className="w-3 h-3" />
+                    <span>每</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={168}
+                      value={plan.interval_hours}
+                      onChange={(e) => setPlan({ ...plan, interval_hours: Math.max(1, Math.min(168, Number(e.target.value) || 1)) })}
+                      className="w-12 bg-background/40 border border-foreground/10 rounded px-1.5 py-0.5 text-[11px] text-foreground focus:border-amber-glow/60 outline-none"
+                    />
+                    <span>h 扫一次</span>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <div className="text-[10.5px] tracking-wider text-foreground/45">推荐来源 ({plan.sources.length})</div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-[10.5px] tracking-wider text-foreground/45">推荐来源 ({plan.sources.length}) · 可编辑</div>
+                    <button
+                      onClick={() => setPlan({ ...plan, sources: [...plan.sources, { name: "自定义来源", query: "", rationale: "手动添加" }] })}
+                      className="text-[10.5px] text-amber-glow/80 hover:text-amber-glow flex items-center gap-0.5"
+                    >
+                      <Plus className="w-3 h-3" /> 加一条
+                    </button>
+                  </div>
                   {plan.sources.map((s, i) => (
-                    <div key={i} className="rounded-lg bg-background/40 border border-foreground/10 p-2.5">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className="text-[12px] font-medium text-foreground">{s.name}</span>
-                        <span className="text-[10px] text-foreground/40 truncate max-w-[55%]" title={s.query}>{s.query}</span>
+                    <div key={i} className="rounded-lg bg-background/40 border border-foreground/10 p-2.5 space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <input
+                          value={s.name}
+                          onChange={(e) => {
+                            const next = [...plan.sources];
+                            next[i] = { ...next[i], name: e.target.value };
+                            setPlan({ ...plan, sources: next });
+                          }}
+                          placeholder="来源名"
+                          className="flex-1 bg-transparent border-b border-transparent hover:border-foreground/10 focus:border-amber-glow/50 outline-none text-[12px] font-medium text-foreground py-0.5"
+                        />
+                        <button
+                          onClick={() => setPlan({ ...plan, sources: plan.sources.filter((_, idx) => idx !== i) })}
+                          className="text-foreground/30 hover:text-destructive transition shrink-0"
+                          title="删除"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                      <div className="text-[10.5px] text-foreground/55 leading-snug">{s.rationale}</div>
+                      <input
+                        value={s.query}
+                        onChange={(e) => {
+                          const next = [...plan.sources];
+                          next[i] = { ...next[i], query: e.target.value };
+                          setPlan({ ...plan, sources: next });
+                        }}
+                        placeholder="搜索关键词 / site: 语法"
+                        className="w-full bg-background/60 border border-foreground/10 rounded px-2 py-1 text-[10.5px] text-foreground/80 placeholder:text-foreground/30 focus:border-amber-glow/50 outline-none"
+                      />
+                      <div className="text-[10.5px] text-foreground/45 leading-snug">{s.rationale}</div>
                     </div>
                   ))}
                 </div>
