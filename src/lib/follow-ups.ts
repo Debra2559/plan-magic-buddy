@@ -65,11 +65,11 @@ export function useFollowUps() {
 
   const add = (item: Omit<FollowUp, "id" | "createdAt"> & Partial<Pick<FollowUp, "id" | "createdAt">>) => {
     const full: FollowUp = {
+      ...item,
       id: item.id ?? `fu_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       createdAt: item.createdAt ?? Date.now(),
       remindBeforeDays: item.remindBeforeDays ?? 3,
       intervalHours: item.intervalHours ?? 24,
-      ...item,
     } as FollowUp;
     update([full, ...list]);
     return full;
