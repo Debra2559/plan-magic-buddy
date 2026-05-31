@@ -209,12 +209,6 @@ export function RemindersPanel() {
         </div>
       </div>
 
-      <div className="pt-1">
-        <div className="text-[11px] tracking-widest text-muted-foreground uppercase mb-2 px-1">
-          条件提醒 / 截图待办
-        </div>
-        <FollowUpsPanel />
-      </div>
 
       <div className="flex items-center gap-2 text-[11px] text-muted-foreground px-1">
         <AlarmClock className="w-3 h-3" />
