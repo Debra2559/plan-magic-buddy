@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Bell, Sunrise, BellOff, AlarmClock, Moon, Check } from "lucide-react";
 import { isInQuietHours, useReminderSettings } from "@/lib/reminder-settings";
-import { FollowUpsPanel } from "@/components/FollowUpsPanel";
+
 
 function Toggle({ on, onChange }: { on: boolean; onChange: (next: boolean) => void }) {
   return (
