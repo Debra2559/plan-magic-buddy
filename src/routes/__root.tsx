@@ -12,6 +12,7 @@ import { useEffect } from "react";
 import appCss from "../styles.css?url";
 import { SylvaProvider } from "@/lib/sylva-store";
 import { ReminderRunner } from "@/components/ReminderRunner";
+import { FollowUpRunner } from "@/components/FollowUpRunner";
 import { Toaster } from "sonner";
 import { AvatarStatsOverlay } from "@/components/AvatarStatsOverlay";
 import { QuickCaptureHotkey } from "@/components/QuickCaptureHotkey";
@@ -149,6 +150,7 @@ function RootComponent() {
             <SylvaProvider>
               <Outlet />
               <ReminderRunner />
+              <FollowUpRunner />
               <ThemedToaster />
               <AvatarStatsOverlay />
               <QuickCaptureHotkey />
