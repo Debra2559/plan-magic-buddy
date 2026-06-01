@@ -1,9 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSylva } from "@/lib/sylva-store";
-import { CheckCircle2, Circle, Trash2, Filter, Calendar, Clock, Tag, FileText, GitBranch } from "lucide-react";
+import { CheckCircle2, Circle, Trash2, Filter, Calendar, Clock, Tag, FileText } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { FollowUpsPanel } from "@/components/FollowUpsPanel";
-import { useFollowUps } from "@/lib/follow-ups";
 
 const tagColor: Record<string, string> = {
   工作: "text-moss",
