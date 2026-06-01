@@ -4,8 +4,13 @@ export type FollowUp = {
   id: string;
   title: string;
   notes?: string;
-  /** 依赖的前置事件描述，例如 “等老师签字之后才能交” */
+  /** 依赖的前置事件描述（人类可读），例如 "等老师签字之后才能交" */
   prerequisite?: string;
+  /** 前置依赖的目标 id：可以是另一个 FollowUp.id，也可以是 sylva-store DoneItem.id。
+   *  目标未完成时，提醒会被自动跳过 */
+  prerequisiteId?: string;
+  /** 关联到主 store DoneItem.id（reminder/todo），用于双向同步 done 状态、出现在日历/Todo 里 */
+  linkedItemId?: string;
   /** 截止日期 YYYY-MM-DD，可选 */
   ddl?: string;
   /** 截止前多少天开始提醒（无 ddl 时忽略，按 intervalHours 直接轮询） */
@@ -14,7 +19,7 @@ export type FollowUp = {
   intervalHours: number;
   /** 上次询问时间（ms） */
   lastAskedAt?: number;
-  /** 暂停到某个时间点（ms），用户点“稍后再问” */
+  /** 暂停到某个时间点（ms），用户点"稍后再问" */
   snoozeUntil?: number;
   createdAt: number;
   done?: boolean;

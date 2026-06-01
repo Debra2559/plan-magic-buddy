@@ -2,14 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { Check, Clock, X, GitBranch, ChevronDown, ChevronUp } from "lucide-react";
 import { daysUntil, loadFollowUps, saveFollowUps, type FollowUp } from "@/lib/follow-ups";
 import { isInQuietHours, loadReminderSettings } from "@/lib/reminder-settings";
+import { useSylva } from "@/lib/sylva-store";
+import { isPrereqDone } from "@/components/FollowUpsPanel";
 
 type Toast = { id: string; followUp: FollowUp };
 
-function shouldAsk(f: FollowUp, now: number): boolean {
+function shouldAsk(f: FollowUp, now: number, prereqOk: boolean): boolean {
   if (f.done) return false;
+  if (!prereqOk) return false;
   if (f.snoozeUntil && now < f.snoozeUntil) return false;
   const left = daysUntil(f.ddl);
-  if (left !== null && left > f.remindBeforeDays) return false; // 还没到提醒窗口
+  if (left !== null && left > f.remindBeforeDays) return false;
   const last = f.lastAskedAt ?? 0;
   const intervalMs = Math.max(0.5, f.intervalHours) * 3600 * 1000;
   return now - last >= intervalMs;
@@ -18,6 +21,23 @@ function shouldAsk(f: FollowUp, now: number): boolean {
 export function FollowUpRunner() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const checkingRef = useRef(false);
+  const { items, toggleDone } = useSylva();
+
+  // 反向同步：主 store 中的 linked item 被勾完成时，把对应 FollowUp 也置为 done
+  useEffect(() => {
+    const list = loadFollowUps();
+    let changed = false;
+    const next = list.map((f) => {
+      if (f.done || !f.linkedItemId) return f;
+      const it = items.find((i) => i.id === f.linkedItemId);
+      if (it && it.done) {
+        changed = true;
+        return { ...f, done: true };
+      }
+      return f;
+    });
+    if (changed) saveFollowUps(next);
+  }, [items]);
 
   useEffect(() => {
     const tick = () => {
@@ -31,7 +51,8 @@ export function FollowUpRunner() {
         const list = loadFollowUps();
         let changed = false;
         const next = list.map((f) => {
-          if (!shouldAsk(f, now)) return f;
+          const prereqOk = isPrereqDone(f.prerequisiteId, items, list);
+          if (!shouldAsk(f, now, prereqOk)) return f;
           if (toasts.find((t) => t.id === f.id)) return f;
           setToasts((prev) => (prev.find((t) => t.id === f.id) ? prev : [...prev, { id: f.id, followUp: f }]));
           changed = true;
@@ -50,7 +71,7 @@ export function FollowUpRunner() {
       clearInterval(t);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [toasts]);
+  }, [toasts, items]);
 
   const dismiss = (id: string) => setToasts((p) => p.filter((t) => t.id !== id));
 
@@ -60,7 +81,15 @@ export function FollowUpRunner() {
     saveFollowUps(next);
   };
 
-  const markDone = (id: string) => { mutate(id, { done: true }); dismiss(id); };
+  const markDone = (id: string) => {
+    const f = loadFollowUps().find((x) => x.id === id);
+    mutate(id, { done: true });
+    if (f?.linkedItemId) {
+      const it = items.find((i) => i.id === f.linkedItemId);
+      if (it && !it.done) toggleDone(f.linkedItemId);
+    }
+    dismiss(id);
+  };
   const snooze = (id: string, hours: number) => {
     mutate(id, { snoozeUntil: Date.now() + hours * 3600 * 1000 });
     dismiss(id);
