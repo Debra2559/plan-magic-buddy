@@ -599,6 +599,63 @@ export type Database = {
         }
         Relationships: []
       }
+      follow_ups: {
+        Row: {
+          created_at_ms: number
+          ddl: string | null
+          done: boolean
+          id: string
+          interval_hours: number
+          last_asked_at: number | null
+          linked_item_id: string | null
+          notes: string | null
+          prerequisite: string | null
+          prerequisite_id: string | null
+          remind_before_days: number
+          snooze_until: number | null
+          source: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at_ms: number
+          ddl?: string | null
+          done?: boolean
+          id: string
+          interval_hours?: number
+          last_asked_at?: number | null
+          linked_item_id?: string | null
+          notes?: string | null
+          prerequisite?: string | null
+          prerequisite_id?: string | null
+          remind_before_days?: number
+          snooze_until?: number | null
+          source?: string
+          title: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at_ms?: number
+          ddl?: string | null
+          done?: boolean
+          id?: string
+          interval_hours?: number
+          last_asked_at?: number | null
+          linked_item_id?: string | null
+          notes?: string | null
+          prerequisite?: string | null
+          prerequisite_id?: string | null
+          remind_before_days?: number
+          snooze_until?: number | null
+          source?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       habits: {
         Row: {
           created_at: string
