@@ -27,9 +27,6 @@ export function TodosView({ initialFilter = "all", filterKey }: { initialFilter?
   const [filter, setFilter] = useState<"all" | "todo" | "reminder" | "event">(initialFilter);
   useEffect(() => { setFilter(initialFilter); }, [initialFilter, filterKey]);
   const [tagFilter, setTagFilter] = useState<string>("all");
-  const [showFollow, setShowFollow] = useState(true);
-  const { list: followList } = useFollowUps();
-  const followPending = followList.filter((f) => !f.done).length;
 
   const todos = useMemo(() => {
     return items
