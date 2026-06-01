@@ -93,26 +93,6 @@ export function TodosView({ initialFilter = "all", filterKey }: { initialFilter?
         ))}
       </div>
 
-      <div className="mb-6 rounded-xl border border-border bg-foreground/[0.03] overflow-hidden">
-        <button
-          onClick={() => setShowFollow((v) => !v)}
-          className="w-full flex items-center gap-2 px-4 py-3 hover:bg-foreground/5 transition"
-        >
-          <GitBranch className="w-4 h-4 text-amber-glow" />
-          <span className="text-sm text-foreground font-medium">跟进 / 截图待办</span>
-          {followPending > 0 && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-glow/20 text-amber-glow">
-              {followPending}
-            </span>
-          )}
-          <span className="ml-auto text-xs text-muted-foreground">{showFollow ? "收起" : "展开"}</span>
-        </button>
-        {showFollow && (
-          <div className="p-3 border-t border-border/60">
-            <FollowUpsPanel />
-          </div>
-        )}
-      </div>
 
 
       {Object.keys(grouped).length === 0 ? (
