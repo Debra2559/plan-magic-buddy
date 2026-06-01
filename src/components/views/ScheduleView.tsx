@@ -394,13 +394,24 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
         <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-auto bg-background/95 backdrop-blur-xl border-border">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-amber-glow">
-              <Sparkles className="w-4 h-4" /> AI 新增规划
+              <Sparkles className="w-4 h-4" /> 新增日程
             </DialogTitle>
             <DialogDescription className="text-muted-foreground text-xs">
-              用自然语言说出目标，AI 会自动拆成事件 / 待办 / 提醒，确认后写回当前日历。
+              用自然语言让 AI 排期，或上传截图 / 手动添加条件提醒，统一汇入日程。
             </DialogDescription>
           </DialogHeader>
-          <AiPlanner />
+          <Tabs defaultValue="ai" className="mt-2">
+            <TabsList className="bg-foreground/5">
+              <TabsTrigger value="ai">AI 规划</TabsTrigger>
+              <TabsTrigger value="follow">截图 / 条件提醒</TabsTrigger>
+            </TabsList>
+            <TabsContent value="ai" className="mt-3">
+              <AiPlanner />
+            </TabsContent>
+            <TabsContent value="follow" className="mt-3">
+              <FollowUpsPanel />
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </div>
