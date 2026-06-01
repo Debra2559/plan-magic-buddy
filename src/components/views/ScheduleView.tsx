@@ -5,6 +5,8 @@ import type { PlanItem } from "@/lib/plan.functions";
 import { TimePicker } from "@/components/ui/time-picker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AiPlanner } from "@/components/AiPlanner";
+import { FollowUpsPanel } from "@/components/FollowUpsPanel";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 
 
