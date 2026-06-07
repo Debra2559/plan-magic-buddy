@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useExpenses, useBudgets, EXPENSE_CATEGORIES, fenToYuan, yuanToFen, currentMonth, type Expense } from "@/lib/expenses";
-import { Wallet, Plus, Trash2, AlertTriangle, TrendingUp, Pencil, Check, X } from "lucide-react";
+import { Wallet, Plus, Trash2, AlertTriangle, TrendingUp, Pencil, Check, X, ScanLine } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
+import { ExpenseImportDialog } from "@/components/ExpenseImportDialog";
 
 const CAT_COLORS: Record<string, string> = {
   餐饮: "#f59e0b", 交通: "#06b6d4", 购物: "#ec4899", 娱乐: "#a78bfa",
@@ -14,10 +15,11 @@ function todayStr() {
 }
 
 export function LedgerView() {
-  const { items, add, remove, update } = useExpenses();
+  const { items, add, addMany, remove, update } = useExpenses();
   const { items: budgets, setBudget } = useBudgets();
   const [month, setMonth] = useState(currentMonth());
   const [tab, setTab] = useState<"流水" | "图表" | "预算">("流水");
+  const [importing, setImporting] = useState(false);
 
   // 录入
   const [amountStr, setAmountStr] = useState("");
@@ -72,6 +74,13 @@ export function LedgerView() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setImporting(true)}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-glow/15 border border-amber-glow/40 text-amber-glow text-xs hover:bg-amber-glow/25"
+            title="从微信 / 支付宝长截图识别并批量导入"
+          >
+            <ScanLine className="w-3 h-3" /> 截图导入
+          </button>
           <input
             type="month"
             value={month}
@@ -226,6 +235,13 @@ export function LedgerView() {
             );
           })}
         </div>
+      )}
+
+      {importing && (
+        <ExpenseImportDialog
+          onClose={() => setImporting(false)}
+          onImport={addMany}
+        />
       )}
     </div>
   );
