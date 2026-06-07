@@ -15,6 +15,7 @@ const tagColor: Record<string, string> = {
 
 export function TodosView({ initialFilter = "all", filterKey }: { initialFilter?: "all" | "todo" | "reminder" | "event"; filterKey?: string } = {}) {
   const { items, toggleDone, removeItem, updateItem, isRecentlySynced } = useSylva();
+  const { start: startFocus, state: focusState } = useFocusTimer();
   const [detailId, setDetailId] = useState<string | null>(null);
   const detailItem = detailId ? items.find((i) => i.id === detailId) ?? null : null;
   const [draftNote, setDraftNote] = useState("");
