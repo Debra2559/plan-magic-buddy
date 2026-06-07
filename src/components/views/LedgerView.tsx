@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useExpenses, useBudgets, EXPENSE_CATEGORIES, fenToYuan, yuanToFen, currentMonth, type Expense } from "@/lib/expenses";
-import { Wallet, Plus, Trash2, AlertTriangle, TrendingUp, Pencil, Check, X } from "lucide-react";
+import { Wallet, Plus, Trash2, AlertTriangle, TrendingUp, Pencil, Check, X, ScanLine } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
+import { ExpenseImportDialog } from "@/components/ExpenseImportDialog";
 
 const CAT_COLORS: Record<string, string> = {
   餐饮: "#f59e0b", 交通: "#06b6d4", 购物: "#ec4899", 娱乐: "#a78bfa",
