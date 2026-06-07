@@ -136,7 +136,9 @@ function DesktopApp() {
 
 
   return (
+    <FocusTimerProvider>
     <div className="fixed inset-0 overflow-hidden bg-black select-none">
+      <FocusTimerOverlay />
       {/* Wallpaper */}
       <img src={forestBg} alt="" className="absolute inset-0 w-full h-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
