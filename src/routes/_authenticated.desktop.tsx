@@ -46,6 +46,7 @@ import {
   Shield,
   Brain,
   Radar,
+  Wallet,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/desktop")({
