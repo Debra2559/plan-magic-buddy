@@ -19,8 +19,6 @@ import { AbilityView } from "@/components/views/AbilityView";
 import { MonitorView } from "@/components/views/MonitorView";
 import { LedgerView } from "@/components/views/LedgerView";
 import { SettingsView } from "@/components/views/SettingsView";
-import { FocusTimerProvider } from "@/lib/focus-sessions";
-import { FocusTimerOverlay } from "@/components/FocusTimer";
 import { SyncSummaryModal } from "@/components/SyncSummaryModal";
 import { OnboardingHint } from "@/components/OnboardingHint";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -136,9 +134,7 @@ function DesktopApp() {
 
 
   return (
-    <FocusTimerProvider>
     <div className="fixed inset-0 overflow-hidden bg-black select-none">
-      <FocusTimerOverlay />
       {/* Wallpaper */}
       <img src={forestBg} alt="" className="absolute inset-0 w-full h-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
@@ -305,7 +301,7 @@ function DesktopApp() {
         </DialogContent>
       </Dialog>
     </div>
-    </FocusTimerProvider>
+
   );
 }
 
