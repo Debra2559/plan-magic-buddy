@@ -305,6 +305,7 @@ function DesktopApp() {
         </DialogContent>
       </Dialog>
     </div>
+    </FocusTimerProvider>
   );
 }
 
