@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSylva } from "@/lib/sylva-store";
 import { useFocusTimer } from "@/lib/focus-sessions";
+import { FocusTimerStarter } from "@/components/FocusTimer";
 import { CheckCircle2, Circle, Trash2, Filter, Calendar, Clock, Tag, FileText, Play } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
