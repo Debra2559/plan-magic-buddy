@@ -74,6 +74,13 @@ export function LedgerView() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setImporting(true)}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-glow/15 border border-amber-glow/40 text-amber-glow text-xs hover:bg-amber-glow/25"
+            title="从微信 / 支付宝长截图识别并批量导入"
+          >
+            <ScanLine className="w-3 h-3" /> 截图导入
+          </button>
           <input
             type="month"
             value={month}
