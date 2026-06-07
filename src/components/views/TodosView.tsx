@@ -57,13 +57,16 @@ export function TodosView({ initialFilter = "all", filterKey }: { initialFilter?
             完成 {done} / {total}
           </h2>
         </div>
-        <div className="text-right">
-          <div className="text-xs text-muted-foreground/70 mb-1">今日完成率</div>
-          <div className="w-40 h-1.5 bg-foreground/10 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-moss to-amber-glow"
-              style={{ width: `${total > 0 ? (done / total) * 100 : 0}%` }}
-            />
+        <div className="flex items-end gap-4">
+          <FocusTimerStarter />
+          <div className="text-right">
+            <div className="text-xs text-muted-foreground/70 mb-1">今日完成率</div>
+            <div className="w-40 h-1.5 bg-foreground/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-moss to-amber-glow"
+                style={{ width: `${total > 0 ? (done / total) * 100 : 0}%` }}
+              />
+            </div>
           </div>
         </div>
       </div>
