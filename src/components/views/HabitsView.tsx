@@ -104,6 +104,13 @@ export function HabitsView() {
               {/* edit/delete actions — bottom right, away from done badge */}
               <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition z-10">
                 <button
+                  onClick={(e) => { e.stopPropagation(); setLogging(h); }}
+                  className="w-6 h-6 rounded-md bg-background/70 backdrop-blur hover:bg-amber-glow/25 text-muted-foreground hover:text-amber-glow flex items-center justify-center"
+                  title="写记录 / 看历史"
+                >
+                  <NotebookPen className="w-3 h-3" />
+                </button>
+                <button
                   onClick={(e) => { e.stopPropagation(); setEditing(h); }}
                   className="w-6 h-6 rounded-md bg-background/70 backdrop-blur hover:bg-amber-glow/25 text-muted-foreground hover:text-amber-glow flex items-center justify-center"
                   title="编辑"
@@ -118,6 +125,18 @@ export function HabitsView() {
                   <Trash2 className="w-3 h-3" />
                 </button>
               </div>
+
+              {/* checkin count badge */}
+              {counts[h.id] > 0 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setLogging(h); }}
+                  className="absolute top-2 right-2 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-glow/15 border border-amber-glow/40 text-[10px] text-amber-glow hover:bg-amber-glow/25"
+                  title="查看记录"
+                >
+                  <NotebookPen className="w-2.5 h-2.5" /> {counts[h.id]}
+                </button>
+              )}
+
 
               <button
                 onClick={() => toggleHabit(h.id)}
