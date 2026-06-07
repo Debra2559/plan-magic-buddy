@@ -1,5 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { FocusTimerProvider } from "@/lib/focus-sessions";
+import { FocusTimerOverlay } from "@/components/FocusTimer";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ location }) => {
@@ -8,5 +10,10 @@ export const Route = createFileRoute("/_authenticated")({
       throw redirect({ to: "/login", search: { redirect: location.href } as any });
     }
   },
-  component: () => <Outlet />,
+  component: () => (
+    <FocusTimerProvider>
+      <Outlet />
+      <FocusTimerOverlay />
+    </FocusTimerProvider>
+  ),
 });
