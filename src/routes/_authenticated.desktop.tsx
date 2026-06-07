@@ -214,6 +214,7 @@ function DesktopApp() {
                 {view === "journal" && <JournalView />}
                 {view === "ability" && <AbilityView />}
                 {view === "monitor" && <MonitorView />}
+                {view === "ledger" && <LedgerView />}
               </div>
             </div>
           </AppWindow>
