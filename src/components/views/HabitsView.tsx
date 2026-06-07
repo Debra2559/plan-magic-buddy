@@ -20,6 +20,8 @@ export function HabitsView() {
   const [editing, setEditing] = useState<Habit | null>(null);
   const [deleting, setDeleting] = useState<Habit | null>(null);
   const [creating, setCreating] = useState(false);
+  const [logging, setLogging] = useState<Habit | null>(null);
+  const { counts, reload: reloadCounts } = useHabitCheckinCounts();
 
   const doneCount = habits.filter((h) => isHabitDoneOn(h, today)).length;
   const missedToday = habits.filter((h) => !isHabitDoneOn(h, today) && habitStreak(h, today) > 0);
