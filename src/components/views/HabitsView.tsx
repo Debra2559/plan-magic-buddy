@@ -130,12 +130,13 @@ export function HabitsView() {
               {counts[h.id] > 0 && (
                 <button
                   onClick={(e) => { e.stopPropagation(); setLogging(h); }}
-                  className="absolute top-2 right-2 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-glow/15 border border-amber-glow/40 text-[10px] text-amber-glow hover:bg-amber-glow/25"
+                  className="absolute top-2 left-2 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-background/70 backdrop-blur border border-amber-glow/30 text-[10px] text-amber-glow hover:bg-amber-glow/15"
                   title="查看记录"
                 >
                   <NotebookPen className="w-2.5 h-2.5" /> {counts[h.id]}
                 </button>
               )}
+
 
 
               <button
