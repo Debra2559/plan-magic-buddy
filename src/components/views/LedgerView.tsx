@@ -236,6 +236,13 @@ export function LedgerView() {
           })}
         </div>
       )}
+
+      {importing && (
+        <ExpenseImportDialog
+          onClose={() => setImporting(false)}
+          onImport={addMany}
+        />
+      )}
     </div>
   );
 }
