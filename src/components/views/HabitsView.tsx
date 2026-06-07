@@ -207,6 +207,15 @@ export function HabitsView() {
         />
       )}
 
+      {logging && (
+        <HabitCheckinDialog
+          habit={logging}
+          onClose={() => setLogging(null)}
+          onChanged={() => reloadCounts()}
+        />
+      )}
+
+
       <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <AlertDialogContent className="bg-zinc-950 border-rose-400/30">
           <AlertDialogHeader>
