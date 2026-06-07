@@ -770,6 +770,39 @@ export type Database = {
         }
         Relationships: []
       }
+      habit_checkins: {
+        Row: {
+          created_at: string
+          date: string
+          habit_id: string
+          id: string
+          images: string[]
+          note: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          habit_id: string
+          id?: string
+          images?: string[]
+          note?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          habit_id?: string
+          id?: string
+          images?: string[]
+          note?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       habits: {
         Row: {
           created_at: string
