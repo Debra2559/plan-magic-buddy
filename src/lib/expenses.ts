@@ -64,6 +64,18 @@ export function useExpenses() {
     if (!error && data) setItems((xs) => [fromRow(data), ...xs]);
   }, []);
 
+  const addMany = useCallback(async (list: Omit<Expense, "id" | "createdAt">[]) => {
+    if (list.length === 0) return 0;
+    const rows = list.map((e) => ({
+      amount: e.amount, category: e.category, note: e.note ?? null,
+      date: e.date, payment_method: e.paymentMethod ?? null,
+    }));
+    const { data, error } = await supabase.from("expenses").insert(rows).select();
+    if (error || !data) return 0;
+    setItems((xs) => [...data.map(fromRow), ...xs]);
+    return data.length;
+  }, []);
+
   const update = useCallback(async (id: string, patch: Partial<Expense>) => {
     const payload: any = {};
     if (patch.amount !== undefined) payload.amount = patch.amount;
