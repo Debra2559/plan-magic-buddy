@@ -130,6 +130,19 @@ export function TodosView({ initialFilter = "all", filterKey }: { initialFilter?
                     <span className={`text-[10px] tracking-wider ${tagColor[it.tag] ?? "text-muted-foreground"}`}>
                       {it.tag}
                     </span>
+                    {!it.done && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (focusState) return;
+                          startFocus({ mode: "pomodoro", plannedMin: 25, linkedItemId: it.id, title: it.title, tag: it.tag });
+                        }}
+                        className="opacity-0 group-hover:opacity-100 text-muted-foreground/70 hover:text-amber-glow p-1 transition"
+                        title="开始番茄钟"
+                      >
+                        <Play className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <button
                       onClick={(e) => { e.stopPropagation(); removeItem(it.id); }}
                       className="opacity-0 group-hover:opacity-100 text-muted-foreground/60 hover:text-destructive p-1 transition"
