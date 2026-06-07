@@ -10,7 +10,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Flame, Check, AlertTriangle, Plus, Pencil, Trash2, X, Save } from "lucide-react";
+import { Flame, Check, AlertTriangle, Plus, Pencil, Trash2, X, Save, NotebookPen } from "lucide-react";
+import { useHabitCheckinCounts } from "@/lib/habit-checkins";
+import { HabitCheckinDialog } from "@/components/HabitCheckinDialog";
 
 export function HabitsView() {
   const { habits, toggleHabit, addHabit, updateHabit, removeHabit } = useSylva();
