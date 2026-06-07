@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSylva } from "@/lib/sylva-store";
-import { CheckCircle2, Circle, Trash2, Filter, Calendar, Clock, Tag, FileText } from "lucide-react";
+import { useFocusTimer } from "@/lib/focus-sessions";
+import { FocusTimerStarter } from "@/components/FocusTimer";
+import { CheckCircle2, Circle, Trash2, Filter, Calendar, Clock, Tag, FileText, Play } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 const tagColor: Record<string, string> = {
@@ -14,6 +16,7 @@ const tagColor: Record<string, string> = {
 
 export function TodosView({ initialFilter = "all", filterKey }: { initialFilter?: "all" | "todo" | "reminder" | "event"; filterKey?: string } = {}) {
   const { items, toggleDone, removeItem, updateItem, isRecentlySynced } = useSylva();
+  const { start: startFocus, state: focusState } = useFocusTimer();
   const [detailId, setDetailId] = useState<string | null>(null);
   const detailItem = detailId ? items.find((i) => i.id === detailId) ?? null : null;
   const [draftNote, setDraftNote] = useState("");
@@ -54,13 +57,16 @@ export function TodosView({ initialFilter = "all", filterKey }: { initialFilter?
             完成 {done} / {total}
           </h2>
         </div>
-        <div className="text-right">
-          <div className="text-xs text-muted-foreground/70 mb-1">今日完成率</div>
-          <div className="w-40 h-1.5 bg-foreground/10 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-moss to-amber-glow"
-              style={{ width: `${total > 0 ? (done / total) * 100 : 0}%` }}
-            />
+        <div className="flex items-end gap-4">
+          <FocusTimerStarter />
+          <div className="text-right">
+            <div className="text-xs text-muted-foreground/70 mb-1">今日完成率</div>
+            <div className="w-40 h-1.5 bg-foreground/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-moss to-amber-glow"
+                style={{ width: `${total > 0 ? (done / total) * 100 : 0}%` }}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -128,6 +134,19 @@ export function TodosView({ initialFilter = "all", filterKey }: { initialFilter?
                     <span className={`text-[10px] tracking-wider ${tagColor[it.tag] ?? "text-muted-foreground"}`}>
                       {it.tag}
                     </span>
+                    {!it.done && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (focusState) return;
+                          startFocus({ mode: "pomodoro", plannedMin: 25, linkedItemId: it.id, title: it.title, tag: it.tag });
+                        }}
+                        className="opacity-0 group-hover:opacity-100 text-muted-foreground/70 hover:text-amber-glow p-1 transition"
+                        title="开始番茄钟"
+                      >
+                        <Play className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <button
                       onClick={(e) => { e.stopPropagation(); removeItem(it.id); }}
                       className="opacity-0 group-hover:opacity-100 text-muted-foreground/60 hover:text-destructive p-1 transition"

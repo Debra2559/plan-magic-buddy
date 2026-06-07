@@ -305,6 +305,36 @@ export type Database = {
         }
         Relationships: []
       }
+      budgets: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string
+          id: string
+          month: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          created_at?: string
+          id?: string
+          month: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          id?: string
+          month?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       canvas_documents: {
         Row: {
           created_at: string
@@ -419,6 +449,42 @@ export type Database = {
           mood?: string | null
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          date: string
+          id: string
+          note: string | null
+          payment_method: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string
+          created_at?: string
+          date: string
+          id?: string
+          note?: string | null
+          payment_method?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          date?: string
+          id?: string
+          note?: string | null
+          payment_method?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -596,6 +662,54 @@ export type Database = {
           request_id?: string
           status?: number | null
           step?: string
+        }
+        Relationships: []
+      }
+      focus_sessions: {
+        Row: {
+          actual_min: number
+          completed: boolean
+          created_at: string
+          ended_at: string | null
+          id: string
+          linked_item_id: string | null
+          mode: string
+          planned_min: number
+          started_at: string
+          tag: string | null
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actual_min?: number
+          completed?: boolean
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          linked_item_id?: string | null
+          mode?: string
+          planned_min?: number
+          started_at?: string
+          tag?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          actual_min?: number
+          completed?: boolean
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          linked_item_id?: string | null
+          mode?: string
+          planned_min?: number
+          started_at?: string
+          tag?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
