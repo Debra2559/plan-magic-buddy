@@ -15,10 +15,11 @@ function todayStr() {
 }
 
 export function LedgerView() {
-  const { items, add, remove, update } = useExpenses();
+  const { items, add, addMany, remove, update } = useExpenses();
   const { items: budgets, setBudget } = useBudgets();
   const [month, setMonth] = useState(currentMonth());
   const [tab, setTab] = useState<"流水" | "图表" | "预算">("流水");
+  const [importing, setImporting] = useState(false);
 
   // 录入
   const [amountStr, setAmountStr] = useState("");
