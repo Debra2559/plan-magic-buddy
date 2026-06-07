@@ -92,7 +92,7 @@ export function useExpenses() {
     setItems((xs) => xs.filter((x) => x.id !== id));
   }, []);
 
-  return { items, loading, add, update, remove, reload };
+  return { items, loading, add, addMany, update, remove, reload };
 }
 
 export function useBudgets() {
