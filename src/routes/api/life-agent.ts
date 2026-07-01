@@ -67,7 +67,7 @@ async function buildSnapshot(userId: string) {
       .eq("user_id", userId).eq("done", false).order("created_at_ms", { ascending: false }).limit(15),
     supabaseAdmin.from("notes").select("id,text,tags,updated_at")
       .eq("user_id", userId).is("deleted_at", null).order("updated_at", { ascending: false }).limit(8),
-    supabaseAdmin.from("user_profiles").select("ai_nickname,tone,user_nickname").eq("user_id", userId).maybeSingle(),
+    supabaseAdmin.from("user_profiles").select("ai_nickname,display_name,persona_prompt").eq("user_id", userId).maybeSingle(),
   ]);
 
   const memBlock = await fetchMemoryBlockForUser(userId, 20);
