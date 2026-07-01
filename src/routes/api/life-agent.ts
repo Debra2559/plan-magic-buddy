@@ -107,11 +107,12 @@ async function buildSnapshot(userId: string) {
 
 function systemPrompt(snapshot: Awaited<ReturnType<typeof buildSnapshot>>) {
   const name = snapshot.persona?.ai_nickname || "Sylva";
-  const user = snapshot.persona?.user_nickname || "主人";
-  const tone = snapshot.persona?.tone || "温暖、克制、直接";
+  const user = snapshot.persona?.display_name || "主人";
+  const personaPrompt = snapshot.persona?.persona_prompt || "温暖、克制、直接";
   return [
     `你是 ${name}，${user} 的贴身生活 agent。`,
-    `语气：${tone}。简洁直接，用中文。不要客套。回答里禁止用"作为AI"这种自我提示。`,
+    `人设与口吻：${personaPrompt}`,
+    `补充：简洁直接，用中文。不要客套。回答里禁止用"作为AI"这种自我提示。`,
     ``,
     `你的能力：你可以调用工具直接读取和修改 ${user} 的生活数据——日程、待办、习惯、记账、跟进、笔记、长期记忆。`,
     `原则：`,
