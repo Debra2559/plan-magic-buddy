@@ -257,8 +257,12 @@ const initialHabits: Habit[] = [
   seedHabit("h6", "早睡", "🌙", 3, false),
 ];
 
-let idCounter = 1000;
-const nextId = () => `i-${++idCounter}`;
+// 使用 UUID，避免与远端/本地已有的自增 ID (`i-1006` 等) 冲突，
+// 同时符合 schedule_items.id 的 UUID 约束。
+const nextId = () =>
+  typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `i-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 
 export function SylvaProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<DoneItem[]>(() => loadLS("sylva.items", initialItems));
