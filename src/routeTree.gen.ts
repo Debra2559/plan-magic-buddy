@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiLifeAgentRouteImport } from './routes/api/life-agent'
 import { Route as AuthenticatedDesktopRouteImport } from './routes/_authenticated.desktop'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiPublicHooksScanHackathonsRouteImport } from './routes/api/public/hooks/scan-hackathons'
@@ -33,6 +34,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLifeAgentRoute = ApiLifeAgentRouteImport.update({
+  id: '/api/life-agent',
+  path: '/api/life-agent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedDesktopRoute = AuthenticatedDesktopRouteImport.update({
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/desktop': typeof AuthenticatedDesktopRoute
+  '/api/life-agent': typeof ApiLifeAgentRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
   '/api/public/hooks/generate-insights': typeof ApiPublicHooksGenerateInsightsRoute
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/desktop': typeof AuthenticatedDesktopRoute
+  '/api/life-agent': typeof ApiLifeAgentRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
   '/api/public/hooks/generate-insights': typeof ApiPublicHooksGenerateInsightsRoute
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/desktop': typeof AuthenticatedDesktopRoute
+  '/api/life-agent': typeof ApiLifeAgentRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
   '/api/public/hooks/generate-insights': typeof ApiPublicHooksGenerateInsightsRoute
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin'
     | '/desktop'
+    | '/api/life-agent'
     | '/api/public/feishu/webhook'
     | '/api/public/hooks/daily-recap'
     | '/api/public/hooks/generate-insights'
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin'
     | '/desktop'
+    | '/api/life-agent'
     | '/api/public/feishu/webhook'
     | '/api/public/hooks/daily-recap'
     | '/api/public/hooks/generate-insights'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_authenticated/admin'
     | '/_authenticated/desktop'
+    | '/api/life-agent'
     | '/api/public/feishu/webhook'
     | '/api/public/hooks/daily-recap'
     | '/api/public/hooks/generate-insights'
@@ -163,6 +175,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiLifeAgentRoute: typeof ApiLifeAgentRoute
   ApiPublicFeishuWebhookRoute: typeof ApiPublicFeishuWebhookRoute
   ApiPublicHooksDailyRecapRoute: typeof ApiPublicHooksDailyRecapRoute
   ApiPublicHooksGenerateInsightsRoute: typeof ApiPublicHooksGenerateInsightsRoute
@@ -192,6 +205,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/life-agent': {
+      id: '/api/life-agent'
+      path: '/api/life-agent'
+      fullPath: '/api/life-agent'
+      preLoaderRoute: typeof ApiLifeAgentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/desktop': {
@@ -271,6 +291,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiLifeAgentRoute: ApiLifeAgentRoute,
   ApiPublicFeishuWebhookRoute: ApiPublicFeishuWebhookRoute,
   ApiPublicHooksDailyRecapRoute: ApiPublicHooksDailyRecapRoute,
   ApiPublicHooksGenerateInsightsRoute: ApiPublicHooksGenerateInsightsRoute,
