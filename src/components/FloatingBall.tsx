@@ -130,6 +130,10 @@ export function FloatingBall() {
     setOpen(false);
   };
 
+  const openAgent = () => {
+    window.dispatchEvent(new Event("life-agent:open"));
+    setOpen(false);
+  };
   const goAI = () => { navigateTo("ai"); setOpen(false); };
   const goToday = () => { navigateTo("schedule"); setOpen(false); };
 
@@ -209,9 +213,10 @@ export function FloatingBall() {
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
+          <BallAction icon={<Sparkles className="w-4 h-4" />} label="生活助手" hint="能动手" onClick={openAgent} />
           <BallAction icon={<ClipboardPaste className="w-4 h-4" />} label="速记剪贴板" hint="Shift+Q+W" onClick={quickCapture} />
           <BallAction icon={<CalendarPlus className="w-4 h-4" />} label="新建事件" onClick={newEvent} />
-          <BallAction icon={<MessageSquare className="w-4 h-4" />} label="跟 AI 聊聊" onClick={goAI} />
+          <BallAction icon={<MessageSquare className="w-4 h-4" />} label="AI 规划" onClick={goAI} />
           <BallAction icon={<ListTodo className="w-4 h-4" />} label="查看今日" onClick={goToday} />
           <button
             onClick={() => { setPos((p) => ({ ...p, enabled: false })); setOpen(false); toast("已隐藏悬浮球", { description: "在设置中可重新开启" }); }}
