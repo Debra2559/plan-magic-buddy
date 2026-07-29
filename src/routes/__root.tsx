@@ -84,7 +84,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "theme-color", content: "#0f1220" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "Sylva" },
       { title: "Lovable App" },
       { name: "description", content: "AI-powered planning, scheduling, and note-taking app for Mac and mobile." },
       { name: "author", content: "Lovable" },
@@ -99,10 +103,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/487e9bbb-a0db-4798-9703-b1528b348f56/id-preview-40bcac30--01545937-4efd-4487-a500-8dd999f2e87d.lovable.app-1779289256332.png" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/app-icon-512.png" },
+      { rel: "icon", href: "/app-icon-512.png", type: "image/png" },
     ],
   }),
   shellComponent: RootShell,
