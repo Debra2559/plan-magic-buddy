@@ -20,6 +20,7 @@ import { Route as ApiPublicHooksScanAiNewsRouteImport } from './routes/api/publi
 import { Route as ApiPublicHooksGenerateInsightsRouteImport } from './routes/api/public/hooks/generate-insights'
 import { Route as ApiPublicHooksDailyRecapRouteImport } from './routes/api/public/hooks/daily-recap'
 import { Route as ApiPublicFeishuWebhookRouteImport } from './routes/api/public/feishu/webhook'
+import { Route as ApiPublicCalendarTokenDoticsRouteImport } from './routes/api/public/calendar/$token[.]ics'
 import { Route as ApiPublicFeishuOauthCallbackRouteImport } from './routes/api/public/feishu/oauth/callback'
 
 const LoginRoute = LoginRouteImport.update({
@@ -80,6 +81,12 @@ const ApiPublicFeishuWebhookRoute = ApiPublicFeishuWebhookRouteImport.update({
   path: '/api/public/feishu/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCalendarTokenDoticsRoute =
+  ApiPublicCalendarTokenDoticsRouteImport.update({
+    id: '/api/public/calendar/$token.ics',
+    path: '/api/public/calendar/$token.ics',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicFeishuOauthCallbackRoute =
   ApiPublicFeishuOauthCallbackRouteImport.update({
     id: '/api/public/feishu/oauth/callback',
@@ -93,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/desktop': typeof AuthenticatedDesktopRoute
   '/api/life-agent': typeof ApiLifeAgentRoute
+  '/api/public/calendar/$token.ics': typeof ApiPublicCalendarTokenDoticsRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
   '/api/public/hooks/generate-insights': typeof ApiPublicHooksGenerateInsightsRoute
@@ -106,6 +114,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/desktop': typeof AuthenticatedDesktopRoute
   '/api/life-agent': typeof ApiLifeAgentRoute
+  '/api/public/calendar/$token.ics': typeof ApiPublicCalendarTokenDoticsRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
   '/api/public/hooks/generate-insights': typeof ApiPublicHooksGenerateInsightsRoute
@@ -121,6 +130,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/desktop': typeof AuthenticatedDesktopRoute
   '/api/life-agent': typeof ApiLifeAgentRoute
+  '/api/public/calendar/$token.ics': typeof ApiPublicCalendarTokenDoticsRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
   '/api/public/hooks/daily-recap': typeof ApiPublicHooksDailyRecapRoute
   '/api/public/hooks/generate-insights': typeof ApiPublicHooksGenerateInsightsRoute
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/desktop'
     | '/api/life-agent'
+    | '/api/public/calendar/$token.ics'
     | '/api/public/feishu/webhook'
     | '/api/public/hooks/daily-recap'
     | '/api/public/hooks/generate-insights'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/desktop'
     | '/api/life-agent'
+    | '/api/public/calendar/$token.ics'
     | '/api/public/feishu/webhook'
     | '/api/public/hooks/daily-recap'
     | '/api/public/hooks/generate-insights'
@@ -163,6 +175,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/desktop'
     | '/api/life-agent'
+    | '/api/public/calendar/$token.ics'
     | '/api/public/feishu/webhook'
     | '/api/public/hooks/daily-recap'
     | '/api/public/hooks/generate-insights'
@@ -176,6 +189,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
   ApiLifeAgentRoute: typeof ApiLifeAgentRoute
+  ApiPublicCalendarTokenDoticsRoute: typeof ApiPublicCalendarTokenDoticsRoute
   ApiPublicFeishuWebhookRoute: typeof ApiPublicFeishuWebhookRoute
   ApiPublicHooksDailyRecapRoute: typeof ApiPublicHooksDailyRecapRoute
   ApiPublicHooksGenerateInsightsRoute: typeof ApiPublicHooksGenerateInsightsRoute
@@ -263,6 +277,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicFeishuWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/calendar/$token.ics': {
+      id: '/api/public/calendar/$token.ics'
+      path: '/api/public/calendar/$token.ics'
+      fullPath: '/api/public/calendar/$token.ics'
+      preLoaderRoute: typeof ApiPublicCalendarTokenDoticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/feishu/oauth/callback': {
       id: '/api/public/feishu/oauth/callback'
       path: '/api/public/feishu/oauth/callback'
@@ -292,6 +313,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
   ApiLifeAgentRoute: ApiLifeAgentRoute,
+  ApiPublicCalendarTokenDoticsRoute: ApiPublicCalendarTokenDoticsRoute,
   ApiPublicFeishuWebhookRoute: ApiPublicFeishuWebhookRoute,
   ApiPublicHooksDailyRecapRoute: ApiPublicHooksDailyRecapRoute,
   ApiPublicHooksGenerateInsightsRoute: ApiPublicHooksGenerateInsightsRoute,
@@ -302,13 +324,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
