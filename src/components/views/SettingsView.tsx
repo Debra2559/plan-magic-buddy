@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bell, Cloud, Palette, Keyboard, User, Info, Sparkles, Bot, Webhook, ChevronRight, ChevronDown, LogOut, Lightbulb, Wand2, MousePointerClick, Brain } from "lucide-react";
+import { Bell, Cloud, Palette, Keyboard, User, Info, Sparkles, Bot, Webhook, ChevronRight, ChevronDown, LogOut, Lightbulb, Wand2, MousePointerClick, Brain, CalendarCheck } from "lucide-react";
 import { MemoryPanel } from "@/components/MemoryPanel";
 import { FloatingBallPanel } from "@/components/FloatingBallPanel";
 import { ComicSettingsPanel } from "@/components/ComicSettingsPanel";
 import { InsightsSettingsPanel } from "@/components/InsightsSettingsPanel";
 import { FeishuSyncPanel } from "@/components/FeishuSyncPanel";
 import { FeishuWebhookLogsPanel } from "@/components/FeishuWebhookLogsPanel";
+import { CalendarSyncPanel } from "@/components/CalendarSyncPanel";
 import { AiPersonaPanel } from "@/components/AiPersonaPanel";
 import { RemindersPanel } from "@/components/RemindersPanel";
 import { useSylva } from "@/lib/sylva-store";
@@ -168,7 +169,7 @@ function DateFlashPanel() {
   );
 }
 
-type NavKey = "general" | "persona" | "memory" | "insights" | "comic" | "feishu" | "webhook" | "reminders" | "appearance" | "floating" | "shortcuts" | "about";
+type NavKey = "general" | "persona" | "memory" | "insights" | "comic" | "calendar" | "feishu" | "webhook" | "reminders" | "appearance" | "floating" | "shortcuts" | "about";
 type NavGroup = { label: string; items: { key: NavKey; title: string; icon: typeof User; subtitle?: string }[] };
 
 const NAV: NavGroup[] = [
@@ -185,6 +186,7 @@ const NAV: NavGroup[] = [
   {
     label: "同步",
     items: [
+      { key: "calendar", title: "日历订阅 (iOS/Mac)", icon: CalendarCheck },
       { key: "feishu", title: "飞书同步", icon: Cloud },
       { key: "webhook", title: "Webhook 日志", icon: Webhook },
     ],
@@ -212,6 +214,7 @@ const TITLES: Record<NavKey, { title: string; desc: string }> = {
   memory: { title: "长期记忆", desc: "AI 关于你的长期记忆 — 会自动注入到规划、洞察和飞书机器人" },
   insights: { title: "AI 行为洞察", desc: "AI 根据你的日程、记录、习惯行为生成的贴心提示" },
   comic: { title: "漫画生成", desc: "选择默认图像模型与画面风格" },
+  calendar: { title: "日历订阅", desc: "把日程同步到 iPhone/Mac 系统日历、Google Calendar" },
   feishu: { title: "飞书同步", desc: "日历推送、接收人捕获与诊断" },
   webhook: { title: "Webhook 日志", desc: "查看最近的飞书事件回调" },
   reminders: { title: "提醒", desc: "桌面通知与每日总结" },
@@ -305,6 +308,7 @@ export function SettingsView() {
       case "memory": return <MemoryPanel />;
       case "insights": return <InsightsSettingsPanel />;
       case "comic": return <ComicSettingsPanel />;
+      case "calendar": return <CalendarSyncPanel />;
       case "feishu": return <FeishuSyncPanel />;
       case "webhook": return <FeishuWebhookLogsPanel />;
       case "reminders": return <RemindersPanel />;
