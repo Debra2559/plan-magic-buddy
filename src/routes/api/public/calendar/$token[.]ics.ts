@@ -46,11 +46,11 @@ function fold(line: string) {
   return out.join("\r\n");
 }
 
-export const Route = createFileRoute("/api/public/calendar/$token[.]ics")({
+export const Route = createFileRoute("/api/public/calendar/$token.ics")({
   server: {
     handlers: {
       GET: async ({ params }) => {
-        const token = params.token;
+        const token = (params as any).token ?? (params as any)["token.ics"];
         if (!token || token.length < 8) {
           return new Response("invalid token", { status: 400 });
         }
