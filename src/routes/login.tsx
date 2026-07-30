@@ -213,8 +213,10 @@ function LoginPage() {
               />
               <button
                 type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => setShowPwd((v) => !v)}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  setShowPwd((v) => !v);
+                }}
                 className="absolute inset-y-0 right-0 z-10 flex items-center justify-center w-10 cursor-pointer text-foreground/40 hover:text-foreground/80"
                 aria-label={showPwd ? "隐藏密码" : "显示密码"}
                 title={showPwd ? "隐藏密码" : "显示密码"}
