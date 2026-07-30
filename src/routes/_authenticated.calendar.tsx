@@ -117,14 +117,6 @@ function CalendarClient() {
           >
             今天
           </button>
-
-          <Link
-            to="/desktop"
-            className="text-xs px-2.5 py-1.5 rounded-md border border-border hover:bg-accent transition-colors inline-flex items-center gap-1"
-          >
-            <LayoutGrid className="w-3.5 h-3.5" />
-            完整版
-          </Link>
         </div>
       </header>
 
