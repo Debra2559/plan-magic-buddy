@@ -250,6 +250,14 @@ function CalendarClient() {
           </ul>
         </aside>
       </div>
+      )}
     </div>
   );
 }
+
+function shiftDate(date: string, delta: number) {
+  const [y, m, d] = date.split("-").map(Number);
+  const dt = new Date(y, m - 1, d + delta);
+  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+}
+
