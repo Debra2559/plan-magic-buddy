@@ -1,5 +1,7 @@
 {
-  "name": "tanstack_start_ts",
+  "name": "sylva-calendar",
+  "productName": "Sylva 日历",
+  "version": "0.1.0",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -11,7 +13,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "electron:dev": "electron .",
-    "electron:package:mac": "electron-packager-mac"
+    "electron:package:mac": "node scripts/package-mac.mjs",
+    "electron:package:mac:signed": "SIGN_MAC=true node scripts/package-mac.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^2.0.47",
