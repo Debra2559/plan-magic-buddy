@@ -78,7 +78,7 @@ function DownloadPage() {
             <h2 className="font-display text-xl">先在浏览器里试试</h2>
           </div>
           <p className="text-sm text-foreground/70 leading-relaxed mb-5">
-            不想下载也可以，网页端有一模一样的日历与桌面体验预览。
+            不想下载也可以，网页端有同样的日历体验，登录后数据互通。
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
@@ -86,12 +86,6 @@ function DownloadPage() {
               className="px-5 py-2.5 rounded-full bg-foreground/10 border border-foreground/15 text-sm hover:bg-foreground/15 transition"
             >
               打开网页日历
-            </Link>
-            <Link
-              to="/desktop"
-              className="px-5 py-2.5 rounded-full bg-foreground/10 border border-foreground/15 text-sm hover:bg-foreground/15 transition"
-            >
-              Mac 桌面体验预览
             </Link>
           </div>
         </section>
