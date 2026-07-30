@@ -421,6 +421,7 @@ export type Database = {
           angle: string | null
           created_at: string
           id: string
+          medium: string
           notes: string | null
           platform: string
           score: number
@@ -434,6 +435,7 @@ export type Database = {
           angle?: string | null
           created_at?: string
           id?: string
+          medium?: string
           notes?: string | null
           platform?: string
           score?: number
@@ -447,6 +449,7 @@ export type Database = {
           angle?: string | null
           created_at?: string
           id?: string
+          medium?: string
           notes?: string | null
           platform?: string
           score?: number
@@ -464,6 +467,7 @@ export type Database = {
           id: string
           idea_id: string | null
           link: string | null
+          medium: string
           metrics: Json
           notes: string | null
           platform: string
@@ -480,6 +484,7 @@ export type Database = {
           id?: string
           idea_id?: string | null
           link?: string | null
+          medium?: string
           metrics?: Json
           notes?: string | null
           platform?: string
@@ -496,6 +501,7 @@ export type Database = {
           id?: string
           idea_id?: string | null
           link?: string | null
+          medium?: string
           metrics?: Json
           notes?: string | null
           platform?: string

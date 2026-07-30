@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
 import {
   Megaphone, Lightbulb, KanbanSquare, CalendarRange, Plus, Trash2, Star,
-  CalendarPlus, ChevronRight, ExternalLink, Check, ArrowRight,
+  CalendarPlus, ChevronRight, ExternalLink, Check, ArrowRight, GripVertical,
 } from "lucide-react";
 import {
   useContentIdeas, useContentPieces, CONTENT_STAGES, CONTENT_PLATFORMS,
-  todayStr, shiftDate,
-  type ContentStage, type ContentPiece,
+  CONTENT_MEDIUMS, stageLabel, todayStr, shiftDate,
+  type ContentStage, type ContentPiece, type ContentMedium,
 } from "@/lib/content-studio";
 import { useSylva } from "@/lib/sylva-store";
 
@@ -68,6 +68,7 @@ function IdeasTab() {
   const [title, setTitle] = useState("");
   const [platform, setPlatform] = useState<string>("通用");
   const [angle, setAngle] = useState("");
+  const [medium, setMedium] = useState<ContentMedium>("article");
   const [filter, setFilter] = useState<"inbox" | "picked" | "archived" | "all">("inbox");
 
   const list = items.filter((i) => filter === "all" || i.status === filter);
@@ -75,7 +76,7 @@ function IdeasTab() {
   const submit = async () => {
     const t = title.trim();
     if (!t) return;
-    await add({ title: t, platform, angle: angle.trim() || undefined });
+    await add({ title: t, platform, medium, angle: angle.trim() || undefined });
     setTitle(""); setAngle("");
   };
 
@@ -108,6 +109,21 @@ function IdeasTab() {
             <Plus className="w-3.5 h-3.5" /> 入库
           </button>
         </div>
+        <div className="flex gap-1.5">
+          {CONTENT_MEDIUMS.map((m) => (
+            <button
+              key={m.key}
+              onClick={() => setMedium(m.key)}
+              className={`px-2.5 py-1 rounded-full text-[11px] border transition ${
+                medium === m.key
+                  ? "border-amber-glow/50 text-amber-glow bg-amber-glow/10"
+                  : "border-border text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {m.emoji} {m.label}
+            </button>
+          ))}
+        </div>
         <input
           value={angle}
           onChange={(e) => setAngle(e.target.value)}
@@ -139,6 +155,10 @@ function IdeasTab() {
                 {idea.angle && <div className="text-[11px] text-muted-foreground mt-1">{idea.angle}</div>}
                 <div className="flex items-center gap-2 mt-2 text-[10.5px] text-muted-foreground/70">
                   <span className="px-1.5 py-0.5 rounded bg-foreground/[0.07]">{idea.platform}</span>
+                  <span className="px-1.5 py-0.5 rounded bg-foreground/[0.07]">
+                    {CONTENT_MEDIUMS.find((m) => m.key === idea.medium)?.emoji}
+                    {CONTENT_MEDIUMS.find((m) => m.key === idea.medium)?.label}
+                  </span>
                   <span className="flex items-center gap-0.5">
                     {[1, 2, 3, 4, 5].map((n) => (
                       <button key={n} onClick={() => void update(idea.id, { score: n })}>
@@ -156,7 +176,7 @@ function IdeasTab() {
               {idea.status !== "picked" && (
                 <button
                   onClick={async () => {
-                    await addPiece({ title: idea.title, platform: idea.platform, ideaId: idea.id, notes: idea.angle });
+                    await addPiece({ title: idea.title, platform: idea.platform, medium: idea.medium, ideaId: idea.id, notes: idea.angle });
                     await update(idea.id, { status: "picked" });
                   }}
                   className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-amber-glow/15 border border-amber-glow/40 text-amber-glow hover:bg-amber-glow/25"
@@ -192,17 +212,63 @@ function IdeasTab() {
 
 function BoardTab() {
   const { items, add, update, remove } = useContentPieces();
+  const { addItems, updateItem, items: planItems } = useSylva();
   const [title, setTitle] = useState("");
+  const [medium, setMedium] = useState<ContentMedium>("article");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overStage, setOverStage] = useState<ContentStage | null>(null);
 
   const submit = async () => {
     const t = title.trim();
     if (!t) return;
-    await add({ title: t });
+    await add({ title: t, medium });
     setTitle("");
   };
 
   const open = items.find((p) => p.id === openId) ?? null;
+
+  /** 拖拽换阶段：写库 + 同步日历（当前阶段建/挪日程，前置阶段勾完成，后置阶段取消完成） */
+  const moveToStage = async (piece: ContentPiece, stage: ContentStage) => {
+    if (piece.stage === stage) return;
+    const targetIdx = CONTENT_STAGES.findIndex((s) => s.key === stage);
+    const schedule = { ...piece.stageSchedule };
+    const when = stage === "scheduled" || stage === "published"
+      ? piece.publishDate ?? todayStr()
+      : todayStr();
+
+    // 当前阶段：没有日程就建一个，有就挪到今天并置为未完成
+    const existing = schedule[stage] ? planItems.find((i) => i.id === schedule[stage]) : undefined;
+    if (existing) {
+      updateItem(existing.id, { date: when, done: stage === "published" } as any);
+    } else {
+      const [id] = addItems([
+        {
+          type: "todo",
+          title: `【${piece.platform}】${stageLabel(stage, piece.medium)}：${piece.title}`,
+          date: when,
+          tag: "自媒体",
+          note: piece.notes ?? undefined,
+        } as any,
+      ]);
+      schedule[stage] = id;
+      if (stage === "published") updateItem(id, { done: true } as any);
+    }
+
+    // 前后阶段的完成状态跟随
+    CONTENT_STAGES.forEach((s, idx) => {
+      const linkedId = schedule[s.key];
+      if (!linkedId || s.key === stage) return;
+      const linked = planItems.find((i) => i.id === linkedId);
+      if (!linked) return;
+      const shouldDone = idx < targetIdx;
+      if (linked.done !== shouldDone) updateItem(linkedId, { done: shouldDone } as any);
+    });
+
+    const patch: Partial<ContentPiece> = { stage, stageSchedule: schedule };
+    if ((stage === "scheduled" || stage === "published") && !piece.publishDate) patch.publishDate = when;
+    await update(piece.id, patch);
+  };
 
   return (
     <div className="space-y-4">
@@ -214,16 +280,51 @@ function BoardTab() {
           placeholder="直接新建一个内容（标题）"
           className="flex-1 bg-background/40 border border-foreground/15 rounded-md px-3 py-2 text-[12px] text-foreground placeholder:text-foreground/30 focus:border-amber-glow/60 focus:outline-none"
         />
+        <div className="flex gap-1 items-center">
+          {CONTENT_MEDIUMS.map((m) => (
+            <button
+              key={m.key}
+              onClick={() => setMedium(m.key)}
+              className={`px-2.5 py-1.5 rounded-md text-[11px] border transition ${
+                medium === m.key
+                  ? "border-amber-glow/50 text-amber-glow bg-amber-glow/10"
+                  : "border-border text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {m.emoji} {m.label}
+            </button>
+          ))}
+        </div>
         <button onClick={() => void submit()} disabled={!title.trim()} className="flex items-center gap-1 px-4 py-2 rounded-md text-xs bg-amber-glow text-background disabled:opacity-40">
           <Plus className="w-3.5 h-3.5" /> 新建
         </button>
       </div>
 
+      <div className="text-[11px] text-muted-foreground/60 flex items-center gap-1.5">
+        <GripVertical className="w-3 h-3" /> 直接把卡片拖到别的阶段，日历排期会自动跟着更新
+      </div>
+
       <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
         {CONTENT_STAGES.map((stage) => {
           const list = items.filter((p) => p.stage === stage.key);
+          const isOver = overStage === stage.key;
           return (
-            <div key={stage.key} className="widget p-3 min-h-[180px]">
+            <div
+              key={stage.key}
+              onDragOver={(e) => { e.preventDefault(); setOverStage(stage.key); }}
+              onDragLeave={() => setOverStage((s) => (s === stage.key ? null : s))}
+              onDrop={(e) => {
+                e.preventDefault();
+                setOverStage(null);
+                const id = dragId ?? e.dataTransfer.getData("text/plain");
+                const piece = items.find((p) => p.id === id);
+                setDragId(null);
+                if (piece) void moveToStage(piece, stage.key);
+              }}
+              className={`widget p-3 min-h-[180px] transition ${
+                isOver ? "ring-2 ring-amber-glow/60 bg-amber-glow/[0.06]" : ""
+              }`}
+            >
               <div className="flex items-center gap-1.5 mb-2">
                 <span className="text-sm">{stage.emoji}</span>
                 <span className="text-xs text-foreground">{stage.label}</span>
@@ -232,18 +333,34 @@ function BoardTab() {
               <div className="text-[10px] text-muted-foreground/50 mb-2">{stage.hint}</div>
               <div className="space-y-2">
                 {list.map((p) => (
-                  <button
+                  <div
                     key={p.id}
+                    draggable
+                    onDragStart={(e) => {
+                      setDragId(p.id);
+                      e.dataTransfer.setData("text/plain", p.id);
+                      e.dataTransfer.effectAllowed = "move";
+                    }}
+                    onDragEnd={() => { setDragId(null); setOverStage(null); }}
                     onClick={() => setOpenId(p.id)}
-                    className="w-full text-left p-2 rounded-lg bg-foreground/[0.05] border border-border/60 hover:border-amber-glow/40 transition"
+                    className={`w-full text-left p-2 rounded-lg bg-foreground/[0.05] border border-border/60 hover:border-amber-glow/40 transition cursor-grab active:cursor-grabbing ${
+                      dragId === p.id ? "opacity-40" : ""
+                    }`}
                   >
-                    <div className="text-[12px] text-foreground leading-snug line-clamp-2">{p.title}</div>
-                    <div className="flex items-center gap-1.5 mt-1 text-[10px] text-muted-foreground/70">
+                    <div className="flex items-start gap-1.5">
+                      <GripVertical className="w-3 h-3 mt-0.5 text-muted-foreground/40 shrink-0" />
+                      <div className="text-[12px] text-foreground leading-snug line-clamp-2">{p.title}</div>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-1 text-[10px] text-muted-foreground/70 pl-[18px]">
+                      <span className="px-1 rounded bg-foreground/[0.07]">
+                        {CONTENT_MEDIUMS.find((m) => m.key === p.medium)?.emoji}
+                        {CONTENT_MEDIUMS.find((m) => m.key === p.medium)?.label}
+                      </span>
                       <span>{p.platform}</span>
                       {p.publishDate && <span>· {p.publishDate}</span>}
                       {p.stageSchedule[stage.key] && <CalendarPlus className="w-2.5 h-2.5 text-amber-glow" />}
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -257,29 +374,31 @@ function BoardTab() {
           onClose={() => setOpenId(null)}
           onUpdate={(patch) => void update(open.id, patch)}
           onDelete={() => { void remove(open.id); setOpenId(null); }}
+          onStageChange={(stage) => void moveToStage(open, stage)}
         />
       )}
     </div>
   );
 }
 
+
 function PieceDetail({
-  piece, onClose, onUpdate, onDelete,
+  piece, onClose, onUpdate, onDelete, onStageChange,
 }: {
   piece: ContentPiece;
   onClose: () => void;
   onUpdate: (patch: Partial<ContentPiece>) => void;
   onDelete: () => void;
+  onStageChange: (stage: ContentStage) => void;
 }) {
   const { addItems, items: planItems } = useSylva();
   const [date, setDate] = useState(todayStr());
 
   const linkStage = (stage: ContentStage, when: string) => {
-    const meta = CONTENT_STAGES.find((s) => s.key === stage)!;
     const [id] = addItems([
       {
         type: "todo",
-        title: `【${piece.platform}】${meta.label}：${piece.title}`,
+        title: `【${piece.platform}】${stageLabel(stage, piece.medium)}：${piece.title}`,
         date: when,
         tag: "自媒体",
         note: piece.notes ?? undefined,
@@ -296,7 +415,7 @@ function PieceDetail({
       const [id] = addItems([
         {
           type: "todo",
-          title: `【${piece.platform}】${s.label}：${piece.title}`,
+          title: `【${piece.platform}】${stageLabel(s.key, piece.medium)}：${piece.title}`,
           date: when,
           tag: "自媒体",
         } as any,
@@ -330,13 +449,25 @@ function PieceDetail({
             </select>
           </label>
           <label className="space-y-1">
+            <div className="text-muted-foreground/70">形式</div>
+            <select
+              value={piece.medium}
+              onChange={(e) => onUpdate({ medium: e.target.value as ContentMedium })}
+              className="w-full bg-background/40 border border-foreground/15 rounded-md px-2 py-1.5 text-foreground focus:outline-none"
+            >
+              {CONTENT_MEDIUMS.map((m) => <option key={m.key} value={m.key}>{m.emoji} {m.label}</option>)}
+            </select>
+          </label>
+          <label className="space-y-1">
             <div className="text-muted-foreground/70">当前阶段</div>
             <select
               value={piece.stage}
-              onChange={(e) => onUpdate({ stage: e.target.value as ContentStage })}
+              onChange={(e) => onStageChange(e.target.value as ContentStage)}
               className="w-full bg-background/40 border border-foreground/15 rounded-md px-2 py-1.5 text-foreground focus:outline-none"
             >
-              {CONTENT_STAGES.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+              {CONTENT_STAGES.map((s) => (
+                <option key={s.key} value={s.key}>{stageLabel(s.key, piece.medium)}</option>
+              ))}
             </select>
           </label>
           <label className="space-y-1">
@@ -385,7 +516,7 @@ function PieceDetail({
               return (
                 <div key={s.key} className="flex items-center gap-2 text-[11.5px] px-2 py-1.5 rounded-lg bg-foreground/[0.04]">
                   <span>{s.emoji}</span>
-                  <span className="text-foreground">{s.label}</span>
+                  <span className="text-foreground">{stageLabel(s.key, piece.medium)}</span>
                   {linked ? (
                     <span className={`ml-auto flex items-center gap-1 ${linked.done ? "text-emerald-400" : "text-muted-foreground"}`}>
                       {linked.done && <Check className="w-3 h-3" />}
@@ -432,9 +563,13 @@ function ScheduleTab() {
               {list.map((p) => (
                 <div key={p.id} className="flex items-center gap-2 text-[12px] text-foreground">
                   <span className="px-1.5 py-0.5 rounded bg-amber-glow/15 text-amber-glow text-[10px]">{p.platform}</span>
+                  <span className="px-1.5 py-0.5 rounded bg-foreground/[0.07] text-[10px] text-muted-foreground">
+                    {CONTENT_MEDIUMS.find((m) => m.key === p.medium)?.emoji}
+                    {CONTENT_MEDIUMS.find((m) => m.key === p.medium)?.label}
+                  </span>
                   <span className="flex-1 truncate">{p.title}</span>
                   <span className="text-[10px] text-muted-foreground/70">
-                    {CONTENT_STAGES.find((s) => s.key === p.stage)?.label}
+                    {stageLabel(p.stage, p.medium)}
                   </span>
                   {p.link && (
                     <a href={p.link} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-amber-glow">
