@@ -131,6 +131,33 @@ export function FollowUpsPanel() {
   const pending = list.filter((f) => !f.done);
   const finished = list.filter((f) => f.done);
 
+  const [dragOver, setDragOver] = useState(false);
+  const busyRef = useRef(false);
+  busyRef.current = busy;
+
+  /** 全局 Ctrl+V 粘贴截图直接识别（输入框内粘贴文字不受影响） */
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      if (busyRef.current) return;
+      const dt = e.clipboardData;
+      if (!dt) return;
+      const imgs: File[] = [];
+      for (const item of Array.from(dt.items ?? [])) {
+        if (item.kind === "file") {
+          const f = item.getAsFile();
+          if (f && f.type.startsWith("image/")) imgs.push(f);
+        }
+      }
+      if (imgs.length === 0) return;
+      e.preventDefault();
+      void handleFiles(imgs);
+    };
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+
   /** 前置依赖可选目标：未完成的 followUp + 未完成的主 items */
   const prereqOptions = useMemo(() => {
     const fuOpts = list.filter((f) => !f.done).map((f) => ({ id: f.id, label: `🔁 ${f.title}` }));
