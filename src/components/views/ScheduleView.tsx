@@ -553,16 +553,47 @@ function DayEditor({
   };
 
   // Position the popup near the anchor, clamped to viewport (draggable + resizable)
+  // 尺寸/位置会记忆到 localStorage
+  const rectKey = `sylva.dayPopup.rect.${viewMode === "text" ? "text" : "grid"}`;
   const [rect, setRect] = useState(() => {
     const w = viewMode === "text" ? 420 : 320;
     const h = viewMode === "text" ? 460 : 360;
     const margin = 12;
     const vw = typeof window !== "undefined" ? window.innerWidth : 1280;
     const vh = typeof window !== "undefined" ? window.innerHeight : 800;
+    let saved: { x: number; y: number; w: number; h: number } | null = null;
+    try {
+      const raw = typeof window !== "undefined" ? window.localStorage.getItem(rectKey) : null;
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (typeof p?.w === "number" && typeof p?.h === "number") saved = p;
+      }
+    } catch {
+      /* ignore */
+    }
+    if (saved) {
+      const sw = Math.max(280, Math.min(saved.w, vw - 2 * margin));
+      const sh = Math.max(220, Math.min(saved.h, vh - 2 * margin));
+      return {
+        x: Math.max(0, Math.min(saved.x, vw - sw)),
+        y: Math.max(0, Math.min(saved.y, vh - 40)),
+        w: sw,
+        h: sh,
+      };
+    }
     const x = anchor ? Math.max(margin, Math.min(anchor.x - w / 2, vw - w - margin)) : (vw - w) / 2;
     const y0 = anchor ? Math.max(margin, Math.min(anchor.y - 40, vh - h - margin)) : (vh - h) / 2;
     return { x, y: y0, w, h };
   });
+
+  const persistRect = (r: { x: number; y: number; w: number; h: number }) => {
+    try {
+      window.localStorage.setItem(rectKey, JSON.stringify(r));
+    } catch {
+      /* ignore */
+    }
+  };
+
 
   const startDrag = (e: React.MouseEvent, mode: "move" | "resize") => {
     e.preventDefault();
@@ -588,7 +619,12 @@ function DayEditor({
     const onUp = () => {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
+      setRect((r) => {
+        persistRect(r);
+        return r;
+      });
     };
+
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
   };
