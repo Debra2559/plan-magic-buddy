@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   Megaphone, Lightbulb, KanbanSquare, CalendarRange, Plus, Trash2, Star,
-  CalendarPlus, ChevronRight, ExternalLink, Check, ArrowRight,
+  CalendarPlus, ChevronRight, ExternalLink, Check, ArrowRight, GripVertical,
 } from "lucide-react";
 import {
   useContentIdeas, useContentPieces, CONTENT_STAGES, CONTENT_PLATFORMS,
@@ -249,10 +249,10 @@ function BoardTab() {
           date: when,
           tag: "自媒体",
           note: piece.notes ?? undefined,
-          done: stage === "published",
         } as any,
       ]);
       schedule[stage] = id;
+      if (stage === "published") updateItem(id, { done: true });
     }
 
     // 前后阶段的完成状态跟随
@@ -351,7 +351,7 @@ function BoardTab() {
                       <GripVertical className="w-3 h-3 mt-0.5 text-muted-foreground/40 shrink-0" />
                       <div className="text-[12px] text-foreground leading-snug line-clamp-2">{p.title}</div>
                     </div>
-                    <div className="flex items-center gap-1.5 mt-1 text-[10px] text-muted-foreground/70 pl-4.5">
+                    <div className="flex items-center gap-1.5 mt-1 text-[10px] text-muted-foreground/70 pl-[18px]">
                       <span className="px-1 rounded bg-foreground/[0.07]">
                         {CONTENT_MEDIUMS.find((m) => m.key === p.medium)?.emoji}
                         {CONTENT_MEDIUMS.find((m) => m.key === p.medium)?.label}
@@ -383,22 +383,22 @@ function BoardTab() {
 
 
 function PieceDetail({
-  piece, onClose, onUpdate, onDelete,
+  piece, onClose, onUpdate, onDelete, onStageChange,
 }: {
   piece: ContentPiece;
   onClose: () => void;
   onUpdate: (patch: Partial<ContentPiece>) => void;
   onDelete: () => void;
+  onStageChange: (stage: ContentStage) => void;
 }) {
   const { addItems, items: planItems } = useSylva();
   const [date, setDate] = useState(todayStr());
 
   const linkStage = (stage: ContentStage, when: string) => {
-    const meta = CONTENT_STAGES.find((s) => s.key === stage)!;
     const [id] = addItems([
       {
         type: "todo",
-        title: `【${piece.platform}】${meta.label}：${piece.title}`,
+        title: `【${piece.platform}】${stageLabel(stage, piece.medium)}：${piece.title}`,
         date: when,
         tag: "自媒体",
         note: piece.notes ?? undefined,
@@ -415,7 +415,7 @@ function PieceDetail({
       const [id] = addItems([
         {
           type: "todo",
-          title: `【${piece.platform}】${s.label}：${piece.title}`,
+          title: `【${piece.platform}】${stageLabel(s.key, piece.medium)}：${piece.title}`,
           date: when,
           tag: "自媒体",
         } as any,
@@ -449,13 +449,25 @@ function PieceDetail({
             </select>
           </label>
           <label className="space-y-1">
+            <div className="text-muted-foreground/70">形式</div>
+            <select
+              value={piece.medium}
+              onChange={(e) => onUpdate({ medium: e.target.value as ContentMedium })}
+              className="w-full bg-background/40 border border-foreground/15 rounded-md px-2 py-1.5 text-foreground focus:outline-none"
+            >
+              {CONTENT_MEDIUMS.map((m) => <option key={m.key} value={m.key}>{m.emoji} {m.label}</option>)}
+            </select>
+          </label>
+          <label className="space-y-1">
             <div className="text-muted-foreground/70">当前阶段</div>
             <select
               value={piece.stage}
-              onChange={(e) => onUpdate({ stage: e.target.value as ContentStage })}
+              onChange={(e) => onStageChange(e.target.value as ContentStage)}
               className="w-full bg-background/40 border border-foreground/15 rounded-md px-2 py-1.5 text-foreground focus:outline-none"
             >
-              {CONTENT_STAGES.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+              {CONTENT_STAGES.map((s) => (
+                <option key={s.key} value={s.key}>{stageLabel(s.key, piece.medium)}</option>
+              ))}
             </select>
           </label>
           <label className="space-y-1">
@@ -504,7 +516,7 @@ function PieceDetail({
               return (
                 <div key={s.key} className="flex items-center gap-2 text-[11.5px] px-2 py-1.5 rounded-lg bg-foreground/[0.04]">
                   <span>{s.emoji}</span>
-                  <span className="text-foreground">{s.label}</span>
+                  <span className="text-foreground">{stageLabel(s.key, piece.medium)}</span>
                   {linked ? (
                     <span className={`ml-auto flex items-center gap-1 ${linked.done ? "text-emerald-400" : "text-muted-foreground"}`}>
                       {linked.done && <Check className="w-3 h-3" />}
@@ -551,9 +563,13 @@ function ScheduleTab() {
               {list.map((p) => (
                 <div key={p.id} className="flex items-center gap-2 text-[12px] text-foreground">
                   <span className="px-1.5 py-0.5 rounded bg-amber-glow/15 text-amber-glow text-[10px]">{p.platform}</span>
+                  <span className="px-1.5 py-0.5 rounded bg-foreground/[0.07] text-[10px] text-muted-foreground">
+                    {CONTENT_MEDIUMS.find((m) => m.key === p.medium)?.emoji}
+                    {CONTENT_MEDIUMS.find((m) => m.key === p.medium)?.label}
+                  </span>
                   <span className="flex-1 truncate">{p.title}</span>
                   <span className="text-[10px] text-muted-foreground/70">
-                    {CONTENT_STAGES.find((s) => s.key === p.stage)?.label}
+                    {stageLabel(p.stage, p.medium)}
                   </span>
                   {p.link && (
                     <a href={p.link} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-amber-glow">
