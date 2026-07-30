@@ -128,7 +128,32 @@ function CalendarClient() {
         </div>
       </header>
 
+      {viewMode === "text" ? (
+        <div className="flex-1 flex flex-col p-4 max-w-3xl w-full mx-auto">
+          <div className="flex items-center justify-center gap-3 pb-3">
+            <button
+              onClick={() => setSelected(shiftDate(selected, -1))}
+              className="p-1.5 rounded-md hover:bg-accent transition-colors"
+              aria-label="前一天"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <h2 className="font-display text-base tabular-nums">
+              {selected.replace(/-/g, " / ")}
+            </h2>
+            <button
+              onClick={() => setSelected(shiftDate(selected, 1))}
+              className="p-1.5 rounded-md hover:bg-accent transition-colors"
+              aria-label="后一天"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          <CalendarTextEditor key={selected} date={selected} />
+        </div>
+      ) : (
       <div className="flex-1 flex flex-col lg:flex-row">
+
         <div className="flex-1 p-3">
           <div className="grid grid-cols-7 text-[11px] text-muted-foreground mb-1">
             {weekdays.map((d) => (
