@@ -1032,6 +1032,131 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
 
 /* ---------- Right-panel rich modules ---------- */
 
+
+function MilestonesPanel({
+  items,
+  selected,
+  onAdd,
+  onDelete,
+  onJump,
+}: {
+  items: Array<PlanItem & { id: string; done?: boolean }>;
+  selected: string;
+  onAdd: (item: PlanItem) => void;
+  onDelete: (id: string) => void;
+  onJump: (iso: string) => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState(selected);
+  const [note, setNote] = useState("");
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => { setDate(selected); }, [selected]);
+
+  const milestones = items
+    .filter((i) => i.type === "milestone" && i.date)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const upcoming = milestones.filter((m) => daysFromToday(m.date) >= 0);
+  const past = milestones.filter((m) => daysFromToday(m.date) < 0);
+
+  const submit = () => {
+    const t = title.trim();
+    if (!t || !date) return;
+    onAdd({ type: "milestone", title: t, date, tag: "生活", note: note.trim() || undefined });
+    setTitle("");
+    setNote("");
+    setOpen(false);
+  };
+
+  return (
+    <section>
+      <SectionHeader icon={Flag} title="关键节点" count={upcoming.length} accent="accent" />
+      <div className="space-y-1.5">
+        {milestones.length === 0 && !open && (
+          <div className="text-center py-5 text-xs text-muted-foreground/70 rounded-xl border border-dashed border-border">
+            记录比赛、截止、考试等重要节点
+          </div>
+        )}
+        {[...upcoming, ...past.slice(-3).reverse()].map((m) => {
+          const n = daysFromToday(m.date);
+          const [, mm, dd] = m.date.split("-");
+          return (
+            <div
+              key={m.id}
+              className={`group flex items-center gap-2 px-2.5 py-2 rounded-lg border ${
+                n < 0
+                  ? "border-border bg-foreground/[0.03] opacity-60"
+                  : n <= 3
+                    ? "border-rose-400/50 bg-rose-500/10"
+                    : "border-border bg-foreground/[0.04]"
+              }`}
+            >
+              <span className="text-sm">🚩</span>
+              <button onClick={() => onJump(m.date)} className="flex-1 min-w-0 text-left">
+                <p className={`text-xs truncate ${m.done ? "line-through opacity-60" : "text-foreground"}`}>{m.title}</p>
+                <p className="text-[10px] text-muted-foreground/80 font-mono">
+                  {Number(mm)}/{Number(dd)} · {dLabel(m.date)}
+                  {m.note ? ` · ${m.note}` : ""}
+                </p>
+              </button>
+              <button
+                onClick={() => onDelete(m.id)}
+                title="删除关键节点"
+                className="p-1 rounded text-muted-foreground/60 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {open ? (
+        <div className="mt-2 p-2.5 rounded-xl border border-border bg-foreground/[0.04] space-y-2">
+          <input
+            autoFocus
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); submit(); }
+              if (e.key === "Escape") setOpen(false);
+            }}
+            placeholder="节点名称，如「XX 黑客松决赛」"
+            className="w-full bg-transparent border-none px-1 py-1 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
+          />
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="bg-background/60 border border-border rounded-md px-2 py-1 text-[11px] text-foreground"
+            />
+            <input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="备注（可选）"
+              className="flex-1 min-w-0 bg-transparent border-none px-1 py-1 text-[11px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
+            />
+            <button
+              onClick={submit}
+              className="px-2.5 py-1 rounded-md bg-rose-500/80 text-white text-[11px] hover:bg-rose-500 shrink-0"
+            >
+              添加
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setOpen(true)}
+          className="mt-2 w-full inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg border border-dashed border-border text-[11px] text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06] transition"
+        >
+          <Plus className="w-3 h-3" /> 新增关键节点
+        </button>
+      )}
+    </section>
+  );
+}
+
 function SectionHeader({ icon: Icon, title, count, accent = "amber" }: { icon: any; title: string; count?: number | string; accent?: "amber" | "moss" | "accent" }) {
   const color = accent === "moss" ? "text-moss" : accent === "accent" ? "text-accent" : "text-amber-glow";
   return (
