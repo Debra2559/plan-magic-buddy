@@ -86,6 +86,28 @@ function CalendarClient() {
           </button>
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-md border border-border overflow-hidden">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`text-xs px-2 py-1.5 inline-flex items-center gap-1 transition-colors ${
+                viewMode === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+              }`}
+              title="时间视图"
+            >
+              <CalendarDays className="w-3.5 h-3.5" />
+              时间
+            </button>
+            <button
+              onClick={() => setViewMode("text")}
+              className={`text-xs px-2 py-1.5 inline-flex items-center gap-1 transition-colors ${
+                viewMode === "text" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+              }`}
+              title="文本视图"
+            >
+              <AlignLeft className="w-3.5 h-3.5" />
+              文本
+            </button>
+          </div>
           <button
             onClick={() => {
               setCursor({ y: ty, m: tm });
@@ -95,6 +117,7 @@ function CalendarClient() {
           >
             今天
           </button>
+
           <Link
             to="/desktop"
             className="text-xs px-2.5 py-1.5 rounded-md border border-border hover:bg-accent transition-colors inline-flex items-center gap-1"
