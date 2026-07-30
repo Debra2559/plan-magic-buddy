@@ -18,6 +18,7 @@ import { JournalView } from "@/components/views/JournalView";
 import { AbilityView } from "@/components/views/AbilityView";
 import { MonitorView } from "@/components/views/MonitorView";
 import { LedgerView } from "@/components/views/LedgerView";
+import { ContentView } from "@/components/views/ContentView";
 import { SettingsView } from "@/components/views/SettingsView";
 import { SyncSummaryModal } from "@/components/SyncSummaryModal";
 import { OnboardingHint } from "@/components/OnboardingHint";
@@ -45,6 +46,7 @@ import {
   Brain,
   Radar,
   Wallet,
+  Megaphone,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/desktop")({
@@ -64,7 +66,7 @@ interface WinPos {
   y: number;
 }
 
-type SylvaView = "ai" | "schedule" | "todos" | "notes" | "habits" | "journal" | "ability" | "monitor" | "ledger" | "settings";
+type SylvaView = "ai" | "schedule" | "todos" | "notes" | "habits" | "journal" | "ability" | "monitor" | "ledger" | "content" | "settings";
 
 function DesktopApp() {
   const [now, setNow] = useState<Date | null>(null);
@@ -81,7 +83,7 @@ function DesktopApp() {
   const [view, setView] = useState<SylvaView>(() => {
     if (typeof window === "undefined") return "ai";
     const v = new URLSearchParams(window.location.search).get("view");
-    const allowed: SylvaView[] = ["schedule", "ai", "todos", "notes", "habits", "ability", "monitor", "settings"];
+    const allowed: SylvaView[] = ["schedule", "ai", "todos", "notes", "habits", "ability", "monitor", "ledger", "content", "settings"];
     return (allowed as string[]).includes(v ?? "") ? (v as SylvaView) : "schedule";
   });
   const [todosFilter, setTodosFilter] = useState<"todo" | "reminder" | "event" | "all">("all");
@@ -197,6 +199,7 @@ function DesktopApp() {
                 <SidebarItem icon={Brain} label="能力" active={view === "ability"} onClick={() => setView("ability")} />
                 <SidebarItem icon={Radar} label="监控" active={view === "monitor"} onClick={() => setView("monitor")} />
                 <SidebarItem icon={Wallet} label="记账" active={view === "ledger"} onClick={() => setView("ledger")} />
+                <SidebarItem icon={Megaphone} label="自媒体" active={view === "content"} onClick={() => setView("content")} />
                 <div className="mt-auto pt-4 border-t border-border/70">
                   <SidebarItem icon={Settings} label="设置" active={false} onClick={openSettings} muted />
                 </div>
@@ -213,6 +216,7 @@ function DesktopApp() {
                 {view === "ability" && <AbilityView />}
                 {view === "monitor" && <MonitorView />}
                 {view === "ledger" && <LedgerView />}
+                {view === "content" && <ContentView />}
               </div>
             </div>
           </AppWindow>
