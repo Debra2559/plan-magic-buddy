@@ -5,6 +5,24 @@ export const CONTENT_PLATFORMS = [
   "通用", "小红书", "抖音", "B站", "公众号", "知乎", "视频号", "X/Twitter", "YouTube",
 ] as const;
 
+export type ContentMedium = "article" | "video";
+
+export const CONTENT_MEDIUMS: { key: ContentMedium; label: string; emoji: string }[] = [
+  { key: "article", label: "图文", emoji: "🖼️" },
+  { key: "video", label: "视频", emoji: "🎥" },
+];
+
+/** 不同形式下阶段的展示名 */
+export const STAGE_LABEL_BY_MEDIUM: Record<ContentMedium, Partial<Record<ContentStage, string>>> = {
+  article: { produce: "配图/素材", edit: "排版/成稿" },
+  video: { produce: "拍摄/录制", edit: "剪辑/封面" },
+};
+
+export const stageLabel = (stage: ContentStage, medium: ContentMedium = "article") =>
+  STAGE_LABEL_BY_MEDIUM[medium]?.[stage] ??
+  CONTENT_STAGES.find((s) => s.key === stage)?.label ??
+  stage;
+
 export type ContentStage = "idea" | "script" | "produce" | "edit" | "scheduled" | "published";
 
 export const CONTENT_STAGES: { key: ContentStage; label: string; hint: string; emoji: string }[] = [
@@ -23,6 +41,7 @@ export interface ContentIdea {
   angle?: string;
   notes?: string;
   tags: string[];
+  medium: ContentMedium;
   score: number;
   status: "inbox" | "picked" | "archived";
   createdAt: string;
@@ -33,6 +52,7 @@ export interface ContentPiece {
   ideaId?: string;
   title: string;
   platform: string;
+  medium: ContentMedium;
   stage: ContentStage;
   publishDate?: string;
   notes?: string;
@@ -51,6 +71,7 @@ const ideaFrom = (r: any): ContentIdea => ({
   angle: r.angle ?? undefined,
   notes: r.notes ?? undefined,
   tags: r.tags ?? [],
+  medium: (r.medium ?? "article") as ContentMedium,
   score: r.score ?? 3,
   status: r.status ?? "inbox",
   createdAt: r.created_at,
@@ -61,6 +82,7 @@ const pieceFrom = (r: any): ContentPiece => ({
   ideaId: r.idea_id ?? undefined,
   title: r.title,
   platform: r.platform,
+  medium: (r.medium ?? "article") as ContentMedium,
   stage: (r.stage ?? "idea") as ContentStage,
   publishDate: r.publish_date ?? undefined,
   notes: r.notes ?? undefined,
@@ -94,6 +116,7 @@ export function useContentIdeas() {
     const { data } = await supabase.from("content_ideas").insert({
       title: v.title,
       platform: v.platform ?? "通用",
+      medium: v.medium ?? "article",
       angle: v.angle ?? null,
       notes: v.notes ?? null,
       tags: v.tags ?? [],
@@ -108,6 +131,7 @@ export function useContentIdeas() {
     const p: any = {};
     if (patch.title !== undefined) p.title = patch.title;
     if (patch.platform !== undefined) p.platform = patch.platform;
+    if (patch.medium !== undefined) p.medium = patch.medium;
     if (patch.angle !== undefined) p.angle = patch.angle;
     if (patch.notes !== undefined) p.notes = patch.notes;
     if (patch.tags !== undefined) p.tags = patch.tags;
@@ -146,6 +170,7 @@ export function useContentPieces() {
     const { data } = await supabase.from("content_pieces").insert({
       title: v.title,
       platform: v.platform ?? "通用",
+      medium: v.medium ?? "article",
       stage: v.stage ?? "idea",
       idea_id: v.ideaId ?? null,
       publish_date: v.publishDate ?? null,
@@ -161,6 +186,7 @@ export function useContentPieces() {
     const p: any = {};
     if (patch.title !== undefined) p.title = patch.title;
     if (patch.platform !== undefined) p.platform = patch.platform;
+    if (patch.medium !== undefined) p.medium = patch.medium;
     if (patch.stage !== undefined) p.stage = patch.stage;
     if (patch.publishDate !== undefined) p.publish_date = patch.publishDate;
     if (patch.notes !== undefined) p.notes = patch.notes;
