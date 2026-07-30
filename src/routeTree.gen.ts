@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiLifeAgentRouteImport } from './routes/api/life-agent'
 import { Route as AuthenticatedDesktopRouteImport } from './routes/_authenticated.desktop'
+import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiPublicHooksScanHackathonsRouteImport } from './routes/api/public/hooks/scan-hackathons'
 import { Route as ApiPublicHooksScanAiNewsRouteImport } from './routes/api/public/hooks/scan-ai-news'
@@ -45,6 +46,11 @@ const ApiLifeAgentRoute = ApiLifeAgentRouteImport.update({
 const AuthenticatedDesktopRoute = AuthenticatedDesktopRouteImport.update({
   id: '/desktop',
   path: '/desktop',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/calendar': typeof AuthenticatedCalendarRoute
   '/desktop': typeof AuthenticatedDesktopRoute
   '/api/life-agent': typeof ApiLifeAgentRoute
   '/api/public/calendar/$token.ics': typeof ApiPublicCalendarTokenDoticsRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/calendar': typeof AuthenticatedCalendarRoute
   '/desktop': typeof AuthenticatedDesktopRoute
   '/api/life-agent': typeof ApiLifeAgentRoute
   '/api/public/calendar/$token.ics': typeof ApiPublicCalendarTokenDoticsRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/desktop': typeof AuthenticatedDesktopRoute
   '/api/life-agent': typeof ApiLifeAgentRoute
   '/api/public/calendar/$token.ics': typeof ApiPublicCalendarTokenDoticsRoute
@@ -144,6 +153,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/admin'
+    | '/calendar'
     | '/desktop'
     | '/api/life-agent'
     | '/api/public/calendar/$token.ics'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/admin'
+    | '/calendar'
     | '/desktop'
     | '/api/life-agent'
     | '/api/public/calendar/$token.ics'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/login'
     | '/_authenticated/admin'
+    | '/_authenticated/calendar'
     | '/_authenticated/desktop'
     | '/api/life-agent'
     | '/api/public/calendar/$token.ics'
@@ -233,6 +245,13 @@ declare module '@tanstack/react-router' {
       path: '/desktop'
       fullPath: '/desktop'
       preLoaderRoute: typeof AuthenticatedDesktopRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/calendar': {
+      id: '/_authenticated/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof AuthenticatedCalendarRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/admin': {
@@ -296,11 +315,13 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedDesktopRoute: typeof AuthenticatedDesktopRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedDesktopRoute: AuthenticatedDesktopRoute,
 }
 
@@ -324,3 +345,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

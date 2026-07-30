@@ -1,8 +1,9 @@
 {
-  "name": "Sylva · 生活助手",
-  "short_name": "Sylva",
-  "description": "AI 驱动的日程、待办、习惯、记账与生活助手",
-  "start_url": "/",
+  "name": "Sylva 日历",
+  "short_name": "日历",
+  "description": "Sylva 日历客户端：按月查看日程、待办与提醒",
+  "start_url": "/calendar",
+
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
