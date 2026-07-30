@@ -31,6 +31,20 @@ function ymd(y: number, m: number, d: number) {
   return `${y}-${pad(m)}-${pad(d)}`;
 }
 
+type Density = "auto" | "compact" | "cozy";
+const DENSITY_KEY = "sylva:calendar:density";
+
+function useWindowWidth() {
+  const [w, setW] = useState(1280);
+  useEffect(() => {
+    const onResize = () => setW(window.innerWidth);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return w;
+}
+
 function CalendarClient() {
   const { items, toggleDone } = useSylva();
   const hydrated = useHydrated();
@@ -40,6 +54,26 @@ function CalendarClient() {
   const [cursor, setCursor] = useState({ y: ty, m: tm });
   const [selected, setSelected] = useState<string>(today);
   const [viewMode, setViewMode] = useCalendarViewMode();
+
+  const width = useWindowWidth();
+  const [density, setDensity] = useState<Density>("auto");
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(DENSITY_KEY) as Density | null;
+      if (saved === "auto" || saved === "compact" || saved === "cozy") setDensity(saved);
+    } catch {}
+  }, []);
+  const changeDensity = (d: Density) => {
+    setDensity(d);
+    try {
+      localStorage.setItem(DENSITY_KEY, d);
+    } catch {}
+  };
+  // 自动排版：窄窗口紧凑，宽窗口宽松
+  const compact = density === "auto" ? width < 900 : density === "compact";
+  const cellMinH = compact ? 62 : 104;
+  const maxPreview = compact ? 2 : 4;
+
 
 
   const byDate = useMemo(() => {
