@@ -7,6 +7,7 @@ import { InsightsSettingsPanel } from "@/components/InsightsSettingsPanel";
 import { FeishuSyncPanel } from "@/components/FeishuSyncPanel";
 import { FeishuWebhookLogsPanel } from "@/components/FeishuWebhookLogsPanel";
 import { CalendarSyncPanel } from "@/components/CalendarSyncPanel";
+import { useCalendarViewMode } from "@/lib/calendar-view";
 import { AiPersonaPanel } from "@/components/AiPersonaPanel";
 import { RemindersPanel } from "@/components/RemindersPanel";
 import { useSylva } from "@/lib/sylva-store";
@@ -308,7 +309,13 @@ export function SettingsView() {
       case "memory": return <MemoryPanel />;
       case "insights": return <InsightsSettingsPanel />;
       case "comic": return <ComicSettingsPanel />;
-      case "calendar": return <CalendarSyncPanel />;
+      case "calendar": return (
+        <div className="space-y-4">
+          <CalendarViewModeCard />
+          <CalendarSyncPanel />
+        </div>
+      );
+
       case "feishu": return <FeishuSyncPanel />;
       case "webhook": return <FeishuWebhookLogsPanel />;
       case "reminders": return <RemindersPanel />;
@@ -429,6 +436,37 @@ export function SettingsView() {
             {renderContent}
           </div>
         </main>
+      </div>
+    </div>
+  );
+}
+
+/** 日历视图模式：时间网格 / 自由文本 */
+function CalendarViewModeCard() {
+  const [mode, setMode] = useCalendarViewMode();
+  const options: { key: "grid" | "text"; title: string; desc: string }[] = [
+    { key: "grid", title: "时间视图", desc: "月历网格 + 当日时间表，适合看安排" },
+    { key: "text", title: "文本视图", desc: "一整天写成一段文字，像便签一样自由" },
+  ];
+  return (
+    <div className="widget p-4 space-y-3">
+      <div>
+        <div className="text-sm text-foreground">日历默认视图</div>
+        <div className="text-xs text-muted-foreground mt-0.5">在 /calendar 页面顶部也能随时切换</div>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-2">
+        {options.map((o) => (
+          <button
+            key={o.key}
+            onClick={() => setMode(o.key)}
+            className={`text-left p-3 rounded-lg border transition-colors ${
+              mode === o.key ? "border-primary bg-primary/10" : "border-border hover:bg-accent/40"
+            }`}
+          >
+            <div className="text-sm text-foreground">{o.title}</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">{o.desc}</div>
+          </button>
+        ))}
       </div>
     </div>
   );

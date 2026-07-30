@@ -2,7 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useHydrated } from "@tanstack/react-router";
 import { useSylva, todayLocal } from "@/lib/sylva-store";
-import { ChevronLeft, ChevronRight, Check, Clock, LayoutGrid } from "lucide-react";
+import { useCalendarViewMode } from "@/lib/calendar-view";
+import { CalendarTextEditor } from "@/components/CalendarTextEditor";
+import { ChevronLeft, ChevronRight, Check, Clock, LayoutGrid, AlignLeft, CalendarDays } from "lucide-react";
+
 
 export const Route = createFileRoute("/_authenticated/calendar")({
   head: () => ({
@@ -35,6 +38,8 @@ function CalendarClient() {
 
   const [cursor, setCursor] = useState({ y: ty, m: tm });
   const [selected, setSelected] = useState<string>(today);
+  const [viewMode, setViewMode] = useCalendarViewMode();
+
 
   const byDate = useMemo(() => {
     if (!hydrated) return {} as Record<string, typeof items>;
@@ -81,6 +86,28 @@ function CalendarClient() {
           </button>
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-md border border-border overflow-hidden">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`text-xs px-2 py-1.5 inline-flex items-center gap-1 transition-colors ${
+                viewMode === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+              }`}
+              title="时间视图"
+            >
+              <CalendarDays className="w-3.5 h-3.5" />
+              时间
+            </button>
+            <button
+              onClick={() => setViewMode("text")}
+              className={`text-xs px-2 py-1.5 inline-flex items-center gap-1 transition-colors ${
+                viewMode === "text" ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+              }`}
+              title="文本视图"
+            >
+              <AlignLeft className="w-3.5 h-3.5" />
+              文本
+            </button>
+          </div>
           <button
             onClick={() => {
               setCursor({ y: ty, m: tm });
@@ -90,6 +117,7 @@ function CalendarClient() {
           >
             今天
           </button>
+
           <Link
             to="/desktop"
             className="text-xs px-2.5 py-1.5 rounded-md border border-border hover:bg-accent transition-colors inline-flex items-center gap-1"
@@ -100,7 +128,32 @@ function CalendarClient() {
         </div>
       </header>
 
+      {viewMode === "text" ? (
+        <div className="flex-1 flex flex-col p-4 max-w-3xl w-full mx-auto">
+          <div className="flex items-center justify-center gap-3 pb-3">
+            <button
+              onClick={() => setSelected(shiftDate(selected, -1))}
+              className="p-1.5 rounded-md hover:bg-accent transition-colors"
+              aria-label="前一天"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <h2 className="font-display text-base tabular-nums">
+              {selected.replace(/-/g, " / ")}
+            </h2>
+            <button
+              onClick={() => setSelected(shiftDate(selected, 1))}
+              className="p-1.5 rounded-md hover:bg-accent transition-colors"
+              aria-label="后一天"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          <CalendarTextEditor key={selected} date={selected} />
+        </div>
+      ) : (
       <div className="flex-1 flex flex-col lg:flex-row">
+
         <div className="flex-1 p-3">
           <div className="grid grid-cols-7 text-[11px] text-muted-foreground mb-1">
             {weekdays.map((d) => (
@@ -197,6 +250,14 @@ function CalendarClient() {
           </ul>
         </aside>
       </div>
+      )}
     </div>
   );
 }
+
+function shiftDate(date: string, delta: number) {
+  const [y, m, d] = date.split("-").map(Number);
+  const dt = new Date(y, m - 1, d + delta);
+  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+}
+
