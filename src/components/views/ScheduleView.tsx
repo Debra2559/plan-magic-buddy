@@ -552,27 +552,70 @@ function DayEditor({
     setDraftTime("");
   };
 
-  // Position the popup near the anchor, clamped to viewport
-  const width = viewMode === "text" ? 420 : 320;
-  const height = viewMode === "text" ? 460 : 360;
-  const margin = 12;
-  const vw = typeof window !== "undefined" ? window.innerWidth : 1280;
-  const vh = typeof window !== "undefined" ? window.innerHeight : 800;
-  const x = anchor ? Math.max(margin, Math.min(anchor.x - width / 2, vw - width - margin)) : (vw - width) / 2;
-  const yPos = anchor ? Math.max(margin, Math.min(anchor.y - 40, vh - height - margin)) : (vh - height) / 2;
+  // Position the popup near the anchor, clamped to viewport (draggable + resizable)
+  const [rect, setRect] = useState(() => {
+    const w = viewMode === "text" ? 420 : 320;
+    const h = viewMode === "text" ? 460 : 360;
+    const margin = 12;
+    const vw = typeof window !== "undefined" ? window.innerWidth : 1280;
+    const vh = typeof window !== "undefined" ? window.innerHeight : 800;
+    const x = anchor ? Math.max(margin, Math.min(anchor.x - w / 2, vw - w - margin)) : (vw - w) / 2;
+    const y0 = anchor ? Math.max(margin, Math.min(anchor.y - 40, vh - h - margin)) : (vh - h) / 2;
+    return { x, y: y0, w, h };
+  });
+
+  const startDrag = (e: React.MouseEvent, mode: "move" | "resize") => {
+    e.preventDefault();
+    e.stopPropagation();
+    const start = { mx: e.clientX, my: e.clientY, ...rect };
+    const onMove = (ev: MouseEvent) => {
+      const dx = ev.clientX - start.mx;
+      const dy = ev.clientY - start.my;
+      if (mode === "move") {
+        setRect((r) => ({
+          ...r,
+          x: Math.max(0, Math.min(start.x + dx, window.innerWidth - r.w)),
+          y: Math.max(0, Math.min(start.y + dy, window.innerHeight - 40)),
+        }));
+      } else {
+        setRect((r) => ({
+          ...r,
+          w: Math.max(280, Math.min(start.w + dx, window.innerWidth - start.x - 8)),
+          h: Math.max(220, Math.min(start.h + dy, window.innerHeight - start.y - 8)),
+        }));
+      }
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
 
   return (
     <div
       ref={ref}
-      style={{ position: "fixed", left: x, top: yPos, width, maxHeight: height, zIndex: 100 }}
+      style={{ position: "fixed", left: rect.x, top: rect.y, width: rect.w, height: rect.h, zIndex: 100 }}
       className="rounded-xl shadow-2xl border border-border bg-card/95 backdrop-blur-2xl flex flex-col overflow-hidden text-foreground"
       onMouseDown={(e) => e.stopPropagation()}
     >
-      <div className="h-9 shrink-0 flex items-center px-3 border-b border-border bg-background/50">
-        <button onClick={onClose} title="关闭" className="w-3 h-3 rounded-full bg-[#ff5f57] hover:brightness-110" />
+      <div
+        className="h-9 shrink-0 flex items-center px-3 border-b border-border bg-background/50 cursor-move select-none"
+        onMouseDown={(e) => startDrag(e, "move")}
+      >
+        <button onClick={onClose} onMouseDown={(e) => e.stopPropagation()} title="关闭" className="w-3 h-3 rounded-full bg-[#ff5f57] hover:brightness-110" />
         <div className="flex-1 text-center text-xs font-medium text-white/85">{headerLabel}</div>
         <span className="w-3 h-3" />
       </div>
+
+      <div
+        onMouseDown={(e) => startDrag(e, "resize")}
+        title="拖拽调整大小"
+        className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize z-10"
+        style={{ background: "linear-gradient(135deg, transparent 50%, hsl(var(--border)) 50%)" }}
+      />
+
 
       {viewMode === "text" ? (
         <div className="flex-1 overflow-auto p-3">
