@@ -249,13 +249,15 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                 }}
                 title="双击编辑这一天"
                 className={`block min-h-[110px] p-2 text-left align-top transition relative overflow-hidden
-                  ${isSelected ? "bg-amber-glow/15 ring-2 ring-amber-glow/60 z-10" : "bg-background/50 hover:bg-background/60"}`}
+                  ${isSelected ? "bg-amber-glow/15 ring-2 ring-amber-glow/60 z-10" : hasMilestone ? "bg-rose-500/[0.07] hover:bg-rose-500/10" : "bg-background/50 hover:bg-background/60"}`}
               >
+                {hasMilestone && <span className="absolute inset-y-0 left-0 w-[3px] bg-rose-400/80" />}
                 <div className="absolute top-2 left-2 right-2 flex items-center justify-between h-5">
                   <span className={`text-sm leading-5 font-semibold ${isToday ? "text-amber-glow" : "text-foreground/85"}`}>
                     {cell.day}
                   </span>
                   <div className="flex items-center gap-1">
+                    {hasMilestone && <Flag className="w-3 h-3 text-rose-400" aria-label="有关键节点" />}
                     {dayItems.length > 0 && dayItems.every((it) => it.done) && (
                       <CheckCircle2 className="w-3 h-3 text-moss" aria-label="今日日程全部完成" />
                     )}
@@ -270,7 +272,9 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                     <div
                       key={it.id}
                       className={`text-[11px] leading-tight px-1.5 py-1 rounded-md truncate border shadow-sm ${
-                        tagColor[it.tag] ?? "bg-foreground/20 text-foreground border-foreground/30"
+                        it.type === "milestone"
+                          ? "bg-rose-500/25 text-rose-100 border-rose-400/60 font-medium"
+                          : tagColor[it.tag] ?? "bg-foreground/20 text-foreground border-foreground/30"
                       } ${it.done ? "opacity-50 line-through" : ""} ${
                         it.pending ? "border-dashed border-amber-glow/70 text-amber-glow bg-amber-glow/10" : ""
                       } ${
@@ -278,6 +282,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                       }`}
                       title={it.pending ? `${it.title}（待确认）` : it.title}
                     >
+                      {it.type === "milestone" && <span className="mr-1">🚩</span>}
                       {it.time && <span className="font-mono mr-1 opacity-80">{it.time}</span>}
                       {it.title}
                     </div>
