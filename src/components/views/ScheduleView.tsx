@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useCalendarViewMode } from "@/lib/calendar-view";
 import { CalendarTextEditor } from "@/components/CalendarTextEditor";
 import { useSylva, isHabitDoneOn } from "@/lib/sylva-store";
-import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X, CheckCircle2, RotateCcw, Check, Sparkles, Flame, BookHeart, StickyNote, ImageIcon, TrendingUp } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X, CheckCircle2, RotateCcw, Check, Sparkles, Flame, BookHeart, StickyNote, ImageIcon, TrendingUp, Flag } from "lucide-react";
 import type { PlanItem } from "@/lib/plan.functions";
 import { TimePicker } from "@/components/ui/time-picker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -24,7 +24,21 @@ const tagColor: Record<string, string> = {
   习惯: "bg-moss/60 text-white border-moss",
 };
 
-const typeIcon = { event: CalIcon, todo: Clock, reminder: Bell } as const;
+const typeIcon = { event: CalIcon, todo: Clock, reminder: Bell, milestone: Flag } as const;
+
+/** 距今天数：负数=已过去 */
+function daysFromToday(iso: string) {
+  const today = new Date();
+  const t = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const [y, m, d] = iso.split("-").map(Number);
+  return Math.round((new Date(y, m - 1, d).getTime() - t) / 86400000);
+}
+function dLabel(iso: string) {
+  const n = daysFromToday(iso);
+  if (n === 0) return "今天";
+  if (n > 0) return `D-${n}`;
+  return `已过 ${-n} 天`;
+}
 
 export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void; onGoSettings?: () => void } = {}) {
   const { items, habits, notes, comics, navigateTo, toggleHabitOn, addItems, updateItem, removeItem, toggleDone, isRecapDone, unmarkRecapDone, isRecentlySynced, markRecentlySynced, pendingIds, confirmPending, revertPending, addNote } = useSylva();
@@ -215,7 +229,12 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
           ))}
           {cells.map((cell, i) => {
             if (!cell) return <div key={i} className="bg-background/30 min-h-[110px]" />;
-            const dayItems = itemsByDate[cell.iso] ?? [];
+            const rawDayItems = itemsByDate[cell.iso] ?? [];
+            // 关键节点置顶显示
+            const dayItems = [...rawDayItems].sort(
+              (a, b) => (a.type === "milestone" ? 0 : 1) - (b.type === "milestone" ? 0 : 1),
+            );
+            const hasMilestone = dayItems.some((it) => it.type === "milestone");
             const isSelected = cell.iso === selected;
             const isToday = cell.iso === "2026-05-19";
             return (
@@ -230,13 +249,15 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                 }}
                 title="双击编辑这一天"
                 className={`block min-h-[110px] p-2 text-left align-top transition relative overflow-hidden
-                  ${isSelected ? "bg-amber-glow/15 ring-2 ring-amber-glow/60 z-10" : "bg-background/50 hover:bg-background/60"}`}
+                  ${isSelected ? "bg-amber-glow/15 ring-2 ring-amber-glow/60 z-10" : hasMilestone ? "bg-rose-500/[0.07] hover:bg-rose-500/10" : "bg-background/50 hover:bg-background/60"}`}
               >
+                {hasMilestone && <span className="absolute inset-y-0 left-0 w-[3px] bg-rose-400/80" />}
                 <div className="absolute top-2 left-2 right-2 flex items-center justify-between h-5">
                   <span className={`text-sm leading-5 font-semibold ${isToday ? "text-amber-glow" : "text-foreground/85"}`}>
                     {cell.day}
                   </span>
                   <div className="flex items-center gap-1">
+                    {hasMilestone && <Flag className="w-3 h-3 text-rose-400" aria-label="有关键节点" />}
                     {dayItems.length > 0 && dayItems.every((it) => it.done) && (
                       <CheckCircle2 className="w-3 h-3 text-moss" aria-label="今日日程全部完成" />
                     )}
@@ -251,7 +272,9 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                     <div
                       key={it.id}
                       className={`text-[11px] leading-tight px-1.5 py-1 rounded-md truncate border shadow-sm ${
-                        tagColor[it.tag] ?? "bg-foreground/20 text-foreground border-foreground/30"
+                        it.type === "milestone"
+                          ? "bg-rose-500/25 text-rose-100 border-rose-400/60 font-medium"
+                          : tagColor[it.tag] ?? "bg-foreground/20 text-foreground border-foreground/30"
                       } ${it.done ? "opacity-50 line-through" : ""} ${
                         it.pending ? "border-dashed border-amber-glow/70 text-amber-glow bg-amber-glow/10" : ""
                       } ${
@@ -259,6 +282,7 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
                       }`}
                       title={it.pending ? `${it.title}（待确认）` : it.title}
                     >
+                      {it.type === "milestone" && <span className="mr-1">🚩</span>}
                       {it.time && <span className="font-mono mr-1 opacity-80">{it.time}</span>}
                       {it.title}
                     </div>
@@ -315,6 +339,18 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
             </button>
           </div>
         )}
+
+        <MilestonesPanel
+          items={items}
+          selected={selected}
+          onAdd={(item) => addItems([item])}
+          onDelete={(id) => removeItem(id)}
+          onJump={(iso) => {
+            setSelected(iso);
+            const [yy, mm] = iso.split("-").map(Number);
+            setCursor(new Date(yy, mm - 1, 1));
+          }}
+        />
 
         <section>
           <SectionHeader icon={CalIcon} title="日程" count={selectedItems.length} accent="amber" />
@@ -995,6 +1031,131 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
 }
 
 /* ---------- Right-panel rich modules ---------- */
+
+
+function MilestonesPanel({
+  items,
+  selected,
+  onAdd,
+  onDelete,
+  onJump,
+}: {
+  items: Array<PlanItem & { id: string; done?: boolean }>;
+  selected: string;
+  onAdd: (item: PlanItem) => void;
+  onDelete: (id: string) => void;
+  onJump: (iso: string) => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState(selected);
+  const [note, setNote] = useState("");
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => { setDate(selected); }, [selected]);
+
+  const milestones = items
+    .filter((i) => i.type === "milestone" && i.date)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const upcoming = milestones.filter((m) => daysFromToday(m.date) >= 0);
+  const past = milestones.filter((m) => daysFromToday(m.date) < 0);
+
+  const submit = () => {
+    const t = title.trim();
+    if (!t || !date) return;
+    onAdd({ type: "milestone", title: t, date, tag: "生活", note: note.trim() || undefined });
+    setTitle("");
+    setNote("");
+    setOpen(false);
+  };
+
+  return (
+    <section>
+      <SectionHeader icon={Flag} title="关键节点" count={upcoming.length} accent="accent" />
+      <div className="space-y-1.5">
+        {milestones.length === 0 && !open && (
+          <div className="text-center py-5 text-xs text-muted-foreground/70 rounded-xl border border-dashed border-border">
+            记录比赛、截止、考试等重要节点
+          </div>
+        )}
+        {[...upcoming, ...past.slice(-3).reverse()].map((m) => {
+          const n = daysFromToday(m.date);
+          const [, mm, dd] = m.date.split("-");
+          return (
+            <div
+              key={m.id}
+              className={`group flex items-center gap-2 px-2.5 py-2 rounded-lg border ${
+                n < 0
+                  ? "border-border bg-foreground/[0.03] opacity-60"
+                  : n <= 3
+                    ? "border-rose-400/50 bg-rose-500/10"
+                    : "border-border bg-foreground/[0.04]"
+              }`}
+            >
+              <span className="text-sm">🚩</span>
+              <button onClick={() => onJump(m.date)} className="flex-1 min-w-0 text-left">
+                <p className={`text-xs truncate ${m.done ? "line-through opacity-60" : "text-foreground"}`}>{m.title}</p>
+                <p className="text-[10px] text-muted-foreground/80 font-mono">
+                  {Number(mm)}/{Number(dd)} · {dLabel(m.date)}
+                  {m.note ? ` · ${m.note}` : ""}
+                </p>
+              </button>
+              <button
+                onClick={() => onDelete(m.id)}
+                title="删除关键节点"
+                className="p-1 rounded text-muted-foreground/60 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {open ? (
+        <div className="mt-2 p-2.5 rounded-xl border border-border bg-foreground/[0.04] space-y-2">
+          <input
+            autoFocus
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); submit(); }
+              if (e.key === "Escape") setOpen(false);
+            }}
+            placeholder="节点名称，如「XX 黑客松决赛」"
+            className="w-full bg-transparent border-none px-1 py-1 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
+          />
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="bg-background/60 border border-border rounded-md px-2 py-1 text-[11px] text-foreground"
+            />
+            <input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="备注（可选）"
+              className="flex-1 min-w-0 bg-transparent border-none px-1 py-1 text-[11px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none"
+            />
+            <button
+              onClick={submit}
+              className="px-2.5 py-1 rounded-md bg-rose-500/80 text-white text-[11px] hover:bg-rose-500 shrink-0"
+            >
+              添加
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setOpen(true)}
+          className="mt-2 w-full inline-flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg border border-dashed border-border text-[11px] text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06] transition"
+        >
+          <Plus className="w-3 h-3" /> 新增关键节点
+        </button>
+      )}
+    </section>
+  );
+}
 
 function SectionHeader({ icon: Icon, title, count, accent = "amber" }: { icon: any; title: string; count?: number | string; accent?: "amber" | "moss" | "accent" }) {
   const color = accent === "moss" ? "text-moss" : accent === "accent" ? "text-accent" : "text-amber-glow";

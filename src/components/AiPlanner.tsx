@@ -5,7 +5,7 @@ import { generatePlan, type Plan, type PlanItem } from "@/lib/plan.functions";
 import { useSylva } from "@/lib/sylva-store";
 import { EnterHint } from "@/components/EnterHint";
 import { shouldSubmitOnKey } from "@/lib/keybinds";
-import { Sparkles, ArrowUp, Loader2, Calendar, CheckSquare, Bell, Plus, RefreshCw, Wand2, Check, X, Trash2, Eye } from "lucide-react";
+import { Sparkles, ArrowUp, Loader2, Calendar, CheckSquare, Bell, Plus, RefreshCw, Wand2, Check, X, Trash2, Eye, Flag } from "lucide-react";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
@@ -24,6 +24,7 @@ const typeMeta: Record<PlanItem["type"], { icon: typeof Calendar; color: string;
   event: { icon: Calendar, color: "text-amber-glow", label: "日程" },
   todo: { icon: CheckSquare, color: "text-moss", label: "待办" },
   reminder: { icon: Bell, color: "text-accent", label: "提醒" },
+  milestone: { icon: Flag, color: "text-rose-400", label: "关键节点" },
 };
 
 const tagColors: Record<string, string> = {

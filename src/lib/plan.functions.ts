@@ -6,7 +6,7 @@ import { fetchMemoryBlockForUser } from "./memories.functions";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const PlanItemSchema = z.object({
-  type: z.enum(["event", "todo", "reminder"]).describe("event=日程(有时间段), todo=待办, reminder=提醒"),
+  type: z.enum(["event", "todo", "reminder", "milestone"]).describe("event=日程(有时间段), todo=待办, reminder=提醒, milestone=关键节点(比赛/截止/考试等重要里程碑)"),
   title: z.string().describe("简洁的中文标题, 不超过 20 字"),
   date: z.string().describe("YYYY-MM-DD 格式日期, 基于今天 2026-05-19 推算"),
   time: z.string().optional().describe("HH:MM 24h 格式, event 必填, todo/reminder 可选"),
