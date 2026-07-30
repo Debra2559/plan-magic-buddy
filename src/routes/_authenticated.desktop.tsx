@@ -354,29 +354,49 @@ function DesktopApp() {
 
 function DraggableWidget({
   id,
-  pos,
-  setPos,
+  box,
+  setBox,
   onDoubleClick,
   children,
 }: {
   id: string;
-  pos: WinPos;
-  setPos: (p: WinPos) => void;
+  box: WinBox;
+  setBox: (b: WinBox) => void;
   onDoubleClick?: () => void;
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ ox: number; oy: number; moved: boolean } | null>(null);
+  const drag = useRef<{ ox: number; oy: number } | null>(null);
 
   const onMouseDown = (e: React.MouseEvent) => {
-    drag.current = { ox: e.clientX - pos.x, oy: e.clientY - pos.y, moved: false };
+    if ((e.target as HTMLElement).closest("[data-resize-handle]")) return;
+    drag.current = { ox: e.clientX - box.x, oy: e.clientY - box.y };
     const move = (ev: MouseEvent) => {
       if (!drag.current) return;
-      drag.current.moved = true;
-      setPos({ x: ev.clientX - drag.current.ox, y: ev.clientY - drag.current.oy });
+      setBox({ ...box, x: ev.clientX - drag.current.ox, y: ev.clientY - drag.current.oy });
     };
     const up = () => {
       drag.current = null;
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
+    };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+  };
+
+  const startResize = (e: React.MouseEvent, dir: "e" | "s" | "se") => {
+    e.stopPropagation();
+    e.preventDefault();
+    const sx = e.clientX;
+    const sy = e.clientY;
+    const sw = box.w;
+    const sh = box.h;
+    const move = (ev: MouseEvent) => {
+      const w = dir === "s" ? sw : Math.max(200, Math.round(sw + ev.clientX - sx));
+      const h = dir === "e" ? sh : Math.max(140, Math.round(sh + ev.clientY - sy));
+      setBox({ ...box, w, h });
+    };
+    const up = () => {
       window.removeEventListener("mousemove", move);
       window.removeEventListener("mouseup", up);
     };
@@ -390,16 +410,33 @@ function DraggableWidget({
       data-widget={id}
       onMouseDown={onMouseDown}
       onDoubleClick={onDoubleClick}
-      style={{ left: pos.x, top: pos.y }}
+      style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
       className="absolute cursor-grab active:cursor-grabbing group"
-      title="双击编辑"
+      title="双击编辑 · 拖动边角调整大小"
     >
-      {children}
+      <div className="w-full h-full overflow-auto [&>*]:!w-full [&>*]:min-h-full">{children}</div>
       <div className="pointer-events-none absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition px-2 py-0.5 rounded-full bg-background/80 text-foreground text-[10px] border border-border">
         双击编辑
       </div>
+      {/* Resize handles */}
+      <div
+        data-resize-handle
+        onMouseDown={(e) => startResize(e, "e")}
+        className="absolute top-2 -right-1 bottom-6 w-2 cursor-ew-resize"
+      />
+      <div
+        data-resize-handle
+        onMouseDown={(e) => startResize(e, "s")}
+        className="absolute -bottom-1 left-2 right-6 h-2 cursor-ns-resize"
+      />
+      <div
+        data-resize-handle
+        onMouseDown={(e) => startResize(e, "se")}
+        className="absolute -bottom-1 -right-1 w-4 h-4 cursor-nwse-resize rounded-sm opacity-0 group-hover:opacity-100 transition bg-foreground/25 border border-border"
+      />
     </div>
   );
+
 }
 
 function AppWindow({
