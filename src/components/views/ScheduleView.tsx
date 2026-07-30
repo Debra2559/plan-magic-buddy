@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { useCalendarViewMode } from "@/lib/calendar-view";
+import { CalendarTextEditor } from "@/components/CalendarTextEditor";
 import { useSylva, isHabitDoneOn } from "@/lib/sylva-store";
 import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X, CheckCircle2, RotateCcw, Check, Sparkles, Flame, BookHeart, StickyNote, ImageIcon, TrendingUp } from "lucide-react";
 import type { PlanItem } from "@/lib/plan.functions";
@@ -481,6 +483,7 @@ function DayEditor({
 }) {
   const [draft, setDraft] = useState("");
   const [draftTime, setDraftTime] = useState("");
+  const [viewMode] = useCalendarViewMode();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
