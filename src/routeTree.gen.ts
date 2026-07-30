@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiLifeAgentRouteImport } from './routes/api/life-agent'
+import { Route as AuthenticatedWidgetRouteImport } from './routes/_authenticated.widget'
 import { Route as AuthenticatedDesktopRouteImport } from './routes/_authenticated.desktop'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -42,6 +43,11 @@ const ApiLifeAgentRoute = ApiLifeAgentRouteImport.update({
   id: '/api/life-agent',
   path: '/api/life-agent',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedWidgetRoute = AuthenticatedWidgetRouteImport.update({
+  id: '/widget',
+  path: '/widget',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedDesktopRoute = AuthenticatedDesktopRouteImport.update({
   id: '/desktop',
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/desktop': typeof AuthenticatedDesktopRoute
+  '/widget': typeof AuthenticatedWidgetRoute
   '/api/life-agent': typeof ApiLifeAgentRoute
   '/api/public/calendar/$token.ics': typeof ApiPublicCalendarTokenDoticsRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/desktop': typeof AuthenticatedDesktopRoute
+  '/widget': typeof AuthenticatedWidgetRoute
   '/api/life-agent': typeof ApiLifeAgentRoute
   '/api/public/calendar/$token.ics': typeof ApiPublicCalendarTokenDoticsRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
@@ -138,6 +146,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/desktop': typeof AuthenticatedDesktopRoute
+  '/_authenticated/widget': typeof AuthenticatedWidgetRoute
   '/api/life-agent': typeof ApiLifeAgentRoute
   '/api/public/calendar/$token.ics': typeof ApiPublicCalendarTokenDoticsRoute
   '/api/public/feishu/webhook': typeof ApiPublicFeishuWebhookRoute
@@ -155,6 +164,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/calendar'
     | '/desktop'
+    | '/widget'
     | '/api/life-agent'
     | '/api/public/calendar/$token.ics'
     | '/api/public/feishu/webhook'
@@ -170,6 +180,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/calendar'
     | '/desktop'
+    | '/widget'
     | '/api/life-agent'
     | '/api/public/calendar/$token.ics'
     | '/api/public/feishu/webhook'
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/calendar'
     | '/_authenticated/desktop'
+    | '/_authenticated/widget'
     | '/api/life-agent'
     | '/api/public/calendar/$token.ics'
     | '/api/public/feishu/webhook'
@@ -239,6 +251,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/life-agent'
       preLoaderRoute: typeof ApiLifeAgentRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/widget': {
+      id: '/_authenticated/widget'
+      path: '/widget'
+      fullPath: '/widget'
+      preLoaderRoute: typeof AuthenticatedWidgetRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/desktop': {
       id: '/_authenticated/desktop'
@@ -317,12 +336,14 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedDesktopRoute: typeof AuthenticatedDesktopRoute
+  AuthenticatedWidgetRoute: typeof AuthenticatedWidgetRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedDesktopRoute: AuthenticatedDesktopRoute,
+  AuthenticatedWidgetRoute: AuthenticatedWidgetRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -345,3 +366,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
