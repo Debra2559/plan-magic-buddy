@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useHydrated } from "@tanstack/react-router";
 import { useSylva, todayLocal } from "@/lib/sylva-store";
 import { useCalendarViewMode } from "@/lib/calendar-view";
