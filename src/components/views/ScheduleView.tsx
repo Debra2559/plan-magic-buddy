@@ -619,7 +619,12 @@ function DayEditor({
     const onUp = () => {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
+      setRect((r) => {
+        persistRect(r);
+        return r;
+      });
     };
+
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
   };
