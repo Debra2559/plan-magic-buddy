@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useHydrated } from "@tanstack/react-router";
 import { useSylva, todayLocal } from "@/lib/sylva-store";
 import { useCalendarViewMode } from "@/lib/calendar-view";
 import { CalendarTextEditor } from "@/components/CalendarTextEditor";
-import { ChevronLeft, ChevronRight, Check, Clock, AlignLeft, CalendarDays } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Clock, AlignLeft, CalendarDays, Rows3, Rows2, Wand2 } from "lucide-react";
+
 
 
 export const Route = createFileRoute("/_authenticated/calendar")({
@@ -30,6 +31,20 @@ function ymd(y: number, m: number, d: number) {
   return `${y}-${pad(m)}-${pad(d)}`;
 }
 
+type Density = "auto" | "compact" | "cozy";
+const DENSITY_KEY = "sylva:calendar:density";
+
+function useWindowWidth() {
+  const [w, setW] = useState(1280);
+  useEffect(() => {
+    const onResize = () => setW(window.innerWidth);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return w;
+}
+
 function CalendarClient() {
   const { items, toggleDone } = useSylva();
   const hydrated = useHydrated();
@@ -39,6 +54,26 @@ function CalendarClient() {
   const [cursor, setCursor] = useState({ y: ty, m: tm });
   const [selected, setSelected] = useState<string>(today);
   const [viewMode, setViewMode] = useCalendarViewMode();
+
+  const width = useWindowWidth();
+  const [density, setDensity] = useState<Density>("auto");
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(DENSITY_KEY) as Density | null;
+      if (saved === "auto" || saved === "compact" || saved === "cozy") setDensity(saved);
+    } catch {}
+  }, []);
+  const changeDensity = (d: Density) => {
+    setDensity(d);
+    try {
+      localStorage.setItem(DENSITY_KEY, d);
+    } catch {}
+  };
+  // 自动排版：窄窗口紧凑，宽窗口宽松
+  const compact = density === "auto" ? width < 900 : density === "compact";
+  const cellMinH = compact ? 62 : 104;
+  const maxPreview = compact ? 2 : 4;
+
 
 
   const byDate = useMemo(() => {
@@ -65,8 +100,9 @@ function CalendarClient() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <header className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border/60 sticky top-0 bg-background/90 backdrop-blur z-10">
-        <div className="flex items-center gap-2">
+      <header className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-2.5 border-b border-border/60 sticky top-0 bg-background/90 backdrop-blur z-10">
+        <div className="flex min-w-0 items-center gap-2">
+
           <button
             onClick={() => shift(-1)}
             className="p-1.5 rounded-md hover:bg-accent transition-colors"
@@ -108,6 +144,27 @@ function CalendarClient() {
               文本
             </button>
           </div>
+          <div className="flex items-center rounded-md border border-border overflow-hidden">
+            {([
+              { key: "auto", label: "自动", Icon: Wand2 },
+              { key: "compact", label: "紧凑", Icon: Rows3 },
+              { key: "cozy", label: "宽松", Icon: Rows2 },
+            ] as { key: Density; label: string; Icon: typeof Wand2 }[]).map(({ key, label, Icon }) => (
+              <button
+                key={key}
+                onClick={() => changeDensity(key)}
+                title={`${label}布局`}
+                aria-label={`${label}布局`}
+                className={`text-xs px-2 py-1.5 inline-flex items-center gap-1 transition-colors ${
+                  density === key ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{label}</span>
+              </button>
+            ))}
+          </div>
+
           <button
             onClick={() => {
               setCursor({ y: ty, m: tm });
@@ -144,9 +201,9 @@ function CalendarClient() {
           <CalendarTextEditor key={selected} date={selected} />
         </div>
       ) : (
-      <div className="flex-1 flex flex-col lg:flex-row">
+      <div className={`flex-1 flex flex-col ${compact ? "xl:flex-row" : "lg:flex-row"}`}>
 
-        <div className="flex-1 p-3">
+        <div className={`flex-1 ${compact ? "p-2" : "p-4"}`}>
           <div className="grid grid-cols-7 text-[11px] text-muted-foreground mb-1">
             {weekdays.map((d) => (
               <div key={d} className="text-center py-1">
@@ -158,7 +215,7 @@ function CalendarClient() {
             {Array.from({ length: totalCells }, (_, i) => {
               const day = i - startOffset + 1;
               if (day < 1 || day > daysInMonth) {
-                return <div key={i} className="bg-muted/20 min-h-[86px]" />;
+                return <div key={i} className="bg-muted/20" style={{ minHeight: cellMinH }} />;
               }
               const key = ymd(cursor.y, cursor.m, day);
               const dayItems = byDate[key] ?? [];
@@ -168,20 +225,21 @@ function CalendarClient() {
                 <button
                   key={i}
                   onClick={() => setSelected(key)}
-                  className={`bg-card min-h-[86px] p-1.5 flex flex-col gap-1 text-left overflow-hidden transition-colors hover:bg-accent/40
+                  style={{ minHeight: cellMinH }}
+                  className={`bg-card ${compact ? "p-1 gap-0.5" : "p-2 gap-1"} flex flex-col text-left overflow-hidden transition-colors hover:bg-accent/40
                     ${isSel ? "ring-2 ring-primary ring-inset" : ""}`}
                 >
                   <span
-                    className={`text-xs font-semibold leading-none ${
+                    className={`${compact ? "text-[11px]" : "text-sm"} font-semibold leading-none ${
                       isToday ? "text-primary" : "text-foreground"
                     }`}
                   >
                     {day}
                   </span>
-                  {dayItems.slice(0, 3).map((it) => (
+                  {dayItems.slice(0, maxPreview).map((it) => (
                     <span
                       key={it.id}
-                      className={`text-[10px] leading-tight px-1 py-0.5 rounded bg-primary/15 text-primary truncate w-full ${
+                      className={`${compact ? "text-[10px] px-1" : "text-[11px] px-1.5 py-0.5"} leading-tight rounded bg-primary/15 text-primary truncate w-full ${
                         it.done ? "line-through opacity-50" : ""
                       }`}
                       title={it.title}
@@ -190,8 +248,8 @@ function CalendarClient() {
                       {it.title}
                     </span>
                   ))}
-                  {dayItems.length > 3 && (
-                    <span className="text-[10px] text-muted-foreground">+{dayItems.length - 3}</span>
+                  {dayItems.length > maxPreview && (
+                    <span className="text-[10px] text-muted-foreground">+{dayItems.length - maxPreview}</span>
                   )}
                 </button>
               );
@@ -199,7 +257,8 @@ function CalendarClient() {
           </div>
         </div>
 
-        <aside className="lg:w-[340px] border-t lg:border-t-0 lg:border-l border-border/60 p-4">
+
+        <aside className={`shrink-0 border-t border-border/60 ${compact ? "xl:w-[300px] xl:border-t-0 xl:border-l p-3" : "lg:w-[360px] lg:border-t-0 lg:border-l p-4"}`}>
           <h2 className="text-sm font-semibold mb-3">
             {selected} · {selectedItems.length} 项
           </h2>

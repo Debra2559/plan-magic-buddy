@@ -66,16 +66,58 @@ interface WinPos {
   y: number;
 }
 
+interface WinBox extends WinPos {
+  w: number;
+  h: number;
+}
+
+const DEFAULT_BOXES: Record<WidgetId, WinBox> = {
+  calendar: { x: 32, y: 56, w: 340, h: 330 },
+  today: { x: 470, y: 56, w: 300, h: 330 },
+  note: { x: 32, y: 410, w: 300, h: 200 },
+  habits: { x: 470, y: 410, w: 300, h: 220 },
+};
+
+const WIDGET_STORAGE_KEY = "sylva:desktop:widgets";
+
 type SylvaView = "ai" | "schedule" | "todos" | "notes" | "habits" | "journal" | "ability" | "monitor" | "ledger" | "content" | "settings";
 
 function DesktopApp() {
   const [now, setNow] = useState<Date | null>(null);
-  const [positions, setPositions] = useState<Record<WidgetId, WinPos>>({
-    calendar: { x: 32, y: 56 },
-    today: { x: 470, y: 56 },
-    note: { x: 32, y: 410 },
-    habits: { x: 470, y: 410 },
-  });
+  const [boxes, setBoxes] = useState<Record<WidgetId, WinBox>>(DEFAULT_BOXES);
+
+  // 恢复已保存的位置与尺寸
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(WIDGET_STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as Partial<Record<WidgetId, Partial<WinBox>>>;
+      setBoxes((prev) => {
+        const next = { ...prev };
+        (Object.keys(DEFAULT_BOXES) as WidgetId[]).forEach((id) => {
+          const s = saved?.[id];
+          if (s && typeof s.x === "number" && typeof s.y === "number") {
+            next[id] = {
+              x: s.x,
+              y: s.y,
+              w: typeof s.w === "number" ? s.w : DEFAULT_BOXES[id].w,
+              h: typeof s.h === "number" ? s.h : DEFAULT_BOXES[id].h,
+            };
+          }
+        });
+        return next;
+      });
+    } catch {}
+  }, []);
+
+  const persistBoxes = (next: Record<WidgetId, WinBox>) => {
+    setBoxes(next);
+    try {
+      localStorage.setItem(WIDGET_STORAGE_KEY, JSON.stringify(next));
+    } catch {}
+  };
+  const setBox = (id: WidgetId, box: WinBox) => persistBoxes({ ...boxes, [id]: box });
+
   const [appOpen, setAppOpen] = useState(true);
   const [appPos, setAppPos] = useState<WinPos>({ x: 240, y: 90 });
   const [appMaximized, setAppMaximized] = useState(true);
@@ -164,18 +206,19 @@ function DesktopApp() {
 
       {/* Desktop widgets layer */}
       <div className="absolute inset-0 pt-7 pb-24">
-        <DraggableWidget id="calendar" pos={positions.calendar} setPos={(p) => setPositions({ ...positions, calendar: p })} onDoubleClick={() => { setAppOpen(true); setActiveDock("sylva"); setView("schedule"); }}>
+        <DraggableWidget id="calendar" box={boxes.calendar} setBox={(b) => setBox("calendar", b)} onDoubleClick={() => { setAppOpen(true); setActiveDock("sylva"); setView("schedule"); }}>
           <CalendarWidget />
         </DraggableWidget>
-        <DraggableWidget id="today" pos={positions.today} setPos={(p) => setPositions({ ...positions, today: p })} onDoubleClick={() => { setAppOpen(true); setActiveDock("sylva"); setView("todos"); }}>
+        <DraggableWidget id="today" box={boxes.today} setBox={(b) => setBox("today", b)} onDoubleClick={() => { setAppOpen(true); setActiveDock("sylva"); setView("todos"); }}>
           <TodayWidget />
         </DraggableWidget>
-        <DraggableWidget id="note" pos={positions.note} setPos={(p) => setPositions({ ...positions, note: p })} onDoubleClick={() => { setAppOpen(true); setActiveDock("sylva"); setView("notes"); }}>
+        <DraggableWidget id="note" box={boxes.note} setBox={(b) => setBox("note", b)} onDoubleClick={() => { setAppOpen(true); setActiveDock("sylva"); setView("notes"); }}>
           <QuickNoteWidget />
         </DraggableWidget>
-        <DraggableWidget id="habits" pos={positions.habits} setPos={(p) => setPositions({ ...positions, habits: p })} onDoubleClick={() => { setAppOpen(true); setActiveDock("sylva"); setView("habits"); }}>
+        <DraggableWidget id="habits" box={boxes.habits} setBox={(b) => setBox("habits", b)} onDoubleClick={() => { setAppOpen(true); setActiveDock("sylva"); setView("habits"); }}>
           <HabitsWidget />
         </DraggableWidget>
+
 
         {/* App window: Sylva */}
         {appOpen && (
@@ -311,29 +354,49 @@ function DesktopApp() {
 
 function DraggableWidget({
   id,
-  pos,
-  setPos,
+  box,
+  setBox,
   onDoubleClick,
   children,
 }: {
   id: string;
-  pos: WinPos;
-  setPos: (p: WinPos) => void;
+  box: WinBox;
+  setBox: (b: WinBox) => void;
   onDoubleClick?: () => void;
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ ox: number; oy: number; moved: boolean } | null>(null);
+  const drag = useRef<{ ox: number; oy: number } | null>(null);
 
   const onMouseDown = (e: React.MouseEvent) => {
-    drag.current = { ox: e.clientX - pos.x, oy: e.clientY - pos.y, moved: false };
+    if ((e.target as HTMLElement).closest("[data-resize-handle]")) return;
+    drag.current = { ox: e.clientX - box.x, oy: e.clientY - box.y };
     const move = (ev: MouseEvent) => {
       if (!drag.current) return;
-      drag.current.moved = true;
-      setPos({ x: ev.clientX - drag.current.ox, y: ev.clientY - drag.current.oy });
+      setBox({ ...box, x: ev.clientX - drag.current.ox, y: ev.clientY - drag.current.oy });
     };
     const up = () => {
       drag.current = null;
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
+    };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+  };
+
+  const startResize = (e: React.MouseEvent, dir: "e" | "s" | "se") => {
+    e.stopPropagation();
+    e.preventDefault();
+    const sx = e.clientX;
+    const sy = e.clientY;
+    const sw = box.w;
+    const sh = box.h;
+    const move = (ev: MouseEvent) => {
+      const w = dir === "s" ? sw : Math.max(200, Math.round(sw + ev.clientX - sx));
+      const h = dir === "e" ? sh : Math.max(140, Math.round(sh + ev.clientY - sy));
+      setBox({ ...box, w, h });
+    };
+    const up = () => {
       window.removeEventListener("mousemove", move);
       window.removeEventListener("mouseup", up);
     };
@@ -347,16 +410,33 @@ function DraggableWidget({
       data-widget={id}
       onMouseDown={onMouseDown}
       onDoubleClick={onDoubleClick}
-      style={{ left: pos.x, top: pos.y }}
+      style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
       className="absolute cursor-grab active:cursor-grabbing group"
-      title="双击编辑"
+      title="双击编辑 · 拖动边角调整大小"
     >
-      {children}
+      <div className="w-full h-full overflow-auto [&>*]:!w-full [&>*]:min-h-full">{children}</div>
       <div className="pointer-events-none absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition px-2 py-0.5 rounded-full bg-background/80 text-foreground text-[10px] border border-border">
         双击编辑
       </div>
+      {/* Resize handles */}
+      <div
+        data-resize-handle
+        onMouseDown={(e) => startResize(e, "e")}
+        className="absolute top-2 -right-1 bottom-6 w-2 cursor-ew-resize"
+      />
+      <div
+        data-resize-handle
+        onMouseDown={(e) => startResize(e, "s")}
+        className="absolute -bottom-1 left-2 right-6 h-2 cursor-ns-resize"
+      />
+      <div
+        data-resize-handle
+        onMouseDown={(e) => startResize(e, "se")}
+        className="absolute -bottom-1 -right-1 w-4 h-4 cursor-nwse-resize rounded-sm opacity-0 group-hover:opacity-100 transition bg-foreground/25 border border-border"
+      />
     </div>
   );
+
 }
 
 function AppWindow({
