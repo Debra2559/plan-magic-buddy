@@ -100,8 +100,9 @@ function CalendarClient() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <header className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border/60 sticky top-0 bg-background/90 backdrop-blur z-10">
-        <div className="flex items-center gap-2">
+      <header className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-2.5 border-b border-border/60 sticky top-0 bg-background/90 backdrop-blur z-10">
+        <div className="flex min-w-0 items-center gap-2">
+
           <button
             onClick={() => shift(-1)}
             className="p-1.5 rounded-md hover:bg-accent transition-colors"
