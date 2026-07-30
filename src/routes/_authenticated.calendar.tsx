@@ -257,7 +257,7 @@ function CalendarClient() {
         </div>
 
 
-        <aside className="lg:w-[340px] border-t lg:border-t-0 lg:border-l border-border/60 p-4">
+        <aside className={`shrink-0 border-t border-border/60 ${compact ? "xl:w-[300px] xl:border-t-0 xl:border-l p-3" : "lg:w-[360px] lg:border-t-0 lg:border-l p-4"}`}>
           <h2 className="text-sm font-semibold mb-3">
             {selected} · {selectedItems.length} 项
           </h2>
