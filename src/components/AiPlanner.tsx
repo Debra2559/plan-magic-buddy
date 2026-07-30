@@ -24,6 +24,7 @@ const typeMeta: Record<PlanItem["type"], { icon: typeof Calendar; color: string;
   event: { icon: Calendar, color: "text-amber-glow", label: "日程" },
   todo: { icon: CheckSquare, color: "text-moss", label: "待办" },
   reminder: { icon: Bell, color: "text-accent", label: "提醒" },
+  milestone: { icon: Flag, color: "text-rose-400", label: "关键节点" },
 };
 
 const tagColors: Record<string, string> = {
