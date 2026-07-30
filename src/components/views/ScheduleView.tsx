@@ -24,7 +24,21 @@ const tagColor: Record<string, string> = {
   习惯: "bg-moss/60 text-white border-moss",
 };
 
-const typeIcon = { event: CalIcon, todo: Clock, reminder: Bell } as const;
+const typeIcon = { event: CalIcon, todo: Clock, reminder: Bell, milestone: Flag } as const;
+
+/** 距今天数：负数=已过去 */
+function daysFromToday(iso: string) {
+  const today = new Date();
+  const t = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const [y, m, d] = iso.split("-").map(Number);
+  return Math.round((new Date(y, m - 1, d).getTime() - t) / 86400000);
+}
+function dLabel(iso: string) {
+  const n = daysFromToday(iso);
+  if (n === 0) return "今天";
+  if (n > 0) return `D-${n}`;
+  return `已过 ${-n} 天`;
+}
 
 export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void; onGoSettings?: () => void } = {}) {
   const { items, habits, notes, comics, navigateTo, toggleHabitOn, addItems, updateItem, removeItem, toggleDone, isRecapDone, unmarkRecapDone, isRecentlySynced, markRecentlySynced, pendingIds, confirmPending, revertPending, addNote } = useSylva();
