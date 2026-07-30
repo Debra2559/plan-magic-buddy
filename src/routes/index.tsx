@@ -6,7 +6,9 @@ import { QuickNoteWidget } from "@/components/widgets/QuickNoteWidget";
 import { HabitsWidget } from "@/components/widgets/HabitsWidget";
 import { AiPlanner } from "@/components/AiPlanner";
 import { PhoneMockup } from "@/components/PhoneMockup";
-import { Sparkles, RefreshCw, Apple, Smartphone, Monitor } from "lucide-react";
+import { Sparkles, RefreshCw, Apple, Monitor, Download } from "lucide-react";
+import { MAC_DOWNLOAD } from "@/lib/downloads";
+
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -64,16 +66,33 @@ function Index() {
           像森林一样安静地待在你身边，把零散的想法长成可执行的节奏。
         </p>
         <div className="flex items-center justify-center gap-3 mt-10 flex-wrap">
-          <Link to="/desktop" className="flex items-center gap-2 px-6 py-3 rounded-full bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition shadow-lg shadow-amber-glow/30">
-            <Monitor className="w-4 h-4" /> 打开 Mac 桌面体验
-          </Link>
-          <a href="#download" className="flex items-center gap-2 px-6 py-3 rounded-full bg-foreground/10 border border-foreground/15 backdrop-blur text-sm hover:bg-foreground/15 transition">
-            <Apple className="w-4 h-4" /> 下载 .app
+          <a
+            href={MAC_DOWNLOAD.url}
+            download={MAC_DOWNLOAD.filename}
+            className="flex items-center gap-2 px-6 py-3 rounded-full bg-amber-glow text-primary-foreground text-sm font-medium hover:scale-[1.02] transition shadow-lg shadow-amber-glow/30"
+          >
+            <Download className="w-4 h-4" /> 下载 macOS 客户端
           </a>
-          <button className="flex items-center gap-2 px-6 py-3 rounded-full bg-foreground/10 border border-foreground/15 backdrop-blur text-sm hover:bg-foreground/15 transition">
-            <Smartphone className="w-4 h-4" /> iPhone App
-          </button>
+          <Link
+            to="/desktop"
+            className="flex items-center gap-2 px-6 py-3 rounded-full bg-foreground/10 border border-foreground/15 backdrop-blur text-sm hover:bg-foreground/15 transition"
+          >
+            <Monitor className="w-4 h-4" /> 先看桌面体验
+          </Link>
+          <Link
+            to="/download"
+            className="flex items-center gap-2 px-6 py-3 rounded-full bg-foreground/10 border border-foreground/15 backdrop-blur text-sm hover:bg-foreground/15 transition"
+          >
+            <Apple className="w-4 h-4" /> 安装说明
+          </Link>
         </div>
+        <p className="text-xs text-foreground/45 mt-4">
+          {MAC_DOWNLOAD.arch} · {MAC_DOWNLOAD.sizeLabel} · 首次打开需右键「打开」，
+          <Link to="/download" className="underline hover:text-foreground/70">
+            查看说明
+          </Link>
+        </p>
+
       </section>
 
       {/* Desktop scene with widgets */}
