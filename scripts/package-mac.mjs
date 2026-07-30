@@ -17,10 +17,11 @@ const osxSign = shouldSign
   ? {
       identity: process.env.APPLE_SIGNING_IDENTITY || undefined,
       keychain: process.env.KEYCHAIN_PATH || undefined,
-      hardenedRuntime: true,
-      entitlements,
-      "entitlements-inherit": entitlements,
-      signatureFlags: "library",
+      optionsForFile: () => ({
+        hardenedRuntime: true,
+        entitlements,
+        signatureFlags: "library",
+      }),
     }
   : undefined;
 
