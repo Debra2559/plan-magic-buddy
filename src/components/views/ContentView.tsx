@@ -240,7 +240,7 @@ function BoardTab() {
     // 当前阶段：没有日程就建一个，有就挪到今天并置为未完成
     const existing = schedule[stage] ? planItems.find((i) => i.id === schedule[stage]) : undefined;
     if (existing) {
-      updateItem(existing.id, { date: when, done: stage === "published" });
+      updateItem(existing.id, { date: when, done: stage === "published" } as any);
     } else {
       const [id] = addItems([
         {
@@ -252,7 +252,7 @@ function BoardTab() {
         } as any,
       ]);
       schedule[stage] = id;
-      if (stage === "published") updateItem(id, { done: true });
+      if (stage === "published") updateItem(id, { done: true } as any);
     }
 
     // 前后阶段的完成状态跟随
@@ -262,7 +262,7 @@ function BoardTab() {
       const linked = planItems.find((i) => i.id === linkedId);
       if (!linked) return;
       const shouldDone = idx < targetIdx;
-      if (linked.done !== shouldDone) updateItem(linkedId, { done: shouldDone });
+      if (linked.done !== shouldDone) updateItem(linkedId, { done: shouldDone } as any);
     });
 
     const patch: Partial<ContentPiece> = { stage, stageSchedule: schedule };
