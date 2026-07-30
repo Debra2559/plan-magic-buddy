@@ -50,7 +50,11 @@ export const Route = createFileRoute("/api/public/calendar/$token.ics")({
   server: {
     handlers: {
       GET: async ({ params }) => {
-        const token = (params as any).token ?? (params as any)["token.ics"];
+        const raw = String(
+          (params as any).token ?? (params as any)["token.ics"] ?? "",
+        );
+        // 路由参数可能带上 .ics 后缀，这里统一去掉
+        const token = raw.replace(/\.ics$/i, "");
         if (!token || token.length < 8) {
           return new Response("invalid token", { status: 400 });
         }
