@@ -48,15 +48,16 @@ export function FollowUpsPanel() {
     return ids[0];
   };
 
-  const handleFiles = async (files: FileList | null) => {
+  const handleFiles = async (files: FileList | File[] | null) => {
     if (!files || files.length === 0) return;
     setBusy(true);
     try {
       let added = 0;
       // 并行识别，加快多图速度
       const datas = await Promise.all(
-        Array.from(files).slice(0, 4).filter((f) => f.type.startsWith("image/")).map(fileToDataUrl),
+        Array.from(files).filter((f) => f.type.startsWith("image/")).slice(0, 4).map(fileToDataUrl),
       );
+
       const results = await Promise.all(
         datas.map((dataUrl) => extract({ data: { imageDataUrl: dataUrl } }).catch(() => ({ tasks: [] }))),
       );
