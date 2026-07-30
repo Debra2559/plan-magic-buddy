@@ -6,15 +6,15 @@ export const Route = createFileRoute("/download")({
   component: DownloadPage,
   head: () => ({
     meta: [
-      { title: "下载 Sylva macOS 客户端" },
+      { title: "下载 Sylva 日历 macOS 客户端" },
       {
         name: "description",
-        content: "下载 Sylva 日历 macOS 客户端：菜单栏常驻、桌面组件、日程待办实时同步。附首次打开的 Gatekeeper 解决方法。",
+        content: "下载 Sylva 日历 macOS 客户端：专注的日历视图、文本/时间双模式、日程待办实时同步。附首次打开的 Gatekeeper 解决方法。",
       },
-      { property: "og:title", content: "下载 Sylva macOS 客户端" },
+      { property: "og:title", content: "下载 Sylva 日历 macOS 客户端" },
       {
         property: "og:description",
-        content: "Sylva 日历 macOS 客户端下载：桌面组件、菜单栏常驻、与网页端同账号同步。",
+        content: "Sylva 日历 macOS 客户端下载：专注日历、菜单栏常驻、与网页端同账号同步。",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
