@@ -206,18 +206,19 @@ function DesktopApp() {
 
       {/* Desktop widgets layer */}
       <div className="absolute inset-0 pt-7 pb-24">
-        <DraggableWidget id="calendar" pos={positions.calendar} setPos={(p) => setPositions({ ...positions, calendar: p })} onDoubleClick={() => { setAppOpen(true); setActiveDock("sylva"); setView("schedule"); }}>
+        <DraggableWidget id="calendar" box={boxes.calendar} setBox={(b) => setBox("calendar", b)} onDoubleClick={() => { setAppOpen(true); setActiveDock("sylva"); setView("schedule"); }}>
           <CalendarWidget />
         </DraggableWidget>
-        <DraggableWidget id="today" pos={positions.today} setPos={(p) => setPositions({ ...positions, today: p })} onDoubleClick={() => { setAppOpen(true); setActiveDock("sylva"); setView("todos"); }}>
+        <DraggableWidget id="today" box={boxes.today} setBox={(b) => setBox("today", b)} onDoubleClick={() => { setAppOpen(true); setActiveDock("sylva"); setView("todos"); }}>
           <TodayWidget />
         </DraggableWidget>
-        <DraggableWidget id="note" pos={positions.note} setPos={(p) => setPositions({ ...positions, note: p })} onDoubleClick={() => { setAppOpen(true); setActiveDock("sylva"); setView("notes"); }}>
+        <DraggableWidget id="note" box={boxes.note} setBox={(b) => setBox("note", b)} onDoubleClick={() => { setAppOpen(true); setActiveDock("sylva"); setView("notes"); }}>
           <QuickNoteWidget />
         </DraggableWidget>
-        <DraggableWidget id="habits" pos={positions.habits} setPos={(p) => setPositions({ ...positions, habits: p })} onDoubleClick={() => { setAppOpen(true); setActiveDock("sylva"); setView("habits"); }}>
+        <DraggableWidget id="habits" box={boxes.habits} setBox={(b) => setBox("habits", b)} onDoubleClick={() => { setAppOpen(true); setActiveDock("sylva"); setView("habits"); }}>
           <HabitsWidget />
         </DraggableWidget>
+
 
         {/* App window: Sylva */}
         {appOpen && (
