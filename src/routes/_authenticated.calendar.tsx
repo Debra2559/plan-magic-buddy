@@ -38,6 +38,8 @@ function CalendarClient() {
 
   const [cursor, setCursor] = useState({ y: ty, m: tm });
   const [selected, setSelected] = useState<string>(today);
+  const [viewMode, setViewMode] = useCalendarViewMode();
+
 
   const byDate = useMemo(() => {
     if (!hydrated) return {} as Record<string, typeof items>;
