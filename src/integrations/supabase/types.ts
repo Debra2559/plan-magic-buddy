@@ -416,6 +416,107 @@ export type Database = {
         }
         Relationships: []
       }
+      content_ideas: {
+        Row: {
+          angle: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          platform: string
+          score: number
+          status: string
+          tags: string[]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          angle?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          platform?: string
+          score?: number
+          status?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          angle?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          platform?: string
+          score?: number
+          status?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      content_pieces: {
+        Row: {
+          created_at: string
+          id: string
+          idea_id: string | null
+          link: string | null
+          metrics: Json
+          notes: string | null
+          platform: string
+          publish_date: string | null
+          stage: string
+          stage_schedule: Json
+          tags: string[]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          idea_id?: string | null
+          link?: string | null
+          metrics?: Json
+          notes?: string | null
+          platform?: string
+          publish_date?: string | null
+          stage?: string
+          stage_schedule?: Json
+          tags?: string[]
+          title: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          idea_id?: string | null
+          link?: string | null
+          metrics?: Json
+          notes?: string | null
+          platform?: string
+          publish_date?: string | null
+          stage?: string
+          stage_schedule?: Json
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_pieces_idea_id_fkey"
+            columns: ["idea_id"]
+            isOneToOne: false
+            referencedRelation: "content_ideas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_recaps: {
         Row: {
           created_at: string
