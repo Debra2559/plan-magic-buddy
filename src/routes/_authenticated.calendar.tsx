@@ -1,10 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState, useEffect } from "react";
 import { useHydrated } from "@tanstack/react-router";
 import { useSylva, todayLocal } from "@/lib/sylva-store";
 import { useCalendarViewMode } from "@/lib/calendar-view";
 import { CalendarTextEditor } from "@/components/CalendarTextEditor";
-import { ChevronLeft, ChevronRight, Check, Clock, LayoutGrid, AlignLeft, CalendarDays } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Clock, AlignLeft, CalendarDays } from "lucide-react";
 
 
 export const Route = createFileRoute("/_authenticated/calendar")({
