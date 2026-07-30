@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo } from "react";
+import { useRef, useState, useMemo, useEffect } from "react";
 import { GitBranch, Plus, Trash2, Upload, Loader2, Check, Calendar, Clock, ImageIcon, Link2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -48,15 +48,16 @@ export function FollowUpsPanel() {
     return ids[0];
   };
 
-  const handleFiles = async (files: FileList | null) => {
+  const handleFiles = async (files: FileList | File[] | null) => {
     if (!files || files.length === 0) return;
     setBusy(true);
     try {
       let added = 0;
       // 并行识别，加快多图速度
       const datas = await Promise.all(
-        Array.from(files).slice(0, 4).filter((f) => f.type.startsWith("image/")).map(fileToDataUrl),
+        Array.from(files).filter((f) => f.type.startsWith("image/")).slice(0, 4).map(fileToDataUrl),
       );
+
       const results = await Promise.all(
         datas.map((dataUrl) => extract({ data: { imageDataUrl: dataUrl } }).catch(() => ({ tasks: [] }))),
       );
@@ -130,6 +131,33 @@ export function FollowUpsPanel() {
   const pending = list.filter((f) => !f.done);
   const finished = list.filter((f) => f.done);
 
+  const [dragOver, setDragOver] = useState(false);
+  const busyRef = useRef(false);
+  busyRef.current = busy;
+
+  /** 全局 Ctrl+V 粘贴截图直接识别（输入框内粘贴文字不受影响） */
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      if (busyRef.current) return;
+      const dt = e.clipboardData;
+      if (!dt) return;
+      const imgs: File[] = [];
+      for (const item of Array.from(dt.items ?? [])) {
+        if (item.kind === "file") {
+          const f = item.getAsFile();
+          if (f && f.type.startsWith("image/")) imgs.push(f);
+        }
+      }
+      if (imgs.length === 0) return;
+      e.preventDefault();
+      void handleFiles(imgs);
+    };
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+
   /** 前置依赖可选目标：未完成的 followUp + 未完成的主 items */
   const prereqOptions = useMemo(() => {
     const fuOpts = list.filter((f) => !f.done).map((f) => ({ id: f.id, label: `🔁 ${f.title}` }));
@@ -154,8 +182,21 @@ export function FollowUpsPanel() {
           </div>
         </div>
         <label
-          className={`flex flex-col items-center justify-center gap-2 m-3 py-6 rounded-lg border border-dashed cursor-pointer transition ${
-            busy ? "border-amber-glow/60 bg-amber-glow/10" : "border-border hover:border-amber-glow/60 hover:bg-amber-glow/5"
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            const fs = Array.from(e.dataTransfer?.files ?? []).filter((f) => f.type.startsWith("image/"));
+            if (fs.length) void handleFiles(fs);
+          }}
+          onPaste={(e) => {
+            const fs = Array.from(e.clipboardData?.files ?? []).filter((f) => f.type.startsWith("image/"));
+            if (fs.length) { e.preventDefault(); void handleFiles(fs); }
+          }}
+          tabIndex={0}
+          className={`flex flex-col items-center justify-center gap-2 m-3 py-6 rounded-lg border border-dashed cursor-pointer transition outline-none ${
+            busy || dragOver ? "border-amber-glow/60 bg-amber-glow/10" : "border-border hover:border-amber-glow/60 hover:bg-amber-glow/5 focus:border-amber-glow/60"
           }`}
         >
           {busy ? (
@@ -166,9 +207,12 @@ export function FollowUpsPanel() {
           ) : (
             <>
               <Upload className="w-5 h-5 text-foreground/60" />
-              <span className="text-xs text-foreground/70">点击或拖拽图片（最多 4 张，并行识别）</span>
+              <span className="text-xs text-foreground/70">
+                {dragOver ? "松开即可识别" : "点击 / 拖拽 / Ctrl+V 粘贴截图（最多 4 张，并行识别）"}
+              </span>
             </>
           )}
+
           <input
             ref={fileRef}
             type="file"
