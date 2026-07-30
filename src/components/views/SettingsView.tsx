@@ -308,7 +308,13 @@ export function SettingsView() {
       case "memory": return <MemoryPanel />;
       case "insights": return <InsightsSettingsPanel />;
       case "comic": return <ComicSettingsPanel />;
-      case "calendar": return <CalendarSyncPanel />;
+      case "calendar": return (
+        <div className="space-y-4">
+          <CalendarViewModeCard />
+          <CalendarSyncPanel />
+        </div>
+      );
+
       case "feishu": return <FeishuSyncPanel />;
       case "webhook": return <FeishuWebhookLogsPanel />;
       case "reminders": return <RemindersPanel />;
