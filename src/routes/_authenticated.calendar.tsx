@@ -143,6 +143,27 @@ function CalendarClient() {
               文本
             </button>
           </div>
+          <div className="flex items-center rounded-md border border-border overflow-hidden">
+            {([
+              { key: "auto", label: "自动", Icon: Wand2 },
+              { key: "compact", label: "紧凑", Icon: Rows3 },
+              { key: "cozy", label: "宽松", Icon: Rows2 },
+            ] as { key: Density; label: string; Icon: typeof Wand2 }[]).map(({ key, label, Icon }) => (
+              <button
+                key={key}
+                onClick={() => changeDensity(key)}
+                title={`${label}布局`}
+                aria-label={`${label}布局`}
+                className={`text-xs px-2 py-1.5 inline-flex items-center gap-1 transition-colors ${
+                  density === key ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{label}</span>
+              </button>
+            ))}
+          </div>
+
           <button
             onClick={() => {
               setCursor({ y: ty, m: tm });
