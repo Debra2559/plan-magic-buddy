@@ -517,8 +517,8 @@ function DayEditor({
   };
 
   // Position the popup near the anchor, clamped to viewport
-  const width = 320;
-  const height = 360;
+  const width = viewMode === "text" ? 420 : 320;
+  const height = viewMode === "text" ? 460 : 360;
   const margin = 12;
   const vw = typeof window !== "undefined" ? window.innerWidth : 1280;
   const vh = typeof window !== "undefined" ? window.innerHeight : 800;
