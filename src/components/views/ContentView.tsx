@@ -543,11 +543,53 @@ function PieceDetail({
 /* ---------------- 发布排期 ---------------- */
 
 function ScheduleTab() {
-  const { items } = useContentPieces();
+  const { items, update } = useContentPieces();
+  const { items: planItems, addItems, updateItem, removeItem } = useSylva();
   const days = useMemo(() => Array.from({ length: 14 }, (_, i) => shiftDate(todayStr(), i)), []);
+
+  const pubTitle = (p: ContentPiece) => `【${p.platform}】发布：${p.title}`;
+
+  const linkPublish = (p: ContentPiece) => {
+    const when = p.publishDate ?? todayStr();
+    const [id] = addItems([
+      { type: "todo", title: pubTitle(p), date: when, tag: "自媒体", note: p.link ?? p.notes ?? undefined } as any,
+    ]);
+    void update(p.id, { publishDate: when, stageSchedule: { ...p.stageSchedule, scheduled: id } });
+  };
+
+  const unlinkPublish = (p: ContentPiece, id: string) => {
+    removeItem(id);
+    const next = { ...p.stageSchedule };
+    delete next.scheduled;
+    void update(p.id, { stageSchedule: next });
+  };
+
+  const movePublish = (p: ContentPiece, when: string) => {
+    if (!when) return;
+    const id = p.stageSchedule.scheduled;
+    if (id && planItems.some((i) => i.id === id)) updateItem(id, { date: when } as any);
+    void update(p.id, { publishDate: when });
+  };
+
+  const unplanned = items.filter(
+    (p) => p.publishDate && days.includes(p.publishDate) && !p.stageSchedule.scheduled,
+  );
 
   return (
     <div className="space-y-2">
+      <div className="widget p-3 flex items-center gap-2 text-[11.5px] text-muted-foreground">
+        <CalendarPlus className="w-3.5 h-3.5 text-amber-glow" />
+        每条内容都能把「发布」当天排进日历，改日期会同步挪动日历里的待办
+        {unplanned.length > 0 && (
+          <button
+            onClick={() => unplanned.forEach(linkPublish)}
+            className="ml-auto px-2.5 py-1 rounded-full bg-amber-glow text-background text-[11px]"
+          >
+            一键排入未关联的 {unplanned.length} 条
+          </button>
+        )}
+      </div>
+
       {days.map((d) => {
         const list = items.filter((p) => p.publishDate === d);
         return (
@@ -560,24 +602,54 @@ function ScheduleTab() {
             </div>
             <div className="flex-1 space-y-1.5">
               {list.length === 0 && <div className="text-[11px] text-muted-foreground/40">—</div>}
-              {list.map((p) => (
-                <div key={p.id} className="flex items-center gap-2 text-[12px] text-foreground">
-                  <span className="px-1.5 py-0.5 rounded bg-amber-glow/15 text-amber-glow text-[10px]">{p.platform}</span>
-                  <span className="px-1.5 py-0.5 rounded bg-foreground/[0.07] text-[10px] text-muted-foreground">
-                    {CONTENT_MEDIUMS.find((m) => m.key === p.medium)?.emoji}
-                    {CONTENT_MEDIUMS.find((m) => m.key === p.medium)?.label}
-                  </span>
-                  <span className="flex-1 truncate">{p.title}</span>
-                  <span className="text-[10px] text-muted-foreground/70">
-                    {stageLabel(p.stage, p.medium)}
-                  </span>
-                  {p.link && (
-                    <a href={p.link} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-amber-glow">
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  )}
-                </div>
-              ))}
+              {list.map((p) => {
+                const linkedId = p.stageSchedule.scheduled;
+                const linked = linkedId ? planItems.find((i) => i.id === linkedId) : undefined;
+                return (
+                  <div key={p.id} className="flex items-center gap-2 text-[12px] text-foreground">
+                    <span className="px-1.5 py-0.5 rounded bg-amber-glow/15 text-amber-glow text-[10px]">{p.platform}</span>
+                    <span className="px-1.5 py-0.5 rounded bg-foreground/[0.07] text-[10px] text-muted-foreground">
+                      {CONTENT_MEDIUMS.find((m) => m.key === p.medium)?.emoji}
+                      {CONTENT_MEDIUMS.find((m) => m.key === p.medium)?.label}
+                    </span>
+                    <span className="flex-1 truncate">{p.title}</span>
+                    <span className="text-[10px] text-muted-foreground/70">
+                      {stageLabel(p.stage, p.medium)}
+                    </span>
+
+                    <input
+                      type="date"
+                      value={p.publishDate ?? ""}
+                      onChange={(e) => movePublish(p, e.target.value)}
+                      className="bg-background/40 border border-foreground/15 rounded px-1.5 py-0.5 text-[10px] text-foreground focus:outline-none"
+                    />
+
+                    {linked ? (
+                      <button
+                        onClick={() => unlinkPublish(p, linked.id)}
+                        title="取消日历关联"
+                        className={`flex items-center gap-1 text-[10px] ${linked.done ? "text-emerald-400" : "text-amber-glow"} hover:underline`}
+                      >
+                        {linked.done ? <Check className="w-3 h-3" /> : <CalendarPlus className="w-3 h-3" />}
+                        已排日历
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => linkPublish(p)}
+                        className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-amber-glow"
+                      >
+                        排进日历 <ChevronRight className="w-3 h-3" />
+                      </button>
+                    )}
+
+                    {p.link && (
+                      <a href={p.link} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-amber-glow">
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         );
@@ -585,3 +657,4 @@ function ScheduleTab() {
     </div>
   );
 }
+
