@@ -40,9 +40,13 @@ function Index() {
           <a href="#ai" className="hover:text-foreground transition">AI 规划</a>
           <a href="#sync" className="hover:text-foreground transition">飞书同步</a>
         </div>
-        <button className="text-sm px-4 py-2 rounded-full bg-foreground/10 border border-foreground/15 backdrop-blur hover:bg-foreground/15 transition">
+        <Link
+          to="/download"
+          className="text-sm px-4 py-2 rounded-full bg-foreground/10 border border-foreground/15 backdrop-blur hover:bg-foreground/15 transition"
+        >
           下载 macOS
-        </button>
+        </Link>
+
       </nav>
 
       {/* Hero */}

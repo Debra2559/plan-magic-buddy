@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as DownloadRouteImport } from './routes/download'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiLifeAgentRouteImport } from './routes/api/life-agent'
@@ -28,6 +29,11 @@ import { Route as ApiPublicFeishuOauthCallbackRouteImport } from './routes/api/p
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DownloadRoute = DownloadRouteImport.update({
+  id: '/download',
+  path: '/download',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -108,6 +114,7 @@ const ApiPublicFeishuOauthCallbackRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/download': typeof DownloadRoute
   '/login': typeof LoginRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/calendar': typeof AuthenticatedCalendarRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/download': typeof DownloadRoute
   '/login': typeof LoginRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/calendar': typeof AuthenticatedCalendarRoute
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/download': typeof DownloadRoute
   '/login': typeof LoginRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/download'
     | '/login'
     | '/admin'
     | '/calendar'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/download'
     | '/login'
     | '/admin'
     | '/calendar'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/download'
     | '/login'
     | '/_authenticated/admin'
     | '/_authenticated/calendar'
@@ -211,6 +223,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  DownloadRoute: typeof DownloadRoute
   LoginRoute: typeof LoginRoute
   ApiLifeAgentRoute: typeof ApiLifeAgentRoute
   ApiPublicCalendarTokenDoticsRoute: typeof ApiPublicCalendarTokenDoticsRoute
@@ -229,6 +242,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/download': {
+      id: '/download'
+      path: '/download'
+      fullPath: '/download'
+      preLoaderRoute: typeof DownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -353,6 +373,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  DownloadRoute: DownloadRoute,
   LoginRoute: LoginRoute,
   ApiLifeAgentRoute: ApiLifeAgentRoute,
   ApiPublicCalendarTokenDoticsRoute: ApiPublicCalendarTokenDoticsRoute,
