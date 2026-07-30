@@ -5,8 +5,8 @@ import {
 } from "lucide-react";
 import {
   useContentIdeas, useContentPieces, CONTENT_STAGES, CONTENT_PLATFORMS,
-  todayStr, shiftDate,
-  type ContentStage, type ContentPiece,
+  CONTENT_MEDIUMS, stageLabel, todayStr, shiftDate,
+  type ContentStage, type ContentPiece, type ContentMedium,
 } from "@/lib/content-studio";
 import { useSylva } from "@/lib/sylva-store";
 
@@ -68,6 +68,7 @@ function IdeasTab() {
   const [title, setTitle] = useState("");
   const [platform, setPlatform] = useState<string>("通用");
   const [angle, setAngle] = useState("");
+  const [medium, setMedium] = useState<ContentMedium>("article");
   const [filter, setFilter] = useState<"inbox" | "picked" | "archived" | "all">("inbox");
 
   const list = items.filter((i) => filter === "all" || i.status === filter);
@@ -75,7 +76,7 @@ function IdeasTab() {
   const submit = async () => {
     const t = title.trim();
     if (!t) return;
-    await add({ title: t, platform, angle: angle.trim() || undefined });
+    await add({ title: t, platform, medium, angle: angle.trim() || undefined });
     setTitle(""); setAngle("");
   };
 
@@ -108,6 +109,21 @@ function IdeasTab() {
             <Plus className="w-3.5 h-3.5" /> 入库
           </button>
         </div>
+        <div className="flex gap-1.5">
+          {CONTENT_MEDIUMS.map((m) => (
+            <button
+              key={m.key}
+              onClick={() => setMedium(m.key)}
+              className={`px-2.5 py-1 rounded-full text-[11px] border transition ${
+                medium === m.key
+                  ? "border-amber-glow/50 text-amber-glow bg-amber-glow/10"
+                  : "border-border text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {m.emoji} {m.label}
+            </button>
+          ))}
+        </div>
         <input
           value={angle}
           onChange={(e) => setAngle(e.target.value)}
@@ -139,6 +155,10 @@ function IdeasTab() {
                 {idea.angle && <div className="text-[11px] text-muted-foreground mt-1">{idea.angle}</div>}
                 <div className="flex items-center gap-2 mt-2 text-[10.5px] text-muted-foreground/70">
                   <span className="px-1.5 py-0.5 rounded bg-foreground/[0.07]">{idea.platform}</span>
+                  <span className="px-1.5 py-0.5 rounded bg-foreground/[0.07]">
+                    {CONTENT_MEDIUMS.find((m) => m.key === idea.medium)?.emoji}
+                    {CONTENT_MEDIUMS.find((m) => m.key === idea.medium)?.label}
+                  </span>
                   <span className="flex items-center gap-0.5">
                     {[1, 2, 3, 4, 5].map((n) => (
                       <button key={n} onClick={() => void update(idea.id, { score: n })}>
@@ -156,7 +176,7 @@ function IdeasTab() {
               {idea.status !== "picked" && (
                 <button
                   onClick={async () => {
-                    await addPiece({ title: idea.title, platform: idea.platform, ideaId: idea.id, notes: idea.angle });
+                    await addPiece({ title: idea.title, platform: idea.platform, medium: idea.medium, ideaId: idea.id, notes: idea.angle });
                     await update(idea.id, { status: "picked" });
                   }}
                   className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-amber-glow/15 border border-amber-glow/40 text-amber-glow hover:bg-amber-glow/25"
