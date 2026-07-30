@@ -66,16 +66,58 @@ interface WinPos {
   y: number;
 }
 
+interface WinBox extends WinPos {
+  w: number;
+  h: number;
+}
+
+const DEFAULT_BOXES: Record<WidgetId, WinBox> = {
+  calendar: { x: 32, y: 56, w: 340, h: 330 },
+  today: { x: 470, y: 56, w: 300, h: 330 },
+  note: { x: 32, y: 410, w: 300, h: 200 },
+  habits: { x: 470, y: 410, w: 300, h: 220 },
+};
+
+const WIDGET_STORAGE_KEY = "sylva:desktop:widgets";
+
 type SylvaView = "ai" | "schedule" | "todos" | "notes" | "habits" | "journal" | "ability" | "monitor" | "ledger" | "content" | "settings";
 
 function DesktopApp() {
   const [now, setNow] = useState<Date | null>(null);
-  const [positions, setPositions] = useState<Record<WidgetId, WinPos>>({
-    calendar: { x: 32, y: 56 },
-    today: { x: 470, y: 56 },
-    note: { x: 32, y: 410 },
-    habits: { x: 470, y: 410 },
-  });
+  const [boxes, setBoxes] = useState<Record<WidgetId, WinBox>>(DEFAULT_BOXES);
+
+  // 恢复已保存的位置与尺寸
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(WIDGET_STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as Partial<Record<WidgetId, Partial<WinBox>>>;
+      setBoxes((prev) => {
+        const next = { ...prev };
+        (Object.keys(DEFAULT_BOXES) as WidgetId[]).forEach((id) => {
+          const s = saved?.[id];
+          if (s && typeof s.x === "number" && typeof s.y === "number") {
+            next[id] = {
+              x: s.x,
+              y: s.y,
+              w: typeof s.w === "number" ? s.w : DEFAULT_BOXES[id].w,
+              h: typeof s.h === "number" ? s.h : DEFAULT_BOXES[id].h,
+            };
+          }
+        });
+        return next;
+      });
+    } catch {}
+  }, []);
+
+  const persistBoxes = (next: Record<WidgetId, WinBox>) => {
+    setBoxes(next);
+    try {
+      localStorage.setItem(WIDGET_STORAGE_KEY, JSON.stringify(next));
+    } catch {}
+  };
+  const setBox = (id: WidgetId, box: WinBox) => persistBoxes({ ...boxes, [id]: box });
+
   const [appOpen, setAppOpen] = useState(true);
   const [appPos, setAppPos] = useState<WinPos>({ x: 240, y: 90 });
   const [appMaximized, setAppMaximized] = useState(true);
