@@ -340,6 +340,18 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
           </div>
         )}
 
+        <MilestonesPanel
+          items={items}
+          selected={selected}
+          onAdd={(item) => addItems([item])}
+          onDelete={(id) => removeItem(id)}
+          onJump={(iso) => {
+            setSelected(iso);
+            const [yy, mm] = iso.split("-").map(Number);
+            setCursor(new Date(yy, mm - 1, 1));
+          }}
+        />
+
         <section>
           <SectionHeader icon={CalIcon} title="日程" count={selectedItems.length} accent="amber" />
           {selectedItems.length === 0 ? (
