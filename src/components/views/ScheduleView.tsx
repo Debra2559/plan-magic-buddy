@@ -229,7 +229,12 @@ export function ScheduleView({ onGoPlan, onGoSettings }: { onGoPlan?: () => void
           ))}
           {cells.map((cell, i) => {
             if (!cell) return <div key={i} className="bg-background/30 min-h-[110px]" />;
-            const dayItems = itemsByDate[cell.iso] ?? [];
+            const rawDayItems = itemsByDate[cell.iso] ?? [];
+            // 关键节点置顶显示
+            const dayItems = [...rawDayItems].sort(
+              (a, b) => (a.type === "milestone" ? 0 : 1) - (b.type === "milestone" ? 0 : 1),
+            );
+            const hasMilestone = dayItems.some((it) => it.type === "milestone");
             const isSelected = cell.iso === selected;
             const isToday = cell.iso === "2026-05-19";
             return (
