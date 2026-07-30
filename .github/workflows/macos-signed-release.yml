@@ -1,0 +1,89 @@
+name: Build signed macOS client
+
+on:
+  workflow_dispatch:
+    inputs:
+      arch:
+        description: macOS architecture
+        type: choice
+        default: arm64
+        options:
+          - arm64
+          - x64
+          - universal
+
+jobs:
+  build-signed-macos:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Import Developer ID certificate
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          CERTIFICATE_PATH="$RUNNER_TEMP/developer-id.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/sylva-signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -hex 24)"
+
+          echo "$CSC_LINK" | base64 --decode > "$CERTIFICATE_PATH"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" -P "$CSC_KEY_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain-db
+          security default-keychain -s "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
+
+      - name: Package, sign and notarize
+        env:
+          SIGN_MAC: true
+          ELECTRON_ARCH: ${{ inputs.arch }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: npm run electron:package:mac
+
+      - name: Verify signature and notarization staple
+        run: |
+          set -euo pipefail
+          APP_PATH="$(find electron-release -maxdepth 3 -name 'Sylva 日历.app' -type d | head -n 1)"
+          test -n "$APP_PATH"
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+          xcrun stapler validate "$APP_PATH"
+          spctl --assess --type execute --verbose=4 "$APP_PATH"
+
+      - name: Create downloadable zip
+        run: |
+          set -euo pipefail
+          APP_PATH="$(find electron-release -maxdepth 3 -name 'Sylva 日历.app' -type d | head -n 1)"
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "Sylva-Calendar-mac-${{ inputs.arch }}-signed-notarized.zip"
+
+      - name: Upload signed client
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sylva-Calendar-mac-${{ inputs.arch }}-signed-notarized
+          path: Sylva-Calendar-mac-${{ inputs.arch }}-signed-notarized.zip
+
+      - name: Cleanup keychain
+        if: always()
+        run: |
+          if [ -n "${KEYCHAIN_PATH:-}" ]; then
+            security delete-keychain "$KEYCHAIN_PATH" || true
+          fi
