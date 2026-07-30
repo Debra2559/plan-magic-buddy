@@ -213,13 +213,15 @@ function LoginPage() {
               />
               <button
                 type="button"
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => setShowPwd((v) => !v)}
-                tabIndex={-1}
-                className="absolute inset-y-0 right-2 flex items-center px-1 text-foreground/40 hover:text-foreground/80"
+                className="absolute inset-y-0 right-0 z-10 flex items-center justify-center w-10 cursor-pointer text-foreground/40 hover:text-foreground/80"
+                aria-label={showPwd ? "隐藏密码" : "显示密码"}
                 title={showPwd ? "隐藏密码" : "显示密码"}
               >
                 {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
+
             </div>
             {mode === "signup" && pwd && (() => {
               // 评分 0-4: 长度、字母、数字、符号；pwned 直接打 0；checking 显示最近一次评分
