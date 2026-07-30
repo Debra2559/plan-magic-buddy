@@ -200,9 +200,9 @@ function CalendarClient() {
           <CalendarTextEditor key={selected} date={selected} />
         </div>
       ) : (
-      <div className="flex-1 flex flex-col lg:flex-row">
+      <div className={`flex-1 flex flex-col ${compact ? "xl:flex-row" : "lg:flex-row"}`}>
 
-        <div className="flex-1 p-3">
+        <div className={`flex-1 ${compact ? "p-2" : "p-4"}`}>
           <div className="grid grid-cols-7 text-[11px] text-muted-foreground mb-1">
             {weekdays.map((d) => (
               <div key={d} className="text-center py-1">
@@ -214,7 +214,7 @@ function CalendarClient() {
             {Array.from({ length: totalCells }, (_, i) => {
               const day = i - startOffset + 1;
               if (day < 1 || day > daysInMonth) {
-                return <div key={i} className="bg-muted/20 min-h-[86px]" />;
+                return <div key={i} className="bg-muted/20" style={{ minHeight: cellMinH }} />;
               }
               const key = ymd(cursor.y, cursor.m, day);
               const dayItems = byDate[key] ?? [];
@@ -224,20 +224,21 @@ function CalendarClient() {
                 <button
                   key={i}
                   onClick={() => setSelected(key)}
-                  className={`bg-card min-h-[86px] p-1.5 flex flex-col gap-1 text-left overflow-hidden transition-colors hover:bg-accent/40
+                  style={{ minHeight: cellMinH }}
+                  className={`bg-card ${compact ? "p-1 gap-0.5" : "p-2 gap-1"} flex flex-col text-left overflow-hidden transition-colors hover:bg-accent/40
                     ${isSel ? "ring-2 ring-primary ring-inset" : ""}`}
                 >
                   <span
-                    className={`text-xs font-semibold leading-none ${
+                    className={`${compact ? "text-[11px]" : "text-sm"} font-semibold leading-none ${
                       isToday ? "text-primary" : "text-foreground"
                     }`}
                   >
                     {day}
                   </span>
-                  {dayItems.slice(0, 3).map((it) => (
+                  {dayItems.slice(0, maxPreview).map((it) => (
                     <span
                       key={it.id}
-                      className={`text-[10px] leading-tight px-1 py-0.5 rounded bg-primary/15 text-primary truncate w-full ${
+                      className={`${compact ? "text-[10px] px-1" : "text-[11px] px-1.5 py-0.5"} leading-tight rounded bg-primary/15 text-primary truncate w-full ${
                         it.done ? "line-through opacity-50" : ""
                       }`}
                       title={it.title}
@@ -246,14 +247,15 @@ function CalendarClient() {
                       {it.title}
                     </span>
                   ))}
-                  {dayItems.length > 3 && (
-                    <span className="text-[10px] text-muted-foreground">+{dayItems.length - 3}</span>
+                  {dayItems.length > maxPreview && (
+                    <span className="text-[10px] text-muted-foreground">+{dayItems.length - maxPreview}</span>
                   )}
                 </button>
               );
             })}
           </div>
         </div>
+
 
         <aside className="lg:w-[340px] border-t lg:border-t-0 lg:border-l border-border/60 p-4">
           <h2 className="text-sm font-semibold mb-3">
