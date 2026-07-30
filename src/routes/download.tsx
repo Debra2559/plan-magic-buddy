@@ -31,9 +31,9 @@ function DownloadPage() {
         </Link>
 
         <p className="text-xs tracking-widest text-amber-glow mb-3">macOS 客户端 · v{MAC_DOWNLOAD.version}</p>
-        <h1 className="font-display text-4xl md:text-5xl mb-5">把 Sylva 放进你的菜单栏。</h1>
+        <h1 className="font-display text-4xl md:text-5xl mb-5">把 Sylva 日历放进你的菜单栏。</h1>
         <p className="text-foreground/70 leading-relaxed mb-10 max-w-xl">
-          客户端包含完整日历、菜单栏常驻图标，以及可拖动、置顶的桌面组件（今日待办 / 接下来的日程 / 关键节点倒计时），
+          一个干净的 macOS 日历客户端：支持时间视图与文本视图，日程、待办、提醒一站式管理，
           和网页端使用同一个账号，数据实时同步。
         </p>
 
