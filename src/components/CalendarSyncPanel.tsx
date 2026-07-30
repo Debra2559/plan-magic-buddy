@@ -23,8 +23,13 @@ export function CalendarSyncPanel() {
     };
   }, [fetchToken]);
 
+  // 预览域名（lovableproject.com / id-preview--*）需要 Lovable 登录，系统日历无法访问，
+  // 因此订阅链接一律使用已发布的公开域名。
+  const PUBLIC_BASE = "https://project--01545937-4efd-4487-a500-8dd999f2e87d.lovable.app";
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const httpUrl = token ? `${origin}/api/public/calendar/${token}.ics` : "";
+  const base =
+    /lovableproject\.com|id-preview--/.test(origin) || !origin ? PUBLIC_BASE : origin;
+  const httpUrl = token ? `${base}/api/public/calendar/${token}.ics` : "";
   const webcalUrl = token ? httpUrl.replace(/^https?:/, "webcal:") : "";
 
   const copy = async (kind: "http" | "webcal") => {
