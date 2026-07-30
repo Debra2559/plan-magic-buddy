@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { useCalendarViewMode } from "@/lib/calendar-view";
+import { CalendarTextEditor } from "@/components/CalendarTextEditor";
 import { useSylva, isHabitDoneOn } from "@/lib/sylva-store";
 import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, Bell, Plus, Trash2, X, CheckCircle2, RotateCcw, Check, Sparkles, Flame, BookHeart, StickyNote, ImageIcon, TrendingUp } from "lucide-react";
 import type { PlanItem } from "@/lib/plan.functions";
@@ -481,6 +483,7 @@ function DayEditor({
 }) {
   const [draft, setDraft] = useState("");
   const [draftTime, setDraftTime] = useState("");
+  const [viewMode] = useCalendarViewMode();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -514,8 +517,8 @@ function DayEditor({
   };
 
   // Position the popup near the anchor, clamped to viewport
-  const width = 320;
-  const height = 360;
+  const width = viewMode === "text" ? 420 : 320;
+  const height = viewMode === "text" ? 460 : 360;
   const margin = 12;
   const vw = typeof window !== "undefined" ? window.innerWidth : 1280;
   const vh = typeof window !== "undefined" ? window.innerHeight : 800;
@@ -535,45 +538,53 @@ function DayEditor({
         <span className="w-3 h-3" />
       </div>
 
-      <div className="flex-1 overflow-auto p-3 space-y-1.5">
-        {items.length === 0 && (
-          <div className="text-[11px] text-muted-foreground/70 text-center py-6">这一天还没有安排，下方添加</div>
-        )}
-        {items.map((it) => (
-          <EditableRow
-            key={it.id}
-            item={it}
-            onChange={(patch) => onUpdate(it.id, patch)}
-            onToggleDone={() => onToggleDone(it.id)}
-            onDelete={() => onDelete(it.id)}
-          />
-        ))}
-      </div>
+      {viewMode === "text" ? (
+        <div className="flex-1 overflow-auto p-3">
+          <CalendarTextEditor key={date} date={date} />
+        </div>
+      ) : (
+        <>
+          <div className="flex-1 overflow-auto p-3 space-y-1.5">
+            {items.length === 0 && (
+              <div className="text-[11px] text-muted-foreground/70 text-center py-6">这一天还没有安排，下方添加</div>
+            )}
+            {items.map((it) => (
+              <EditableRow
+                key={it.id}
+                item={it}
+                onChange={(patch) => onUpdate(it.id, patch)}
+                onToggleDone={() => onToggleDone(it.id)}
+                onDelete={() => onDelete(it.id)}
+              />
+            ))}
+          </div>
 
-      <div className="shrink-0 border-t border-border p-2 flex items-center gap-1.5 bg-background/30">
-        <TimePicker value={draftTime} onChange={setDraftTime} size="sm" />
-        <input
-          autoFocus
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-              e.preventDefault();
-              submit();
-            }
-          }}
-          placeholder="添加一条安排…（Enter 提交）"
-          title="Enter 提交 · 单行输入框不支持换行"
-          className="flex-1 bg-foreground/5 border border-border rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-amber-glow/50"
-        />
-        <button
-          onClick={submit}
-          className="p-1.5 rounded bg-amber-glow/80 text-primary-foreground hover:bg-amber-glow"
-          title="添加（Enter）"
-        >
-          <Plus className="w-3.5 h-3.5" />
-        </button>
-      </div>
+          <div className="shrink-0 border-t border-border p-2 flex items-center gap-1.5 bg-background/30">
+            <TimePicker value={draftTime} onChange={setDraftTime} size="sm" />
+            <input
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  submit();
+                }
+              }}
+              placeholder="添加一条安排…（Enter 提交）"
+              title="Enter 提交 · 单行输入框不支持换行"
+              className="flex-1 bg-foreground/5 border border-border rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-amber-glow/50"
+            />
+            <button
+              onClick={submit}
+              className="p-1.5 rounded bg-amber-glow/80 text-primary-foreground hover:bg-amber-glow"
+              title="添加（Enter）"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
