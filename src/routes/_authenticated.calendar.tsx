@@ -1,10 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useHydrated } from "@tanstack/react-router";
 import { useSylva, todayLocal } from "@/lib/sylva-store";
 import { useCalendarViewMode } from "@/lib/calendar-view";
 import { CalendarTextEditor } from "@/components/CalendarTextEditor";
-import { ChevronLeft, ChevronRight, Check, Clock, LayoutGrid, AlignLeft, CalendarDays } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Clock, AlignLeft, CalendarDays } from "lucide-react";
 
 
 export const Route = createFileRoute("/_authenticated/calendar")({
@@ -117,14 +117,6 @@ function CalendarClient() {
           >
             今天
           </button>
-
-          <Link
-            to="/desktop"
-            className="text-xs px-2.5 py-1.5 rounded-md border border-border hover:bg-accent transition-colors inline-flex items-center gap-1"
-          >
-            <LayoutGrid className="w-3.5 h-3.5" />
-            完整版
-          </Link>
         </div>
       </header>
 

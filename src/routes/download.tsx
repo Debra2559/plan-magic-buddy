@@ -6,15 +6,15 @@ export const Route = createFileRoute("/download")({
   component: DownloadPage,
   head: () => ({
     meta: [
-      { title: "下载 Sylva macOS 客户端" },
+      { title: "下载 Sylva 日历 macOS 客户端" },
       {
         name: "description",
-        content: "下载 Sylva 日历 macOS 客户端：菜单栏常驻、桌面组件、日程待办实时同步。附首次打开的 Gatekeeper 解决方法。",
+        content: "下载 Sylva 日历 macOS 客户端：专注的日历视图、文本/时间双模式、日程待办实时同步。附首次打开的 Gatekeeper 解决方法。",
       },
-      { property: "og:title", content: "下载 Sylva macOS 客户端" },
+      { property: "og:title", content: "下载 Sylva 日历 macOS 客户端" },
       {
         property: "og:description",
-        content: "Sylva 日历 macOS 客户端下载：桌面组件、菜单栏常驻、与网页端同账号同步。",
+        content: "Sylva 日历 macOS 客户端下载：专注日历、菜单栏常驻、与网页端同账号同步。",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -31,9 +31,9 @@ function DownloadPage() {
         </Link>
 
         <p className="text-xs tracking-widest text-amber-glow mb-3">macOS 客户端 · v{MAC_DOWNLOAD.version}</p>
-        <h1 className="font-display text-4xl md:text-5xl mb-5">把 Sylva 放进你的菜单栏。</h1>
+        <h1 className="font-display text-4xl md:text-5xl mb-5">把 Sylva 日历放进你的菜单栏。</h1>
         <p className="text-foreground/70 leading-relaxed mb-10 max-w-xl">
-          客户端包含完整日历、菜单栏常驻图标，以及可拖动、置顶的桌面组件（今日待办 / 接下来的日程 / 关键节点倒计时），
+          一个干净的 macOS 日历客户端：支持时间视图与文本视图，日程、待办、提醒一站式管理，
           和网页端使用同一个账号，数据实时同步。
         </p>
 
@@ -78,7 +78,7 @@ function DownloadPage() {
             <h2 className="font-display text-xl">先在浏览器里试试</h2>
           </div>
           <p className="text-sm text-foreground/70 leading-relaxed mb-5">
-            不想下载也可以，网页端有一模一样的日历与桌面体验预览。
+            不想下载也可以，网页端有同样的日历体验，登录后数据互通。
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
@@ -86,12 +86,6 @@ function DownloadPage() {
               className="px-5 py-2.5 rounded-full bg-foreground/10 border border-foreground/15 text-sm hover:bg-foreground/15 transition"
             >
               打开网页日历
-            </Link>
-            <Link
-              to="/desktop"
-              className="px-5 py-2.5 rounded-full bg-foreground/10 border border-foreground/15 text-sm hover:bg-foreground/15 transition"
-            >
-              Mac 桌面体验预览
             </Link>
           </div>
         </section>
