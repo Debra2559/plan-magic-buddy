@@ -9,49 +9,45 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiLifeAgentRouteImport } from './routes/api/life-agent'
-import { Route as AuthenticatedWidgetRouteImport } from './routes/_authenticated.widget'
-import { Route as AuthenticatedDesktopRouteImport } from './routes/_authenticated.desktop'
-import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as DownloadRouteImport } from './routes/download'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as ApiPublicHooksScanHackathonsRouteImport } from './routes/api/public/hooks/scan-hackathons'
-import { Route as ApiPublicHooksScanAiNewsRouteImport } from './routes/api/public/hooks/scan-ai-news'
-import { Route as ApiPublicHooksGenerateInsightsRouteImport } from './routes/api/public/hooks/generate-insights'
-import { Route as ApiPublicHooksDailyRecapRouteImport } from './routes/api/public/hooks/daily-recap'
-import { Route as ApiPublicFeishuWebhookRouteImport } from './routes/api/public/feishu/webhook'
+import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated.calendar'
+import { Route as AuthenticatedDesktopRouteImport } from './routes/_authenticated.desktop'
+import { Route as AuthenticatedWidgetRouteImport } from './routes/_authenticated.widget'
+import { Route as ApiLifeAgentRouteImport } from './routes/api/life-agent'
 import { Route as ApiPublicCalendarTokenDoticsRouteImport } from './routes/api/public/calendar/$token[.]ics'
+import { Route as ApiPublicFeishuWebhookRouteImport } from './routes/api/public/feishu/webhook'
+import { Route as ApiPublicHooksDailyRecapRouteImport } from './routes/api/public/hooks/daily-recap'
+import { Route as ApiPublicHooksGenerateInsightsRouteImport } from './routes/api/public/hooks/generate-insights'
+import { Route as ApiPublicHooksScanAiNewsRouteImport } from './routes/api/public/hooks/scan-ai-news'
+import { Route as ApiPublicHooksScanHackathonsRouteImport } from './routes/api/public/hooks/scan-hackathons'
 import { Route as ApiPublicFeishuOauthCallbackRouteImport } from './routes/api/public/feishu/oauth/callback'
 
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const DownloadRoute = DownloadRouteImport.update({
+  id: '/download',
+  path: '/download',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiLifeAgentRoute = ApiLifeAgentRouteImport.update({
-  id: '/api/life-agent',
-  path: '/api/life-agent',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedWidgetRoute = AuthenticatedWidgetRouteImport.update({
-  id: '/widget',
-  path: '/widget',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedDesktopRoute = AuthenticatedDesktopRouteImport.update({
-  id: '/desktop',
-  path: '/desktop',
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
@@ -59,21 +55,36 @@ const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const AuthenticatedDesktopRoute = AuthenticatedDesktopRouteImport.update({
+  id: '/desktop',
+  path: '/desktop',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const ApiPublicHooksScanHackathonsRoute =
-  ApiPublicHooksScanHackathonsRouteImport.update({
-    id: '/api/public/hooks/scan-hackathons',
-    path: '/api/public/hooks/scan-hackathons',
+const AuthenticatedWidgetRoute = AuthenticatedWidgetRouteImport.update({
+  id: '/widget',
+  path: '/widget',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const ApiLifeAgentRoute = ApiLifeAgentRouteImport.update({
+  id: '/api/life-agent',
+  path: '/api/life-agent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCalendarTokenDoticsRoute =
+  ApiPublicCalendarTokenDoticsRouteImport.update({
+    id: '/api/public/calendar/$token.ics',
+    path: '/api/public/calendar/$token.ics',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksScanAiNewsRoute =
-  ApiPublicHooksScanAiNewsRouteImport.update({
-    id: '/api/public/hooks/scan-ai-news',
-    path: '/api/public/hooks/scan-ai-news',
+const ApiPublicFeishuWebhookRoute = ApiPublicFeishuWebhookRouteImport.update({
+  id: '/api/public/feishu/webhook',
+  path: '/api/public/feishu/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksDailyRecapRoute =
+  ApiPublicHooksDailyRecapRouteImport.update({
+    id: '/api/public/hooks/daily-recap',
+    path: '/api/public/hooks/daily-recap',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksGenerateInsightsRoute =
@@ -82,21 +93,16 @@ const ApiPublicHooksGenerateInsightsRoute =
     path: '/api/public/hooks/generate-insights',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksDailyRecapRoute =
-  ApiPublicHooksDailyRecapRouteImport.update({
-    id: '/api/public/hooks/daily-recap',
-    path: '/api/public/hooks/daily-recap',
+const ApiPublicHooksScanAiNewsRoute =
+  ApiPublicHooksScanAiNewsRouteImport.update({
+    id: '/api/public/hooks/scan-ai-news',
+    path: '/api/public/hooks/scan-ai-news',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicFeishuWebhookRoute = ApiPublicFeishuWebhookRouteImport.update({
-  id: '/api/public/feishu/webhook',
-  path: '/api/public/feishu/webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicCalendarTokenDoticsRoute =
-  ApiPublicCalendarTokenDoticsRouteImport.update({
-    id: '/api/public/calendar/$token.ics',
-    path: '/api/public/calendar/$token.ics',
+const ApiPublicHooksScanHackathonsRoute =
+  ApiPublicHooksScanHackathonsRouteImport.update({
+    id: '/api/public/hooks/scan-hackathons',
+    path: '/api/public/hooks/scan-hackathons',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicFeishuOauthCallbackRoute =
@@ -108,6 +114,7 @@ const ApiPublicFeishuOauthCallbackRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/download': typeof DownloadRoute
   '/login': typeof LoginRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/calendar': typeof AuthenticatedCalendarRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/download': typeof DownloadRoute
   '/login': typeof LoginRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/calendar': typeof AuthenticatedCalendarRoute
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/download': typeof DownloadRoute
   '/login': typeof LoginRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/download'
     | '/login'
     | '/admin'
     | '/calendar'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/download'
     | '/login'
     | '/admin'
     | '/calendar'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/download'
     | '/login'
     | '/_authenticated/admin'
     | '/_authenticated/calendar'
@@ -211,6 +223,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  DownloadRoute: typeof DownloadRoute
   LoginRoute: typeof LoginRoute
   ApiLifeAgentRoute: typeof ApiLifeAgentRoute
   ApiPublicCalendarTokenDoticsRoute: typeof ApiPublicCalendarTokenDoticsRoute
@@ -224,11 +237,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -238,32 +251,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/download': {
+      id: '/download'
+      path: '/download'
+      fullPath: '/download'
+      preLoaderRoute: typeof DownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/life-agent': {
-      id: '/api/life-agent'
-      path: '/api/life-agent'
-      fullPath: '/api/life-agent'
-      preLoaderRoute: typeof ApiLifeAgentRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/widget': {
-      id: '/_authenticated/widget'
-      path: '/widget'
-      fullPath: '/widget'
-      preLoaderRoute: typeof AuthenticatedWidgetRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/desktop': {
-      id: '/_authenticated/desktop'
-      path: '/desktop'
-      fullPath: '/desktop'
-      preLoaderRoute: typeof AuthenticatedDesktopRouteImport
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/calendar': {
@@ -273,39 +279,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCalendarRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+    '/_authenticated/desktop': {
+      id: '/_authenticated/desktop'
+      path: '/desktop'
+      fullPath: '/desktop'
+      preLoaderRoute: typeof AuthenticatedDesktopRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/api/public/hooks/scan-hackathons': {
-      id: '/api/public/hooks/scan-hackathons'
-      path: '/api/public/hooks/scan-hackathons'
-      fullPath: '/api/public/hooks/scan-hackathons'
-      preLoaderRoute: typeof ApiPublicHooksScanHackathonsRouteImport
+    '/_authenticated/widget': {
+      id: '/_authenticated/widget'
+      path: '/widget'
+      fullPath: '/widget'
+      preLoaderRoute: typeof AuthenticatedWidgetRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/life-agent': {
+      id: '/api/life-agent'
+      path: '/api/life-agent'
+      fullPath: '/api/life-agent'
+      preLoaderRoute: typeof ApiLifeAgentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/scan-ai-news': {
-      id: '/api/public/hooks/scan-ai-news'
-      path: '/api/public/hooks/scan-ai-news'
-      fullPath: '/api/public/hooks/scan-ai-news'
-      preLoaderRoute: typeof ApiPublicHooksScanAiNewsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/generate-insights': {
-      id: '/api/public/hooks/generate-insights'
-      path: '/api/public/hooks/generate-insights'
-      fullPath: '/api/public/hooks/generate-insights'
-      preLoaderRoute: typeof ApiPublicHooksGenerateInsightsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/daily-recap': {
-      id: '/api/public/hooks/daily-recap'
-      path: '/api/public/hooks/daily-recap'
-      fullPath: '/api/public/hooks/daily-recap'
-      preLoaderRoute: typeof ApiPublicHooksDailyRecapRouteImport
+    '/api/public/calendar/$token.ics': {
+      id: '/api/public/calendar/$token.ics'
+      path: '/api/public/calendar/$token.ics'
+      fullPath: '/api/public/calendar/$token.ics'
+      preLoaderRoute: typeof ApiPublicCalendarTokenDoticsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/feishu/webhook': {
@@ -315,11 +314,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicFeishuWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/calendar/$token.ics': {
-      id: '/api/public/calendar/$token.ics'
-      path: '/api/public/calendar/$token.ics'
-      fullPath: '/api/public/calendar/$token.ics'
-      preLoaderRoute: typeof ApiPublicCalendarTokenDoticsRouteImport
+    '/api/public/hooks/daily-recap': {
+      id: '/api/public/hooks/daily-recap'
+      path: '/api/public/hooks/daily-recap'
+      fullPath: '/api/public/hooks/daily-recap'
+      preLoaderRoute: typeof ApiPublicHooksDailyRecapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/generate-insights': {
+      id: '/api/public/hooks/generate-insights'
+      path: '/api/public/hooks/generate-insights'
+      fullPath: '/api/public/hooks/generate-insights'
+      preLoaderRoute: typeof ApiPublicHooksGenerateInsightsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/scan-ai-news': {
+      id: '/api/public/hooks/scan-ai-news'
+      path: '/api/public/hooks/scan-ai-news'
+      fullPath: '/api/public/hooks/scan-ai-news'
+      preLoaderRoute: typeof ApiPublicHooksScanAiNewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/scan-hackathons': {
+      id: '/api/public/hooks/scan-hackathons'
+      path: '/api/public/hooks/scan-hackathons'
+      fullPath: '/api/public/hooks/scan-hackathons'
+      preLoaderRoute: typeof ApiPublicHooksScanHackathonsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/feishu/oauth/callback': {
@@ -353,6 +373,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  DownloadRoute: DownloadRoute,
   LoginRoute: LoginRoute,
   ApiLifeAgentRoute: ApiLifeAgentRoute,
   ApiPublicCalendarTokenDoticsRoute: ApiPublicCalendarTokenDoticsRoute,

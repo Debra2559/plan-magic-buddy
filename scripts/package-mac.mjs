@@ -54,27 +54,15 @@ const paths = await packager({
   darwinDarkModeSupport: true,
   osxSign,
   osxNotarize,
+  // Electron 客户端只需要主进程文件和 package.json，其余一律排除，避免包体积失控。
   ignore: (file) => {
-    const rel = path.relative(root, file);
-    if (!rel || rel.startsWith("..")) return false;
-    return [
-      /^\.git($|\/)/,
-      /^\.github($|\/)/,
-      /^\.lovable($|\/)/,
-      /^\.tanstack($|\/)/,
-      /^\.wrangler($|\/)/,
-      /^docs($|\/)/,
-      /^dist($|\/)/,
-      /^electron-release($|\/)/,
-      /^node_modules($|\/)/,
-      /^public($|\/)/,
-      /^src($|\/)/,
-      /^supabase($|\/)/,
-      /^\.env/,
-      /^.*\.log$/,
-      /^tsconfig\.tsbuildinfo$/,
-    ].some((rule) => rule.test(rel));
+    let rel = file.startsWith(root) ? path.relative(root, file) : file;
+    rel = rel.replace(/^[/\\]+/, "");
+    if (!rel) return false;
+    const top = rel.split(/[/\\]/)[0];
+    return !(top === "electron" || rel === "package.json");
   },
+
 });
 
 console.log(paths.join("\n"));
