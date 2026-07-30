@@ -136,20 +136,25 @@ export function CalendarTextEditor({ date }: Props) {
   };
 
   const btn =
-    "text-[11px] px-2 py-1 rounded-md border border-border hover:bg-accent transition-colors inline-flex items-center gap-1";
+    "group relative p-1.5 rounded-md border border-border hover:bg-accent transition-colors inline-flex items-center justify-center text-muted-foreground hover:text-foreground";
+  const tip =
+    "pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-1 whitespace-nowrap rounded bg-foreground px-1.5 py-0.5 text-[10px] text-background opacity-0 group-hover:opacity-100 transition-opacity z-20";
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between gap-2 px-1 pb-2">
         <div className="flex items-center gap-1.5">
-          <button className={btn} onClick={() => applyToSelection("check")} title="打勾 / 取消（当前行）">
-            <CheckSquare className="w-3 h-3" /> 打勾
+          <button className={btn} onClick={() => applyToSelection("check")} aria-label="打勾">
+            <CheckSquare className="w-3.5 h-3.5" />
+            <span className={tip}>打勾 / 取消（当前行）</span>
           </button>
-          <button className={btn} onClick={() => applyToSelection("highlight")} title="高亮选中文字">
-            <Highlighter className="w-3 h-3" /> 高亮
+          <button className={btn} onClick={() => applyToSelection("highlight")} aria-label="高亮">
+            <Highlighter className="w-3.5 h-3.5" />
+            <span className={tip}>高亮选中文字</span>
           </button>
-          <button className={btn} onClick={() => applyToSelection("star")} title="标记当前行">
-            <Star className="w-3 h-3" /> 标记
+          <button className={btn} onClick={() => applyToSelection("star")} aria-label="标记">
+            <Star className="w-3.5 h-3.5" />
+            <span className={tip}>标记当前行</span>
           </button>
         </div>
         <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
